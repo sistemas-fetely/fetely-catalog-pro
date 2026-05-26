@@ -17,22 +17,31 @@ import type { Product } from "@/types";
 
 type Tree = Record<string, Record<string, string[]>>;
 
+// Categorias onde a hierarquia é invertida: Coleção → Grupo (ex.: Celebrar à Mesa)
+const COLECAO_FIRST_CATEGORIES = new Set(["Celebrar à Mesa"]);
+
 function buildTree(products: Product[]): Tree {
   const tree: Tree = {};
   for (const p of products) {
     if (!tree[p.categoria]) tree[p.categoria] = {};
-    if (!tree[p.categoria][p.grupo]) tree[p.categoria][p.grupo] = [];
-    if (!tree[p.categoria][p.grupo].includes(p.colecao)) {
-      tree[p.categoria][p.grupo].push(p.colecao);
+    const colecaoFirst = COLECAO_FIRST_CATEGORIES.has(p.categoria);
+    const lvl1 = colecaoFirst ? p.colecao : p.grupo;
+    const lvl2 = colecaoFirst ? p.grupo : p.colecao;
+    if (!tree[p.categoria][lvl1]) tree[p.categoria][lvl1] = [];
+    if (!tree[p.categoria][lvl1].includes(lvl2)) {
+      tree[p.categoria][lvl1].push(lvl2);
     }
   }
-  // sort
   for (const cat of Object.keys(tree)) {
     for (const grp of Object.keys(tree[cat])) {
       tree[cat][grp].sort((a, b) => a.localeCompare(b, "pt-BR"));
     }
   }
   return tree;
+}
+
+function isColecaoFirst(categoria: string) {
+  return COLECAO_FIRST_CATEGORIES.has(categoria);
 }
 
 interface Props {
@@ -53,13 +62,14 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
   const total = cartTotal(items);
   const totalUnits = items.reduce((s, i) => s + i.quantity, 0);
 
-  const search = useRouterState({ select: (r) => r.location.search as { colecao?: string } });
+  const search = useRouterState({ select: (r) => r.location.search as { colecao?: string; grupo?: string } });
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const activeColecao = pathname === "/catalog" ? search.colecao : undefined;
+  const activeGrupo = pathname === "/catalog" ? search.grupo : undefined;
   const navigate = useNavigate();
 
-  const handleSelectColecao = (colecao: string) => {
-    navigate({ to: "/catalog", search: { colecao } });
+  const handleSelectColecao = (colecao: string, grupo?: string) => {
+    navigate({ to: "/catalog", search: grupo ? { colecao, grupo } : { colecao } });
     onNavigate?.();
   };
 
@@ -107,37 +117,69 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
             )}
 
             {!collapsed &&
-              Object.entries(grupos).map(([grupo, colecoes]) => {
-                const gkey = `${categoria}::${grupo}`;
+              Object.entries(grupos).map(([lvl1, lvl2List]) => {
+                const colecaoFirst = isColecaoFirst(categoria);
+                const gkey = `${categoria}::${lvl1}`;
                 const isOpen = expandedGroups[gkey] ?? true;
+                const lvl1IsColecao = colecaoFirst;
+                const lvl1Active = lvl1IsColecao && activeColecao === lvl1 && !activeGrupo;
                 return (
                   <div key={gkey} className="px-2">
-                    <button
-                      onClick={() => toggleGroup(gkey)}
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs text-text-secondary hover:text-gold rounded transition"
+                    <div
+                      className={`flex items-center rounded transition ${
+                        lvl1Active ? "bg-gold/10" : ""
+                      }`}
                     >
-                      {isOpen ? (
-                        <ChevronDown className="h-3 w-3 flex-shrink-0" />
+                      <button
+                        onClick={() => toggleGroup(gkey)}
+                        className="flex items-center px-2 py-1.5 text-text-secondary hover:text-gold transition"
+                        aria-label={isOpen ? "Recolher" : "Expandir"}
+                      >
+                        {isOpen ? (
+                          <ChevronDown className="h-3 w-3 flex-shrink-0" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3 flex-shrink-0" />
+                        )}
+                      </button>
+                      {lvl1IsColecao ? (
+                        <button
+                          onClick={() => handleSelectColecao(lvl1)}
+                          className={`flex-1 text-left text-xs py-1.5 pr-2 transition ${
+                            lvl1Active ? "text-gold" : "text-text-secondary hover:text-gold"
+                          }`}
+                        >
+                          {lvl1}
+                        </button>
                       ) : (
-                        <ChevronRight className="h-3 w-3 flex-shrink-0" />
+                        <button
+                          onClick={() => toggleGroup(gkey)}
+                          className="flex-1 text-left text-xs py-1.5 pr-2 uppercase tracking-wider text-text-secondary hover:text-gold transition"
+                        >
+                          {lvl1}
+                        </button>
                       )}
-                      <span className="uppercase tracking-wider">{grupo}</span>
-                    </button>
+                    </div>
                     {isOpen && (
                       <ul className="pl-5 pb-1">
-                        {colecoes.map((col) => {
-                          const active = activeColecao === col;
+                        {lvl2List.map((lvl2) => {
+                          const active = lvl1IsColecao
+                            ? activeColecao === lvl1 && activeGrupo === lvl2
+                            : activeColecao === lvl2;
                           return (
-                            <li key={col}>
+                            <li key={lvl2}>
                               <button
-                                onClick={() => handleSelectColecao(col)}
+                                onClick={() =>
+                                  lvl1IsColecao
+                                    ? handleSelectColecao(lvl1, lvl2)
+                                    : handleSelectColecao(lvl2)
+                                }
                                 className={`block w-full text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
                                   active
                                     ? "border-gold bg-gold/10 text-gold"
                                     : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2/60"
                                 }`}
                               >
-                                {col}
+                                {lvl2}
                               </button>
                             </li>
                           );
