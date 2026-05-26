@@ -64,42 +64,63 @@ function validate(raw: unknown): ValidationResult {
         return;
       }
     }
+    const tipo = String(r.tipo ?? "");
+    const isVN =
+      r.isVelaNumerica !== undefined
+        ? Boolean(r.isVelaNumerica)
+        : tipo.toLowerCase().includes("numéric") || tipo.toLowerCase().includes("numeric");
     cleaned.push({
       sku: String(r.sku),
       codCadastro: String(r.codCadastro ?? r.sku),
+      ean: String(r.ean ?? ""),
       marca: String(r.marca),
       linha: String(r.linha ?? ""),
       categoria: String(r.categoria),
+      departamento: r.departamento ? String(r.departamento) : undefined,
       grupo: String(r.grupo),
-      tipo: String(r.tipo ?? ""),
-      colecao: String(r.colecao),
+      tipo,
       familia: String(r.familia ?? r.colecao),
+      colecao: String(r.colecao),
+      subColecao: r.subColecao ? String(r.subColecao) : undefined,
+      subColecao2: r.subColecao2 ? String(r.subColecao2) : undefined,
       corNome: String(r.corNome ?? ""),
       cor: String(r.cor ?? ""),
       estampa: String(r.estampa ?? ""),
       tamanhoNumero: String(r.tamanhoNumero ?? ""),
       tamanhoRef: String(r.tamanhoRef ?? ""),
       nomeComercial: String(r.nomeComercial),
+      nomeCompleto: r.nomeCompleto ? String(r.nomeCompleto) : undefined,
+      metaDescricao: r.metaDescricao ? String(r.metaDescricao) : undefined,
+      descricaoColecao: r.descricaoColecao ? String(r.descricaoColecao) : undefined,
+      descricaoProduto: r.descricaoProduto ? String(r.descricaoProduto) : undefined,
+      ncm: r.ncm ? String(r.ncm) : undefined,
+      cest: r.cest ? String(r.cest) : undefined,
+      origemFisc: r.origemFisc ? String(r.origemFisc) : undefined,
+      origemProd: r.origemProd ? String(r.origemProd) : undefined,
+      tipoEmbalagem: r.tipoEmbalagem ? String(r.tipoEmbalagem) : undefined,
+      material: String(r.material ?? ""),
+      materialDescritivo: r.materialDescritivo ? String(r.materialDescritivo) : undefined,
+      pesoG: Number(r.pesoG) || 0,
+      larguraCm: Number(r.larguraCm) || 0,
+      alturaCm: Number(r.alturaCm) || 0,
+      profundidadeCm: r.profundidadeCm !== undefined ? Number(r.profundidadeCm) || 0 : undefined,
       multiplos: Number(r.multiplos) || 1,
       qtdKit: Number(r.qtdKit) || 1,
       precoVarejo: Number(r.precoVarejo) || 0,
       precoAtacado: Number(r.precoAtacado) || 0,
       statusEstoque: String(r.statusEstoque ?? ""),
-      material: String(r.material ?? ""),
-      pesoG: Number(r.pesoG) || 0,
-      larguraCm: Number(r.larguraCm) || 0,
-      alturaCm: Number(r.alturaCm) || 0,
-      ean: String(r.ean ?? ""),
-      isVelaNumerica: Boolean(r.isVelaNumerica),
-      numeroVela: r.numeroVela !== undefined ? Number(r.numeroVela) : undefined,
+      isVelaNumerica: isVN,
+      numeroVela:
+        r.numeroVela === null || r.numeroVela === undefined ? null : Number(r.numeroVela),
     });
+
   });
 
   const skuSet = new Set<string>();
   cleaned.forEach((p) => {
     if (skuSet.has(p.sku)) warnings.push(`SKU duplicado: ${p.sku}`);
     skuSet.add(p.sku);
-    if (p.isVelaNumerica && p.numeroVela === undefined) {
+    if (p.isVelaNumerica && (p.numeroVela === undefined || p.numeroVela === null)) {
       warnings.push(`Vela numérica sem "numeroVela": ${p.sku}`);
     }
   });
