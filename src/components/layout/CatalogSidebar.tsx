@@ -121,58 +121,47 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
                 const colecaoFirst = isColecaoFirst(categoria);
                 const gkey = `${categoria}::${lvl1}`;
                 const isOpen = expandedGroups[gkey] ?? true;
-                const lvl1IsColecao = colecaoFirst;
-                const lvl1Active = lvl1IsColecao && activeColecao === lvl1 && !activeGrupo;
+
+                // Coleção-first: render só a coleção como item clicável (sem filhos)
+                if (colecaoFirst) {
+                  const active = activeColecao === lvl1;
+                  return (
+                    <div key={gkey} className="px-2">
+                      <button
+                        onClick={() => handleSelectColecao(lvl1)}
+                        className={`block w-full text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
+                          active
+                            ? "border-gold bg-gold/10 text-gold"
+                            : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2/60"
+                        }`}
+                      >
+                        {lvl1}
+                      </button>
+                    </div>
+                  );
+                }
+
                 return (
                   <div key={gkey} className="px-2">
-                    <div
-                      className={`flex items-center rounded transition ${
-                        lvl1Active ? "bg-gold/10" : ""
-                      }`}
+                    <button
+                      onClick={() => toggleGroup(gkey)}
+                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs text-text-secondary hover:text-gold rounded transition"
                     >
-                      <button
-                        onClick={() => toggleGroup(gkey)}
-                        className="flex items-center px-2 py-1.5 text-text-secondary hover:text-gold transition"
-                        aria-label={isOpen ? "Recolher" : "Expandir"}
-                      >
-                        {isOpen ? (
-                          <ChevronDown className="h-3 w-3 flex-shrink-0" />
-                        ) : (
-                          <ChevronRight className="h-3 w-3 flex-shrink-0" />
-                        )}
-                      </button>
-                      {lvl1IsColecao ? (
-                        <button
-                          onClick={() => handleSelectColecao(lvl1)}
-                          className={`flex-1 text-left text-xs py-1.5 pr-2 transition ${
-                            lvl1Active ? "text-gold" : "text-text-secondary hover:text-gold"
-                          }`}
-                        >
-                          {lvl1}
-                        </button>
+                      {isOpen ? (
+                        <ChevronDown className="h-3 w-3 flex-shrink-0" />
                       ) : (
-                        <button
-                          onClick={() => toggleGroup(gkey)}
-                          className="flex-1 text-left text-xs py-1.5 pr-2 uppercase tracking-wider text-text-secondary hover:text-gold transition"
-                        >
-                          {lvl1}
-                        </button>
+                        <ChevronRight className="h-3 w-3 flex-shrink-0" />
                       )}
-                    </div>
+                      <span className="uppercase tracking-wider">{lvl1}</span>
+                    </button>
                     {isOpen && (
                       <ul className="pl-5 pb-1">
                         {lvl2List.map((lvl2) => {
-                          const active = lvl1IsColecao
-                            ? activeColecao === lvl1 && activeGrupo === lvl2
-                            : activeColecao === lvl2;
+                          const active = activeColecao === lvl2;
                           return (
                             <li key={lvl2}>
                               <button
-                                onClick={() =>
-                                  lvl1IsColecao
-                                    ? handleSelectColecao(lvl1, lvl2)
-                                    : handleSelectColecao(lvl2)
-                                }
+                                onClick={() => handleSelectColecao(lvl2)}
                                 className={`block w-full text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
                                   active
                                     ? "border-gold bg-gold/10 text-gold"
