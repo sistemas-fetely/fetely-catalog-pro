@@ -50,7 +50,11 @@ function OrdersPage() {
         />
       </div>
 
-      {filtered.length === 0 ? (
+      {!hydrated ? (
+        <div className="rounded-lg gold-border bg-surface p-12 text-center text-text-secondary">
+          Carregando pedidos...
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="rounded-lg gold-border bg-surface p-12 text-center">
           <Package className="h-10 w-10 text-gold/60 mx-auto mb-3" />
           <p className="text-text-secondary">
