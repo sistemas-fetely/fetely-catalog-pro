@@ -61,13 +61,8 @@ function CommercialPage() {
 
       {/* Tabela de condições */}
       <section className="mt-14">
-        <div className="mb-5 flex items-center justify-between">
+        <div className="mb-5">
           <h2 className="font-display text-3xl">Condições de pagamento</h2>
-          {ativo && (
-            <span className="rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-[10px] uppercase tracking-wider text-gold">
-              Modo Master · todas liberadas
-            </span>
-          )}
         </div>
         <div className="rounded-lg gold-border bg-surface overflow-hidden">
           <table className="w-full text-sm">
