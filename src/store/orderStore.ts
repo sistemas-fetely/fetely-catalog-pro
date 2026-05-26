@@ -1,5 +1,14 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
+
+const safeStorage = () =>
+  typeof window !== "undefined"
+    ? window.localStorage
+    : ({
+        getItem: () => null,
+        setItem: () => {},
+        removeItem: () => {},
+      } as Storage);
 import type { CartItem, OrderMeta, Product, SavedOrder } from "@/types";
 
 interface OrderState {
