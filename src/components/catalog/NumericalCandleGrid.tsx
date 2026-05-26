@@ -183,7 +183,7 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
       </div>
 
       {/* Resumo + ação */}
-      <div className="sticky bottom-4 flex items-center justify-between rounded-lg gold-border bg-surface-2/95 backdrop-blur p-4">
+      <div className="flex items-center justify-between rounded-lg gold-border bg-surface-2/95 backdrop-blur p-4">
         <div>
           <div className="text-[10px] uppercase tracking-[0.2em] text-text-muted">
             Subtotal da seleção
