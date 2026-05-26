@@ -17,6 +17,7 @@ import { usePhotos, getColecaoPhoto } from "@/store/photoStore";
 
 const searchSchema = z.object({
   colecao: fallback(z.string(), "").optional(),
+  grupo: fallback(z.string(), "").optional(),
   highlight: fallback(z.string(), "").optional(),
 });
 
