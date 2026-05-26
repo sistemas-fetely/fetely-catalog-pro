@@ -93,12 +93,25 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
         </div>
       </div>
 
+      {/* Preenchimento em lote */}
+      <BulkFiller
+        onApply={(perItem) => {
+          const next: Record<string, number> = { ...qtys };
+          filtered.forEach((p) => {
+            const step = Math.max(1, p.multiplos);
+            next[p.sku] = perItem * step;
+          });
+          setQtys(next);
+        }}
+      />
+
       {/* Grade 0-9 */}
       <div className="rounded-lg gold-border overflow-hidden">
-        <div className="grid grid-cols-[64px_1fr_140px_160px] bg-surface-2 text-[10px] uppercase tracking-[0.18em] text-text-muted">
+        <div className="grid grid-cols-[64px_1fr_120px_120px_160px] bg-surface-2 text-[10px] uppercase tracking-[0.18em] text-text-muted">
           <div className="px-4 py-3">Nº</div>
           <div className="px-4 py-3">Produto</div>
-          <div className="px-4 py-3 text-right">Preço Atacado</div>
+          <div className="px-4 py-3 text-right">Varejo sug.</div>
+          <div className="px-4 py-3 text-right">Atacado</div>
           <div className="px-4 py-3">Quantidade</div>
         </div>
         {filtered.map((p) => {
@@ -106,7 +119,7 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
           return (
             <div
               key={p.sku}
-              className="grid grid-cols-[64px_1fr_140px_160px] items-center border-t border-border/50 bg-surface hover:bg-surface-2/60 transition"
+              className="grid grid-cols-[64px_1fr_120px_120px_160px] items-center border-t border-border/50 bg-surface hover:bg-surface-2/60 transition"
             >
               <div
                 className="px-4 py-3 font-display text-3xl font-semibold"
@@ -120,6 +133,9 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
                   <span className="text-[10px] font-mono text-text-muted">{p.sku}</span>
                   <StockBadge status={p.statusEstoque} />
                 </div>
+              </div>
+              <div className="px-4 py-3 text-right text-xs text-text-secondary">
+                {p.precoVarejo > 0 ? formatBRL(p.precoVarejo) : "—"}
               </div>
               <div className="px-4 py-3 text-right text-gold font-medium">
                 {formatBRL(p.precoAtacado)}
