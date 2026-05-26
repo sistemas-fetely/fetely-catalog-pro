@@ -97,6 +97,17 @@ export function Header() {
             Cartilhas
           </Link>
           <Link
+            to="/orders"
+            className={`hidden md:flex items-center gap-1.5 uppercase tracking-wider text-xs transition ${
+              pathname.startsWith("/orders")
+                ? "text-gold"
+                : "text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            <ClipboardList className="h-4 w-4" />
+            Pedidos
+          </Link>
+          <Link
             to="/import"
             className={`hidden md:inline uppercase tracking-wider text-xs transition ${
               pathname.startsWith("/import")
