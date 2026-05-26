@@ -73,10 +73,32 @@ export interface OrderMeta {
   vendedor: string;
 }
 
+export interface OrderCommercial {
+  faixaId: number;
+  faixaNome: string;
+  frete: "FOB" | "CIF";
+  condicaoId: number | null;
+  condicaoDescricao: string;
+  bruto: number;
+  descontoCelebraPct: number;
+  descontoCelebraValor: number;
+  descontoMasterPct: number;
+  descontoMasterValor: number;
+  bonusPixValor: number;
+  aplicouPix: boolean;
+  totalFinal: number;
+  totalSemPix: number;
+  negociacao: boolean;
+  justificativa: string;
+  observacaoInterna: string;
+  usouReservada: boolean;
+}
+
 export interface SavedOrder {
   id: string;
   createdAt: string;
   items: CartItem[];
   meta: OrderMeta;
   total: number;
+  commercial?: OrderCommercial;
 }
