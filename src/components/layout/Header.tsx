@@ -1,5 +1,6 @@
+import { useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Camera, Menu, ShoppingBag } from "lucide-react";
+import { Camera, Menu, Moon, ShoppingBag, Sun } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
@@ -12,6 +13,15 @@ export function Header() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const mobileOpen = useUI((s) => s.mobileSidebarOpen);
   const setMobileOpen = useUI((s) => s.setMobileSidebarOpen);
+  const theme = useUI((s) => s.theme);
+  const toggleTheme = useUI((s) => s.toggleTheme);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    root.classList.toggle("light", theme === "light");
+    root.classList.toggle("dark", theme === "dark");
+  }, [theme]);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md h-16">
