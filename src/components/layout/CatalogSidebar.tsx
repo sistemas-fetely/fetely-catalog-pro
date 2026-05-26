@@ -17,22 +17,31 @@ import type { Product } from "@/types";
 
 type Tree = Record<string, Record<string, string[]>>;
 
+// Categorias onde a hierarquia é invertida: Coleção → Grupo (ex.: Celebrar à Mesa)
+const COLECAO_FIRST_CATEGORIES = new Set(["Celebrar à Mesa"]);
+
 function buildTree(products: Product[]): Tree {
   const tree: Tree = {};
   for (const p of products) {
     if (!tree[p.categoria]) tree[p.categoria] = {};
-    if (!tree[p.categoria][p.grupo]) tree[p.categoria][p.grupo] = [];
-    if (!tree[p.categoria][p.grupo].includes(p.colecao)) {
-      tree[p.categoria][p.grupo].push(p.colecao);
+    const colecaoFirst = COLECAO_FIRST_CATEGORIES.has(p.categoria);
+    const lvl1 = colecaoFirst ? p.colecao : p.grupo;
+    const lvl2 = colecaoFirst ? p.grupo : p.colecao;
+    if (!tree[p.categoria][lvl1]) tree[p.categoria][lvl1] = [];
+    if (!tree[p.categoria][lvl1].includes(lvl2)) {
+      tree[p.categoria][lvl1].push(lvl2);
     }
   }
-  // sort
   for (const cat of Object.keys(tree)) {
     for (const grp of Object.keys(tree[cat])) {
       tree[cat][grp].sort((a, b) => a.localeCompare(b, "pt-BR"));
     }
   }
   return tree;
+}
+
+function isColecaoFirst(categoria: string) {
+  return COLECAO_FIRST_CATEGORIES.has(categoria);
 }
 
 interface Props {
