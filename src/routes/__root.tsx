@@ -1,4 +1,3 @@
-import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -10,7 +9,6 @@ import {
 
 import appCss from "../styles.css?url";
 import { Header } from "@/components/layout/Header";
-import { useAuth as useAuthStore } from "@/store/authStore";
 
 function NotFoundComponent() {
   return (
@@ -64,6 +62,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "description",
         content: "Catálogo e registro de pedidos B2B para representantes Fetély.",
       },
+      { property: "og:title", content: "Fetély — Sistema B2B de Pedidos" },
+      { name: "twitter:title", content: "Fetély — Sistema B2B de Pedidos" },
+      { name: "description", content: "Fetély Order Pro is a B2B ordering system for luxury celebration items." },
+      { property: "og:description", content: "Fetély Order Pro is a B2B ordering system for luxury celebration items." },
+      { name: "twitter:description", content: "Fetély Order Pro is a B2B ordering system for luxury celebration items." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/dfc78683-f26c-4200-a323-ca692bd3e097/id-preview-f8130124--f24862e9-aac1-42a1-bec2-f14e7decae2e.lovable.app-1779771805394.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/dfc78683-f26c-4200-a323-ca692bd3e097/id-preview-f8130124--f24862e9-aac1-42a1-bec2-f14e7decae2e.lovable.app-1779771805394.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
@@ -89,47 +96,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const router = useRouter();
-  const pathname = router.state.location.pathname;
-  const isLogin = pathname === "/login";
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthGate>
-        <div className="min-h-screen bg-background text-text-primary">
-          {!isLogin && <Header />}
-          <Outlet />
-        </div>
-      </AuthGate>
+      <div className="min-h-screen bg-background text-text-primary">
+        <Header />
+        <Outlet />
+      </div>
     </QueryClientProvider>
   );
-}
-
-function AuthGate({ children }: { children: React.ReactNode }) {
-  const init = useAuthStore((s) => s.init);
-  const loading = useAuthStore((s) => s.loading);
-  const session = useAuthStore((s) => s.session);
-  const router = useRouter();
-  const pathname = router.state.location.pathname;
-  const isPublic = pathname === "/login";
-
-  React.useEffect(() => {
-    init();
-  }, [init]);
-
-  React.useEffect(() => {
-    if (loading) return;
-    if (!session && !isPublic) {
-      router.navigate({ to: "/login" });
-    }
-  }, [loading, session, isPublic, router]);
-
-  if (loading && !isPublic) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-text-secondary text-sm">
-        Carregando...
-      </div>
-    );
-  }
-  if (!session && !isPublic) return null;
-  return <>{children}</>;
 }
