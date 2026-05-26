@@ -130,9 +130,15 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
                 <Folder className="h-4 w-4" />
               </div>
             ) : (
-              <div className="px-3 pb-1.5 pt-2 text-[10px] uppercase tracking-[0.2em] text-gold flex items-center gap-2">
+              <button
+                onClick={() => {
+                  navigate({ to: "/catalog/categoria/$categoria", params: { categoria } });
+                  onNavigate?.();
+                }}
+                className="w-full text-left px-3 pb-1.5 pt-2 text-[10px] uppercase tracking-[0.2em] text-gold hover:text-gold-light flex items-center gap-2 transition"
+              >
                 <Folder className="h-3 w-3" /> {categoria}
-              </div>
+              </button>
             )}
 
             {!collapsed &&

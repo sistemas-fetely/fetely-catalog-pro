@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      photos: {
+        Row: {
+          colecao: string
+          cor: string | null
+          created_at: string
+          id: string
+          kind: string
+          path: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          colecao: string
+          cor?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          path: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          colecao?: string
+          cor?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          path?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ativo: boolean

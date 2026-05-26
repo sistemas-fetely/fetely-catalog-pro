@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -9,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { Header } from "@/components/layout/Header";
+import { usePhotos } from "@/store/photoStore";
 
 function NotFoundComponent() {
   return (
@@ -98,10 +100,19 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
+      <BootEffects />
       <div className="min-h-screen bg-background text-text-primary">
         <Header />
         <Outlet />
       </div>
     </QueryClientProvider>
   );
+}
+
+function BootEffects() {
+  const fetchPhotos = usePhotos((s) => s.fetchAll);
+  useEffect(() => {
+    void fetchPhotos();
+  }, [fetchPhotos]);
+  return null;
 }
