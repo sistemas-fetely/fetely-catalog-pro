@@ -13,5 +13,8 @@ export function nearestMultiple(value: number, mult: number): number {
 
 export function isValidMultiple(value: number, mult: number): boolean {
   if (mult <= 1) return value >= 0 && Number.isInteger(value);
-  return value % mult === 0;
+  if (value % mult === 0) return true;
+  // permite meia caixa (ex: 6 un. para multiplos de 12)
+  if (mult % 2 === 0 && value % (mult / 2) === 0) return true;
+  return false;
 }
