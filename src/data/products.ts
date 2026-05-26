@@ -105,9 +105,16 @@ function colorsForCollection(colecao: string) {
   return CANDLE_COLORS;
 }
 
+function sizesForCollection(colecao: string) {
+  // Classique só existe em 7 cm no catálogo oficial
+  if (colecao === "Classique") return CANDLE_SIZES.filter((s) => s.code === "7");
+  return CANDLE_SIZES;
+}
+
 function buildNumericCandles(colecao: string): Product[] {
   const out: Product[] = [];
   const colors = colorsForCollection(colecao);
+  const sizes = sizesForCollection(colecao);
   const prefix = COLECAO_CODE[colecao] ?? colecao.slice(0, 2).toUpperCase();
   for (const color of colors) {
     for (const size of CANDLE_SIZES) {
