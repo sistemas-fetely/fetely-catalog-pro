@@ -1,5 +1,16 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
+
+const noopStorage: Storage = {
+  length: 0,
+  clear: () => {},
+  getItem: () => null,
+  key: () => null,
+  removeItem: () => {},
+  setItem: () => {},
+};
+const safeStorage = (): Storage =>
+  typeof window !== "undefined" ? window.localStorage : noopStorage;
 import type { CartItem, OrderMeta, Product, SavedOrder } from "@/types";
 
 interface OrderState {
@@ -69,7 +80,7 @@ export const useOrder = create<OrderState>()(
         return order;
       },
     }),
-    { name: "fetely-order" },
+    { name: "fetely-order", storage: createJSONStorage(safeStorage) },
   ),
 );
 
