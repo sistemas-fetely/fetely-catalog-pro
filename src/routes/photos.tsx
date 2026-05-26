@@ -153,8 +153,12 @@ function ColecaoTab({
         title={target ? `Foto da coleção ${target.nome}` : ""}
         subtitle={target ? `${target.categoria} · ${target.grupo}` : ""}
         current={current}
-        onSave={(data) => open && setColecaoPhoto(open, data)}
-        onRemove={current ? () => open && removeColecaoPhoto(open) : undefined}
+        onSave={async (data) => {
+          if (open) await setColecaoPhoto(open, data);
+        }}
+        onRemove={current ? async () => {
+          if (open) await removeColecaoPhoto(open);
+        } : undefined}
       />
     </>
   );
@@ -291,10 +295,14 @@ function CorTab({
         title={open ? `Foto da cor ${open}` : ""}
         subtitle={`Coleção ${colecao}`}
         current={current}
-        onSave={(data) => open && setProdutoPhoto(colecao, open, data)}
+        onSave={async (data) => {
+          if (open) await setProdutoPhoto(colecao, open, data);
+        }}
         onRemove={
           current
-            ? () => open && removeProdutoPhoto(colecao, open)
+            ? async () => {
+                if (open) await removeProdutoPhoto(colecao, open);
+              }
             : undefined
         }
       />
