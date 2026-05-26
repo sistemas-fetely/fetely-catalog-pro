@@ -28,7 +28,6 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
   const [qtys, setQtys] = useState<Record<string, number>>({});
   const addBulk = useOrder((s) => s.addBulk);
   const photos = usePhotos();
-  const colorPhoto = getProdutoPhoto(photos, colecao, color);
 
   const filtered = products
     .filter((p) => p.corNome === color && p.tamanhoNumero === size)
@@ -59,19 +58,37 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
           Variante de cor
         </div>
         <div className="flex flex-wrap gap-2">
-          {colors.map((c) => (
-            <button
-              key={c}
-              onClick={() => setColor(c)}
-              className={`px-4 py-2 rounded-full text-xs uppercase tracking-wider border transition ${
-                c === color
-                  ? "bg-gold text-background border-gold"
-                  : "border-border text-text-secondary hover:border-gold/60 hover:text-gold-light"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
+          {colors.map((c) => {
+            const photo = getProdutoPhoto(photos, colecao, c);
+            const active = c === color;
+            return (
+              <button
+                key={c}
+                onClick={() => setColor(c)}
+                className={`flex items-center gap-2 pl-1 pr-4 py-1 rounded-full text-xs uppercase tracking-wider border transition ${
+                  active
+                    ? "bg-gold text-background border-gold"
+                    : "border-border text-text-secondary hover:border-gold/60 hover:text-gold-light"
+                }`}
+              >
+                {photo ? (
+                  <img
+                    src={photo}
+                    alt={c}
+                    className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <PhotoPlaceholder
+                    colecao={colecao}
+                    label={c}
+                    className="h-8 w-8 rounded-full flex-shrink-0"
+                    showIcon={false}
+                  />
+                )}
+                <span>{c}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -139,27 +156,11 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
               >
                 {p.numeroVela}
               </div>
-              <div className="px-4 py-3 flex items-center gap-3">
-                {colorPhoto ? (
-                  <img
-                    src={colorPhoto}
-                    alt={color}
-                    className="h-10 w-10 rounded object-cover flex-shrink-0"
-                  />
-                ) : (
-                  <PhotoPlaceholder
-                    colecao={colecao}
-                    label={color}
-                    className="h-10 w-10 rounded flex-shrink-0"
-                    showIcon={false}
-                  />
-                )}
-                <div className="min-w-0">
-                  <div className="text-sm text-text-primary truncate">{p.nomeComercial}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] font-mono text-text-muted">{p.sku}</span>
-                    <StockBadge status={p.statusEstoque} />
-                  </div>
+              <div className="px-4 py-3 min-w-0">
+                <div className="text-sm text-text-primary truncate">{p.nomeComercial}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[10px] font-mono text-text-muted">{p.sku}</span>
+                  <StockBadge status={p.statusEstoque} />
                 </div>
               </div>
               <div className="px-4 py-3 text-right text-xs text-text-secondary">
