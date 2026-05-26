@@ -19,15 +19,32 @@ type Tree = Record<string, Record<string, string[]>>;
 
 // Categorias onde a hierarquia é invertida: Coleção → Grupo (ex.: Celebrar à Mesa)
 const COLECAO_FIRST_CATEGORIES = new Set(["Celebrar à Mesa"]);
+// Grupos que devem aparecer como subdivisão expansível (em vez de listar coleções soltas)
+const SUBDIVIDED_GROUPS = new Set(["Jogo Americano", "Copos e Taças"]);
+const GRP_PREFIX = "GRP::";
 
 function buildTree(products: Product[]): Tree {
   const tree: Tree = {};
   for (const p of products) {
     if (!tree[p.categoria]) tree[p.categoria] = {};
     const colecaoFirst = COLECAO_FIRST_CATEGORIES.has(p.categoria);
+
+    if (colecaoFirst && SUBDIVIDED_GROUPS.has(p.grupo)) {
+      const key = `${GRP_PREFIX}${p.grupo}`;
+      if (!tree[p.categoria][key]) tree[p.categoria][key] = [];
+      if (!tree[p.categoria][key].includes(p.colecao)) {
+        tree[p.categoria][key].push(p.colecao);
+      }
+      continue;
+    }
+
     const lvl1 = colecaoFirst ? p.colecao : p.grupo;
     const lvl2 = colecaoFirst ? p.grupo : p.colecao;
     if (!tree[p.categoria][lvl1]) tree[p.categoria][lvl1] = [];
+    if (colecaoFirst) {
+      // coleção-first sem subdivisão: filhos não exibidos
+      continue;
+    }
     if (!tree[p.categoria][lvl1].includes(lvl2)) {
       tree[p.categoria][lvl1].push(lvl2);
     }
