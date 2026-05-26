@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -110,10 +111,8 @@ function RootComponent() {
 
 function BootEffects() {
   const fetchPhotos = usePhotos((s) => s.fetchAll);
-  const loaded = usePhotos((s) => s.loaded);
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  if (typeof window !== "undefined" && !loaded) {
+  useEffect(() => {
     void fetchPhotos();
-  }
+  }, [fetchPhotos]);
   return null;
 }
