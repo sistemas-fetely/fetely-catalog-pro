@@ -151,7 +151,7 @@ function NewOrder() {
               onBack={() => setColecao(null)}
             >
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {groupsByCollection(colecao).map((g) => (
+                {getGroupsByCollection(products, colecao).map((g) => (
                   <button
                     key={g}
                     onClick={() => setGrupo(g)}
