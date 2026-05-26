@@ -59,19 +59,37 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
           Variante de cor
         </div>
         <div className="flex flex-wrap gap-2">
-          {colors.map((c) => (
-            <button
-              key={c}
-              onClick={() => setColor(c)}
-              className={`px-4 py-2 rounded-full text-xs uppercase tracking-wider border transition ${
-                c === color
-                  ? "bg-gold text-background border-gold"
-                  : "border-border text-text-secondary hover:border-gold/60 hover:text-gold-light"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
+          {colors.map((c) => {
+            const photo = getProdutoPhoto(photos, colecao, c);
+            const active = c === color;
+            return (
+              <button
+                key={c}
+                onClick={() => setColor(c)}
+                className={`flex items-center gap-2 pl-1 pr-4 py-1 rounded-full text-xs uppercase tracking-wider border transition ${
+                  active
+                    ? "bg-gold text-background border-gold"
+                    : "border-border text-text-secondary hover:border-gold/60 hover:text-gold-light"
+                }`}
+              >
+                {photo ? (
+                  <img
+                    src={photo}
+                    alt={c}
+                    className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <PhotoPlaceholder
+                    colecao={colecao}
+                    label={c}
+                    className="h-8 w-8 rounded-full flex-shrink-0"
+                    showIcon={false}
+                  />
+                )}
+                <span>{c}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
