@@ -66,15 +66,18 @@ export const useOrder = create<OrderState>()(
       removeItem: (sku) => set((s) => ({ items: s.items.filter((i) => i.sku !== sku) })),
       clearCart: () => set({ items: [], meta: defaultMeta }),
       setMeta: (m) => set((s) => ({ meta: { ...s.meta, ...m } })),
-      saveOrder: () => {
+      saveOrder: (commercial) => {
         const { items, meta } = get();
-        const total = items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
+        const total =
+          commercial?.totalFinal ??
+          items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
         const order: SavedOrder = {
           id: `PED-${Date.now()}`,
           createdAt: new Date().toISOString(),
           items,
           meta,
           total,
+          commercial,
         };
         set((s) => ({ history: [order, ...s.history].slice(0, 30) }));
         return order;
