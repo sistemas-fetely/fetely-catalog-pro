@@ -224,12 +224,13 @@ function EmptyState() {
     });
   }, [collections, categoria, grupo]);
 
+  type SearchT = { colecao?: string; grupo?: string; categoria?: string; highlight?: string };
   const setCategoria = (c: string | undefined) =>
     navigate({
-      search: (prev) => ({ ...prev, categoria: c || undefined, grupo: undefined }),
+      search: (prev: SearchT) => ({ ...prev, categoria: c || undefined, grupo: undefined }),
     });
   const setGrupo = (g: string | undefined) =>
-    navigate({ search: (prev) => ({ ...prev, grupo: g || undefined }) });
+    navigate({ search: (prev: SearchT) => ({ ...prev, grupo: g || undefined }) });
 
   return (
     <div className="space-y-6">
@@ -294,7 +295,7 @@ function EmptyState() {
           <button
             onClick={() =>
               navigate({
-                search: (prev) => ({
+                search: (prev: SearchT) => ({
                   ...prev,
                   categoria: undefined,
                   grupo: undefined,
