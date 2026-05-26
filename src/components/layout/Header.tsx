@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Camera, Menu, Moon, ShoppingBag, Sun } from "lucide-react";
+import { Camera, LogOut, Menu, Moon, ShoppingBag, Sun, Users } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
+import { useAuth } from "@/store/authStore";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
@@ -15,6 +16,10 @@ export function Header() {
   const setMobileOpen = useUI((s) => s.setMobileSidebarOpen);
   const theme = useUI((s) => s.theme);
   const toggleTheme = useUI((s) => s.toggleTheme);
+  const profile = useAuth((s) => s.profile);
+  const session = useAuth((s) => s.session);
+  const isAdminOrMaster = useAuth((s) => s.isAdminOrMaster);
+  const signOut = useAuth((s) => s.signOut);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -89,6 +94,19 @@ export function Header() {
           >
             Importar
           </Link>
+          {session && isAdminOrMaster() && (
+            <Link
+              to="/admin/users"
+              className={`hidden md:flex items-center gap-1.5 uppercase tracking-wider text-xs transition ${
+                pathname.startsWith("/admin")
+                  ? "text-gold"
+                  : "text-text-secondary hover:text-text-primary"
+              }`}
+            >
+              <Users className="h-4 w-4" />
+              Usuários
+            </Link>
+          )}
           <button
             onClick={toggleTheme}
             className="text-text-secondary hover:text-gold transition p-1"
@@ -115,6 +133,25 @@ export function Header() {
               </span>
             )}
           </Link>
+          {session ? (
+            <button
+              onClick={() => signOut()}
+              className="flex items-center gap-1.5 text-text-secondary hover:text-gold transition"
+              title={profile?.nome_completo ?? profile?.email ?? "Sair"}
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden lg:inline text-xs uppercase tracking-wider">
+                Sair
+              </span>
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="text-xs uppercase tracking-wider text-text-secondary hover:text-gold transition"
+            >
+              Entrar
+            </Link>
+          )}
         </nav>
       </div>
 

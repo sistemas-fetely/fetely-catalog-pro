@@ -1,3 +1,4 @@
+import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -9,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { Header } from "@/components/layout/Header";
+import { useAuth as useAuthStore } from "@/store/authStore";
 
 function NotFoundComponent() {
   return (
@@ -87,12 +89,47 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+  const pathname = router.state.location.pathname;
+  const isLogin = pathname === "/login";
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-background text-text-primary">
-        <Header />
-        <Outlet />
-      </div>
+      <AuthGate>
+        <div className="min-h-screen bg-background text-text-primary">
+          {!isLogin && <Header />}
+          <Outlet />
+        </div>
+      </AuthGate>
     </QueryClientProvider>
   );
+}
+
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const init = useAuthStore((s) => s.init);
+  const loading = useAuthStore((s) => s.loading);
+  const session = useAuthStore((s) => s.session);
+  const router = useRouter();
+  const pathname = router.state.location.pathname;
+  const isPublic = pathname === "/login";
+
+  React.useEffect(() => {
+    init();
+  }, [init]);
+
+  React.useEffect(() => {
+    if (loading) return;
+    if (!session && !isPublic) {
+      router.navigate({ to: "/login" });
+    }
+  }, [loading, session, isPublic, router]);
+
+  if (loading && !isPublic) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-text-secondary text-sm">
+        Carregando...
+      </div>
+    );
+  }
+  if (!session && !isPublic) return null;
+  return <>{children}</>;
 }

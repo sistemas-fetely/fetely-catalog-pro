@@ -11,11 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PhotosRouteImport } from './routes/photos'
 import { Route as NewOrderRouteImport } from './routes/new-order'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as ConfirmationRouteImport } from './routes/confirmation'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
 
 const PhotosRoute = PhotosRouteImport.update({
   id: '/photos',
@@ -25,6 +27,11 @@ const PhotosRoute = PhotosRouteImport.update({
 const NewOrderRoute = NewOrderRouteImport.update({
   id: '/new-order',
   path: '/new-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ImportRoute = ImportRouteImport.update({
@@ -52,6 +59,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,8 +71,10 @@ export interface FileRoutesByFullPath {
   '/catalog': typeof CatalogRoute
   '/confirmation': typeof ConfirmationRoute
   '/import': typeof ImportRoute
+  '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
   '/photos': typeof PhotosRoute
+  '/admin/users': typeof AdminUsersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -68,8 +82,10 @@ export interface FileRoutesByTo {
   '/catalog': typeof CatalogRoute
   '/confirmation': typeof ConfirmationRoute
   '/import': typeof ImportRoute
+  '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
   '/photos': typeof PhotosRoute
+  '/admin/users': typeof AdminUsersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -78,8 +94,10 @@ export interface FileRoutesById {
   '/catalog': typeof CatalogRoute
   '/confirmation': typeof ConfirmationRoute
   '/import': typeof ImportRoute
+  '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
   '/photos': typeof PhotosRoute
+  '/admin/users': typeof AdminUsersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -89,8 +107,10 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/confirmation'
     | '/import'
+    | '/login'
     | '/new-order'
     | '/photos'
+    | '/admin/users'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -98,8 +118,10 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/confirmation'
     | '/import'
+    | '/login'
     | '/new-order'
     | '/photos'
+    | '/admin/users'
   id:
     | '__root__'
     | '/'
@@ -107,8 +129,10 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/confirmation'
     | '/import'
+    | '/login'
     | '/new-order'
     | '/photos'
+    | '/admin/users'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -117,8 +141,10 @@ export interface RootRouteChildren {
   CatalogRoute: typeof CatalogRoute
   ConfirmationRoute: typeof ConfirmationRoute
   ImportRoute: typeof ImportRoute
+  LoginRoute: typeof LoginRoute
   NewOrderRoute: typeof NewOrderRoute
   PhotosRoute: typeof PhotosRoute
+  AdminUsersRoute: typeof AdminUsersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -135,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/new-order'
       fullPath: '/new-order'
       preLoaderRoute: typeof NewOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/import': {
@@ -172,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -181,8 +221,10 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogRoute: CatalogRoute,
   ConfirmationRoute: ConfirmationRoute,
   ImportRoute: ImportRoute,
+  LoginRoute: LoginRoute,
   NewOrderRoute: NewOrderRoute,
   PhotosRoute: PhotosRoute,
+  AdminUsersRoute: AdminUsersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
