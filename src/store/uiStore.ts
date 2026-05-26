@@ -32,7 +32,7 @@ export const useUI = create<UIState>()(
       sidebarCollapsed: false,
       expandedGroups: {},
       mobileSidebarOpen: false,
-      theme: "dark",
+      theme: "light",
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
       toggleGroup: (key) =>
