@@ -22,7 +22,6 @@ const REQUIRED_FIELDS: (keyof Product)[] = [
   "colecao",
   "nomeComercial",
   "multiplos",
-  "precoAtacado",
 ];
 
 interface ValidationResult {
