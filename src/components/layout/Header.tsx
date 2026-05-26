@@ -109,6 +109,15 @@ export function Header() {
               Usuários
             </Link>
           )}
+          {negociacaoAtiva && (
+            <Link
+              to="/cart"
+              className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-gold/50 bg-gold/10 px-2.5 py-1 text-[10px] uppercase tracking-wider text-gold"
+              title="Modo negociação ativo"
+            >
+              <Lock className="h-3 w-3" /> Negociação
+            </Link>
+          )}
           <button
             onClick={toggleTheme}
             className="text-text-secondary hover:text-gold transition p-1"
