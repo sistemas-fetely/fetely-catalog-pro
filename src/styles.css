@@ -90,8 +90,43 @@
   --stock-out: oklch(0.475 0.12 25);        /* #8B3A3A */
 }
 
-.dark {
-  /* same — design is dark-first */
+.light {
+  /* Light theme — predominant cream #F0E7DB */
+  --background: oklch(0.925 0.018 78);       /* #F0E7DB */
+  --foreground: oklch(0.22 0.012 60);        /* deep brown-black */
+  --surface: oklch(0.955 0.014 78);          /* #F8F1E6 */
+  --surface-2: oklch(0.885 0.022 78);        /* #E5D8C5 */
+
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+
+  --gold: oklch(0.595 0.115 78);             /* darker gold for contrast */
+  --gold-light: oklch(0.695 0.115 80);
+  --gold-muted: oklch(0.495 0.085 78);
+
+  --text-primary: oklch(0.22 0.012 60);
+  --text-secondary: oklch(0.42 0.022 70);
+  --text-muted: oklch(0.55 0.02 72);
+
+  --primary: var(--gold);
+  --primary-foreground: oklch(0.97 0.012 78);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--gold);
+  --accent-foreground: oklch(0.97 0.012 78);
+  --destructive: oklch(0.5 0.18 25);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.82 0.025 78);
+  --input: oklch(0.82 0.025 78);
+  --ring: var(--gold);
+
+  --stock-in: oklch(0.48 0.09 155);
+  --stock-pre: oklch(0.55 0.13 70);
+  --stock-out: oklch(0.5 0.14 25);
 }
 
 @layer base {

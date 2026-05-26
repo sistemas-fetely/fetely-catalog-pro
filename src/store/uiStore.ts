@@ -16,11 +16,14 @@ interface UIState {
   sidebarCollapsed: boolean;
   expandedGroups: Record<string, boolean>;
   mobileSidebarOpen: boolean;
+  theme: "dark" | "light";
   toggleSidebar: () => void;
   setSidebarCollapsed: (v: boolean) => void;
   toggleGroup: (key: string) => void;
   setGroupExpanded: (key: string, v: boolean) => void;
   setMobileSidebarOpen: (v: boolean) => void;
+  toggleTheme: () => void;
+  setTheme: (t: "dark" | "light") => void;
 }
 
 export const useUI = create<UIState>()(
@@ -29,6 +32,7 @@ export const useUI = create<UIState>()(
       sidebarCollapsed: false,
       expandedGroups: {},
       mobileSidebarOpen: false,
+      theme: "dark",
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
       toggleGroup: (key) =>
@@ -38,6 +42,9 @@ export const useUI = create<UIState>()(
       setGroupExpanded: (key, v) =>
         set((s) => ({ expandedGroups: { ...s.expandedGroups, [key]: v } })),
       setMobileSidebarOpen: (v) => set({ mobileSidebarOpen: v }),
+      toggleTheme: () =>
+        set((s) => ({ theme: s.theme === "dark" ? "light" : "dark" })),
+      setTheme: (t) => set({ theme: t }),
     }),
     {
       name: "fetely-ui",
@@ -45,6 +52,7 @@ export const useUI = create<UIState>()(
       partialize: (s) => ({
         sidebarCollapsed: s.sidebarCollapsed,
         expandedGroups: s.expandedGroups,
+        theme: s.theme,
       }),
     },
   ),
