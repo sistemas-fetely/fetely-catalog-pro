@@ -89,6 +89,18 @@ export function Header() {
           >
             Importar
           </Link>
+          <button
+            onClick={toggleTheme}
+            className="text-text-secondary hover:text-gold transition p-1"
+            aria-label={theme === "dark" ? "Modo claro" : "Modo escuro"}
+            title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </button>
           <Link
             to="/cart"
             className="relative flex items-center gap-2 text-text-primary hover:text-gold transition"
