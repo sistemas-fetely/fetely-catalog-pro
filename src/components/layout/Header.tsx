@@ -87,6 +87,16 @@ export function Header() {
             <span className="hidden sm:inline">Fotos</span>
           </Link>
           <Link
+            to="/commercial"
+            className={`hidden md:inline uppercase tracking-wider text-xs transition ${
+              pathname.startsWith("/commercial")
+                ? "text-gold"
+                : "text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            Cartilhas
+          </Link>
+          <Link
             to="/import"
             className={`hidden md:inline uppercase tracking-wider text-xs transition ${
               pathname.startsWith("/import")
