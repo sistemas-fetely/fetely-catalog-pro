@@ -49,6 +49,7 @@ function validate(raw: unknown): ValidationResult {
       errors: ["O JSON precisa ser um array de produtos ou um objeto { products: [...] }."],
       warnings,
       preview: [],
+      all: [],
     };
   }
 
@@ -132,6 +133,7 @@ function validate(raw: unknown): ValidationResult {
     errors: errors.slice(0, 20),
     warnings: warnings.slice(0, 10),
     preview: cleaned.slice(0, 5),
+    all: cleaned,
   };
 }
 
