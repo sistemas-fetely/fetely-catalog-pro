@@ -33,15 +33,15 @@ export const Route = createFileRoute("/catalog")({
 });
 
 function CatalogPage() {
-  const { colecao, highlight } = Route.useSearch();
+  const { colecao, grupo, highlight } = Route.useSearch();
   const products = useCatalog((s) => s.products);
   const photos = usePhotos();
   const setGroupExpanded = useUI((s) => s.setGroupExpanded);
   const fadeRef = useRef<HTMLDivElement>(null);
 
   const colecaoProducts = useMemo(
-    () => (colecao ? getProductsBy(products, colecao) : []),
-    [products, colecao],
+    () => (colecao ? getProductsBy(products, colecao, grupo || undefined) : []),
+    [products, colecao, grupo],
   );
 
   const meta = useMemo(() => {
