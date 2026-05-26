@@ -9,8 +9,8 @@ interface Props {
   title: string;
   subtitle?: string;
   current?: string;
-  onSave: (dataUrl: string) => void;
-  onRemove?: () => void;
+  onSave: (dataUrl: string) => void | Promise<void>;
+  onRemove?: () => void | Promise<void>;
 }
 
 export function PhotoUploadModal({
@@ -110,12 +110,19 @@ export function PhotoUploadModal({
             {current && onRemove && (
               <button
                 type="button"
-                onClick={() => {
-                  onRemove();
-                  reset();
-                  onOpenChange(false);
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await onRemove();
+                    reset();
+                    onOpenChange(false);
+                  } catch (e) {
+                    console.error(e);
+                    setBusy(false);
+                  }
                 }}
-                className="inline-flex items-center gap-2 text-xs text-text-muted hover:text-destructive transition"
+                className="inline-flex items-center gap-2 text-xs text-text-muted hover:text-destructive transition disabled:opacity-40"
               >
                 <Trash2 className="h-3 w-3" /> Remover foto atual
               </button>
@@ -132,15 +139,21 @@ export function PhotoUploadModal({
             <button
               type="button"
               disabled={!preview || busy}
-              onClick={() => {
-                if (preview) {
-                  onSave(preview);
+              onClick={async () => {
+                if (!preview) return;
+                setBusy(true);
+                try {
+                  await onSave(preview);
                   reset();
                   onOpenChange(false);
+                } catch (e) {
+                  console.error(e);
+                  setBusy(false);
                 }
               }}
-              className="rounded-md bg-gold px-5 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-background hover:bg-gold-light transition disabled:opacity-30"
+              className="rounded-md bg-gold px-5 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-background hover:bg-gold-light transition disabled:opacity-30 inline-flex items-center gap-2"
             >
+              {busy && <Loader2 className="h-3 w-3 animate-spin" />}
               Salvar foto
             </button>
           </div>
