@@ -133,6 +133,25 @@ export function Header() {
               </span>
             )}
           </Link>
+          {session ? (
+            <button
+              onClick={() => signOut()}
+              className="flex items-center gap-1.5 text-text-secondary hover:text-gold transition"
+              title={profile?.nome_completo ?? profile?.email ?? "Sair"}
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden lg:inline text-xs uppercase tracking-wider">
+                Sair
+              </span>
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="text-xs uppercase tracking-wider text-text-secondary hover:text-gold transition"
+            >
+              Entrar
+            </Link>
+          )}
         </nav>
       </div>
 
