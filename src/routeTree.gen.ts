@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PhotosRouteImport } from './routes/photos'
+import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as NewOrderRouteImport } from './routes/new-order'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ImportRouteImport } from './routes/import'
@@ -24,6 +25,11 @@ import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.
 const PhotosRoute = PhotosRouteImport.update({
   id: '/photos',
   path: '/photos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewOrderRoute = NewOrderRouteImport.update({
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
+  '/orders': typeof OrdersRoute
   '/photos': typeof PhotosRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
+  '/orders': typeof OrdersRoute
   '/photos': typeof PhotosRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
+  '/orders': typeof OrdersRoute
   '/photos': typeof PhotosRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/new-order'
+    | '/orders'
     | '/photos'
     | '/admin/users'
     | '/catalog/categoria/$categoria'
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/new-order'
+    | '/orders'
     | '/photos'
     | '/admin/users'
     | '/catalog/categoria/$categoria'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/new-order'
+    | '/orders'
     | '/photos'
     | '/admin/users'
     | '/catalog/categoria/$categoria'
@@ -169,6 +181,7 @@ export interface RootRouteChildren {
   ImportRoute: typeof ImportRoute
   LoginRoute: typeof LoginRoute
   NewOrderRoute: typeof NewOrderRoute
+  OrdersRoute: typeof OrdersRoute
   PhotosRoute: typeof PhotosRoute
   AdminUsersRoute: typeof AdminUsersRoute
 }
@@ -180,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/photos'
       fullPath: '/photos'
       preLoaderRoute: typeof PhotosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/new-order': {
@@ -275,6 +295,7 @@ const rootRouteChildren: RootRouteChildren = {
   ImportRoute: ImportRoute,
   LoginRoute: LoginRoute,
   NewOrderRoute: NewOrderRoute,
+  OrdersRoute: OrdersRoute,
   PhotosRoute: PhotosRoute,
   AdminUsersRoute: AdminUsersRoute,
 }

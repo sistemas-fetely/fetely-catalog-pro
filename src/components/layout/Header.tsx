@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Camera, Lock, LogOut, Menu, Moon, ShoppingBag, Sun, Users } from "lucide-react";
+import { Camera, ClipboardList, Lock, LogOut, Menu, Moon, ShoppingBag, Sun, Users } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
@@ -95,6 +95,17 @@ export function Header() {
             }`}
           >
             Cartilhas
+          </Link>
+          <Link
+            to="/orders"
+            className={`hidden md:flex items-center gap-1.5 uppercase tracking-wider text-xs transition ${
+              pathname.startsWith("/orders")
+                ? "text-gold"
+                : "text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            <ClipboardList className="h-4 w-4" />
+            Pedidos
           </Link>
           <Link
             to="/import"
