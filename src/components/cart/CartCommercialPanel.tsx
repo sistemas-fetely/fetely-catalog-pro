@@ -431,19 +431,40 @@ function PaymentSelector({
 function MasterPasswordModal({ onClose }: { onClose: () => void }) {
   const tryActivate = useNegotiation((s) => s.tryActivate);
   const tentativas = useNegotiation((s) => s.tentativas);
+  const alterarSenha = useNegotiation((s) => s.alterarSenha);
+  const [mode, setMode] = useState<"login" | "change">("login");
   const [senha, setSenha] = useState("");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confirmSenha, setConfirmSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const bloqueado = tentativas >= 3;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (bloqueado) return;
-    setBusy(true);
-    const r = await tryActivate(senha);
-    setBusy(false);
-    if (r.ok) onClose();
-    else setErro(r.erro ?? "Erro");
+    setErro(null);
+    setInfo(null);
+    if (mode === "login") {
+      if (bloqueado) return;
+      setBusy(true);
+      const r = await tryActivate(senha);
+      setBusy(false);
+      if (r.ok) onClose();
+      else setErro(r.erro ?? "Erro");
+    } else {
+      if (novaSenha !== confirmSenha) return setErro("As senhas novas não coincidem.");
+      setBusy(true);
+      const r = await alterarSenha(senha, novaSenha);
+      setBusy(false);
+      if (r.ok) {
+        setInfo("Senha master atualizada.");
+        setSenha("");
+        setNovaSenha("");
+        setConfirmSenha("");
+        setMode("login");
+      } else setErro(r.erro ?? "Erro");
+    }
   };
 
   return (
@@ -452,7 +473,9 @@ function MasterPasswordModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-gold">
             <Lock className="h-4 w-4" />
-            <span className="text-xs uppercase tracking-[0.2em]">Modo Negociação</span>
+            <span className="text-xs uppercase tracking-[0.2em]">
+              {mode === "login" ? "Modo Negociação" : "Alterar senha master"}
+            </span>
           </div>
           <button onClick={onClose} className="text-text-muted hover:text-text-primary">
             <X className="h-4 w-4" />
@@ -461,7 +484,7 @@ function MasterPasswordModal({ onClose }: { onClose: () => void }) {
         <form onSubmit={handleSubmit} className="space-y-3">
           <label className="block">
             <span className="text-[10px] uppercase tracking-wider text-text-muted">
-              Senha master
+              {mode === "login" ? "Senha master" : "Senha atual"}
             </span>
             <input
               type="password"
@@ -470,27 +493,70 @@ function MasterPasswordModal({ onClose }: { onClose: () => void }) {
                 setSenha(e.target.value);
                 setErro(null);
               }}
-              disabled={bloqueado || busy}
+              disabled={(mode === "login" && bloqueado) || busy}
               autoFocus
               className="mt-1 w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
             />
           </label>
+          {mode === "change" && (
+            <>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-wider text-text-muted">
+                  Nova senha (mín. 8)
+                </span>
+                <input
+                  type="password"
+                  value={novaSenha}
+                  onChange={(e) => setNovaSenha(e.target.value)}
+                  disabled={busy}
+                  className="mt-1 w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-wider text-text-muted">
+                  Confirmar nova senha
+                </span>
+                <input
+                  type="password"
+                  value={confirmSenha}
+                  onChange={(e) => setConfirmSenha(e.target.value)}
+                  disabled={busy}
+                  className="mt-1 w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+                />
+              </label>
+            </>
+          )}
           {erro && <p className="text-xs text-stock-out">{erro}</p>}
-          <p className="text-[11px] text-text-muted">
-            Tentativas: {tentativas} / 3 — senha padrão inicial: <code>fetely2025</code>
-          </p>
+          {info && <p className="text-xs text-gold">{info}</p>}
+          {mode === "login" && (
+            <p className="text-[11px] text-text-muted">
+              Tentativas: {tentativas} / 3 — padrão inicial: <code>fetely2025</code>
+            </p>
+          )}
           <div className="flex gap-2 pt-2">
             <button
               type="button"
+              onClick={() => {
+                setMode(mode === "login" ? "change" : "login");
+                setErro(null);
+                setInfo(null);
+              }}
+              className="text-[11px] uppercase tracking-wider text-text-muted hover:text-gold"
+            >
+              {mode === "login" ? "Alterar senha" : "Voltar"}
+            </button>
+            <div className="flex-1" />
+            <button
+              type="button"
               onClick={onClose}
-              className="flex-1 rounded-md border border-border py-2 text-xs uppercase tracking-wider hover:border-gold/50"
+              className="rounded-md border border-border px-3 py-2 text-xs uppercase tracking-wider hover:border-gold/50"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              disabled={bloqueado || busy || !senha}
-              className="flex-1 rounded-md bg-gold py-2 text-xs uppercase tracking-[0.18em] text-background hover:bg-gold-light disabled:opacity-40"
+              disabled={(mode === "login" && bloqueado) || busy || !senha}
+              className="rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-[0.18em] text-background hover:bg-gold-light disabled:opacity-40"
             >
               Confirmar
             </button>
@@ -500,3 +566,4 @@ function MasterPasswordModal({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
+
