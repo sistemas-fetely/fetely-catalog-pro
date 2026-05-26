@@ -62,13 +62,14 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
   const total = cartTotal(items);
   const totalUnits = items.reduce((s, i) => s + i.quantity, 0);
 
-  const search = useRouterState({ select: (r) => r.location.search as { colecao?: string } });
+  const search = useRouterState({ select: (r) => r.location.search as { colecao?: string; grupo?: string } });
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const activeColecao = pathname === "/catalog" ? search.colecao : undefined;
+  const activeGrupo = pathname === "/catalog" ? search.grupo : undefined;
   const navigate = useNavigate();
 
-  const handleSelectColecao = (colecao: string) => {
-    navigate({ to: "/catalog", search: { colecao } });
+  const handleSelectColecao = (colecao: string, grupo?: string) => {
+    navigate({ to: "/catalog", search: grupo ? { colecao, grupo } : { colecao } });
     onNavigate?.();
   };
 
