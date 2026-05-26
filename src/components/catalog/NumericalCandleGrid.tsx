@@ -106,7 +106,7 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
         onApplyUnits={(units) => {
           const next: Record<string, number> = { ...qtys };
           filtered.forEach((p) => {
-            next[p.sku] = nearestMultiple(units, p.multiplos);
+            next[p.sku] = units;
           });
           setQtys(next);
         }}
