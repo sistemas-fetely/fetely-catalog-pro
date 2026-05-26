@@ -71,6 +71,17 @@ export interface OrderMeta {
   condicaoPagamento: string;
   observacoes: string;
   vendedor: string;
+  nomeFantasia?: string;
+  email?: string;
+  telefone?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  municipio?: string;
+  uf?: string;
+  cep?: string;
+  situacao?: string;
 }
 
 export interface OrderCommercial {
