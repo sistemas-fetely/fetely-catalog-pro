@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { COLLECTION_ACCENT } from "@/data/products";
@@ -11,9 +11,10 @@ import type { Product } from "@/types";
 interface Props {
   products: Product[]; // todos os SKUs da coleção (numerica)
   colecao: string;
+  onColorChange?: (color: string) => void;
 }
 
-export function NumericalCandleGrid({ products, colecao }: Props) {
+export function NumericalCandleGrid({ products, colecao, onColorChange }: Props) {
   const colors = useMemo(
     () => Array.from(new Set(products.map((p) => p.corNome))),
     [products],
@@ -28,6 +29,11 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
   const [qtys, setQtys] = useState<Record<string, number>>({});
   const addBulk = useOrder((s) => s.addBulk);
   const photos = usePhotos();
+
+  // Notify parent of color changes (initial + on change)
+  useEffect(() => {
+    onColorChange?.(color);
+  }, [color, onColorChange]);
 
   const filtered = products
     .filter((p) => p.corNome === color && p.tamanhoNumero === size)

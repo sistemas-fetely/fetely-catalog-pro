@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { ChevronRight, X } from "lucide-react";
@@ -13,7 +13,7 @@ import {
   isNumericCollection,
 } from "@/store/catalogStore";
 import { useUI } from "@/store/uiStore";
-import { usePhotos, getColecaoPhoto } from "@/store/photoStore";
+import { usePhotos, getColecaoPhoto, getProdutoPhoto } from "@/store/photoStore";
 import type { Product } from "@/types";
 
 const searchSchema = z.object({
@@ -82,8 +82,18 @@ function CatalogPage() {
     return () => clearTimeout(t);
   }, [highlight, colecao]);
 
-  const heroPhoto = colecao ? getColecaoPhoto(photos, colecao) : undefined;
   const isNum = colecao ? isNumericCollection(colecao) : false;
+  const [activeColor, setActiveColor] = useState<string | undefined>(undefined);
+
+  // Reset selected color when collection changes
+  useEffect(() => {
+    setActiveColor(undefined);
+  }, [colecao]);
+
+  const handleColorChange = useCallback((c: string) => setActiveColor(c), []);
+
+  const colorPhoto = colecao && activeColor ? getProdutoPhoto(photos, colecao, activeColor) : undefined;
+  const heroPhoto = colorPhoto ?? (colecao ? getColecaoPhoto(photos, colecao) : undefined);
 
   return (
     <div className="flex">
@@ -114,12 +124,13 @@ function CatalogPage() {
               </nav>
 
               {/* Hero */}
-              <header className="rounded-xl overflow-hidden gold-border mb-8 relative aspect-[16/5] md:aspect-[16/4]">
+              <header className="rounded-xl overflow-hidden gold-border mb-8 relative aspect-[16/5] md:aspect-[16/4] bg-surface-2">
                 {heroPhoto ? (
                   <img
+                    key={heroPhoto}
                     src={heroPhoto}
-                    alt={colecao}
-                    className="h-full w-full object-cover"
+                    alt={activeColor ? `${colecao} — ${activeColor}` : colecao}
+                    className={`h-full w-full ${colorPhoto ? "object-contain" : "object-cover"} animate-[fadeIn_0.4s_ease-out]`}
                   />
                 ) : (
                   <PhotoPlaceholder
@@ -128,7 +139,7 @@ function CatalogPage() {
                     showIcon={false}
                   />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent pointer-events-none" />
                 <div className="absolute bottom-0 left-0 right-0 p-6 flex items-end justify-between">
                   <div>
                     <div className="text-[10px] uppercase tracking-[0.3em] text-gold">
@@ -138,6 +149,9 @@ function CatalogPage() {
                     {isNum && (
                       <div className="text-[11px] uppercase tracking-wider text-text-secondary mt-1">
                         Vela Numérica · Grade 0–9
+                        {activeColor && (
+                          <span className="ml-2 text-gold">· {activeColor}</span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -153,7 +167,11 @@ function CatalogPage() {
 
               {/* Products */}
               {isNum ? (
-                <NumericalCandleGrid products={colecaoProducts} colecao={colecao} />
+                <NumericalCandleGrid
+                  products={colecaoProducts}
+                  colecao={colecao}
+                  onColorChange={handleColorChange}
+                />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {colecaoProducts.map((p) => (
