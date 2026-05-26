@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { COLLECTION_ACCENT } from "@/data/products";
-import { formatBRL, nearestMultiple } from "@/lib/format";
+import { formatBRL } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
+import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
+import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import type { Product } from "@/types";
 
 interface Props {
@@ -25,6 +27,8 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
   const [size, setSize] = useState(sizes[0]);
   const [qtys, setQtys] = useState<Record<string, number>>({});
   const addBulk = useOrder((s) => s.addBulk);
+  const photos = usePhotos();
+  const colorPhoto = getProdutoPhoto(photos, colecao, color);
 
   const filtered = products
     .filter((p) => p.corNome === color && p.tamanhoNumero === size)
@@ -135,11 +139,27 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
               >
                 {p.numeroVela}
               </div>
-              <div className="px-4 py-3">
-                <div className="text-sm text-text-primary">{p.nomeComercial}</div>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[10px] font-mono text-text-muted">{p.sku}</span>
-                  <StockBadge status={p.statusEstoque} />
+              <div className="px-4 py-3 flex items-center gap-3">
+                {colorPhoto ? (
+                  <img
+                    src={colorPhoto}
+                    alt={color}
+                    className="h-10 w-10 rounded object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <PhotoPlaceholder
+                    colecao={colecao}
+                    label={color}
+                    className="h-10 w-10 rounded flex-shrink-0"
+                    showIcon={false}
+                  />
+                )}
+                <div className="min-w-0">
+                  <div className="text-sm text-text-primary truncate">{p.nomeComercial}</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] font-mono text-text-muted">{p.sku}</span>
+                    <StockBadge status={p.statusEstoque} />
+                  </div>
                 </div>
               </div>
               <div className="px-4 py-3 text-right text-xs text-text-secondary">

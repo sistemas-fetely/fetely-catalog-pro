@@ -9,12 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PhotosRouteImport } from './routes/photos'
 import { Route as NewOrderRouteImport } from './routes/new-order'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as ConfirmationRouteImport } from './routes/confirmation'
+import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as IndexRouteImport } from './routes/index'
 
+const PhotosRoute = PhotosRouteImport.update({
+  id: '/photos',
+  path: '/photos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NewOrderRoute = NewOrderRouteImport.update({
   id: '/new-order',
   path: '/new-order',
@@ -28,6 +35,11 @@ const ImportRoute = ImportRouteImport.update({
 const ConfirmationRoute = ConfirmationRouteImport.update({
   id: '/confirmation',
   path: '/confirmation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatalogRoute = CatalogRouteImport.update({
+  id: '/catalog',
+  path: '/catalog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CartRoute = CartRouteImport.update({
@@ -44,43 +56,80 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
+  '/catalog': typeof CatalogRoute
   '/confirmation': typeof ConfirmationRoute
   '/import': typeof ImportRoute
   '/new-order': typeof NewOrderRoute
+  '/photos': typeof PhotosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
+  '/catalog': typeof CatalogRoute
   '/confirmation': typeof ConfirmationRoute
   '/import': typeof ImportRoute
   '/new-order': typeof NewOrderRoute
+  '/photos': typeof PhotosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
+  '/catalog': typeof CatalogRoute
   '/confirmation': typeof ConfirmationRoute
   '/import': typeof ImportRoute
   '/new-order': typeof NewOrderRoute
+  '/photos': typeof PhotosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cart' | '/confirmation' | '/import' | '/new-order'
+  fullPaths:
+    | '/'
+    | '/cart'
+    | '/catalog'
+    | '/confirmation'
+    | '/import'
+    | '/new-order'
+    | '/photos'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cart' | '/confirmation' | '/import' | '/new-order'
-  id: '__root__' | '/' | '/cart' | '/confirmation' | '/import' | '/new-order'
+  to:
+    | '/'
+    | '/cart'
+    | '/catalog'
+    | '/confirmation'
+    | '/import'
+    | '/new-order'
+    | '/photos'
+  id:
+    | '__root__'
+    | '/'
+    | '/cart'
+    | '/catalog'
+    | '/confirmation'
+    | '/import'
+    | '/new-order'
+    | '/photos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CartRoute: typeof CartRoute
+  CatalogRoute: typeof CatalogRoute
   ConfirmationRoute: typeof ConfirmationRoute
   ImportRoute: typeof ImportRoute
   NewOrderRoute: typeof NewOrderRoute
+  PhotosRoute: typeof PhotosRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/photos': {
+      id: '/photos'
+      path: '/photos'
+      fullPath: '/photos'
+      preLoaderRoute: typeof PhotosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/new-order': {
       id: '/new-order'
       path: '/new-order'
@@ -100,6 +149,13 @@ declare module '@tanstack/react-router' {
       path: '/confirmation'
       fullPath: '/confirmation'
       preLoaderRoute: typeof ConfirmationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalog': {
+      id: '/catalog'
+      path: '/catalog'
+      fullPath: '/catalog'
+      preLoaderRoute: typeof CatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cart': {
@@ -122,9 +178,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CartRoute: CartRoute,
+  CatalogRoute: CatalogRoute,
   ConfirmationRoute: ConfirmationRoute,
   ImportRoute: ImportRoute,
   NewOrderRoute: NewOrderRoute,
+  PhotosRoute: PhotosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

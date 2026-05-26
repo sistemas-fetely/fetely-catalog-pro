@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { StockBadge } from "@/components/ui/StockBadge";
-import { COLLECTION_ACCENT } from "@/data/products";
 import { formatBRL, isValidMultiple } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
+import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
+import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import type { Product } from "@/types";
 
 interface ProductCardProps {
@@ -13,28 +14,39 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const [qty, setQty] = useState(0);
   const addItem = useOrder((s) => s.addItem);
-  const accent = COLLECTION_ACCENT[product.colecao] ?? "oklch(0.5 0 0)";
+  const photos = usePhotos();
+  const photo = getProdutoPhoto(photos, product.colecao, product.corNome);
   const indisponivel = product.precoAtacado <= 0;
   const canAdd = qty > 0 && isValidMultiple(qty, product.multiplos) && !indisponivel;
 
   return (
     <article className="group flex flex-col rounded-lg bg-surface gold-border gold-border-hover overflow-hidden transition">
-      <div
-        className="relative aspect-[4/3] overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${accent} 0%, oklch(0.18 0 0) 100%)`,
-        }}
-      >
-        <div className="absolute inset-0 flex items-end p-3">
-          <div className="text-[10px] uppercase tracking-[0.2em] text-text-primary/80">
+      <div className="relative aspect-[4/3] overflow-hidden">
+        {photo ? (
+          <img
+            src={photo}
+            alt={`${product.nomeComercial} — ${product.corNome}`}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <PhotoPlaceholder
+            colecao={product.colecao}
+            label={product.corNome}
+            className="h-full w-full"
+            showIcon={false}
+          />
+        )}
+        <div className="absolute inset-0 flex items-end p-3 pointer-events-none">
+          <div className="text-[10px] uppercase tracking-[0.2em] text-text-primary/90">
             {product.colecao}
           </div>
         </div>
         <div className="absolute top-3 right-3">
           <StockBadge status={product.statusEstoque} />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent pointer-events-none" />
       </div>
+
 
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div>
