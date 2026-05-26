@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Camera, Lock, LogOut, Menu, Moon, ShoppingBag, Sun, Users } from "lucide-react";
+import { Camera, ClipboardList, Lock, LogOut, Menu, Moon, ShoppingBag, Sun, Users } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
