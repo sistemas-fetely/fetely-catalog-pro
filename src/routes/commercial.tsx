@@ -141,94 +141,17 @@ function CommercialPage() {
   );
 }
 
-function MasterUnlock(props: {
-  ativo: boolean;
-  senha: string;
-  setSenha: (v: string) => void;
-  handleUnlock: (e: React.FormEvent) => void;
-  desativar: () => void;
-  erro: string | null;
-  busy: boolean;
-  bloqueado: boolean;
-  tentativas: number;
-}) {
-  const {
-    ativo,
-    senha,
-    setSenha,
-    handleUnlock,
-    desativar,
-    erro,
-    busy,
-    bloqueado,
-    tentativas,
-  } = props;
-
-  if (ativo) {
-    return (
-      <div className="rounded-lg border border-gold/40 bg-gold/10 px-4 py-3 flex items-center gap-3">
-        <Unlock className="h-4 w-4 text-gold" />
-        <div>
-          <div className="text-[10px] uppercase tracking-wider text-gold">
-            Condições especiais liberadas
-          </div>
-          <div className="text-xs text-text-secondary">
-            Faixa Reservada e condições estendidas visíveis.
-          </div>
-        </div>
-        <button
-          onClick={desativar}
-          className="ml-3 text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-out"
-        >
-          Bloquear
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <form
-      onSubmit={handleUnlock}
-      className="rounded-lg gold-border bg-surface p-4 w-full md:w-auto"
-    >
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
-        <Lock className="h-3.5 w-3.5" /> Senha master
-      </div>
-      <div className="flex gap-2">
-        <input
-          type="password"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          disabled={bloqueado || busy}
-          placeholder="••••••••"
-          className="flex-1 md:w-56 bg-surface-2 border border-border rounded-md px-3 py-2 text-sm focus:border-gold outline-none"
-        />
-        <button
-          type="submit"
-          disabled={bloqueado || busy || !senha}
-          className="rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light disabled:opacity-40"
-        >
-          Liberar
-        </button>
-      </div>
-      {erro && <p className="text-[11px] text-stock-out mt-1.5">{erro}</p>}
-      <p className="text-[10px] text-text-muted mt-1.5">
-        Tentativas: {tentativas}/3
-      </p>
-    </form>
-  );
-}
-
-function FaixaCard({ faixa, negociacao }: { faixa: Faixa; negociacao: boolean }) {
+function FaixaCard({ faixa }: { faixa: Faixa }) {
+  const isReservada = !!faixa.requerSenhaMaster;
   return (
     <article
       className={`relative rounded-lg p-5 flex flex-col gap-3 transition ${
-        negociacao
+        isReservada
           ? "border border-gold bg-gradient-to-br from-gold/10 to-transparent"
           : "gold-border bg-surface"
       }`}
     >
-      {negociacao && (
+      {isReservada && (
         <span className="absolute top-3 right-3 rounded-full bg-gold px-2 py-0.5 text-[9px] uppercase tracking-wider text-background">
           Master
         </span>
