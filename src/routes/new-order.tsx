@@ -313,7 +313,11 @@ function ProductsView({
   onBack: () => void;
 }) {
   const isNum = isNumericCollection(colecao);
-  const products = useMemo(() => productsBy(colecao, grupo ?? undefined), [colecao, grupo]);
+  const catalog = useCatalog((s) => s.products);
+  const products = useMemo(
+    () => getProductsBy(catalog, colecao, grupo ?? undefined),
+    [catalog, colecao, grupo],
+  );
 
   const filtered = useMemo(() => {
     if (filterStatus === "all") return products;
