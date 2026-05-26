@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef } from "react";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { NumericalCandleGrid } from "@/components/catalog/NumericalCandleGrid";
@@ -14,10 +14,12 @@ import {
 } from "@/store/catalogStore";
 import { useUI } from "@/store/uiStore";
 import { usePhotos, getColecaoPhoto } from "@/store/photoStore";
+import type { Product } from "@/types";
 
 const searchSchema = z.object({
   colecao: fallback(z.string(), "").optional(),
   grupo: fallback(z.string(), "").optional(),
+  categoria: fallback(z.string(), "").optional(),
   highlight: fallback(z.string(), "").optional(),
 });
 
@@ -170,14 +172,224 @@ function CatalogPage() {
 }
 
 function EmptyState() {
+  const products = useCatalog((s) => s.products);
+  const photos = usePhotos();
+  const { categoria, grupo } = Route.useSearch();
+  const navigate = Route.useNavigate();
+
+  const { categorias, gruposByCategoria, collections } = useMemo(() => {
+    const cats = new Set<string>();
+    const grp: Record<string, Set<string>> = {};
+    const colMap = new Map<
+      string,
+      { colecao: string; categoria: string; grupo: string; count: number; sample: Product }
+    >();
+    for (const p of products) {
+      if (!p.precoAtacado || p.precoAtacado <= 0) continue;
+      cats.add(p.categoria);
+      if (!grp[p.categoria]) grp[p.categoria] = new Set();
+      grp[p.categoria].add(p.grupo);
+      const existing = colMap.get(p.colecao);
+      if (existing) existing.count += 1;
+      else
+        colMap.set(p.colecao, {
+          colecao: p.colecao,
+          categoria: p.categoria,
+          grupo: p.grupo,
+          count: 1,
+          sample: p,
+        });
+    }
+    return {
+      categorias: Array.from(cats).sort((a, b) => a.localeCompare(b, "pt-BR")),
+      gruposByCategoria: grp,
+      collections: Array.from(colMap.values()).sort((a, b) =>
+        a.colecao.localeCompare(b.colecao, "pt-BR"),
+      ),
+    };
+  }, [products]);
+
+  const gruposDisponiveis = useMemo(() => {
+    if (!categoria) return [] as string[];
+    return Array.from(gruposByCategoria[categoria] ?? []).sort((a, b) =>
+      a.localeCompare(b, "pt-BR"),
+    );
+  }, [categoria, gruposByCategoria]);
+
+  const filtered = useMemo(() => {
+    return collections.filter((c) => {
+      if (categoria && c.categoria !== categoria) return false;
+      if (grupo && c.grupo !== grupo) return false;
+      return true;
+    });
+  }, [collections, categoria, grupo]);
+
+  const setCategoria = (c: string | undefined) =>
+    navigate({
+      search: (prev) => ({ ...prev, categoria: c || undefined, grupo: undefined }),
+    });
+  const setGrupo = (g: string | undefined) =>
+    navigate({ search: (prev) => ({ ...prev, grupo: g || undefined }) });
+
   return (
-    <div className="flex flex-col items-center justify-center text-center py-24">
-      <Sparkles className="h-10 w-10 text-gold mb-4" />
-      <h1 className="font-display text-4xl">Escolha uma coleção</h1>
-      <p className="text-text-secondary mt-2 max-w-md text-sm">
-        Use o menu lateral para navegar pelas categorias, grupos e coleções da
-        Fetély. Toda a estrutura do catálogo está disponível ali.
-      </p>
+    <div className="space-y-6">
+      <header>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-gold-muted">
+          Catálogo Fetély
+        </div>
+        <h1 className="font-display text-4xl md:text-5xl mt-1">Todas as Coleções</h1>
+        <p className="text-text-secondary mt-2 text-sm max-w-2xl">
+          Explore {collections.length} coleções. Use os filtros abaixo ou o menu
+          lateral para refinar.
+        </p>
+      </header>
+
+      {/* Filters */}
+      <div className="rounded-lg gold-border bg-surface/60 p-4 space-y-3">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
+            Categoria
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <FilterChip
+              active={!categoria}
+              onClick={() => setCategoria(undefined)}
+              label="Todas"
+            />
+            {categorias.map((c) => (
+              <FilterChip
+                key={c}
+                active={categoria === c}
+                onClick={() => setCategoria(c)}
+                label={c}
+              />
+            ))}
+          </div>
+        </div>
+
+        {categoria && gruposDisponiveis.length > 1 && (
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
+              Grupo
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <FilterChip
+                active={!grupo}
+                onClick={() => setGrupo(undefined)}
+                label="Todos"
+              />
+              {gruposDisponiveis.map((g) => (
+                <FilterChip
+                  key={g}
+                  active={grupo === g}
+                  onClick={() => setGrupo(g)}
+                  label={g}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(categoria || grupo) && (
+          <button
+            onClick={() =>
+              navigate({
+                search: (prev) => ({
+                  ...prev,
+                  categoria: undefined,
+                  grupo: undefined,
+                }),
+              })
+            }
+            className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-text-muted hover:text-gold transition"
+          >
+            <X className="h-3 w-3" /> Limpar filtros
+          </button>
+        )}
+      </div>
+
+      {/* Results */}
+      <div className="text-[11px] uppercase tracking-wider text-text-muted">
+        {filtered.length} {filtered.length === 1 ? "coleção" : "coleções"}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 text-text-muted text-sm">
+          Nenhuma coleção encontrada com os filtros selecionados.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {filtered.map((c) => {
+            const img = getColecaoPhoto(photos, c.colecao);
+            return (
+              <Link
+                key={c.colecao}
+                to="/catalog"
+                search={{ colecao: c.colecao, grupo: c.grupo }}
+                className="group rounded-lg overflow-hidden gold-border gold-border-hover bg-surface transition"
+              >
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  {img ? (
+                    <img
+                      src={img}
+                      alt={c.colecao}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <PhotoPlaceholder
+                      colecao={c.colecao}
+                      className="h-full w-full"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-background/10 to-transparent" />
+                  <div className="absolute top-2 left-2 rounded-full bg-background/80 backdrop-blur px-2 py-0.5 text-[9px] uppercase tracking-wider text-gold">
+                    {c.categoria}
+                  </div>
+                </div>
+                <div className="p-3">
+                  <div className="font-display text-lg leading-tight">
+                    {c.colecao}
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                      {c.grupo}
+                    </div>
+                    <div className="text-[10px] text-text-secondary">
+                      {c.count} {c.count === 1 ? "item" : "itens"}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] text-gold mt-2 opacity-0 group-hover:opacity-100 transition">
+                    Ver coleção <ChevronRight className="h-3 w-3" />
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
+  );
+}
+
+function FilterChip({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1.5 rounded-full text-[11px] uppercase tracking-wider transition border ${
+        active
+          ? "bg-gold text-background border-gold"
+          : "border-border text-text-secondary hover:text-text-primary hover:border-gold/60"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
