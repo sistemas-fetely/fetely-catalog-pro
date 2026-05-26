@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Package, ShoppingBag, Sparkles } from "lucide-react";
-import { PRODUCTS } from "@/data/products";
+import { ArrowRight, Package, ShoppingBag, Sparkles, Upload } from "lucide-react";
+import { useCatalog } from "@/store/catalogStore";
 import { formatBRL } from "@/lib/format";
 import { useOrder, cartTotal } from "@/store/orderStore";
 
@@ -20,6 +20,8 @@ export const Route = createFileRoute("/")({
 function Dashboard() {
   const items = useOrder((s) => s.items);
   const history = useOrder((s) => s.history);
+  const products = useCatalog((s) => s.products);
+  const catalogSource = useCatalog((s) => s.source);
   const total = cartTotal(items);
   const totalUnits = items.reduce((s, i) => s + i.quantity, 0);
 
@@ -53,7 +55,7 @@ function Dashboard() {
         <StatCard
           icon={<Package className="h-5 w-5" />}
           label="Catálogo ativo"
-          value={`${PRODUCTS.length} SKUs`}
+          value={`${products.length} SKUs`}
         />
         <StatCard
           icon={<ShoppingBag className="h-5 w-5" />}
@@ -107,6 +109,19 @@ function Dashboard() {
               {totalUnits > 0 ? `${totalUnits} unidades` : "Adicione produtos para começar"}
             </div>
           </div>
+        </Link>
+      </div>
+
+      <div className="mt-10 flex items-center justify-center">
+        <Link
+          to="/import"
+          className="group inline-flex items-center gap-3 rounded-md gold-border px-5 py-3 text-xs uppercase tracking-[0.15em] text-gold hover:bg-gold/10 transition"
+        >
+          <Upload className="h-4 w-4" />
+          Importar catálogo JSON
+          <span className="text-text-muted normal-case tracking-normal">
+            ({catalogSource === "imported" ? "ativo: importado" : "ativo: seed"})
+          </span>
         </Link>
       </div>
     </main>

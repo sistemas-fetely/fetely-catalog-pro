@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as NewOrderRouteImport } from './routes/new-order'
+import { Route as ImportRouteImport } from './routes/import'
 import { Route as ConfirmationRouteImport } from './routes/confirmation'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,6 +18,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const NewOrderRoute = NewOrderRouteImport.update({
   id: '/new-order',
   path: '/new-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImportRoute = ImportRouteImport.update({
+  id: '/import',
+  path: '/import',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfirmationRoute = ConfirmationRouteImport.update({
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
   '/confirmation': typeof ConfirmationRoute
+  '/import': typeof ImportRoute
   '/new-order': typeof NewOrderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
   '/confirmation': typeof ConfirmationRoute
+  '/import': typeof ImportRoute
   '/new-order': typeof NewOrderRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
   '/confirmation': typeof ConfirmationRoute
+  '/import': typeof ImportRoute
   '/new-order': typeof NewOrderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cart' | '/confirmation' | '/new-order'
+  fullPaths: '/' | '/cart' | '/confirmation' | '/import' | '/new-order'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cart' | '/confirmation' | '/new-order'
-  id: '__root__' | '/' | '/cart' | '/confirmation' | '/new-order'
+  to: '/' | '/cart' | '/confirmation' | '/import' | '/new-order'
+  id: '__root__' | '/' | '/cart' | '/confirmation' | '/import' | '/new-order'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CartRoute: typeof CartRoute
   ConfirmationRoute: typeof ConfirmationRoute
+  ImportRoute: typeof ImportRoute
   NewOrderRoute: typeof NewOrderRoute
 }
 
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/new-order'
       fullPath: '/new-order'
       preLoaderRoute: typeof NewOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/import': {
+      id: '/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof ImportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/confirmation': {
@@ -106,6 +123,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CartRoute: CartRoute,
   ConfirmationRoute: ConfirmationRoute,
+  ImportRoute: ImportRoute,
   NewOrderRoute: NewOrderRoute,
 }
 export const routeTree = rootRouteImport

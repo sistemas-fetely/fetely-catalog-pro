@@ -4,14 +4,15 @@ import { useMemo, useState } from "react";
 import { NumericalCandleGrid } from "@/components/catalog/NumericalCandleGrid";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { StepIndicator, type Step } from "@/components/ui/StepIndicator";
+import { COLLECTION_ACCENT } from "@/data/products";
 import {
-  CATEGORIES,
-  COLLECTION_ACCENT,
-  collectionsByCategory,
-  groupsByCollection,
+  useCatalog,
+  getCategories,
+  getCollectionsByCategory,
+  getGroupsByCollection,
+  getProductsBy,
   isNumericCollection,
-  productsBy,
-} from "@/data/products";
+} from "@/store/catalogStore";
 import { useOrder, cartTotal } from "@/store/orderStore";
 import { formatBRL } from "@/lib/format";
 
@@ -33,6 +34,7 @@ function NewOrder() {
   const [colecao, setColecao] = useState<string | null>(null);
   const [grupo, setGrupo] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<"all" | "stock" | "pre">("all");
+  const products = useCatalog((s) => s.products);
 
   const stage: Stage = !marca
     ? "marca"
@@ -116,7 +118,7 @@ function NewOrder() {
           {stage === "categoria" && (
             <Stage title="Categoria" subtitle="Etapa 2 de 5" onBack={() => setMarca(null)}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {CATEGORIES.map((c) => (
+                {getCategories(products).map((c) => (
                   <CategoryCard key={c} name={c} onClick={() => setCategoria(c)} />
                 ))}
               </div>
@@ -130,7 +132,7 @@ function NewOrder() {
               onBack={() => setCategoria(null)}
             >
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {collectionsByCategory(categoria).map((col) => (
+                {getCollectionsByCategory(products, categoria).map((col) => (
                   <CollectionCard
                     key={col}
                     name={col}
@@ -149,7 +151,7 @@ function NewOrder() {
               onBack={() => setColecao(null)}
             >
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {groupsByCollection(colecao).map((g) => (
+                {getGroupsByCollection(products, colecao).map((g) => (
                   <button
                     key={g}
                     onClick={() => setGrupo(g)}
@@ -311,7 +313,11 @@ function ProductsView({
   onBack: () => void;
 }) {
   const isNum = isNumericCollection(colecao);
-  const products = useMemo(() => productsBy(colecao, grupo ?? undefined), [colecao, grupo]);
+  const catalog = useCatalog((s) => s.products);
+  const products = useMemo(
+    () => getProductsBy(catalog, colecao, grupo ?? undefined),
+    [catalog, colecao, grupo],
+  );
 
   const filtered = useMemo(() => {
     if (filterStatus === "all") return products;
