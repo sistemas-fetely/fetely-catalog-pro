@@ -20,6 +20,8 @@ export const Route = createFileRoute("/")({
 function Dashboard() {
   const items = useOrder((s) => s.items);
   const history = useOrder((s) => s.history);
+  const products = useCatalog((s) => s.products);
+  const catalogSource = useCatalog((s) => s.source);
   const total = cartTotal(items);
   const totalUnits = items.reduce((s, i) => s + i.quantity, 0);
 
