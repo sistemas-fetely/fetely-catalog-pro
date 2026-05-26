@@ -132,7 +132,7 @@ function NewOrder() {
               onBack={() => setCategoria(null)}
             >
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {collectionsByCategory(categoria).map((col) => (
+                {getCollectionsByCategory(products, categoria).map((col) => (
                   <CollectionCard
                     key={col}
                     name={col}
