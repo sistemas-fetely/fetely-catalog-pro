@@ -41,7 +41,7 @@ function AdminUsersPage() {
   const qc = useQueryClient();
   const usersQ = useQuery({
     queryKey: ["app-users"],
-    queryFn: () => listFn({ data: {} }),
+    queryFn: () => listFn(),
     enabled: !!session && isAdminOrMaster(),
   });
 

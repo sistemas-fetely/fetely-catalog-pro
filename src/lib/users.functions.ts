@@ -76,11 +76,8 @@ export const createAppUser = createServerFn({ method: "POST" })
     return { id: newUserId };
   });
 
-const listSchema = z.object({}).optional();
-
 export const listAppUsers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => listSchema.parse(input))
   .handler(async ({ context }) => {
     const { userId } = context as { userId: string };
     // Only admin or master can list everyone
