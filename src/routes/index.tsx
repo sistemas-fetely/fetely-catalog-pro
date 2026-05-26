@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Package, ShoppingBag, Sparkles } from "lucide-react";
-import { PRODUCTS } from "@/data/products";
+import { ArrowRight, Package, ShoppingBag, Sparkles, Upload } from "lucide-react";
+import { useCatalog } from "@/store/catalogStore";
 import { formatBRL } from "@/lib/format";
 import { useOrder, cartTotal } from "@/store/orderStore";
 
