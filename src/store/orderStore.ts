@@ -11,7 +11,7 @@ const noopStorage: Storage = {
 };
 const safeStorage = (): Storage =>
   typeof window !== "undefined" ? window.localStorage : noopStorage;
-import type { CartItem, OrderMeta, Product, SavedOrder } from "@/types";
+import type { CartItem, OrderCommercial, OrderMeta, Product, SavedOrder } from "@/types";
 
 interface OrderState {
   items: CartItem[];
@@ -23,7 +23,7 @@ interface OrderState {
   removeItem: (sku: string) => void;
   clearCart: () => void;
   setMeta: (m: Partial<OrderMeta>) => void;
-  saveOrder: () => SavedOrder;
+  saveOrder: (commercial?: OrderCommercial) => SavedOrder;
 }
 
 const defaultMeta: OrderMeta = {
@@ -66,15 +66,18 @@ export const useOrder = create<OrderState>()(
       removeItem: (sku) => set((s) => ({ items: s.items.filter((i) => i.sku !== sku) })),
       clearCart: () => set({ items: [], meta: defaultMeta }),
       setMeta: (m) => set((s) => ({ meta: { ...s.meta, ...m } })),
-      saveOrder: () => {
+      saveOrder: (commercial) => {
         const { items, meta } = get();
-        const total = items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
+        const total =
+          commercial?.totalFinal ??
+          items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
         const order: SavedOrder = {
           id: `PED-${Date.now()}`,
           createdAt: new Date().toISOString(),
           items,
           meta,
           total,
+          commercial,
         };
         set((s) => ({ history: [order, ...s.history].slice(0, 30) }));
         return order;

@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Camera, LogOut, Menu, Moon, ShoppingBag, Sun, Users } from "lucide-react";
+import { Camera, Lock, LogOut, Menu, Moon, ShoppingBag, Sun, Users } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
+import { useNegotiation } from "@/store/negotiationStore";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
@@ -20,6 +21,7 @@ export function Header() {
   const session = useAuth((s) => s.session);
   const isAdminOrMaster = useAuth((s) => s.isAdminOrMaster);
   const signOut = useAuth((s) => s.signOut);
+  const negociacaoAtiva = useNegotiation((s) => s.ativo);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -105,6 +107,15 @@ export function Header() {
             >
               <Users className="h-4 w-4" />
               Usuários
+            </Link>
+          )}
+          {negociacaoAtiva && (
+            <Link
+              to="/cart"
+              className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-gold/50 bg-gold/10 px-2.5 py-1 text-[10px] uppercase tracking-wider text-gold"
+              title="Modo negociação ativo"
+            >
+              <Lock className="h-3 w-3" /> Negociação
             </Link>
           )}
           <button
