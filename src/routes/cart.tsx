@@ -233,22 +233,111 @@ function CartPage() {
 
           <div className="rounded-lg gold-border bg-surface p-5 space-y-4">
             <h2 className="font-display text-2xl">Dados do pedido</h2>
-            <Field label="Cliente / Lojista *">
+            <Field label="CNPJ — busca automática">
+              <div className="flex gap-2">
+                <input
+                  value={meta.cnpj}
+                  onChange={(e) => {
+                    setCnpjError(null);
+                    setMeta({ cnpj: formatCNPJ(e.target.value) });
+                  }}
+                  onBlur={(e) => {
+                    const d = onlyDigits(e.target.value);
+                    if (d.length === 14) lookupCNPJ(d);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      lookupCNPJ(meta.cnpj);
+                    }
+                  }}
+                  placeholder="00.000.000/0000-00"
+                  className="input flex-1"
+                  inputMode="numeric"
+                  maxLength={18}
+                />
+                <button
+                  type="button"
+                  onClick={() => lookupCNPJ(meta.cnpj)}
+                  disabled={cnpjLoading || !isValidCNPJLength(meta.cnpj)}
+                  className="px-3 rounded-md bg-surface-2 border border-border text-gold hover:border-gold disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label="Buscar CNPJ"
+                >
+                  {cnpjLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              {cnpjError && (
+                <p className="mt-1.5 text-[11px] text-stock-out">{cnpjError}</p>
+              )}
+              {meta.situacao && !cnpjError && (
+                <p className="mt-1.5 text-[10px] uppercase tracking-wider text-gold-muted">
+                  Situação: {meta.situacao}
+                </p>
+              )}
+            </Field>
+
+            <Field label="Razão social *">
               <input
                 value={meta.cliente}
                 onChange={(e) => setMeta({ cliente: e.target.value })}
-                placeholder="Razão social ou nome fantasia"
+                placeholder="Preenchido automaticamente"
                 className="input"
               />
             </Field>
-            <Field label="CNPJ">
-              <input
-                value={meta.cnpj}
-                onChange={(e) => setMeta({ cnpj: e.target.value })}
-                placeholder="00.000.000/0000-00"
-                className="input"
-              />
-            </Field>
+
+            {meta.nomeFantasia && (
+              <Field label="Nome fantasia">
+                <input
+                  value={meta.nomeFantasia ?? ""}
+                  onChange={(e) => setMeta({ nomeFantasia: e.target.value })}
+                  className="input"
+                />
+              </Field>
+            )}
+
+            {(meta.email || meta.telefone) && (
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="E-mail">
+                  <input
+                    value={meta.email ?? ""}
+                    onChange={(e) => setMeta({ email: e.target.value })}
+                    className="input"
+                  />
+                </Field>
+                <Field label="Telefone">
+                  <input
+                    value={meta.telefone ?? ""}
+                    onChange={(e) => setMeta({ telefone: e.target.value })}
+                    className="input"
+                  />
+                </Field>
+              </div>
+            )}
+
+            {(meta.logradouro || meta.municipio) && (
+              <div className="rounded-md bg-surface-2 border border-border p-3 space-y-1 text-xs">
+                <div className="text-[10px] uppercase tracking-[0.18em] text-text-muted">
+                  Endereço
+                </div>
+                <div className="text-text-primary">
+                  {meta.logradouro}
+                  {meta.numero ? `, ${meta.numero}` : ""}
+                  {meta.complemento ? ` — ${meta.complemento}` : ""}
+                </div>
+                <div className="text-text-secondary">
+                  {meta.bairro}
+                  {meta.bairro && (meta.municipio || meta.uf) ? " · " : ""}
+                  {meta.municipio}
+                  {meta.uf ? `/${meta.uf}` : ""}
+                  {meta.cep ? ` · CEP ${meta.cep}` : ""}
+                </div>
+              </div>
+            )}
+
             <Field label="Observações">
               <textarea
                 value={meta.observacoes}
