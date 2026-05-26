@@ -134,7 +134,15 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
             )}
 
             {!collapsed &&
-              Object.entries(grupos).map(([lvl1, lvl2List]) => {
+              Object.entries(grupos)
+                .sort(([a], [b]) => {
+                  const aSub = a.startsWith(GRP_PREFIX);
+                  const bSub = b.startsWith(GRP_PREFIX);
+                  if (aSub && !bSub) return 1;
+                  if (!aSub && bSub) return -1;
+                  return a.localeCompare(b, "pt-BR");
+                })
+                .map(([lvl1, lvl2List]) => {
                 const colecaoFirst = isColecaoFirst(categoria);
                 const gkey = `${categoria}::${lvl1}`;
                 const isOpen = expandedGroups[gkey] ?? true;
