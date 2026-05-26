@@ -59,7 +59,13 @@ export function getProductsBy(
   colecao: string,
   grupo?: string,
 ): Product[] {
-  return products.filter((p) => p.colecao === colecao && (!grupo || p.grupo === grupo));
+  return products.filter(
+    (p) =>
+      p.colecao === colecao &&
+      (!grupo || p.grupo === grupo) &&
+      p.precoAtacado &&
+      p.precoAtacado > 0,
+  );
 }
 export function isNumericCollection(colecao: string): boolean {
   return (NUMERIC_CANDLE_COLLECTIONS as readonly string[]).includes(colecao);

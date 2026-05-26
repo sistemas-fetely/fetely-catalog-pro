@@ -22,7 +22,6 @@ const REQUIRED_FIELDS: (keyof Product)[] = [
   "colecao",
   "nomeComercial",
   "multiplos",
-  "precoAtacado",
 ];
 
 interface ValidationResult {
@@ -127,13 +126,20 @@ function validate(raw: unknown): ValidationResult {
     }
   });
 
+  // Itens sem preço de atacado não entram no catálogo (viram aviso)
+  const semPreco = cleaned.filter((p) => !p.precoAtacado || p.precoAtacado <= 0);
+  const comPreco = cleaned.filter((p) => p.precoAtacado && p.precoAtacado > 0);
+  semPreco.forEach((p) =>
+    warnings.push(`Sem preço de atacado (não será publicado): ${p.sku} — ${p.nomeComercial}`),
+  );
+
   return {
-    ok: errors.length === 0 && cleaned.length > 0,
-    total: cleaned.length,
+    ok: errors.length === 0 && comPreco.length > 0,
+    total: comPreco.length,
     errors: errors.slice(0, 20),
-    warnings: warnings.slice(0, 10),
-    preview: cleaned.slice(0, 5),
-    all: cleaned,
+    warnings: warnings.slice(0, 50),
+    preview: comPreco.slice(0, 5),
+    all: comPreco,
   };
 }
 
