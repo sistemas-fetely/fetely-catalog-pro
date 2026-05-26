@@ -27,12 +27,10 @@ function CartPage() {
   const saveOrder = useOrder((s) => s.saveOrder);
   const clearCart = useOrder((s) => s.clearCart);
   const negotiationAtivo = useNegotiation((s) => s.ativo);
-  const negotiationData = useNegotiation((s) => ({
-    descontoPct: s.descontoPct,
-    justificativa: s.justificativa,
-    observacaoInterna: s.observacaoInterna,
-    usarReservada: s.usarReservada,
-  }));
+  const negDescontoPct = useNegotiation((s) => s.descontoPct);
+  const negJustificativa = useNegotiation((s) => s.justificativa);
+  const negObservacaoInterna = useNegotiation((s) => s.observacaoInterna);
+  const negUsarReservada = useNegotiation((s) => s.usarReservada);
   const resetNegotiation = useNegotiation((s) => s.resetSession);
   const navigate = useNavigate();
 
