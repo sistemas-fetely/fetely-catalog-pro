@@ -73,7 +73,7 @@ function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link
-          to="/new-order"
+          to="/catalog"
           className="md:col-span-2 group relative overflow-hidden rounded-xl gold-border gold-border-hover bg-surface p-10 transition"
         >
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gold/10 blur-3xl group-hover:bg-gold/20 transition" />
@@ -81,10 +81,10 @@ function Dashboard() {
             <div className="text-[10px] uppercase tracking-[0.3em] text-gold">
               Iniciar
             </div>
-            <h2 className="font-display text-5xl mt-3 mb-4">Novo Pedido</h2>
+            <h2 className="font-display text-5xl mt-3 mb-4">Abrir Catálogo</h2>
             <p className="text-text-secondary max-w-md text-sm">
-              Navegue pelo catálogo em cascata: Marca → Categoria → Coleção →
-              Grupo → Produto.
+              Navegue pelo menu lateral hierárquico: Categoria → Grupo → Coleção,
+              com todas as 41 coleções Fetély a um clique.
             </p>
             <div className="flex items-center gap-2 mt-8 text-gold font-medium uppercase tracking-wider text-xs">
               Começar agora
@@ -92,6 +92,7 @@ function Dashboard() {
             </div>
           </div>
         </Link>
+
 
         <Link
           to="/cart"
