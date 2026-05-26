@@ -89,11 +89,14 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+  const pathname = router.state.location.pathname;
+  const isLogin = pathname === "/login";
   return (
     <QueryClientProvider client={queryClient}>
       <AuthGate>
         <div className="min-h-screen bg-background text-text-primary">
-          <Header />
+          {!isLogin && <Header />}
           <Outlet />
         </div>
       </AuthGate>
