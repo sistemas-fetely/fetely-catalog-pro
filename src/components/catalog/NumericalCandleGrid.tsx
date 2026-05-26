@@ -93,12 +93,25 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
         </div>
       </div>
 
+      {/* Preenchimento em lote */}
+      <BulkFiller
+        onApply={(perItem) => {
+          const next: Record<string, number> = { ...qtys };
+          filtered.forEach((p) => {
+            const step = Math.max(1, p.multiplos);
+            next[p.sku] = perItem * step;
+          });
+          setQtys(next);
+        }}
+      />
+
       {/* Grade 0-9 */}
       <div className="rounded-lg gold-border overflow-hidden">
-        <div className="grid grid-cols-[64px_1fr_140px_160px] bg-surface-2 text-[10px] uppercase tracking-[0.18em] text-text-muted">
+        <div className="grid grid-cols-[64px_1fr_120px_120px_160px] bg-surface-2 text-[10px] uppercase tracking-[0.18em] text-text-muted">
           <div className="px-4 py-3">Nº</div>
           <div className="px-4 py-3">Produto</div>
-          <div className="px-4 py-3 text-right">Preço Atacado</div>
+          <div className="px-4 py-3 text-right">Varejo sug.</div>
+          <div className="px-4 py-3 text-right">Atacado</div>
           <div className="px-4 py-3">Quantidade</div>
         </div>
         {filtered.map((p) => {
@@ -106,7 +119,7 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
           return (
             <div
               key={p.sku}
-              className="grid grid-cols-[64px_1fr_140px_160px] items-center border-t border-border/50 bg-surface hover:bg-surface-2/60 transition"
+              className="grid grid-cols-[64px_1fr_120px_120px_160px] items-center border-t border-border/50 bg-surface hover:bg-surface-2/60 transition"
             >
               <div
                 className="px-4 py-3 font-display text-3xl font-semibold"
@@ -120,6 +133,9 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
                   <span className="text-[10px] font-mono text-text-muted">{p.sku}</span>
                   <StockBadge status={p.statusEstoque} />
                 </div>
+              </div>
+              <div className="px-4 py-3 text-right text-xs text-text-secondary">
+                {p.precoVarejo > 0 ? formatBRL(p.precoVarejo) : "—"}
               </div>
               <div className="px-4 py-3 text-right text-gold font-medium">
                 {formatBRL(p.precoAtacado)}
@@ -155,6 +171,62 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
           className="rounded-md bg-gold px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-background transition hover:bg-gold-light disabled:opacity-30"
         >
           Adicionar seleção ao carrinho
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function BulkFiller({ onApply }: { onApply: (perItem: number) => void }) {
+  const [n, setN] = useState(1);
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gold/30 bg-surface-2/60 p-4">
+      <div>
+        <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted">
+          Preencher coleção
+        </div>
+        <div className="text-xs text-text-secondary mt-1">
+          Coloca a mesma quantidade em cada número (0–9) da combinação selecionada.
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex items-stretch rounded-md border border-border bg-surface h-10">
+          <button
+            type="button"
+            onClick={() => setN((v) => Math.max(1, v - 1))}
+            className="px-3 text-text-secondary hover:text-gold"
+            aria-label="Diminuir"
+          >
+            −
+          </button>
+          <input
+            type="number"
+            min={1}
+            value={n}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              if (!Number.isNaN(v)) setN(Math.max(1, v));
+            }}
+            className="w-16 bg-transparent text-center font-medium outline-none"
+          />
+          <button
+            type="button"
+            onClick={() => setN((v) => v + 1)}
+            className="px-3 text-text-secondary hover:text-gold"
+            aria-label="Aumentar"
+          >
+            +
+          </button>
+        </div>
+        <span className="text-[10px] uppercase tracking-wider text-text-muted">
+          caixa{n > 1 ? "s" : ""} por número
+        </span>
+        <button
+          type="button"
+          onClick={() => onApply(n)}
+          className="rounded-md border border-gold/60 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-gold hover:bg-gold hover:text-background transition"
+        >
+          Aplicar a todos
         </button>
       </div>
     </div>
