@@ -1,10 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Trash2 } from "lucide-react";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { formatBRL } from "@/lib/format";
 import { useOrder, cartTotal } from "@/store/orderStore";
-import type { CartItem } from "@/types";
+import { useNegotiation, registrarNegociacao } from "@/store/negotiationStore";
+import { CartCommercialPanel, type CommercialState } from "@/components/cart/CartCommercialPanel";
+import type { CartItem, OrderCommercial } from "@/types";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -24,7 +26,18 @@ function CartPage() {
   const removeItem = useOrder((s) => s.removeItem);
   const saveOrder = useOrder((s) => s.saveOrder);
   const clearCart = useOrder((s) => s.clearCart);
+  const negotiationAtivo = useNegotiation((s) => s.ativo);
+  const negotiationData = useNegotiation((s) => ({
+    descontoPct: s.descontoPct,
+    justificativa: s.justificativa,
+    observacaoInterna: s.observacaoInterna,
+    usarReservada: s.usarReservada,
+  }));
+  const resetNegotiation = useNegotiation((s) => s.resetSession);
   const navigate = useNavigate();
+
+  const [commercial, setCommercial] = useState<CommercialState | null>(null);
+  const handleCommercialChange = useCallback((s: CommercialState) => setCommercial(s), []);
 
   const grouped = useMemo(() => {
     const map = new Map<string, CartItem[]>();
@@ -40,12 +53,50 @@ function CartPage() {
   const total = cartTotal(items);
 
   const handleConfirm = () => {
-    if (!meta.cliente.trim()) {
-      alert("Informe o nome do cliente.");
-      return;
+    if (!meta.cliente.trim()) return alert("Informe o nome do cliente.");
+    if (!commercial?.podeFinalizar || !commercial.calculo.faixa || !commercial.condicao) {
+      return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
     }
-    const order = saveOrder();
+    const c = commercial.calculo;
+    const faixa = c.faixa!;
+    const orderCommercial: OrderCommercial = {
+      faixaId: faixa.id,
+      faixaNome: faixa.nome,
+      frete: faixa.frete,
+      condicaoId: commercial.condicao.id,
+      condicaoDescricao: commercial.condicao.descricao,
+      bruto: c.bruto,
+      descontoCelebraPct: faixa.descontoCelebra,
+      descontoCelebraValor: c.descontoCelebraValor,
+      descontoMasterPct: negotiationAtivo ? negotiationData.descontoPct : 0,
+      descontoMasterValor: c.descontoMasterValor,
+      bonusPixValor: c.bonusPixValor,
+      aplicouPix: c.aplicouPix,
+      totalFinal: c.total,
+      totalSemPix: c.totalSemPix,
+      negociacao: negotiationAtivo,
+      justificativa: negotiationAtivo ? negotiationData.justificativa : "",
+      observacaoInterna: negotiationAtivo ? negotiationData.observacaoInterna : "",
+      usouReservada: negotiationAtivo && negotiationData.usarReservada,
+    };
+
+    setMeta({ condicaoPagamento: commercial.condicao.descricao });
+    const order = saveOrder(orderCommercial);
+
+    if (orderCommercial.negociacao && orderCommercial.descontoMasterPct > 0) {
+      registrarNegociacao({
+        id: order.id,
+        timestamp: order.createdAt,
+        valorBruto: orderCommercial.bruto,
+        descontoPct: orderCommercial.descontoMasterPct,
+        descontoValor: orderCommercial.descontoMasterValor,
+        justificativa: orderCommercial.justificativa,
+        faixaUsada: orderCommercial.faixaNome,
+      });
+    }
+
     clearCart();
+    resetNegotiation();
     navigate({ to: "/confirmation", search: { id: order.id } });
   };
 
@@ -82,8 +133,7 @@ function CartPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8">
-        {/* Lista agrupada */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-8">
         <div className="space-y-6">
           {grouped.map(([col, group]) => {
             const sub = group.reduce(
@@ -141,8 +191,9 @@ function CartPage() {
           })}
         </div>
 
-        {/* Painel resumo + dados */}
         <aside className="lg:sticky lg:top-24 lg:self-start space-y-4">
+          <CartCommercialPanel bruto={total} onChange={handleCommercialChange} />
+
           <div className="rounded-lg gold-border bg-surface p-5 space-y-4">
             <h2 className="font-display text-2xl">Dados do pedido</h2>
             <Field label="Cliente / Lojista *">
@@ -161,18 +212,6 @@ function CartPage() {
                 className="input"
               />
             </Field>
-            <Field label="Condição de pagamento">
-              <select
-                value={meta.condicaoPagamento}
-                onChange={(e) => setMeta({ condicaoPagamento: e.target.value })}
-                className="input"
-              >
-                <option>À vista</option>
-                <option>30 dias</option>
-                <option>30/60</option>
-                <option>30/60/90</option>
-              </select>
-            </Field>
             <Field label="Observações">
               <textarea
                 value={meta.observacoes}
@@ -185,29 +224,22 @@ function CartPage() {
           </div>
 
           <div className="rounded-lg gold-border bg-surface p-5">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs uppercase tracking-wider text-text-secondary">
-                Itens
-              </span>
-              <span className="text-text-primary">
-                {items.reduce((s, i) => s + i.quantity, 0)}
-              </span>
-            </div>
-            <div className="flex items-baseline justify-between pt-3 border-t border-border">
-              <span className="text-xs uppercase tracking-wider text-text-secondary">
-                Total atacado
-              </span>
-              <span className="font-display text-3xl text-gold">{formatBRL(total)}</span>
-            </div>
+            {commercial?.motivoBloqueio && (
+              <p className="mb-3 text-xs text-stock-out">{commercial.motivoBloqueio}</p>
+            )}
             <button
               onClick={handleConfirm}
-              className="mt-5 w-full rounded-md bg-gold py-3 text-xs font-semibold uppercase tracking-[0.18em] text-background hover:bg-gold-light"
+              disabled={!commercial?.podeFinalizar}
+              className="w-full rounded-md bg-gold py-3 text-xs font-semibold uppercase tracking-[0.18em] text-background hover:bg-gold-light disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Confirmar pedido
             </button>
             <button
               onClick={() => {
-                if (confirm("Limpar todo o carrinho?")) clearCart();
+                if (confirm("Limpar todo o carrinho?")) {
+                  clearCart();
+                  resetNegotiation();
+                }
               }}
               className="mt-2 w-full text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-out"
             >
