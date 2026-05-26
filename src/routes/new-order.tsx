@@ -118,7 +118,7 @@ function NewOrder() {
           {stage === "categoria" && (
             <Stage title="Categoria" subtitle="Etapa 2 de 5" onBack={() => setMarca(null)}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {CATEGORIES.map((c) => (
+                {getCategories(products).map((c) => (
                   <CategoryCard key={c} name={c} onClick={() => setCategoria(c)} />
                 ))}
               </div>
