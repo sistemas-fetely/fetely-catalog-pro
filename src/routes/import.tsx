@@ -31,6 +31,7 @@ interface ValidationResult {
   errors: string[];
   warnings: string[];
   preview: Product[];
+  all: Product[];
 }
 
 function validate(raw: unknown): ValidationResult {
