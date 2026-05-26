@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Trash2, Eye, Package } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
@@ -17,6 +17,8 @@ export const Route = createFileRoute("/orders")({
 function OrdersPage() {
   const history = useOrder((s) => s.history);
   const [query, setQuery] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -48,7 +50,11 @@ function OrdersPage() {
         />
       </div>
 
-      {filtered.length === 0 ? (
+      {!hydrated ? (
+        <div className="rounded-lg gold-border bg-surface p-12 text-center text-text-secondary">
+          Carregando pedidos...
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="rounded-lg gold-border bg-surface p-12 text-center">
           <Package className="h-10 w-10 text-gold/60 mx-auto mb-3" />
           <p className="text-text-secondary">
