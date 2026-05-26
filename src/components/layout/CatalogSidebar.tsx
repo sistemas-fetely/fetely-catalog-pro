@@ -139,9 +139,52 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
                 const gkey = `${categoria}::${lvl1}`;
                 const isOpen = expandedGroups[gkey] ?? true;
 
-                // Coleção-first: render só a coleção como item clicável (sem filhos)
+                // Coleção-first
                 if (colecaoFirst) {
-                  const active = activeColecao === lvl1;
+                  // Subdivisão por grupo (ex.: Jogo Americano, Copos e Taças)
+                  if (lvl1.startsWith(GRP_PREFIX)) {
+                    const grupoName = lvl1.slice(GRP_PREFIX.length);
+                    return (
+                      <div key={gkey} className="px-2">
+                        <button
+                          onClick={() => toggleGroup(gkey)}
+                          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs text-text-secondary hover:text-gold rounded transition"
+                        >
+                          {isOpen ? (
+                            <ChevronDown className="h-3 w-3 flex-shrink-0" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3 flex-shrink-0" />
+                          )}
+                          <span className="uppercase tracking-wider">{grupoName}</span>
+                        </button>
+                        {isOpen && (
+                          <ul className="pl-5 pb-1">
+                            {lvl2List.map((col) => {
+                              const active =
+                                activeColecao === col && activeGrupo === grupoName;
+                              return (
+                                <li key={col}>
+                                  <button
+                                    onClick={() => handleSelectColecao(col, grupoName)}
+                                    className={`block w-full text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
+                                      active
+                                        ? "border-gold bg-gold/10 text-gold"
+                                        : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2/60"
+                                    }`}
+                                  >
+                                    {col}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // Coleção flat
+                  const active = activeColecao === lvl1 && !activeGrupo;
                   return (
                     <div key={gkey} className="px-2">
                       <button
