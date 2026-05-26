@@ -21,6 +21,7 @@ export function Header() {
   const session = useAuth((s) => s.session);
   const isAdminOrMaster = useAuth((s) => s.isAdminOrMaster);
   const signOut = useAuth((s) => s.signOut);
+  const negociacaoAtiva = useNegotiation((s) => s.ativo);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
