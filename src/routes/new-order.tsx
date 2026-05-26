@@ -34,6 +34,7 @@ function NewOrder() {
   const [colecao, setColecao] = useState<string | null>(null);
   const [grupo, setGrupo] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<"all" | "stock" | "pre">("all");
+  const products = useCatalog((s) => s.products);
 
   const stage: Stage = !marca
     ? "marca"
