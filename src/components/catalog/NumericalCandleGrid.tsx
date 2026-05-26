@@ -95,7 +95,7 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
 
       {/* Preenchimento em lote */}
       <BulkFiller
-        onApply={(perItem) => {
+        onApplyBoxes={(perItem) => {
           const next: Record<string, number> = { ...qtys };
           filtered.forEach((p) => {
             const step = Math.max(1, p.multiplos);
@@ -103,7 +103,15 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
           });
           setQtys(next);
         }}
+        onApplyUnits={(units) => {
+          const next: Record<string, number> = { ...qtys };
+          filtered.forEach((p) => {
+            next[p.sku] = nearestMultiple(units, p.multiplos);
+          });
+          setQtys(next);
+        }}
       />
+
 
       {/* Grade 0-9 */}
       <div className="rounded-lg gold-border overflow-hidden">
