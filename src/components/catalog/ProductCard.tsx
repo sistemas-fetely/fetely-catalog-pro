@@ -50,14 +50,20 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="mt-0.5 text-[10px] text-text-muted font-mono">{product.sku}</div>
         </div>
 
-        <div className="flex items-baseline gap-2">
-          <span className="text-xl font-semibold text-gold">
-            {indisponivel ? "—" : formatBRL(product.precoAtacado)}
-          </span>
-          {!indisponivel && (
-            <span className="text-xs text-text-muted line-through">
-              {formatBRL(product.precoVarejo)}
+        <div className="flex items-end justify-between gap-2">
+          <div>
+            <div className="text-[9px] uppercase tracking-[0.18em] text-gold-muted">Atacado</div>
+            <span className="text-xl font-semibold text-gold leading-none">
+              {indisponivel ? "—" : formatBRL(product.precoAtacado)}
             </span>
+          </div>
+          {!indisponivel && product.precoVarejo > 0 && (
+            <div className="text-right">
+              <div className="text-[9px] uppercase tracking-[0.18em] text-text-muted">Varejo sug.</div>
+              <span className="text-sm text-text-secondary leading-none">
+                {formatBRL(product.precoVarejo)}
+              </span>
+            </div>
           )}
         </div>
 
