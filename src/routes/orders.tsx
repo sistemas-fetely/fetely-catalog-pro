@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Trash2, Eye, Package } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
