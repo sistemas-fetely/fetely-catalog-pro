@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Camera, LogOut, Menu, Moon, ShoppingBag, Sun, Users } from "lucide-react";
+import { Camera, Lock, LogOut, Menu, Moon, ShoppingBag, Sun, Users } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
+import { useNegotiation } from "@/store/negotiationStore";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
