@@ -55,7 +55,7 @@ function Dashboard() {
         <StatCard
           icon={<Package className="h-5 w-5" />}
           label="Catálogo ativo"
-          value={`${PRODUCTS.length} SKUs`}
+          value={`${products.length} SKUs`}
         />
         <StatCard
           icon={<ShoppingBag className="h-5 w-5" />}
