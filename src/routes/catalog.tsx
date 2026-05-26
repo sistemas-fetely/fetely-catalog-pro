@@ -13,7 +13,7 @@ import {
   isNumericCollection,
 } from "@/store/catalogStore";
 import { useUI } from "@/store/uiStore";
-import { usePhotos, getColecaoPhoto } from "@/store/photoStore";
+import { usePhotos, getColecaoPhoto, getProdutoPhoto } from "@/store/photoStore";
 import type { Product } from "@/types";
 
 const searchSchema = z.object({
