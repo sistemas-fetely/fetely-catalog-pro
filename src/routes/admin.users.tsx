@@ -45,9 +45,16 @@ function AdminUsersPage() {
     enabled: !!session && isAdminOrMaster(),
   });
 
+  type NewUser = {
+    email: string;
+    password: string;
+    nome_completo: string;
+    telefone: string | null;
+    codigo_vendedor: string | null;
+    role: AppRole;
+  };
   const createMut = useMutation({
-    mutationFn: (input: Parameters<typeof createFn>[0]["data"]) =>
-      createFn({ data: input }),
+    mutationFn: (input: NewUser) => createFn({ data: input }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["app-users"] }),
   });
 
