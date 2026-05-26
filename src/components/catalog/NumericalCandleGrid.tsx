@@ -27,6 +27,8 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
   const [size, setSize] = useState(sizes[0]);
   const [qtys, setQtys] = useState<Record<string, number>>({});
   const addBulk = useOrder((s) => s.addBulk);
+  const photos = usePhotos();
+  const colorPhoto = getProdutoPhoto(photos, colecao, color);
 
   const filtered = products
     .filter((p) => p.corNome === color && p.tamanhoNumero === size)
