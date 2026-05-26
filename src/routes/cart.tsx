@@ -27,12 +27,10 @@ function CartPage() {
   const saveOrder = useOrder((s) => s.saveOrder);
   const clearCart = useOrder((s) => s.clearCart);
   const negotiationAtivo = useNegotiation((s) => s.ativo);
-  const negotiationData = useNegotiation((s) => ({
-    descontoPct: s.descontoPct,
-    justificativa: s.justificativa,
-    observacaoInterna: s.observacaoInterna,
-    usarReservada: s.usarReservada,
-  }));
+  const negDescontoPct = useNegotiation((s) => s.descontoPct);
+  const negJustificativa = useNegotiation((s) => s.justificativa);
+  const negObservacaoInterna = useNegotiation((s) => s.observacaoInterna);
+  const negUsarReservada = useNegotiation((s) => s.usarReservada);
   const resetNegotiation = useNegotiation((s) => s.resetSession);
   const navigate = useNavigate();
 
@@ -68,16 +66,16 @@ function CartPage() {
       bruto: c.bruto,
       descontoCelebraPct: faixa.descontoCelebra,
       descontoCelebraValor: c.descontoCelebraValor,
-      descontoMasterPct: negotiationAtivo ? negotiationData.descontoPct : 0,
+      descontoMasterPct: negotiationAtivo ? negDescontoPct : 0,
       descontoMasterValor: c.descontoMasterValor,
       bonusPixValor: c.bonusPixValor,
       aplicouPix: c.aplicouPix,
       totalFinal: c.total,
       totalSemPix: c.totalSemPix,
       negociacao: negotiationAtivo,
-      justificativa: negotiationAtivo ? negotiationData.justificativa : "",
-      observacaoInterna: negotiationAtivo ? negotiationData.observacaoInterna : "",
-      usouReservada: negotiationAtivo && negotiationData.usarReservada,
+      justificativa: negotiationAtivo ? negJustificativa : "",
+      observacaoInterna: negotiationAtivo ? negObservacaoInterna : "",
+      usouReservada: negotiationAtivo && negUsarReservada,
     };
 
     setMeta({ condicaoPagamento: commercial.condicao.descricao });
