@@ -66,16 +66,16 @@ function CartPage() {
       bruto: c.bruto,
       descontoCelebraPct: faixa.descontoCelebra,
       descontoCelebraValor: c.descontoCelebraValor,
-      descontoMasterPct: negotiationAtivo ? negotiationData.descontoPct : 0,
+      descontoMasterPct: negotiationAtivo ? negDescontoPct : 0,
       descontoMasterValor: c.descontoMasterValor,
       bonusPixValor: c.bonusPixValor,
       aplicouPix: c.aplicouPix,
       totalFinal: c.total,
       totalSemPix: c.totalSemPix,
       negociacao: negotiationAtivo,
-      justificativa: negotiationAtivo ? negotiationData.justificativa : "",
-      observacaoInterna: negotiationAtivo ? negotiationData.observacaoInterna : "",
-      usouReservada: negotiationAtivo && negotiationData.usarReservada,
+      justificativa: negotiationAtivo ? negJustificativa : "",
+      observacaoInterna: negotiationAtivo ? negObservacaoInterna : "",
+      usouReservada: negotiationAtivo && negUsarReservada,
     };
 
     setMeta({ condicaoPagamento: commercial.condicao.descricao });
