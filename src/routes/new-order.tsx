@@ -4,14 +4,15 @@ import { useMemo, useState } from "react";
 import { NumericalCandleGrid } from "@/components/catalog/NumericalCandleGrid";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { StepIndicator, type Step } from "@/components/ui/StepIndicator";
+import { COLLECTION_ACCENT } from "@/data/products";
 import {
-  CATEGORIES,
-  COLLECTION_ACCENT,
-  collectionsByCategory,
-  groupsByCollection,
+  useCatalog,
+  getCategories,
+  getCollectionsByCategory,
+  getGroupsByCollection,
+  getProductsBy,
   isNumericCollection,
-  productsBy,
-} from "@/data/products";
+} from "@/store/catalogStore";
 import { useOrder, cartTotal } from "@/store/orderStore";
 import { formatBRL } from "@/lib/format";
 
