@@ -18,6 +18,7 @@ import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
 
 const PhotosRoute = PhotosRouteImport.update({
   id: '/photos',
@@ -64,40 +65,49 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CatalogCategoriaCategoriaRoute =
+  CatalogCategoriaCategoriaRouteImport.update({
+    id: '/categoria/$categoria',
+    path: '/categoria/$categoria',
+    getParentRoute: () => CatalogRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
-  '/catalog': typeof CatalogRoute
+  '/catalog': typeof CatalogRouteWithChildren
   '/confirmation': typeof ConfirmationRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
   '/photos': typeof PhotosRoute
   '/admin/users': typeof AdminUsersRoute
+  '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
-  '/catalog': typeof CatalogRoute
+  '/catalog': typeof CatalogRouteWithChildren
   '/confirmation': typeof ConfirmationRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
   '/photos': typeof PhotosRoute
   '/admin/users': typeof AdminUsersRoute
+  '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
-  '/catalog': typeof CatalogRoute
+  '/catalog': typeof CatalogRouteWithChildren
   '/confirmation': typeof ConfirmationRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
   '/photos': typeof PhotosRoute
   '/admin/users': typeof AdminUsersRoute
+  '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/new-order'
     | '/photos'
     | '/admin/users'
+    | '/catalog/categoria/$categoria'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +133,7 @@ export interface FileRouteTypes {
     | '/new-order'
     | '/photos'
     | '/admin/users'
+    | '/catalog/categoria/$categoria'
   id:
     | '__root__'
     | '/'
@@ -133,12 +145,13 @@ export interface FileRouteTypes {
     | '/new-order'
     | '/photos'
     | '/admin/users'
+    | '/catalog/categoria/$categoria'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CartRoute: typeof CartRoute
-  CatalogRoute: typeof CatalogRoute
+  CatalogRoute: typeof CatalogRouteWithChildren
   ConfirmationRoute: typeof ConfirmationRoute
   ImportRoute: typeof ImportRoute
   LoginRoute: typeof LoginRoute
@@ -212,13 +225,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/catalog/categoria/$categoria': {
+      id: '/catalog/categoria/$categoria'
+      path: '/categoria/$categoria'
+      fullPath: '/catalog/categoria/$categoria'
+      preLoaderRoute: typeof CatalogCategoriaCategoriaRouteImport
+      parentRoute: typeof CatalogRoute
+    }
   }
 }
+
+interface CatalogRouteChildren {
+  CatalogCategoriaCategoriaRoute: typeof CatalogCategoriaCategoriaRoute
+}
+
+const CatalogRouteChildren: CatalogRouteChildren = {
+  CatalogCategoriaCategoriaRoute: CatalogCategoriaCategoriaRoute,
+}
+
+const CatalogRouteWithChildren =
+  CatalogRoute._addFileChildren(CatalogRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CartRoute: CartRoute,
-  CatalogRoute: CatalogRoute,
+  CatalogRoute: CatalogRouteWithChildren,
   ConfirmationRoute: ConfirmationRoute,
   ImportRoute: ImportRoute,
   LoginRoute: LoginRoute,
@@ -229,3 +260,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
