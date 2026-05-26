@@ -166,31 +166,15 @@ function ImportPage() {
         errors: [`JSON inválido: ${(e as Error).message}`],
         warnings: [],
         preview: [],
+        all: [],
       });
     }
   };
 
   const handleConfirm = () => {
     if (!result?.ok) return;
-    const parsed = JSON.parse(raw);
-    const array = Array.isArray(parsed) ? parsed : parsed.products;
-    const validation = validate(array);
-    if (validation.ok) {
-      const allProducts: Product[] = [];
-      array.forEach((r: any) => {
-        if (r && typeof r === "object" && r.sku) {
-          allProducts.push({
-            ...r,
-            multiplos: Number(r.multiplos) || 1,
-            precoAtacado: Number(r.precoAtacado) || 0,
-            precoVarejo: Number(r.precoVarejo) || 0,
-            isVelaNumerica: Boolean(r.isVelaNumerica),
-          } as Product);
-        }
-      });
-      setProducts(allProducts);
-      alert(`Catálogo atualizado com ${allProducts.length} produtos.`);
-    }
+    setProducts(result.all);
+    alert(`Catálogo atualizado com ${result.all.length} produtos.`);
   };
 
   return (
