@@ -17,6 +17,8 @@ export const Route = createFileRoute("/orders")({
 function OrdersPage() {
   const history = useOrder((s) => s.history);
   const [query, setQuery] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
