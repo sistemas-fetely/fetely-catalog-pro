@@ -176,3 +176,59 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
     </div>
   );
 }
+
+function BulkFiller({ onApply }: { onApply: (perItem: number) => void }) {
+  const [n, setN] = useState(1);
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gold/30 bg-surface-2/60 p-4">
+      <div>
+        <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted">
+          Preencher coleção
+        </div>
+        <div className="text-xs text-text-secondary mt-1">
+          Coloca a mesma quantidade em cada número (0–9) da combinação selecionada.
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex items-stretch rounded-md border border-border bg-surface h-10">
+          <button
+            type="button"
+            onClick={() => setN((v) => Math.max(1, v - 1))}
+            className="px-3 text-text-secondary hover:text-gold"
+            aria-label="Diminuir"
+          >
+            −
+          </button>
+          <input
+            type="number"
+            min={1}
+            value={n}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              if (!Number.isNaN(v)) setN(Math.max(1, v));
+            }}
+            className="w-16 bg-transparent text-center font-medium outline-none"
+          />
+          <button
+            type="button"
+            onClick={() => setN((v) => v + 1)}
+            className="px-3 text-text-secondary hover:text-gold"
+            aria-label="Aumentar"
+          >
+            +
+          </button>
+        </div>
+        <span className="text-[10px] uppercase tracking-wider text-text-muted">
+          caixa{n > 1 ? "s" : ""} por número
+        </span>
+        <button
+          type="button"
+          onClick={() => onApply(n)}
+          className="rounded-md border border-gold/60 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-gold hover:bg-gold hover:text-background transition"
+        >
+          Aplicar a todos
+        </button>
+      </div>
+    </div>
+  );
+}
