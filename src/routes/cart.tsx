@@ -51,6 +51,44 @@ function CartPage() {
 
   const total = cartTotal(items);
 
+  const [cnpjLoading, setCnpjLoading] = useState(false);
+  const [cnpjError, setCnpjError] = useState<string | null>(null);
+
+  const lookupCNPJ = useCallback(
+    async (raw: string) => {
+      if (!isValidCNPJLength(raw)) {
+        setCnpjError("CNPJ deve ter 14 dígitos.");
+        return;
+      }
+      setCnpjLoading(true);
+      setCnpjError(null);
+      try {
+        const d = await fetchCNPJ(raw);
+        setMeta({
+          cnpj: d.cnpj,
+          cliente: d.razaoSocial || meta.cliente,
+          nomeFantasia: d.nomeFantasia,
+          email: d.email,
+          telefone: d.telefone,
+          logradouro: d.logradouro,
+          numero: d.numero,
+          complemento: d.complemento,
+          bairro: d.bairro,
+          municipio: d.municipio,
+          uf: d.uf,
+          cep: d.cep,
+          situacao: d.situacao,
+        });
+      } catch (e) {
+        setCnpjError(e instanceof Error ? e.message : "Erro ao consultar CNPJ");
+      } finally {
+        setCnpjLoading(false);
+      }
+    },
+    [setMeta, meta.cliente],
+  );
+
+
   const handleConfirm = () => {
     if (!meta.cliente.trim()) return alert("Informe o nome do cliente.");
     if (!commercial?.podeFinalizar || !commercial.calculo.faixa || !commercial.condicao) {
