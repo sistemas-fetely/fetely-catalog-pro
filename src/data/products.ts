@@ -64,25 +64,57 @@ export const COLLECTION_ACCENT: Record<string, string> = {
   Lavoire: "oklch(0.78 0.11 85)",
 };
 
-// Cores/variantes para velas numéricas
+// Cores/variantes padrão para velas numéricas
 const CANDLE_COLORS = [
-  { nome: "Noir & Oro", cor: "Preto/Dourado" },
-  { nome: "Bianco & Oro", cor: "Branco/Dourado" },
-  { nome: "Rose Gold", cor: "Rosé" },
+  { nome: "Noir & Oro", cor: "Preto/Dourado", code: "017" },
+  { nome: "Bianco & Oro", cor: "Branco/Dourado", code: "018" },
+  { nome: "Rose Gold", cor: "Rosé", code: "024" },
 ];
+
+// Cores reais da coleção Classique (7 variantes)
+const CLASSIQUE_COLORS = [
+  { nome: "Noir & Oro", cor: "Preto/Dourado", code: "017" },
+  { nome: "Bianco & Oro", cor: "Branco/Dourado", code: "018" },
+  { nome: "Bianco & Oro Éclat", cor: "Branco/Dourado Brilho", code: "019" },
+  { nome: "Bianco & Argento Éclat", cor: "Branco/Prata Brilho", code: "020" },
+  { nome: "Oro Éclat", cor: "Dourado Brilho", code: "021" },
+  { nome: "Rosé Doux - Éclat", cor: "Rosé Brilho", code: "022" },
+  { nome: "Argento Éclat", cor: "Prata Brilho", code: "023" },
+];
+
 const CANDLE_SIZES = [
-  { num: "5 cm", ref: "Médio", preco: 7.9, varejo: 14.9 },
-  { num: "7 cm", ref: "Grande", preco: 9.94, varejo: 18.9 },
+  { num: "5 cm", ref: "Médio", preco: 7.9, varejo: 14.9, code: "5" },
+  { num: "7 cm", ref: "Grande", preco: 9.94, varejo: 16.9, code: "7" },
 ];
+
+const COLECAO_CODE: Record<string, string> = {
+  Classique: "CL",
+  "Dots Doux": "DD",
+  "Fine Pure": "FP",
+  "Frost Glow": "FG",
+  "Glitter Glow": "GG",
+  "Golden Line": "GL",
+  "Splash Neon": "SN",
+  "Sweet Candy": "SC",
+  Texture: "TX",
+};
+
+function colorsForCollection(colecao: string) {
+  if (colecao === "Classique") return CLASSIQUE_COLORS;
+  return CANDLE_COLORS;
+}
 
 function buildNumericCandles(colecao: string): Product[] {
   const out: Product[] = [];
-  for (const color of CANDLE_COLORS) {
+  const colors = colorsForCollection(colecao);
+  const prefix = COLECAO_CODE[colecao] ?? colecao.slice(0, 2).toUpperCase();
+  for (const color of colors) {
     for (const size of CANDLE_SIZES) {
       for (let n = 0; n <= 9; n++) {
+        const cad = `VELNUMGRD.${prefix}.${size.code}/${color.code}${n}0`;
         out.push({
           sku: nextSku("VN"),
-          codCadastro: `VN-${colecao.slice(0, 3).toUpperCase()}-${n}-${size.num.replace(" ", "")}-${color.cor.slice(0, 3).toUpperCase()}`,
+          codCadastro: cad,
           marca: "Fetély",
           linha: "Lumier",
           categoria: "Luz e Momento",
@@ -95,12 +127,17 @@ function buildNumericCandles(colecao: string): Product[] {
           estampa: "Liso",
           tamanhoNumero: size.num,
           tamanhoRef: size.ref,
-          nomeComercial: `Vela ${colecao} Nº ${n} — ${color.nome} ${size.num}`,
+          nomeComercial: `Vela ${colecao} Nº ${n} — ${color.nome} ${size.num} (1un.)`,
           multiplos: 6,
           qtdKit: 1,
           precoVarejo: size.varejo,
           precoAtacado: size.preco,
-          statusEstoque: n === 8 && colecao === "Sweet Candy" ? "Prev. Jun 2026" : "em estoque",
+          statusEstoque:
+            colecao === "Classique"
+              ? "Prev. Jul 2026"
+              : n === 8 && colecao === "Sweet Candy"
+                ? "Prev. Jun 2026"
+                : "em estoque",
           material: "Parafina premium",
           pesoG: 35,
           larguraCm: 4,
