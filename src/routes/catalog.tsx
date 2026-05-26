@@ -124,12 +124,13 @@ function CatalogPage() {
               </nav>
 
               {/* Hero */}
-              <header className="rounded-xl overflow-hidden gold-border mb-8 relative aspect-[16/5] md:aspect-[16/4]">
+              <header className="rounded-xl overflow-hidden gold-border mb-8 relative aspect-[16/5] md:aspect-[16/4] bg-surface-2">
                 {heroPhoto ? (
                   <img
+                    key={heroPhoto}
                     src={heroPhoto}
-                    alt={colecao}
-                    className="h-full w-full object-cover"
+                    alt={activeColor ? `${colecao} — ${activeColor}` : colecao}
+                    className={`h-full w-full ${colorPhoto ? "object-contain" : "object-cover"} animate-[fadeIn_0.4s_ease-out]`}
                   />
                 ) : (
                   <PhotoPlaceholder
@@ -138,7 +139,7 @@ function CatalogPage() {
                     showIcon={false}
                   />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent pointer-events-none" />
                 <div className="absolute bottom-0 left-0 right-0 p-6 flex items-end justify-between">
                   <div>
                     <div className="text-[10px] uppercase tracking-[0.3em] text-gold">
@@ -148,6 +149,9 @@ function CatalogPage() {
                     {isNum && (
                       <div className="text-[11px] uppercase tracking-wider text-text-secondary mt-1">
                         Vela Numérica · Grade 0–9
+                        {activeColor && (
+                          <span className="ml-2 text-gold">· {activeColor}</span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -163,7 +167,11 @@ function CatalogPage() {
 
               {/* Products */}
               {isNum ? (
-                <NumericalCandleGrid products={colecaoProducts} colecao={colecao} />
+                <NumericalCandleGrid
+                  products={colecaoProducts}
+                  colecao={colecao}
+                  onColorChange={handleColorChange}
+                />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {colecaoProducts.map((p) => (
