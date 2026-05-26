@@ -78,7 +78,7 @@ export const useOrder = create<OrderState>()(
         return order;
       },
     }),
-    { name: "fetely-order" },
+    { name: "fetely-order", storage: createJSONStorage(safeStorage) },
   ),
 );
 
