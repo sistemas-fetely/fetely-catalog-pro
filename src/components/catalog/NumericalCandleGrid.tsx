@@ -139,11 +139,27 @@ export function NumericalCandleGrid({ products, colecao }: Props) {
               >
                 {p.numeroVela}
               </div>
-              <div className="px-4 py-3">
-                <div className="text-sm text-text-primary">{p.nomeComercial}</div>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[10px] font-mono text-text-muted">{p.sku}</span>
-                  <StockBadge status={p.statusEstoque} />
+              <div className="px-4 py-3 flex items-center gap-3">
+                {colorPhoto ? (
+                  <img
+                    src={colorPhoto}
+                    alt={color}
+                    className="h-10 w-10 rounded object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <PhotoPlaceholder
+                    colecao={colecao}
+                    label={color}
+                    className="h-10 w-10 rounded flex-shrink-0"
+                    showIcon={false}
+                  />
+                )}
+                <div className="min-w-0">
+                  <div className="text-sm text-text-primary truncate">{p.nomeComercial}</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] font-mono text-text-muted">{p.sku}</span>
+                    <StockBadge status={p.statusEstoque} />
+                  </div>
                 </div>
               </div>
               <div className="px-4 py-3 text-right text-xs text-text-secondary">
