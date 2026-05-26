@@ -21,17 +21,20 @@ export const Route = createFileRoute("/confirmation")({
 
 function formatOrderText(order: SavedOrder): string {
   const lines: string[] = [];
-  lines.push(`PEDIDO FETÉLY — ${order.id}`);
-  lines.push(`Data: ${new Date(order.createdAt).toLocaleString("pt-BR")}`);
-  lines.push(`Vendedor: ${order.meta.vendedor}`);
-  lines.push("");
-  lines.push(`Cliente: ${order.meta.cliente}`);
-  if (order.meta.cnpj) lines.push(`CNPJ: ${order.meta.cnpj}`);
-  lines.push(`Pagamento: ${order.meta.condicaoPagamento}`);
-  if (order.meta.observacoes) lines.push(`Obs.: ${order.meta.observacoes}`);
-  lines.push("");
-  lines.push("ITENS:");
-  lines.push("-".repeat(70));
+  const sep = "═".repeat(50);
+  const sub = "─".repeat(50);
+  lines.push(sep);
+  lines.push("          FETÉLY B2B ORDERS");
+  lines.push("         Resumo do Pedido");
+  lines.push(sep);
+  lines.push(`Pedido:             ${order.id}`);
+  lines.push(`Data:               ${new Date(order.createdAt).toLocaleString("pt-BR")}`);
+  lines.push(`Vendedor:           ${order.meta.vendedor}`);
+  lines.push(`Cliente / Lojista:  ${order.meta.cliente}`);
+  if (order.meta.cnpj) lines.push(`CNPJ:               ${order.meta.cnpj}`);
+  lines.push(sep);
+  lines.push("PRODUTOS");
+  lines.push(sub);
 
   const byCol = new Map<string, typeof order.items>();
   order.items.forEach((i) => {
@@ -44,16 +47,55 @@ function formatOrderText(order: SavedOrder): string {
     lines.push(`\n[${col}]`);
     arr.forEach((i) => {
       lines.push(
-        `  ${i.quantity.toString().padStart(4, " ")} un · ${i.product.sku} · ${i.product.nomeComercial} · ${formatBRL(
-          i.product.precoAtacado,
-        )} = ${formatBRL(i.quantity * i.product.precoAtacado)}`,
+        `  ${i.quantity.toString().padStart(4, " ")} un · ${i.product.sku} · ${i.product.nomeComercial}`,
+      );
+      lines.push(
+        `       Unit: ${formatBRL(i.product.precoAtacado)}  Sub: ${formatBRL(i.quantity * i.product.precoAtacado)}`,
       );
     });
   });
 
   lines.push("");
-  lines.push("-".repeat(70));
-  lines.push(`TOTAL ATACADO: ${formatBRL(order.total)}`);
+  lines.push(sep);
+  lines.push("RESUMO FINANCEIRO");
+  lines.push(sub);
+
+  const c = order.commercial;
+  if (c) {
+    lines.push(`Subtotal bruto (atacado):    ${formatBRL(c.bruto)}`);
+    lines.push(
+      `Desconto ${c.faixaNome} (${c.descontoCelebraPct}%): – ${formatBRL(c.descontoCelebraValor)}`,
+    );
+    if (c.descontoMasterPct > 0) {
+      lines.push(
+        `Desconto negociação (${c.descontoMasterPct}%):    – ${formatBRL(c.descontoMasterValor)}`,
+      );
+    }
+    if (c.aplicouPix) {
+      lines.push(`Bônus PIX (2,5%):              – ${formatBRL(c.bonusPixValor)}`);
+    }
+    lines.push(sub);
+    lines.push(`TOTAL FINAL:                   ${formatBRL(c.totalFinal)}`);
+    lines.push("");
+    lines.push(sep);
+    lines.push("CONDIÇÕES COMERCIAIS");
+    lines.push(sub);
+    lines.push(`Faixa:              ${c.faixaNome}`);
+    lines.push(
+      `Frete:              ${c.frete === "CIF" ? "CIF — Fetély entrega" : "FOB — por conta do lojista"}`,
+    );
+    lines.push(`Pagamento:          ${c.condicaoDescricao}`);
+    if (c.negociacao) {
+      lines.push(`Negociação:         Autorizada — ${c.justificativa || "—"}`);
+    }
+  } else {
+    lines.push(`TOTAL ATACADO: ${formatBRL(order.total)}`);
+  }
+  if (order.meta.observacoes) {
+    lines.push("");
+    lines.push(`Observações: ${order.meta.observacoes}`);
+  }
+  lines.push(sep);
   return lines.join("\n");
 }
 
