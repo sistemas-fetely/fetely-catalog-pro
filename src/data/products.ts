@@ -82,9 +82,10 @@ const CLASSIQUE_COLORS = [
   { nome: "Argento Éclat", cor: "Prata Brilho", code: "023" },
 ];
 
+// Especificações físicas por tamanho (validadas com JSON oficial Classique)
 const CANDLE_SIZES = [
-  { num: "5 cm", ref: "Médio", preco: 7.9, varejo: 14.9, code: "5" },
-  { num: "7 cm", ref: "Grande", preco: 9.94, varejo: 16.9, code: "7" },
+  { num: "5 cm", ref: "Médio",  preco: 7.9,    varejo: 14.9, code: "5", pesoG: 25, alturaCm: 11.1, larguraCm: 4.0, profundidadeCm: 1.0 },
+  { num: "7 cm", ref: "Grande", preco: 9.9412, varejo: 16.9, code: "7", pesoG: 32, alturaCm: 15.6, larguraCm: 5.5, profundidadeCm: 1.4 },
 ];
 
 const COLECAO_CODE: Record<string, string> = {
@@ -112,37 +113,50 @@ function buildNumericCandles(colecao: string): Product[] {
     for (const size of CANDLE_SIZES) {
       for (let n = 0; n <= 9; n++) {
         const cad = `VELNUMGRD.${prefix}.${size.code}/${color.code}${n}0`;
+        const nomeComercial = `Vela ${colecao} Nº ${n}, cor ${color.nome}, ${size.num} (1un.)`;
+        const nomeCompleto = `Vela Numérica ${colecao}, ${size.num}, cor ${color.nome}, contém 1un.`;
         out.push({
           sku: nextSku("VN"),
           codCadastro: cad,
+          ean: ean(),
           marca: "Fetély",
           linha: "Lumier",
           categoria: "Luz e Momento",
+          departamento: "Celebrações",
           grupo: "Vela",
           tipo: "Numérica",
           colecao,
+          subColecao2: colecao === "Classique" ? "Lançamento" : undefined,
           familia: `Número ${n}`,
           corNome: color.nome,
           cor: color.cor,
-          estampa: "Liso",
+          estampa: "",
           tamanhoNumero: size.num,
           tamanhoRef: size.ref,
-          nomeComercial: `Vela ${colecao} Nº ${n} — ${color.nome} ${size.num} (1un.)`,
-          multiplos: 6,
+          nomeComercial,
+          nomeCompleto,
+          metaDescricao: `${nomeComercial} em cera premium. Decoração elegante para celebrar. Coleção ${colecao} - Fetely Celebrações.`,
+          ncm: "3406.00.00",
+          cest: "28.016.00",
+          origemFisc: "Nacional",
+          origemProd: "Importado",
+          tipoEmbalagem: "Cartão Blister + Caixa de PVC",
+          material: "Cera",
+          materialDescritivo: "Cera parafínica de alta qualidade",
+          multiplos: 12,
           qtdKit: 1,
           precoVarejo: size.varejo,
           precoAtacado: size.preco,
           statusEstoque:
             colecao === "Classique"
-              ? "Prev. Jul 2026"
+              ? "Prev. Jul_2026"
               : n === 8 && colecao === "Sweet Candy"
-                ? "Prev. Jun 2026"
+                ? "Prev. Jun_2026"
                 : "em estoque",
-          material: "Parafina premium",
-          pesoG: 35,
-          larguraCm: 4,
-          alturaCm: size.num === "5 cm" ? 5 : 7,
-          ean: ean(),
+          pesoG: size.pesoG,
+          larguraCm: size.larguraCm,
+          alturaCm: size.alturaCm,
+          profundidadeCm: size.profundidadeCm,
           isVelaNumerica: true,
           numeroVela: n,
         });
