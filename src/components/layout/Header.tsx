@@ -38,6 +38,16 @@ export function Header() {
             Novo Pedido
           </Link>
           <Link
+            to="/import"
+            className={`uppercase tracking-wider text-xs transition ${
+              pathname.startsWith("/import")
+                ? "text-gold"
+                : "text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            Importar
+          </Link>
+          <Link
             to="/cart"
             className="relative flex items-center gap-2 text-text-primary hover:text-gold transition"
           >
