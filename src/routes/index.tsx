@@ -111,6 +111,19 @@ function Dashboard() {
           </div>
         </Link>
       </div>
+
+      <div className="mt-10 flex items-center justify-center">
+        <Link
+          to="/import"
+          className="group inline-flex items-center gap-3 rounded-md gold-border px-5 py-3 text-xs uppercase tracking-[0.15em] text-gold hover:bg-gold/10 transition"
+        >
+          <Upload className="h-4 w-4" />
+          Importar catálogo JSON
+          <span className="text-text-muted normal-case tracking-normal">
+            ({catalogSource === "imported" ? "ativo: importado" : "ativo: seed"})
+          </span>
+        </Link>
+      </div>
     </main>
   );
 }
