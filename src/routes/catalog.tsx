@@ -82,8 +82,18 @@ function CatalogPage() {
     return () => clearTimeout(t);
   }, [highlight, colecao]);
 
-  const heroPhoto = colecao ? getColecaoPhoto(photos, colecao) : undefined;
   const isNum = colecao ? isNumericCollection(colecao) : false;
+  const [activeColor, setActiveColor] = useState<string | undefined>(undefined);
+
+  // Reset selected color when collection changes
+  useEffect(() => {
+    setActiveColor(undefined);
+  }, [colecao]);
+
+  const handleColorChange = useCallback((c: string) => setActiveColor(c), []);
+
+  const colorPhoto = colecao && activeColor ? getProdutoPhoto(photos, colecao, activeColor) : undefined;
+  const heroPhoto = colorPhoto ?? (colecao ? getColecaoPhoto(photos, colecao) : undefined);
 
   return (
     <div className="flex">
