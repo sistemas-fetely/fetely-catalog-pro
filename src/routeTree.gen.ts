@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as NewOrderRouteImport } from './routes/new-order'
+import { Route as ConfirmationRouteImport } from './routes/confirmation'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as IndexRouteImport } from './routes/index'
 
 const NewOrderRoute = NewOrderRouteImport.update({
   id: '/new-order',
   path: '/new-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfirmationRoute = ConfirmationRouteImport.update({
+  id: '/confirmation',
+  path: '/confirmation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CartRoute = CartRouteImport.update({
@@ -32,30 +38,34 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
+  '/confirmation': typeof ConfirmationRoute
   '/new-order': typeof NewOrderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
+  '/confirmation': typeof ConfirmationRoute
   '/new-order': typeof NewOrderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
+  '/confirmation': typeof ConfirmationRoute
   '/new-order': typeof NewOrderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cart' | '/new-order'
+  fullPaths: '/' | '/cart' | '/confirmation' | '/new-order'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cart' | '/new-order'
-  id: '__root__' | '/' | '/cart' | '/new-order'
+  to: '/' | '/cart' | '/confirmation' | '/new-order'
+  id: '__root__' | '/' | '/cart' | '/confirmation' | '/new-order'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CartRoute: typeof CartRoute
+  ConfirmationRoute: typeof ConfirmationRoute
   NewOrderRoute: typeof NewOrderRoute
 }
 
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/new-order'
       fullPath: '/new-order'
       preLoaderRoute: typeof NewOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confirmation': {
+      id: '/confirmation'
+      path: '/confirmation'
+      fullPath: '/confirmation'
+      preLoaderRoute: typeof ConfirmationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cart': {
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CartRoute: CartRoute,
+  ConfirmationRoute: ConfirmationRoute,
   NewOrderRoute: NewOrderRoute,
 }
 export const routeTree = rootRouteImport
