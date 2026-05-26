@@ -1,14 +1,16 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-const safeStorage = () =>
-  typeof window !== "undefined"
-    ? window.localStorage
-    : ({
-        getItem: () => null,
-        setItem: () => {},
-        removeItem: () => {},
-      } as Storage);
+const noopStorage: Storage = {
+  length: 0,
+  clear: () => {},
+  getItem: () => null,
+  key: () => null,
+  removeItem: () => {},
+  setItem: () => {},
+};
+const safeStorage = (): Storage =>
+  typeof window !== "undefined" ? window.localStorage : noopStorage;
 import type { CartItem, OrderMeta, Product, SavedOrder } from "@/types";
 
 interface OrderState {
