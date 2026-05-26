@@ -11,7 +11,7 @@ const noopStorage: Storage = {
 };
 const safeStorage = (): Storage =>
   typeof window !== "undefined" ? window.localStorage : noopStorage;
-import type { CartItem, OrderMeta, Product, SavedOrder } from "@/types";
+import type { CartItem, OrderCommercial, OrderMeta, Product, SavedOrder } from "@/types";
 
 interface OrderState {
   items: CartItem[];
@@ -23,7 +23,7 @@ interface OrderState {
   removeItem: (sku: string) => void;
   clearCart: () => void;
   setMeta: (m: Partial<OrderMeta>) => void;
-  saveOrder: () => SavedOrder;
+  saveOrder: (commercial?: OrderCommercial) => SavedOrder;
 }
 
 const defaultMeta: OrderMeta = {
