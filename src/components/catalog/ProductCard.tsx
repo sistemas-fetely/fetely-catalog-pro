@@ -61,13 +61,18 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="text-[10px] uppercase tracking-wider text-text-muted">
             {product.grupo} • {product.tipo}
           </div>
-          <h3 className="font-display text-lg leading-tight text-text-primary mt-1">
+          <Link
+            to="/produto"
+            search={{ sku: product.sku }}
+            className="font-display text-lg leading-tight text-text-primary mt-1 block hover:text-gold transition"
+          >
             {product.nomeComercial}
-          </h3>
+          </Link>
           <div className="mt-1 text-xs text-text-secondary">
             {product.corNome} · {product.tamanhoNumero}
           </div>
           <div className="mt-0.5 text-[10px] text-text-muted font-mono">{product.sku}</div>
+
         </div>
 
         <div className="flex items-end justify-between gap-2">
