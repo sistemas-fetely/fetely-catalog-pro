@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { formatBRL, isValidMultiple } from "@/lib/format";
@@ -6,6 +7,7 @@ import { useOrder } from "@/store/orderStore";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import type { Product } from "@/types";
+
 
 interface ProductCardProps {
   product: Product;
