@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProdutoRouteImport } from './routes/produto'
 import { Route as PhotosRouteImport } from './routes/photos'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as NewOrderRouteImport } from './routes/new-order'
@@ -22,6 +23,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
 
+const ProdutoRoute = ProdutoRouteImport.update({
+  id: '/produto',
+  path: '/produto',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PhotosRoute = PhotosRouteImport.update({
   id: '/photos',
   path: '/photos',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/new-order': typeof NewOrderRoute
   '/orders': typeof OrdersRoute
   '/photos': typeof PhotosRoute
+  '/produto': typeof ProdutoRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/new-order': typeof NewOrderRoute
   '/orders': typeof OrdersRoute
   '/photos': typeof PhotosRoute
+  '/produto': typeof ProdutoRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/new-order': typeof NewOrderRoute
   '/orders': typeof OrdersRoute
   '/photos': typeof PhotosRoute
+  '/produto': typeof ProdutoRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/new-order'
     | '/orders'
     | '/photos'
+    | '/produto'
     | '/admin/users'
     | '/catalog/categoria/$categoria'
   fileRoutesByTo: FileRoutesByTo
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/new-order'
     | '/orders'
     | '/photos'
+    | '/produto'
     | '/admin/users'
     | '/catalog/categoria/$categoria'
   id:
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/new-order'
     | '/orders'
     | '/photos'
+    | '/produto'
     | '/admin/users'
     | '/catalog/categoria/$categoria'
   fileRoutesById: FileRoutesById
@@ -183,11 +195,19 @@ export interface RootRouteChildren {
   NewOrderRoute: typeof NewOrderRoute
   OrdersRoute: typeof OrdersRoute
   PhotosRoute: typeof PhotosRoute
+  ProdutoRoute: typeof ProdutoRoute
   AdminUsersRoute: typeof AdminUsersRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/produto': {
+      id: '/produto'
+      path: '/produto'
+      fullPath: '/produto'
+      preLoaderRoute: typeof ProdutoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/photos': {
       id: '/photos'
       path: '/photos'
@@ -297,6 +317,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewOrderRoute: NewOrderRoute,
   OrdersRoute: OrdersRoute,
   PhotosRoute: PhotosRoute,
+  ProdutoRoute: ProdutoRoute,
   AdminUsersRoute: AdminUsersRoute,
 }
 export const routeTree = rootRouteImport
