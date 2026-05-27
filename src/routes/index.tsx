@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Package, ShoppingBag, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, Mail, Package, ShoppingBag, Sparkles, Upload } from "lucide-react";
 import { useCatalog } from "@/store/catalogStore";
 import { formatBRL } from "@/lib/format";
 import { useOrder, cartTotal } from "@/store/orderStore";
+import { useSendEmail } from "@/hooks/useSendEmail";
 
 export const Route = createFileRoute("/")({
   head: () => ({
