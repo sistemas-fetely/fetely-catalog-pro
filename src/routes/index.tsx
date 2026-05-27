@@ -127,6 +127,24 @@ function Dashboard() {
           </span>
         </Link>
       </div>
+
+      <div className="mt-6 flex items-center justify-center">
+        <button
+          disabled={enviando}
+          onClick={async () => {
+            const resultado = await enviarEmail({
+              to: "flavio@fsime.com.br",
+              subject: "Teste — Resend funcionando",
+              html: "<h2>Funcionou!</h2><p>Setup Resend ok no projeto novo.</p>",
+            });
+            console.log("Resultado do envio:", resultado);
+          }}
+          className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 text-xs uppercase tracking-wider text-text-secondary hover:text-gold disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          <Mail className="h-4 w-4" />
+          {enviando ? "Enviando..." : "Testar envio de email"}
+        </button>
+      </div>
     </main>
   );
 }
