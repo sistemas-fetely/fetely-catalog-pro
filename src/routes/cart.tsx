@@ -156,22 +156,22 @@ function CartPage() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-6 py-10">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
+    <main className="mx-auto max-w-[1400px] px-3 py-4 sm:px-6 sm:py-10">
+      <div className="mb-5 sm:mb-8 flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-[0.3em] text-gold">Revisão</div>
-          <h1 className="font-display text-4xl mt-1">Carrinho do Pedido</h1>
+          <h1 className="font-display text-2xl sm:text-4xl mt-1 truncate">Carrinho do Pedido</h1>
         </div>
         <Link
           to="/new-order"
-          className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-secondary hover:text-gold"
+          className="flex items-center gap-2 text-[11px] sm:text-xs uppercase tracking-wider text-text-secondary hover:text-gold shrink-0"
         >
-          <ArrowLeft className="h-3 w-3" /> Continuar comprando
+          <ArrowLeft className="h-3 w-3" /> <span className="hidden sm:inline">Continuar comprando</span><span className="sm:hidden">Voltar</span>
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-8">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 lg:gap-8">
+        <div className="space-y-4 sm:space-y-6">
           {grouped.map(([col, group]) => {
             const sub = group.reduce(
               (s, i) => s + i.quantity * i.product.precoAtacado,
@@ -179,47 +179,59 @@ function CartPage() {
             );
             return (
               <section key={col} className="rounded-lg gold-border bg-surface overflow-hidden">
-                <header className="flex items-center justify-between px-5 py-3 border-b border-border bg-surface-2">
-                  <div className="font-display text-xl">{col}</div>
-                  <div className="text-xs text-text-secondary">
-                    Subtotal: <span className="text-gold">{formatBRL(sub)}</span>
+                <header className="flex items-center justify-between gap-3 px-3 py-2.5 sm:px-5 sm:py-3 border-b border-border bg-surface-2">
+                  <div className="font-display text-base sm:text-xl truncate">{col}</div>
+                  <div className="text-[11px] sm:text-xs text-text-secondary shrink-0">
+                    <span className="hidden sm:inline">Subtotal: </span>
+                    <span className="text-gold font-medium">{formatBRL(sub)}</span>
                   </div>
                 </header>
                 <ul>
                   {group.map((item) => (
                     <li
                       key={item.sku}
-                      className="grid grid-cols-[1fr_140px_140px_40px] items-center gap-4 px-5 py-4 border-t border-border/50 first:border-t-0"
+                      className="flex flex-col sm:grid sm:grid-cols-[1fr_140px_140px_40px] sm:items-center gap-3 sm:gap-4 px-3 py-3 sm:px-5 sm:py-4 border-t border-border/50 first:border-t-0"
                     >
-                      <div className="min-w-0">
-                        <div className="text-sm text-text-primary truncate">
-                          {item.product.nomeComercial}
+                      <div className="min-w-0 flex items-start justify-between gap-2 sm:block">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm text-text-primary line-clamp-2 sm:truncate">
+                            {item.product.nomeComercial}
+                          </div>
+                          <div className="text-[10px] font-mono text-text-muted mt-0.5">
+                            {item.product.sku} · Caixa {item.product.multiplos}
+                          </div>
                         </div>
-                        <div className="text-[10px] font-mono text-text-muted mt-0.5">
-                          {item.product.sku} · Caixa {item.product.multiplos}
-                        </div>
+                        <button
+                          onClick={() => removeItem(item.sku)}
+                          className="sm:hidden text-text-muted hover:text-stock-out p-2 -mr-2 -mt-1 shrink-0"
+                          aria-label="Remover"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
-                      <QuantityInput
-                        value={item.quantity}
-                        onChange={(v) => updateQty(item.sku, v)}
-                        multiplos={item.product.multiplos}
-                        compact
-                      />
-                      <div className="text-right">
-                        <div className="text-gold font-medium">
-                          {formatBRL(item.quantity * item.product.precoAtacado)}
+                      <div className="flex items-center justify-between gap-3 sm:contents">
+                        <QuantityInput
+                          value={item.quantity}
+                          onChange={(v) => updateQty(item.sku, v)}
+                          multiplos={item.product.multiplos}
+                          compact
+                        />
+                        <div className="text-right">
+                          <div className="text-gold font-medium">
+                            {formatBRL(item.quantity * item.product.precoAtacado)}
+                          </div>
+                          <div className="text-[10px] text-text-muted">
+                            {formatBRL(item.product.precoAtacado)} un.
+                          </div>
                         </div>
-                        <div className="text-[10px] text-text-muted">
-                          {formatBRL(item.product.precoAtacado)} un.
-                        </div>
+                        <button
+                          onClick={() => removeItem(item.sku)}
+                          className="hidden sm:block text-text-muted hover:text-stock-out p-2"
+                          aria-label="Remover"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => removeItem(item.sku)}
-                        className="text-text-muted hover:text-stock-out p-2"
-                        aria-label="Remover"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
                     </li>
                   ))}
                 </ul>
