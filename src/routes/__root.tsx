@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { Header } from "@/components/layout/Header";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { usePhotos } from "@/store/photoStore";
 
 function NotFoundComponent() {
@@ -101,9 +102,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <BootEffects />
-      <div className="min-h-screen bg-background text-text-primary">
+      <div className="min-h-screen bg-background text-text-primary pb-16 md:pb-0">
         <Header />
         <Outlet />
+        <BottomNav />
       </div>
     </QueryClientProvider>
   );

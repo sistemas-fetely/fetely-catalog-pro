@@ -97,34 +97,34 @@ function CatalogPage() {
 
   return (
     <div className="flex">
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <CatalogSidebar />
       </div>
       <main className="flex-1 min-w-0">
         <div
           ref={fadeRef}
           style={{ transition: "opacity 150ms ease-out" }}
-          className="px-6 py-8 max-w-[1200px] mx-auto"
+          className="px-3 py-4 sm:px-6 sm:py-8 max-w-[1200px] mx-auto"
         >
           {!colecao ? (
             <EmptyState />
           ) : (
             <>
               {/* Breadcrumb */}
-              <nav className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-text-muted mb-4">
+              <nav className="flex items-center gap-1.5 text-[10px] sm:text-[11px] uppercase tracking-wider text-text-muted mb-3 sm:mb-4 overflow-x-auto whitespace-nowrap scrollbar-thin pb-1">
                 {meta && (
                   <>
                     <span>{meta.categoria}</span>
-                    <ChevronRight className="h-3 w-3" />
+                    <ChevronRight className="h-3 w-3 shrink-0" />
                     <span>{meta.grupo}</span>
-                    <ChevronRight className="h-3 w-3" />
+                    <ChevronRight className="h-3 w-3 shrink-0" />
                   </>
                 )}
                 <span className="text-gold">{colecao}</span>
               </nav>
 
               {/* Hero */}
-              <header className="rounded-xl overflow-hidden gold-border mb-8 relative aspect-[16/5] md:aspect-[16/4] bg-surface-2">
+              <header className="rounded-xl overflow-hidden gold-border mb-6 sm:mb-8 relative aspect-[16/7] sm:aspect-[16/5] md:aspect-[16/4] bg-surface-2">
                 {heroPhoto ? (
                   <img
                     key={heroPhoto}
@@ -140,14 +140,14 @@ function CatalogPage() {
                   />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent pointer-events-none" />
-                <div className="absolute bottom-0 left-0 right-0 p-6 flex items-end justify-between">
-                  <div>
-                    <div className="text-[10px] uppercase tracking-[0.3em] text-gold">
+                <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6 flex items-end justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] text-gold">
                       Coleção
                     </div>
-                    <h1 className="font-display text-4xl md:text-5xl mt-1">{colecao}</h1>
+                    <h1 className="font-display text-2xl sm:text-4xl md:text-5xl mt-1 leading-tight truncate">{colecao}</h1>
                     {isNum && (
-                      <div className="text-[11px] uppercase tracking-wider text-text-secondary mt-1">
+                      <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-text-secondary mt-1">
                         Vela Numérica · Grade 0–9
                         {activeColor && (
                           <span className="ml-2 text-gold">· {activeColor}</span>
@@ -158,7 +158,7 @@ function CatalogPage() {
                   <Link
                     to="/photos"
                     search={{ tab: "colecao", colecao }}
-                    className="hidden md:inline-flex items-center gap-2 rounded-md gold-border px-3 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+                    className="hidden md:inline-flex items-center gap-2 rounded-md gold-border px-3 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10 transition shrink-0"
                   >
                     Gerenciar fotos
                   </Link>
@@ -173,7 +173,7 @@ function CatalogPage() {
                   onColorChange={handleColorChange}
                 />
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                   {colecaoProducts.map((p) => (
                     <div id={`sku-${p.sku}`} key={p.sku} className="rounded-lg transition">
                       <ProductCard product={p} />
@@ -337,7 +337,7 @@ function EmptyState() {
           Nenhuma coleção encontrada com os filtros selecionados.
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {filtered.map((c) => {
             const img = getColecaoPhoto(photos, c.colecao);
             return (

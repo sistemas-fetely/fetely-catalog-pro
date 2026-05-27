@@ -77,18 +77,18 @@ export function Header() {
           </Link>
           <Link
             to="/photos"
-            className={`flex items-center gap-1.5 uppercase tracking-wider text-xs transition ${
+            className={`hidden md:flex items-center gap-1.5 uppercase tracking-wider text-xs transition ${
               pathname.startsWith("/photos")
                 ? "text-gold"
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
             <Camera className="h-4 w-4" />
-            <span className="hidden sm:inline">Fotos</span>
+            <span className="hidden lg:inline">Fotos</span>
           </Link>
           <Link
             to="/commercial"
-            className={`hidden md:inline uppercase tracking-wider text-xs transition ${
+            className={`hidden lg:inline uppercase tracking-wider text-xs transition ${
               pathname.startsWith("/commercial")
                 ? "text-gold"
                 : "text-text-secondary hover:text-text-primary"
@@ -105,11 +105,11 @@ export function Header() {
             }`}
           >
             <ClipboardList className="h-4 w-4" />
-            Pedidos
+            <span className="hidden lg:inline">Pedidos</span>
           </Link>
           <Link
             to="/import"
-            className={`hidden md:inline uppercase tracking-wider text-xs transition ${
+            className={`hidden lg:inline uppercase tracking-wider text-xs transition ${
               pathname.startsWith("/import")
                 ? "text-gold"
                 : "text-text-secondary hover:text-text-primary"
@@ -127,7 +127,7 @@ export function Header() {
               }`}
             >
               <Users className="h-4 w-4" />
-              Usuários
+              <span className="hidden lg:inline">Usuários</span>
             </Link>
           )}
           {negociacaoAtiva && (
@@ -153,10 +153,10 @@ export function Header() {
           </button>
           <Link
             to="/cart"
-            className="relative flex items-center gap-2 text-text-primary hover:text-gold transition"
+            className="hidden md:flex relative items-center gap-2 text-text-primary hover:text-gold transition"
           >
             <ShoppingBag className="h-4 w-4" />
-            <span className="hidden sm:inline text-xs uppercase tracking-wider">
+            <span className="hidden lg:inline text-xs uppercase tracking-wider">
               Carrinho
             </span>
             {count > 0 && (
