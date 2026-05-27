@@ -195,12 +195,12 @@ function CorTab({
 
   const variantes = useMemo(() => {
     if (!colecao) return [];
-    const set = new Set<string>();
+    const seen = new Set<string>();
     return products
       .filter((p) => p.colecao === colecao)
       .filter((p) => {
-        if (set.has(p.corNome)) return false;
-        set.add(p.corNome);
+        if (seen.has(p.sku)) return false;
+        seen.add(p.sku);
         return true;
       });
   }, [products, colecao]);
@@ -209,7 +209,11 @@ function CorTab({
   const setProdutoPhoto = usePhotos((s) => s.setProdutoPhoto);
   const removeProdutoPhoto = usePhotos((s) => s.removeProdutoPhoto);
 
-  const current = open ? getProdutoPhoto(photos, colecao, open) : undefined;
+  const openProduct = variantes.find((p) => p.sku === open) ?? null;
+  const current = openProduct
+    ? getProdutoPhoto(photos, colecao, openProduct.sku) ??
+      getProdutoPhoto(photos, colecao, openProduct.corNome)
+    : undefined;
 
   return (
     <>
@@ -244,39 +248,48 @@ function CorTab({
 
       {variantes.length === 0 ? (
         <div className="text-center py-16 text-text-muted text-sm">
-          Selecione uma coleção para ver as variantes de cor.
+          Selecione uma coleção para ver os produtos.
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {variantes.map((p) => {
-            const img = getProdutoPhoto(
-              { colecoes: {}, produtos: photos.produtos },
-              colecao,
-              p.corNome,
-            );
+            const img =
+              getProdutoPhoto(
+                { colecoes: {}, produtos: photos.produtos },
+                colecao,
+                p.sku,
+              ) ??
+              getProdutoPhoto(
+                { colecoes: {}, produtos: photos.produtos },
+                colecao,
+                p.corNome,
+              );
             return (
               <button
-                key={p.corNome}
-                onClick={() => setOpen(p.corNome)}
+                key={p.sku}
+                onClick={() => setOpen(p.sku)}
                 className="text-left rounded-lg overflow-hidden gold-border gold-border-hover bg-surface transition"
               >
                 <div className="relative aspect-square">
                   {img ? (
-                    <img src={img} alt={p.corNome} className="h-full w-full object-cover" />
+                    <img src={img} alt={p.nomeComercial} className="h-full w-full object-cover" />
                   ) : (
                     <PhotoPlaceholder
                       colecao={colecao}
-                      label={p.corNome}
+                      label={`${p.grupo} ${p.tamanhoNumero}`}
                       className="h-full w-full"
                     />
                   )}
                 </div>
                 <div className="p-3">
                   <div className="text-[10px] uppercase tracking-wider text-text-muted">
-                    {colecao}
+                    {p.grupo} • {p.tipo}
                   </div>
                   <div className="font-display text-base leading-tight mt-0.5">
-                    {p.corNome}
+                    {p.nomeComercial}
+                  </div>
+                  <div className="text-[10px] text-text-muted mt-0.5">
+                    {p.corNome} · {p.tamanhoNumero}
                   </div>
                   <div className="flex items-center gap-1 text-[10px] text-gold mt-1">
                     <Camera className="h-3 w-3" />
@@ -292,8 +305,8 @@ function CorTab({
       <PhotoUploadModal
         open={!!open}
         onOpenChange={(v) => !v && setOpen(null)}
-        title={open ? `Foto da cor ${open}` : ""}
-        subtitle={`Coleção ${colecao}`}
+        title={openProduct ? `Foto de ${openProduct.nomeComercial}` : ""}
+        subtitle={openProduct ? `${colecao} · ${openProduct.corNome} · ${openProduct.tamanhoNumero}` : ""}
         current={current}
         onSave={async (data) => {
           if (open) await setProdutoPhoto(colecao, open, data);
@@ -309,6 +322,7 @@ function CorTab({
     </>
   );
 }
+
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

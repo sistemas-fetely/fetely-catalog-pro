@@ -99,7 +99,7 @@ function CategoriaPage() {
                         <Link
                           key={c.colecao}
                           to="/catalog"
-                          search={{ colecao: c.colecao, grupo: c.grupo }}
+                          search={{ colecao: c.colecao }}
                           className="group rounded-lg overflow-hidden gold-border gold-border-hover bg-surface transition"
                         >
                           <div className="relative aspect-[4/3]">
