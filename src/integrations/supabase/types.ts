@@ -47,6 +47,147 @@ export type Database = {
         }
         Relationships: []
       }
+      products: {
+        Row: {
+          altura_cm: number
+          categoria: string
+          cest: string | null
+          cod_cadastro: string | null
+          colecao: string
+          cor: string | null
+          cor_nome: string | null
+          created_at: string
+          departamento: string | null
+          descricao_colecao: string | null
+          descricao_produto: string | null
+          ean: string | null
+          estampa: string | null
+          familia: string | null
+          grupo: string
+          id: string
+          is_vela_numerica: boolean
+          largura_cm: number
+          linha: string | null
+          marca: string
+          material: string | null
+          material_descritivo: string | null
+          meta_descricao: string | null
+          multiplos: number
+          ncm: string | null
+          nome_comercial: string
+          nome_completo: string | null
+          numero_vela: number | null
+          origem_fisc: string | null
+          origem_prod: string | null
+          peso_g: number
+          preco_atacado: number
+          preco_varejo: number
+          profundidade_cm: number | null
+          qtd_kit: number
+          sku: string
+          status_estoque: string
+          sub_colecao: string | null
+          sub_colecao2: string | null
+          tamanho_numero: string | null
+          tamanho_ref: string | null
+          tipo: string | null
+          tipo_embalagem: string | null
+          updated_at: string
+        }
+        Insert: {
+          altura_cm?: number
+          categoria: string
+          cest?: string | null
+          cod_cadastro?: string | null
+          colecao: string
+          cor?: string | null
+          cor_nome?: string | null
+          created_at?: string
+          departamento?: string | null
+          descricao_colecao?: string | null
+          descricao_produto?: string | null
+          ean?: string | null
+          estampa?: string | null
+          familia?: string | null
+          grupo: string
+          id?: string
+          is_vela_numerica?: boolean
+          largura_cm?: number
+          linha?: string | null
+          marca?: string
+          material?: string | null
+          material_descritivo?: string | null
+          meta_descricao?: string | null
+          multiplos?: number
+          ncm?: string | null
+          nome_comercial: string
+          nome_completo?: string | null
+          numero_vela?: number | null
+          origem_fisc?: string | null
+          origem_prod?: string | null
+          peso_g?: number
+          preco_atacado?: number
+          preco_varejo?: number
+          profundidade_cm?: number | null
+          qtd_kit?: number
+          sku: string
+          status_estoque?: string
+          sub_colecao?: string | null
+          sub_colecao2?: string | null
+          tamanho_numero?: string | null
+          tamanho_ref?: string | null
+          tipo?: string | null
+          tipo_embalagem?: string | null
+          updated_at?: string
+        }
+        Update: {
+          altura_cm?: number
+          categoria?: string
+          cest?: string | null
+          cod_cadastro?: string | null
+          colecao?: string
+          cor?: string | null
+          cor_nome?: string | null
+          created_at?: string
+          departamento?: string | null
+          descricao_colecao?: string | null
+          descricao_produto?: string | null
+          ean?: string | null
+          estampa?: string | null
+          familia?: string | null
+          grupo?: string
+          id?: string
+          is_vela_numerica?: boolean
+          largura_cm?: number
+          linha?: string | null
+          marca?: string
+          material?: string | null
+          material_descritivo?: string | null
+          meta_descricao?: string | null
+          multiplos?: number
+          ncm?: string | null
+          nome_comercial?: string
+          nome_completo?: string | null
+          numero_vela?: number | null
+          origem_fisc?: string | null
+          origem_prod?: string | null
+          peso_g?: number
+          preco_atacado?: number
+          preco_varejo?: number
+          profundidade_cm?: number | null
+          qtd_kit?: number
+          sku?: string
+          status_estoque?: string
+          sub_colecao?: string | null
+          sub_colecao2?: string | null
+          tamanho_numero?: string | null
+          tamanho_ref?: string | null
+          tipo?: string | null
+          tipo_embalagem?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ativo: boolean
