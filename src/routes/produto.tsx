@@ -104,33 +104,33 @@ function ProductPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-6xl px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
       {/* Breadcrumb */}
-      <nav className="mb-6 flex items-center gap-2 text-xs text-text-muted">
-        <Link to="/catalog" className="hover:text-gold">
+      <nav className="mb-4 sm:mb-6 flex items-center gap-2 text-[11px] sm:text-xs text-text-muted overflow-x-auto whitespace-nowrap scrollbar-thin pb-1">
+        <Link to="/catalog" className="hover:text-gold shrink-0">
           Catálogo
         </Link>
-        <ChevronRight className="h-3 w-3" />
+        <ChevronRight className="h-3 w-3 shrink-0" />
         <Link
           to="/catalog"
           search={{ categoria: product.categoria }}
-          className="hover:text-gold"
+          className="hover:text-gold shrink-0"
         >
           {product.categoria}
         </Link>
-        <ChevronRight className="h-3 w-3" />
+        <ChevronRight className="h-3 w-3 shrink-0" />
         <Link
           to="/catalog"
           search={{ colecao: product.colecao }}
-          className="hover:text-gold"
+          className="hover:text-gold shrink-0"
         >
           {product.colecao}
         </Link>
-        <ChevronRight className="h-3 w-3" />
+        <ChevronRight className="h-3 w-3 shrink-0" />
         <span className="text-text-secondary truncate">{product.nomeComercial}</span>
       </nav>
 
-      <div className="grid gap-8 lg:grid-cols-[1.1fr,1fr]">
+      <div className="grid gap-6 lg:gap-8 lg:grid-cols-[1.1fr,1fr]">
         {/* Imagem */}
         <div className="space-y-3">
           <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-surface gold-border">
@@ -159,7 +159,7 @@ function ProductPage() {
             <div className="text-[10px] uppercase tracking-[0.2em] text-text-muted">
               {product.grupo} • {product.tipo}
             </div>
-            <h1 className="mt-1 font-display text-3xl leading-tight text-text-primary">
+            <h1 className="mt-1 font-display text-2xl sm:text-3xl leading-tight text-text-primary">
               {product.nomeComercial}
             </h1>
             {product.nomeCompleto && product.nomeCompleto !== product.nomeComercial && (
@@ -228,7 +228,7 @@ function ProductPage() {
       </div>
 
       {/* Especificações detalhadas */}
-      <div className="mt-12 grid gap-6 md:grid-cols-2">
+      <div className="mt-8 sm:mt-12 grid gap-4 sm:gap-6 md:grid-cols-2">
         <SpecBlock title="Identificação & Hierarquia" items={specs} />
         <SpecBlock title="Dimensões & Embalagem" items={[...dim, ...embalagem]} />
         <SpecBlock title="Fiscal" items={fiscal} />
