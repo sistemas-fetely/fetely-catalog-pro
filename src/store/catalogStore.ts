@@ -36,12 +36,13 @@ export const useCatalog = create<CatalogState>()(
     {
       name: "fetely-catalog",
       storage: createJSONStorage(safeStorage),
-      version: 4,
+      version: 5,
       migrate: () => ({
         products: DEFAULT_PRODUCTS,
         source: "default" as const,
         importedAt: null,
       }),
+
     },
   ),
 );
