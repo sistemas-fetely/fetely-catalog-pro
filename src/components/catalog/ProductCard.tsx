@@ -17,7 +17,9 @@ export function ProductCard({ product }: ProductCardProps) {
   const [qty, setQty] = useState(0);
   const addItem = useOrder((s) => s.addItem);
   const photos = usePhotos();
-  const photo = getProdutoPhoto(photos, product.colecao, product.corNome);
+  const photo =
+    getProdutoPhoto(photos, product.colecao, product.sku) ??
+    getProdutoPhoto(photos, product.colecao, product.corNome);
   const indisponivel = product.precoAtacado <= 0;
   const canAdd = qty > 0 && isValidMultiple(qty, product.multiplos) && !indisponivel;
 
