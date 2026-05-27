@@ -25,6 +25,7 @@ function Dashboard() {
   const catalogSource = useCatalog((s) => s.source);
   const total = cartTotal(items);
   const totalUnits = items.reduce((s, i) => s + i.quantity, 0);
+  const { enviarEmail, enviando } = useSendEmail();
 
   const todayCount = history.filter((h) => {
     const d = new Date(h.createdAt);
