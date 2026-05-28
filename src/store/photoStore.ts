@@ -177,12 +177,12 @@ export function getColecaoPhoto(
 }
 
 export function getProdutoPhoto(
-  state: { colecoes: Record<string, string>; produtos: Record<string, string> },
+  state: { colecoes?: Record<string, string>; produtos: Record<string, string> },
   colecao: string,
   cor: string,
 ): string | undefined {
   const key = `${normalizeKey(colecao)}__${normalizeKey(cor)}`;
-  return state.produtos[key] ?? state.colecoes[normalizeKey(colecao)];
+  return state.produtos[key];
 }
 
 export function photoStorageBytes(_state: unknown): number {
