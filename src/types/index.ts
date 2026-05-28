@@ -112,4 +112,10 @@ export interface SavedOrder {
   meta: OrderMeta;
   total: number;
   commercial?: OrderCommercial;
+  // Dono do pedido (gravado uma única vez na criação, imutável)
+  vendedorId?: string;
+  vendedorNome?: string;
+  vendedorLogin?: string;
+  vendedorTipo?: "interno" | "representante" | null;
 }
+
