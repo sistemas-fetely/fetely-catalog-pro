@@ -99,3 +99,20 @@ export const useOrder = create<OrderState>()(
 export function cartTotal(items: CartItem[]): number {
   return items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
 }
+
+/**
+ * Hook que retorna o histórico de pedidos visível para o usuário logado.
+ * - admin/master: vê todos os pedidos
+ * - vendedor: vê apenas os próprios (vendedorId === user.id)
+ * - pedidos antigos sem vendedorId só aparecem para admin/master
+ */
+export function useVisibleOrders(): SavedOrder[] {
+  const history = useOrder((s) => s.history);
+  const user = useAuth((s) => s.user);
+  const roles = useAuth((s) => s.roles);
+  const isAdminOrMaster = roles.includes("admin") || roles.includes("master");
+  if (isAdminOrMaster) return history;
+  if (!user) return [];
+  return history.filter((o) => o.vendedorId === user.id);
+}
+
