@@ -191,32 +191,59 @@ export type Database = {
       profiles: {
         Row: {
           ativo: boolean
+          cargo: string | null
+          cnpj_cpf: string | null
           codigo_vendedor: string | null
+          comissao_percent: number | null
           created_at: string
           email: string
+          empresa: string | null
           id: string
+          login_amigavel: string | null
           nome_completo: string | null
+          observacoes: string | null
+          regiao: string | null
+          supervisor: string | null
           telefone: string | null
+          tipo_vendedor: Database["public"]["Enums"]["tipo_vendedor"] | null
           updated_at: string
         }
         Insert: {
           ativo?: boolean
+          cargo?: string | null
+          cnpj_cpf?: string | null
           codigo_vendedor?: string | null
+          comissao_percent?: number | null
           created_at?: string
           email: string
+          empresa?: string | null
           id: string
+          login_amigavel?: string | null
           nome_completo?: string | null
+          observacoes?: string | null
+          regiao?: string | null
+          supervisor?: string | null
           telefone?: string | null
+          tipo_vendedor?: Database["public"]["Enums"]["tipo_vendedor"] | null
           updated_at?: string
         }
         Update: {
           ativo?: boolean
+          cargo?: string | null
+          cnpj_cpf?: string | null
           codigo_vendedor?: string | null
+          comissao_percent?: number | null
           created_at?: string
           email?: string
+          empresa?: string | null
           id?: string
+          login_amigavel?: string | null
           nome_completo?: string | null
+          observacoes?: string | null
+          regiao?: string | null
+          supervisor?: string | null
           telefone?: string | null
+          tipo_vendedor?: Database["public"]["Enums"]["tipo_vendedor"] | null
           updated_at?: string
         }
         Relationships: []
@@ -258,6 +285,7 @@ export type Database = {
     }
     Enums: {
       app_role: "master" | "admin" | "vendedor"
+      tipo_vendedor: "interno" | "representante"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -386,6 +414,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["master", "admin", "vendedor"],
+      tipo_vendedor: ["interno", "representante"],
     },
   },
 } as const
