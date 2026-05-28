@@ -656,7 +656,7 @@ function CredentialsModal({
   const texto = `*Fetély B2B Orders — Acesso criado*
 ${login ? `Login amigável: ${login}\n` : ""}Email: ${email}
 Senha: ${senha}
-Acesse: ${typeof window !== "undefined" ? window.location.origin : ""}
+Acesse: https://fetely-catalog-pro.lovable.app
 *Troque sua senha no primeiro acesso.*`;
   const copy = () => {
     navigator.clipboard.writeText(texto);
