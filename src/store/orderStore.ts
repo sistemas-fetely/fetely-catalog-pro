@@ -83,7 +83,7 @@ export const useOrder = create<OrderState>()(
           total,
           commercial,
           vendedorId: auth.user?.id,
-          vendedorNome: profile?.nome_completo ?? profile?.email ?? null ?? undefined,
+          vendedorNome: profile?.nome_completo ?? profile?.email ?? undefined,
           vendedorLogin: profile?.login_amigavel ?? profile?.email ?? undefined,
           vendedorTipo: profile?.tipo_vendedor ?? null,
         };
