@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Camera, ClipboardList, Lock, LogOut, Menu, Moon, ShoppingBag, Sun, Users } from "lucide-react";
+import { BookOpen, Camera, ClipboardList, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, Upload, Users } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
@@ -8,6 +8,15 @@ import { useNegotiation } from "@/store/negotiationStore";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 
 export function Header() {
   const items = useOrder((s) => s.items);
