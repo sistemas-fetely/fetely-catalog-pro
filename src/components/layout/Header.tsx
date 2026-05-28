@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, Camera, ChevronDown, ClipboardList, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, Upload, User, Users } from "lucide-react";
+import { ChevronDown, ClipboardList, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, User } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
