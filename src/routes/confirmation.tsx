@@ -101,8 +101,9 @@ function formatOrderText(order: SavedOrder): string {
 
 function Confirmation() {
   const { id } = Route.useSearch();
-  const history = useOrder((s) => s.history);
+  const history = useVisibleOrders();
   const order = useMemo(() => history.find((o) => o.id === id) ?? history[0], [history, id]);
+
   const [copied, setCopied] = useState(false);
 
   if (!order) {
