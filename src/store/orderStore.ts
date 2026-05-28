@@ -83,29 +83,35 @@ export const useOrder = create<OrderState>()(
 
         // Build cliente snapshot if a cliente is bound via meta.clienteId
         let metaWithSnapshot = meta;
-        if (meta.clienteId && !meta.clienteSnapshot) {
+        if (meta.clienteId && !meta.clienteSnapshot && typeof window !== "undefined") {
           try {
-            const { useClientes } = require("@/store/clienteStore") as typeof import("@/store/clienteStore");
-            const c = useClientes.getState().getById(meta.clienteId);
-            if (c) {
-              const endereco = c.enderecoEntregaIgual
-                ? `${c.logradouro}${c.numero ? `, ${c.numero}` : ""} — ${c.bairro}, ${c.cidade}/${c.estado} · ${c.cep}`
-                : `${c.entregaLogradouro ?? ""}${c.entregaNumero ? `, ${c.entregaNumero}` : ""} — ${c.entregaBairro ?? ""}, ${c.entregaCidade ?? ""}/${c.entregaEstado ?? ""} · ${c.entregaCep ?? ""}`;
-              metaWithSnapshot = {
-                ...meta,
-                clienteSnapshot: {
-                  clienteId: c.id,
-                  cnpj: c.cnpjFormatado,
-                  razaoSocial: c.razaoSocial,
-                  nomeFantasia: c.nomeFantasia,
-                  cidade: c.cidade,
-                  estado: c.estado,
-                  contatoNome: c.contatoNome,
-                  contatoEmail: c.contatoEmail,
-                  contatoTelefone: c.contatoTelefone,
-                  enderecoEntrega: endereco,
-                },
-              };
+            const raw = window.localStorage.getItem("fetely_clientes_v1");
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              const list: Array<Record<string, unknown>> = parsed?.state?.clientes ?? [];
+              const c = list.find((x) => x.id === meta.clienteId) as
+                | (Record<string, string | boolean | undefined>)
+                | undefined;
+              if (c) {
+                const endereco = c.enderecoEntregaIgual
+                  ? `${c.logradouro ?? ""}${c.numero ? `, ${c.numero}` : ""} — ${c.bairro ?? ""}, ${c.cidade ?? ""}/${c.estado ?? ""} · ${c.cep ?? ""}`
+                  : `${c.entregaLogradouro ?? ""}${c.entregaNumero ? `, ${c.entregaNumero}` : ""} — ${c.entregaBairro ?? ""}, ${c.entregaCidade ?? ""}/${c.entregaEstado ?? ""} · ${c.entregaCep ?? ""}`;
+                metaWithSnapshot = {
+                  ...meta,
+                  clienteSnapshot: {
+                    clienteId: String(c.id),
+                    cnpj: String(c.cnpjFormatado ?? ""),
+                    razaoSocial: String(c.razaoSocial ?? ""),
+                    nomeFantasia: String(c.nomeFantasia ?? ""),
+                    cidade: String(c.cidade ?? ""),
+                    estado: String(c.estado ?? ""),
+                    contatoNome: String(c.contatoNome ?? ""),
+                    contatoEmail: String(c.contatoEmail ?? ""),
+                    contatoTelefone: String(c.contatoTelefone ?? ""),
+                    enderecoEntrega: endereco,
+                  },
+                };
+              }
             }
           } catch {
             /* ignore */
