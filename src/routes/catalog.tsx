@@ -6,6 +6,7 @@ import { ChevronRight, X } from "lucide-react";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { NumericalCandleGrid } from "@/components/catalog/NumericalCandleGrid";
+import { CollectionBulkFiller } from "@/components/catalog/CollectionBulkFiller";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import {
   useCatalog,
@@ -173,13 +174,18 @@ function CatalogPage() {
                   onColorChange={handleColorChange}
                 />
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                  {colecaoProducts.map((p) => (
-                    <div id={`sku-${p.sku}`} key={p.sku} className="rounded-lg transition">
-                      <ProductCard product={p} />
-                    </div>
-                  ))}
-                </div>
+                <>
+                  {meta?.categoria === "Celebrar à Mesa" && (
+                    <CollectionBulkFiller products={colecaoProducts} />
+                  )}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                    {colecaoProducts.map((p) => (
+                      <div id={`sku-${p.sku}`} key={p.sku} className="rounded-lg transition">
+                        <ProductCard product={p} />
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </>
           )}
