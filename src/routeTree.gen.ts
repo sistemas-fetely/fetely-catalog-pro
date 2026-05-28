@@ -18,6 +18,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as ConfirmationRouteImport } from './routes/confirmation'
 import { Route as CommercialRouteImport } from './routes/commercial'
+import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as IndexRouteImport } from './routes/index'
@@ -69,6 +70,11 @@ const CommercialRoute = CommercialRouteImport.update({
   path: '/commercial',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClientesRoute = ClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CatalogRoute = CatalogRouteImport.update({
   id: '/catalog',
   path: '/catalog',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
   '/catalog': typeof CatalogRouteWithChildren
+  '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
   '/confirmation': typeof ConfirmationRoute
   '/import': typeof ImportRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
   '/catalog': typeof CatalogRouteWithChildren
+  '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
   '/confirmation': typeof ConfirmationRoute
   '/import': typeof ImportRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
   '/catalog': typeof CatalogRouteWithChildren
+  '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
   '/confirmation': typeof ConfirmationRoute
   '/import': typeof ImportRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cart'
     | '/catalog'
+    | '/clientes'
     | '/commercial'
     | '/confirmation'
     | '/import'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cart'
     | '/catalog'
+    | '/clientes'
     | '/commercial'
     | '/confirmation'
     | '/import'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cart'
     | '/catalog'
+    | '/clientes'
     | '/commercial'
     | '/confirmation'
     | '/import'
@@ -200,6 +212,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CartRoute: typeof CartRoute
   CatalogRoute: typeof CatalogRouteWithChildren
+  ClientesRoute: typeof ClientesRoute
   CommercialRoute: typeof CommercialRoute
   ConfirmationRoute: typeof ConfirmationRoute
   ImportRoute: typeof ImportRoute
@@ -277,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CommercialRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/clientes': {
+      id: '/clientes'
+      path: '/clientes'
+      fullPath: '/clientes'
+      preLoaderRoute: typeof ClientesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/catalog': {
       id: '/catalog'
       path: '/catalog'
@@ -330,6 +350,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CartRoute: CartRoute,
   CatalogRoute: CatalogRouteWithChildren,
+  ClientesRoute: ClientesRoute,
   CommercialRoute: CommercialRoute,
   ConfirmationRoute: ConfirmationRoute,
   ImportRoute: ImportRoute,
@@ -344,13 +365,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

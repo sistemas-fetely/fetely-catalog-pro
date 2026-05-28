@@ -80,11 +80,49 @@ export const useOrder = create<OrderState>()(
           items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
         const auth = useAuth.getState();
         const profile = auth.profile;
+
+        // Build cliente snapshot if a cliente is bound via meta.clienteId
+        let metaWithSnapshot = meta;
+        if (meta.clienteId && !meta.clienteSnapshot && typeof window !== "undefined") {
+          try {
+            const raw = window.localStorage.getItem("fetely_clientes_v1");
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              const list: Array<Record<string, unknown>> = parsed?.state?.clientes ?? [];
+              const c = list.find((x) => x.id === meta.clienteId) as
+                | (Record<string, string | boolean | undefined>)
+                | undefined;
+              if (c) {
+                const endereco = c.enderecoEntregaIgual
+                  ? `${c.logradouro ?? ""}${c.numero ? `, ${c.numero}` : ""} — ${c.bairro ?? ""}, ${c.cidade ?? ""}/${c.estado ?? ""} · ${c.cep ?? ""}`
+                  : `${c.entregaLogradouro ?? ""}${c.entregaNumero ? `, ${c.entregaNumero}` : ""} — ${c.entregaBairro ?? ""}, ${c.entregaCidade ?? ""}/${c.entregaEstado ?? ""} · ${c.entregaCep ?? ""}`;
+                metaWithSnapshot = {
+                  ...meta,
+                  clienteSnapshot: {
+                    clienteId: String(c.id),
+                    cnpj: String(c.cnpjFormatado ?? ""),
+                    razaoSocial: String(c.razaoSocial ?? ""),
+                    nomeFantasia: String(c.nomeFantasia ?? ""),
+                    cidade: String(c.cidade ?? ""),
+                    estado: String(c.estado ?? ""),
+                    contatoNome: String(c.contatoNome ?? ""),
+                    contatoEmail: String(c.contatoEmail ?? ""),
+                    contatoTelefone: String(c.contatoTelefone ?? ""),
+                    enderecoEntrega: endereco,
+                  },
+                };
+              }
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+
         const order: SavedOrder = {
           id: `PED-${Date.now()}`,
           createdAt: new Date().toISOString(),
           items,
-          meta,
+          meta: metaWithSnapshot,
           total,
           commercial,
           vendedorId: auth.user?.id,

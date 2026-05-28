@@ -1,13 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { formatBRL } from "@/lib/format";
-import { fetchCNPJ, formatCNPJ, isValidCNPJLength, onlyDigits } from "@/lib/cnpj";
 import { useOrder, cartTotal } from "@/store/orderStore";
 import { useNegotiation, registrarNegociacao } from "@/store/negotiationStore";
 import { CartCommercialPanel, type CommercialState } from "@/components/cart/CartCommercialPanel";
+import { ClienteSelector } from "@/components/clientes/ClienteSelector";
 import type { CartItem, OrderCommercial } from "@/types";
+import type { Cliente } from "@/types/cliente";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -51,46 +52,52 @@ function CartPage() {
 
   const total = cartTotal(items);
 
-  const [cnpjLoading, setCnpjLoading] = useState(false);
-  const [cnpjError, setCnpjError] = useState<string | null>(null);
-
-  const lookupCNPJ = useCallback(
-    async (raw: string) => {
-      if (!isValidCNPJLength(raw)) {
-        setCnpjError("CNPJ deve ter 14 dígitos.");
-        return;
-      }
-      setCnpjLoading(true);
-      setCnpjError(null);
-      try {
-        const d = await fetchCNPJ(raw);
-        setMeta({
-          cnpj: d.cnpj,
-          cliente: d.razaoSocial || meta.cliente,
-          nomeFantasia: d.nomeFantasia,
-          email: d.email,
-          telefone: d.telefone,
-          logradouro: d.logradouro,
-          numero: d.numero,
-          complemento: d.complemento,
-          bairro: d.bairro,
-          municipio: d.municipio,
-          uf: d.uf,
-          cep: d.cep,
-          situacao: d.situacao,
-        });
-      } catch (e) {
-        setCnpjError(e instanceof Error ? e.message : "Erro ao consultar CNPJ");
-      } finally {
-        setCnpjLoading(false);
-      }
+  const handleSelectCliente = useCallback(
+    (c: Cliente) => {
+      setMeta({
+        clienteId: c.id,
+        cliente: c.razaoSocial,
+        nomeFantasia: c.nomeFantasia,
+        cnpj: c.cnpjFormatado,
+        email: c.contatoEmail,
+        telefone: c.contatoTelefone,
+        logradouro: c.logradouro,
+        numero: c.numero,
+        complemento: c.complemento,
+        bairro: c.bairro,
+        municipio: c.cidade,
+        uf: c.estado,
+        cep: c.cep,
+        situacao: c.situacaoCadastral,
+        clienteSnapshot: undefined,
+      });
     },
-    [setMeta, meta.cliente],
+    [setMeta],
   );
+
+  const handleClearCliente = useCallback(() => {
+    setMeta({
+      clienteId: undefined,
+      clienteSnapshot: undefined,
+      cliente: "",
+      nomeFantasia: "",
+      cnpj: "",
+      email: "",
+      telefone: "",
+      logradouro: "",
+      numero: "",
+      complemento: "",
+      bairro: "",
+      municipio: "",
+      uf: "",
+      cep: "",
+      situacao: "",
+    });
+  }, [setMeta]);
 
 
   const handleConfirm = () => {
-    if (!meta.cliente.trim()) return alert("Informe o nome do cliente.");
+    if (!meta.clienteId) return alert("Selecione um cliente cadastrado.");
     if (!commercial?.podeFinalizar || !commercial.calculo.faixa || !commercial.condicao) {
       return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
     }
@@ -245,110 +252,17 @@ function CartPage() {
 
           <div className="rounded-lg gold-border bg-surface p-5 space-y-4">
             <h2 className="font-display text-2xl">Dados do pedido</h2>
-            <Field label="CNPJ — busca automática">
-              <div className="flex gap-2">
-                <input
-                  value={meta.cnpj}
-                  onChange={(e) => {
-                    setCnpjError(null);
-                    setMeta({ cnpj: formatCNPJ(e.target.value) });
-                  }}
-                  onBlur={(e) => {
-                    const d = onlyDigits(e.target.value);
-                    if (d.length === 14) lookupCNPJ(d);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      lookupCNPJ(meta.cnpj);
-                    }
-                  }}
-                  placeholder="00.000.000/0000-00"
-                  className="input flex-1"
-                  inputMode="numeric"
-                  maxLength={18}
-                />
-                <button
-                  type="button"
-                  onClick={() => lookupCNPJ(meta.cnpj)}
-                  disabled={cnpjLoading || !isValidCNPJLength(meta.cnpj)}
-                  className="px-3 rounded-md bg-surface-2 border border-border text-gold hover:border-gold disabled:opacity-40 disabled:cursor-not-allowed"
-                  aria-label="Buscar CNPJ"
-                >
-                  {cnpjLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Search className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              {cnpjError && (
-                <p className="mt-1.5 text-[11px] text-stock-out">{cnpjError}</p>
-              )}
-              {meta.situacao && !cnpjError && (
-                <p className="mt-1.5 text-[10px] uppercase tracking-wider text-gold-muted">
-                  Situação: {meta.situacao}
-                </p>
-              )}
-            </Field>
 
-            <Field label="Razão social *">
-              <input
-                value={meta.cliente}
-                onChange={(e) => setMeta({ cliente: e.target.value })}
-                placeholder="Preenchido automaticamente"
-                className="input"
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-text-muted mb-1.5">
+                Cliente *
+              </div>
+              <ClienteSelector
+                selectedId={meta.clienteId}
+                onSelect={handleSelectCliente}
+                onClear={handleClearCliente}
               />
-            </Field>
-
-            {meta.nomeFantasia && (
-              <Field label="Nome fantasia">
-                <input
-                  value={meta.nomeFantasia ?? ""}
-                  onChange={(e) => setMeta({ nomeFantasia: e.target.value })}
-                  className="input"
-                />
-              </Field>
-            )}
-
-            {(meta.email || meta.telefone) && (
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="E-mail">
-                  <input
-                    value={meta.email ?? ""}
-                    onChange={(e) => setMeta({ email: e.target.value })}
-                    className="input"
-                  />
-                </Field>
-                <Field label="Telefone">
-                  <input
-                    value={meta.telefone ?? ""}
-                    onChange={(e) => setMeta({ telefone: e.target.value })}
-                    className="input"
-                  />
-                </Field>
-              </div>
-            )}
-
-            {(meta.logradouro || meta.municipio) && (
-              <div className="rounded-md bg-surface-2 border border-border p-3 space-y-1 text-xs">
-                <div className="text-[10px] uppercase tracking-[0.18em] text-text-muted">
-                  Endereço
-                </div>
-                <div className="text-text-primary">
-                  {meta.logradouro}
-                  {meta.numero ? `, ${meta.numero}` : ""}
-                  {meta.complemento ? ` — ${meta.complemento}` : ""}
-                </div>
-                <div className="text-text-secondary">
-                  {meta.bairro}
-                  {meta.bairro && (meta.municipio || meta.uf) ? " · " : ""}
-                  {meta.municipio}
-                  {meta.uf ? `/${meta.uf}` : ""}
-                  {meta.cep ? ` · CEP ${meta.cep}` : ""}
-                </div>
-              </div>
-            )}
+            </div>
 
             <Field label="Observações">
               <textarea
@@ -360,6 +274,7 @@ function CartPage() {
               />
             </Field>
           </div>
+
 
           <div className="rounded-lg gold-border bg-surface p-5">
             {commercial?.motivoBloqueio && (
