@@ -95,6 +95,23 @@ export const useOrder = create<OrderState>()(
         set((s) => ({ history: [order, ...s.history].slice(0, 30) }));
         return order;
       },
+      reassignOrder: (orderId, novo) => {
+        set((s) => ({
+          history: s.history.map((o) =>
+            o.id === orderId
+              ? {
+                  ...o,
+                  vendedorId: novo.vendedorId,
+                  vendedorNome: novo.vendedorNome ?? o.vendedorNome,
+                  vendedorLogin: novo.vendedorLogin ?? o.vendedorLogin,
+                  vendedorTipo: novo.vendedorTipo ?? o.vendedorTipo ?? null,
+                }
+              : o,
+          ),
+        }));
+      },
+
+
 
     }),
     { name: "fetely-order", storage: createJSONStorage(safeStorage) },
