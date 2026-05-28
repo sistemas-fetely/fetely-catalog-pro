@@ -28,7 +28,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <Link
         to="/produto"
         search={{ sku: product.sku }}
-        className="relative aspect-[4/3] overflow-hidden block"
+        className="relative aspect-square overflow-hidden block"
         aria-label={`Ver detalhes de ${product.nomeComercial}`}
       >
         {photo ? (

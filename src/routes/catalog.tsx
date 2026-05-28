@@ -347,7 +347,7 @@ function EmptyState() {
                 search={{ colecao: c.colecao }}
                 className="group rounded-lg overflow-hidden gold-border gold-border-hover bg-surface transition"
               >
-                <div className="relative aspect-[4/3] overflow-hidden">
+                <div className="relative aspect-square overflow-hidden">
                   {img ? (
                     <img
                       src={img}
