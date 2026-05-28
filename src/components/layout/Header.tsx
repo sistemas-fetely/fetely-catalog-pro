@@ -85,27 +85,6 @@ export function Header() {
             Catálogo
           </Link>
           <Link
-            to="/photos"
-            className={`hidden md:flex items-center gap-1.5 uppercase tracking-wider text-xs transition ${
-              pathname.startsWith("/photos")
-                ? "text-gold"
-                : "text-text-secondary hover:text-text-primary"
-            }`}
-          >
-            <Camera className="h-4 w-4" />
-            <span className="hidden lg:inline">Fotos</span>
-          </Link>
-          <Link
-            to="/commercial"
-            className={`hidden lg:inline uppercase tracking-wider text-xs transition ${
-              pathname.startsWith("/commercial")
-                ? "text-gold"
-                : "text-text-secondary hover:text-text-primary"
-            }`}
-          >
-            Cartilhas
-          </Link>
-          <Link
             to="/orders"
             className={`hidden md:flex items-center gap-1.5 uppercase tracking-wider text-xs transition ${
               pathname.startsWith("/orders")
@@ -116,16 +95,51 @@ export function Header() {
             <ClipboardList className="h-4 w-4" />
             <span className="hidden lg:inline">Pedidos</span>
           </Link>
-          <Link
-            to="/import"
-            className={`hidden lg:inline uppercase tracking-wider text-xs transition ${
-              pathname.startsWith("/import")
-                ? "text-gold"
-                : "text-text-secondary hover:text-text-primary"
-            }`}
-          >
-            Importar
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={`hidden md:flex items-center gap-1.5 uppercase tracking-wider text-xs transition ${
+                  pathname.startsWith("/photos") ||
+                  pathname.startsWith("/commercial") ||
+                  pathname.startsWith("/import")
+                    ? "text-gold"
+                    : "text-text-secondary hover:text-text-primary"
+                }`}
+                aria-label="Configurações"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="hidden lg:inline">Configurações</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-52 bg-surface border border-border"
+            >
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-[0.2em] text-text-secondary">
+                Gestão de catálogo
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-border" />
+              <DropdownMenuItem asChild>
+                <Link to="/import" className="flex items-center gap-2 cursor-pointer">
+                  <Upload className="h-4 w-4 text-gold-muted" />
+                  <span className="text-xs uppercase tracking-wider">Importar</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/commercial" className="flex items-center gap-2 cursor-pointer">
+                  <BookOpen className="h-4 w-4 text-gold-muted" />
+                  <span className="text-xs uppercase tracking-wider">Cartilhas</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/photos" className="flex items-center gap-2 cursor-pointer">
+                  <Camera className="h-4 w-4 text-gold-muted" />
+                  <span className="text-xs uppercase tracking-wider">Fotos</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {session && isAdminOrMaster() && (
             <Link
               to="/admin/users"
