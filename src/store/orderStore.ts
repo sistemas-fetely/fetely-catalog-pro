@@ -12,6 +12,8 @@ const noopStorage: Storage = {
 const safeStorage = (): Storage =>
   typeof window !== "undefined" ? window.localStorage : noopStorage;
 import type { CartItem, OrderCommercial, OrderMeta, Product, SavedOrder } from "@/types";
+import { useAuth } from "@/store/authStore";
+
 
 interface OrderState {
   items: CartItem[];
