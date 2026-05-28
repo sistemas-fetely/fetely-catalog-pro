@@ -174,13 +174,24 @@ function OrdersPage() {
                       {formatBRL(o.total)}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link
-                        to="/confirmation"
-                        search={{ id: o.id }}
-                        className="inline-flex items-center gap-1.5 rounded-md gold-border px-3 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
-                      >
-                        <Eye className="h-3 w-3" /> Ver
-                      </Link>
+                      <div className="inline-flex items-center gap-1.5">
+                        {isAdmin && (
+                          <button
+                            onClick={() => setReassignTarget(o.id)}
+                            title="Reatribuir vendedor"
+                            className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 px-2 py-1.5 text-[10px] uppercase tracking-wider text-amber-300 hover:bg-amber-500/10"
+                          >
+                            <UserCog className="h-3 w-3" />
+                          </button>
+                        )}
+                        <Link
+                          to="/confirmation"
+                          search={{ id: o.id }}
+                          className="inline-flex items-center gap-1.5 rounded-md gold-border px-3 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
+                        >
+                          <Eye className="h-3 w-3" /> Ver
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -189,6 +200,91 @@ function OrdersPage() {
           </table>
         </div>
       )}
+
+      {reassignTarget && isAdmin && (
+        <ReassignModal
+          orderId={reassignTarget}
+          users={(appUsers ?? []).filter((u: any) => u.ativo)}
+          onClose={() => setReassignTarget(null)}
+          onConfirm={(novo) => {
+            reassignOrder(reassignTarget, novo);
+            setReassignTarget(null);
+          }}
+        />
+      )}
     </main>
   );
+}
+
+function ReassignModal({
+  orderId,
+  users,
+  onClose,
+  onConfirm,
+}: {
+  orderId: string;
+  users: any[];
+  onClose: () => void;
+  onConfirm: (novo: {
+    vendedorId: string;
+    vendedorNome?: string | null;
+    vendedorLogin?: string | null;
+    vendedorTipo?: "interno" | "representante" | null;
+  }) => void;
+}) {
+  const [selected, setSelected] = useState<string>("");
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-lg border border-gold/40 bg-surface p-6 space-y-4">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-gold">Admin</div>
+          <h3 className="font-display text-lg">Reatribuir pedido</h3>
+          <p className="text-xs text-text-muted font-mono mt-1">{orderId}</p>
+        </div>
+        <label className="block text-xs uppercase tracking-wider text-text-secondary">
+          Novo vendedor
+          <select
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+            className="mt-1 w-full rounded-md gold-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gold"
+          >
+            <option value="">Selecione um vendedor...</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nome_completo ?? u.email}
+                {u.tipo_vendedor ? ` · ${u.tipo_vendedor}` : ""}
+                {u.regiao ? ` · ${u.regiao}` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={onClose}
+            className="rounded-md border border-border px-4 py-2 text-xs uppercase tracking-wider text-text-secondary hover:bg-surface-2"
+          >
+            Cancelar
+          </button>
+          <button
+            disabled={!selected}
+            onClick={() => {
+              const u = users.find((x) => x.id === selected);
+              if (!u) return;
+              onConfirm({
+                vendedorId: u.id,
+                vendedorNome: u.nome_completo ?? u.email,
+                vendedorLogin: u.login_amigavel ?? u.email,
+                vendedorTipo: (u.tipo_vendedor as "interno" | "representante" | null) ?? null,
+              });
+            }}
+            className="rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Confirmar reatribuição
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 }
