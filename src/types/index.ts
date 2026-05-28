@@ -82,6 +82,9 @@ export interface OrderMeta {
   uf?: string;
   cep?: string;
   situacao?: string;
+  // Vínculo com cadastro de clientes (V6)
+  clienteId?: string;
+  clienteSnapshot?: import("./cliente").ClienteSnapshot;
 }
 
 export interface OrderCommercial {
