@@ -72,9 +72,24 @@ function AdminUsersPage() {
     enabled: !!session && isAdminOrMaster(),
   });
 
+  type CreateInput = {
+    email: string;
+    password: string;
+    nome_completo: string;
+    telefone: string | null;
+    codigo_vendedor: string | null;
+    role: AppRole;
+    tipo_vendedor: TipoVendedor | null;
+    regiao: string | null;
+    comissao_percent: number | null;
+    cargo: string | null;
+    supervisor: string | null;
+    cnpj_cpf: string | null;
+    empresa: string | null;
+    observacoes: string | null;
+  };
   const createMut = useMutation({
-    mutationFn: (input: Parameters<typeof createFn>[0]["data"]) =>
-      createFn({ data: input }),
+    mutationFn: (input: CreateInput) => createFn({ data: input }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["app-users"] }),
   });
 
