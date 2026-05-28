@@ -80,11 +80,43 @@ export const useOrder = create<OrderState>()(
           items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
         const auth = useAuth.getState();
         const profile = auth.profile;
+
+        // Build cliente snapshot if a cliente is bound via meta.clienteId
+        let metaWithSnapshot = meta;
+        if (meta.clienteId && !meta.clienteSnapshot) {
+          try {
+            const { useClientes } = require("@/store/clienteStore") as typeof import("@/store/clienteStore");
+            const c = useClientes.getState().getById(meta.clienteId);
+            if (c) {
+              const endereco = c.enderecoEntregaIgual
+                ? `${c.logradouro}${c.numero ? `, ${c.numero}` : ""} — ${c.bairro}, ${c.cidade}/${c.estado} · ${c.cep}`
+                : `${c.entregaLogradouro ?? ""}${c.entregaNumero ? `, ${c.entregaNumero}` : ""} — ${c.entregaBairro ?? ""}, ${c.entregaCidade ?? ""}/${c.entregaEstado ?? ""} · ${c.entregaCep ?? ""}`;
+              metaWithSnapshot = {
+                ...meta,
+                clienteSnapshot: {
+                  clienteId: c.id,
+                  cnpj: c.cnpjFormatado,
+                  razaoSocial: c.razaoSocial,
+                  nomeFantasia: c.nomeFantasia,
+                  cidade: c.cidade,
+                  estado: c.estado,
+                  contatoNome: c.contatoNome,
+                  contatoEmail: c.contatoEmail,
+                  contatoTelefone: c.contatoTelefone,
+                  enderecoEntrega: endereco,
+                },
+              };
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+
         const order: SavedOrder = {
           id: `PED-${Date.now()}`,
           createdAt: new Date().toISOString(),
           items,
-          meta,
+          meta: metaWithSnapshot,
           total,
           commercial,
           vendedorId: auth.user?.id,
