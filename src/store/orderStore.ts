@@ -26,6 +26,11 @@ interface OrderState {
   clearCart: () => void;
   setMeta: (m: Partial<OrderMeta>) => void;
   saveOrder: (commercial?: OrderCommercial) => SavedOrder;
+  reassignOrder: (
+    orderId: string,
+    novo: { vendedorId: string; vendedorNome?: string | null; vendedorLogin?: string | null; vendedorTipo?: "interno" | "representante" | null },
+  ) => void;
+
 }
 
 const defaultMeta: OrderMeta = {
