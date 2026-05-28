@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Plus, UserCircle2, ChevronDown } from "lucide-react";
+import { Search, Plus, UserCircle2 } from "lucide-react";
 import { useClientes, searchClientesForOrder } from "@/store/clienteStore";
 import { useAuth } from "@/store/authStore";
 import { ClienteFormModal } from "./ClienteFormModal";
