@@ -139,7 +139,7 @@ function CatalogPage() {
                     showIcon={false}
                   />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent pointer-events-none" />
+                
                 <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6 flex items-end justify-between gap-3">
                   <div className="min-w-0">
                     <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] text-gold">
