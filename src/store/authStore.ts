@@ -65,15 +65,15 @@ export const useAuth = create<AuthState>((set, get) => ({
 
     // Listener FIRST (sync state changes), then check current session
     supabase.auth.onAuthStateChange((_event, session) => {
-      set({ session, user: session?.user ?? null });
       if (session?.user) {
+        set({ session, user: session.user, loading: true });
         // Defer Supabase calls to avoid deadlock with listener
         setTimeout(async () => {
           const { profile, roles } = await loadProfileAndRoles(session.user.id);
           set({ profile, roles, loading: false });
         }, 0);
       } else {
-        set({ profile: null, roles: [], loading: false });
+        set({ session: null, user: null, profile: null, roles: [], loading: false });
       }
     });
 
@@ -96,7 +96,9 @@ export const useAuth = create<AuthState>((set, get) => ({
   },
 
   signIn: async (email, password) => {
+    set({ loading: true, profile: null, roles: [] });
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) set({ loading: false });
     return { error: error?.message ?? null };
   },
 
