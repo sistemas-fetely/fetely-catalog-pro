@@ -1,13 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { formatBRL } from "@/lib/format";
-import { fetchCNPJ, formatCNPJ, isValidCNPJLength, onlyDigits } from "@/lib/cnpj";
 import { useOrder, cartTotal } from "@/store/orderStore";
 import { useNegotiation, registrarNegociacao } from "@/store/negotiationStore";
 import { CartCommercialPanel, type CommercialState } from "@/components/cart/CartCommercialPanel";
+import { ClienteSelector } from "@/components/clientes/ClienteSelector";
 import type { CartItem, OrderCommercial } from "@/types";
+import type { Cliente } from "@/types/cliente";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -51,42 +52,48 @@ function CartPage() {
 
   const total = cartTotal(items);
 
-  const [cnpjLoading, setCnpjLoading] = useState(false);
-  const [cnpjError, setCnpjError] = useState<string | null>(null);
-
-  const lookupCNPJ = useCallback(
-    async (raw: string) => {
-      if (!isValidCNPJLength(raw)) {
-        setCnpjError("CNPJ deve ter 14 dígitos.");
-        return;
-      }
-      setCnpjLoading(true);
-      setCnpjError(null);
-      try {
-        const d = await fetchCNPJ(raw);
-        setMeta({
-          cnpj: d.cnpj,
-          cliente: d.razaoSocial || meta.cliente,
-          nomeFantasia: d.nomeFantasia,
-          email: d.email,
-          telefone: d.telefone,
-          logradouro: d.logradouro,
-          numero: d.numero,
-          complemento: d.complemento,
-          bairro: d.bairro,
-          municipio: d.municipio,
-          uf: d.uf,
-          cep: d.cep,
-          situacao: d.situacao,
-        });
-      } catch (e) {
-        setCnpjError(e instanceof Error ? e.message : "Erro ao consultar CNPJ");
-      } finally {
-        setCnpjLoading(false);
-      }
+  const handleSelectCliente = useCallback(
+    (c: Cliente) => {
+      setMeta({
+        clienteId: c.id,
+        cliente: c.razaoSocial,
+        nomeFantasia: c.nomeFantasia,
+        cnpj: c.cnpjFormatado,
+        email: c.contatoEmail,
+        telefone: c.contatoTelefone,
+        logradouro: c.logradouro,
+        numero: c.numero,
+        complemento: c.complemento,
+        bairro: c.bairro,
+        municipio: c.cidade,
+        uf: c.estado,
+        cep: c.cep,
+        situacao: c.situacaoCadastral,
+        clienteSnapshot: undefined,
+      });
     },
-    [setMeta, meta.cliente],
+    [setMeta],
   );
+
+  const handleClearCliente = useCallback(() => {
+    setMeta({
+      clienteId: undefined,
+      clienteSnapshot: undefined,
+      cliente: "",
+      nomeFantasia: "",
+      cnpj: "",
+      email: "",
+      telefone: "",
+      logradouro: "",
+      numero: "",
+      complemento: "",
+      bairro: "",
+      municipio: "",
+      uf: "",
+      cep: "",
+      situacao: "",
+    });
+  }, [setMeta]);
 
 
   const handleConfirm = () => {
