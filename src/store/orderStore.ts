@@ -12,6 +12,8 @@ const noopStorage: Storage = {
 const safeStorage = (): Storage =>
   typeof window !== "undefined" ? window.localStorage : noopStorage;
 import type { CartItem, OrderCommercial, OrderMeta, Product, SavedOrder } from "@/types";
+import { useAuth } from "@/store/authStore";
+
 
 interface OrderState {
   items: CartItem[];
@@ -71,6 +73,8 @@ export const useOrder = create<OrderState>()(
         const total =
           commercial?.totalFinal ??
           items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
+        const auth = useAuth.getState();
+        const profile = auth.profile;
         const order: SavedOrder = {
           id: `PED-${Date.now()}`,
           createdAt: new Date().toISOString(),
@@ -78,10 +82,15 @@ export const useOrder = create<OrderState>()(
           meta,
           total,
           commercial,
+          vendedorId: auth.user?.id,
+          vendedorNome: profile?.nome_completo ?? profile?.email ?? undefined,
+          vendedorLogin: profile?.login_amigavel ?? profile?.email ?? undefined,
+          vendedorTipo: profile?.tipo_vendedor ?? null,
         };
         set((s) => ({ history: [order, ...s.history].slice(0, 30) }));
         return order;
       },
+
     }),
     { name: "fetely-order", storage: createJSONStorage(safeStorage) },
   ),
@@ -90,3 +99,20 @@ export const useOrder = create<OrderState>()(
 export function cartTotal(items: CartItem[]): number {
   return items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
 }
+
+/**
+ * Hook que retorna o histórico de pedidos visível para o usuário logado.
+ * - admin/master: vê todos os pedidos
+ * - vendedor: vê apenas os próprios (vendedorId === user.id)
+ * - pedidos antigos sem vendedorId só aparecem para admin/master
+ */
+export function useVisibleOrders(): SavedOrder[] {
+  const history = useOrder((s) => s.history);
+  const user = useAuth((s) => s.user);
+  const roles = useAuth((s) => s.roles);
+  const isAdminOrMaster = roles.includes("admin") || roles.includes("master");
+  if (isAdminOrMaster) return history;
+  if (!user) return [];
+  return history.filter((o) => o.vendedorId === user.id);
+}
+

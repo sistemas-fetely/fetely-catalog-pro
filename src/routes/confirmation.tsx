@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Copy, Home } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
-import { useOrder } from "@/store/orderStore";
+import { useVisibleOrders } from "@/store/orderStore";
 import type { SavedOrder } from "@/types";
 import { z } from "zod";
 
@@ -101,8 +101,9 @@ function formatOrderText(order: SavedOrder): string {
 
 function Confirmation() {
   const { id } = Route.useSearch();
-  const history = useOrder((s) => s.history);
+  const history = useVisibleOrders();
   const order = useMemo(() => history.find((o) => o.id === id) ?? history[0], [history, id]);
+
   const [copied, setCopied] = useState(false);
 
   if (!order) {
