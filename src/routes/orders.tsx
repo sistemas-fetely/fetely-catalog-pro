@@ -21,11 +21,23 @@ export const Route = createFileRoute("/orders")({
 
 function OrdersPage() {
   const history = useVisibleOrders();
+  const isAdmin = useAuth((s) => s.roles.includes("admin"));
   const isAdminOrMaster = useAuth((s) => s.roles.includes("admin") || s.roles.includes("master"));
+  const reassignOrder = useOrder((s) => s.reassignOrder);
   const [query, setQuery] = useState("");
   const [vendedorFilter, setVendedorFilter] = useState<string>("all");
+  const [reassignTarget, setReassignTarget] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
+
+  const fetchUsers = useServerFn(listAppUsers);
+  const { data: appUsers } = useQuery({
+    queryKey: ["app-users-for-reassign"],
+    queryFn: () => fetchUsers(),
+    enabled: isAdmin,
+    staleTime: 60_000,
+  });
+
 
   // lista de vendedores únicos (somente admin vê dropdown)
   const vendedores = useMemo(() => {
