@@ -360,7 +360,7 @@ function EmptyState() {
                       className="h-full w-full"
                     />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-background/10 to-transparent" />
+                  
                   <div className="absolute top-2 left-2 rounded-full bg-background/80 backdrop-blur px-2 py-0.5 text-[9px] uppercase tracking-wider text-gold">
                     {c.categoria}
                   </div>
