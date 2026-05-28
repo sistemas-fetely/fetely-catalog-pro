@@ -1,9 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Eye, Package } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { Eye, Package, UserCog } from "lucide-react";
 import { formatBRL } from "@/lib/format";
-import { useVisibleOrders } from "@/store/orderStore";
+import { useOrder, useVisibleOrders } from "@/store/orderStore";
 import { useAuth } from "@/store/authStore";
+import { listAppUsers } from "@/lib/users.functions";
+
 
 export const Route = createFileRoute("/orders")({
   head: () => ({
