@@ -97,7 +97,7 @@ function CartPage() {
 
 
   const handleConfirm = () => {
-    if (!meta.cliente.trim()) return alert("Informe o nome do cliente.");
+    if (!meta.clienteId) return alert("Selecione um cliente cadastrado.");
     if (!commercial?.podeFinalizar || !commercial.calculo.faixa || !commercial.condicao) {
       return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
     }
