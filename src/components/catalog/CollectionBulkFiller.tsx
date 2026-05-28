@@ -120,6 +120,10 @@ export function CollectionBulkFiller({ products }: Props) {
   );
 }
 
+function isProntaEntrega(status: string) {
+  return status.toLowerCase().includes("em estoque");
+}
+
 function PreviewModal({
   pending,
   onCancel,
@@ -129,11 +133,17 @@ function PreviewModal({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const totalUnits = pending.entries.reduce((s, e) => s + e.quantity, 0);
-  const total = pending.entries.reduce(
-    (s, e) => s + e.quantity * e.product.precoAtacado,
-    0,
-  );
+  const pronta = pending.entries.filter((e) => isProntaEntrega(e.product.statusEstoque));
+  const programacao = pending.entries.filter((e) => !isProntaEntrega(e.product.statusEstoque));
+
+  const sum = (arr: typeof pending.entries) => ({
+    units: arr.reduce((s, e) => s + e.quantity, 0),
+    total: arr.reduce((s, e) => s + e.quantity * e.product.precoAtacado, 0),
+  });
+  const sProntaEntrega = sum(pronta);
+  const sProgramacao = sum(programacao);
+  const totalGeral = sProntaEntrega.total + sProgramacao.total;
+  const totalUnits = sProntaEntrega.units + sProgramacao.units;
 
   return (
     <div
@@ -141,7 +151,7 @@ function PreviewModal({
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl gold-border bg-surface shadow-2xl"
+        className="w-full max-w-3xl max-h-[85vh] flex flex-col rounded-xl gold-border bg-surface shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="p-5 border-b border-border">
@@ -150,44 +160,36 @@ function PreviewModal({
           </div>
           <h2 className="font-display text-2xl mt-1">Revisar adição ao carrinho</h2>
           <p className="text-xs text-text-secondary mt-1">
-            Aplicando <span className="text-gold">{pending.label}</span> em{" "}
-            {pending.entries.length} {pending.entries.length === 1 ? "item" : "itens"}.
+            Aplicando <span className="text-gold">{pending.label}</span>. O sistema vai
+            dividir em <strong className="text-text-primary">2 pedidos</strong>: um de
+            pronta entrega e outro de programação.
           </p>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-[10px] uppercase tracking-[0.18em] text-text-muted sticky top-0">
-              <tr>
-                <th className="px-4 py-2 text-left">Item</th>
-                <th className="px-4 py-2 text-right">Qtd.</th>
-                <th className="px-4 py-2 text-right">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pending.entries.map(({ product, quantity }) => (
-                <tr key={product.sku} className="border-t border-border/50">
-                  <td className="px-4 py-2.5">
-                    <div className="text-text-primary truncate">{product.nomeComercial}</div>
-                    <div className="text-[10px] text-text-muted font-mono">{product.sku}</div>
-                  </td>
-                  <td className="px-4 py-2.5 text-right text-text-secondary">{quantity}</td>
-                  <td className="px-4 py-2.5 text-right text-gold">
-                    {formatBRL(quantity * product.precoAtacado)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="flex-1 overflow-y-auto divide-y divide-border">
+          <Section
+            title="Pedido 1 — Pronta entrega"
+            badgeClass="bg-stock-ok/15 text-stock-ok border-stock-ok/40"
+            entries={pronta}
+            subtotal={sProntaEntrega}
+            emptyText="Nenhum item em estoque nesta coleção."
+          />
+          <Section
+            title="Pedido 2 — Programação"
+            badgeClass="bg-stock-pre/15 text-stock-pre border-stock-pre/40"
+            entries={programacao}
+            subtotal={sProgramacao}
+            emptyText="Nenhum item em previsão nesta coleção."
+          />
         </div>
 
         <footer className="p-5 border-t border-border flex items-center justify-between gap-4">
           <div>
             <div className="text-[10px] uppercase tracking-[0.2em] text-text-muted">
-              Subtotal da coleção
+              Total geral
             </div>
             <div className="flex items-baseline gap-3 mt-1">
-              <span className="font-display text-2xl text-gold">{formatBRL(total)}</span>
+              <span className="font-display text-2xl text-gold">{formatBRL(totalGeral)}</span>
               <span className="text-xs text-text-secondary">{totalUnits} unidades</span>
             </div>
           </div>
@@ -209,6 +211,59 @@ function PreviewModal({
           </div>
         </footer>
       </div>
+    </div>
+  );
+}
+
+function Section({
+  title,
+  badgeClass,
+  entries,
+  subtotal,
+  emptyText,
+}: {
+  title: string;
+  badgeClass: string;
+  entries: { product: Product; quantity: number }[];
+  subtotal: { units: number; total: number };
+  emptyText: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between px-5 py-3 bg-surface-2/60 sticky top-0 z-10">
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-wider ${badgeClass}`}>
+            {title}
+          </span>
+          <span className="text-[10px] text-text-muted">
+            {entries.length} {entries.length === 1 ? "item" : "itens"}
+          </span>
+        </div>
+        <div className="text-xs text-text-secondary">
+          <span className="text-gold font-medium">{formatBRL(subtotal.total)}</span>
+          <span className="ml-2 text-text-muted">· {subtotal.units} un.</span>
+        </div>
+      </div>
+      {entries.length === 0 ? (
+        <div className="px-5 py-4 text-xs text-text-muted">{emptyText}</div>
+      ) : (
+        <table className="w-full text-sm">
+          <tbody>
+            {entries.map(({ product, quantity }) => (
+              <tr key={product.sku} className="border-t border-border/40">
+                <td className="px-5 py-2.5">
+                  <div className="text-text-primary truncate">{product.nomeComercial}</div>
+                  <div className="text-[10px] text-text-muted font-mono">{product.sku}</div>
+                </td>
+                <td className="px-4 py-2.5 text-right text-text-secondary w-20">{quantity}</td>
+                <td className="px-5 py-2.5 text-right text-gold w-32">
+                  {formatBRL(quantity * product.precoAtacado)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
