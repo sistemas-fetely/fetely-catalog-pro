@@ -166,16 +166,38 @@ export function Header() {
             )}
           </Link>
           {session ? (
-            <button
-              onClick={() => signOut()}
-              className="flex items-center gap-1.5 text-text-secondary hover:text-gold transition"
-              title={profile?.nome_completo ?? profile?.email ?? "Sair"}
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden lg:inline text-xs uppercase tracking-wider">
-                Sair
-              </span>
-            </button>
+            <div className="flex items-center gap-2">
+              {profile && (
+                <div className="hidden md:flex items-center gap-1.5">
+                  {isAdminOrMaster() ? (
+                    <span className="rounded-full border border-gold/40 bg-gold/15 px-2 py-0.5 text-[9px] uppercase tracking-[0.15em] text-gold font-medium">
+                      Admin
+                    </span>
+                  ) : profile.tipo_vendedor === "representante" ? (
+                    <span className="rounded-full border border-gold/30 bg-gold/5 px-2 py-0.5 text-[9px] uppercase tracking-[0.15em] text-gold-muted">
+                      Rep
+                    </span>
+                  ) : (
+                    <span className="rounded-full border border-border bg-surface-hover px-2 py-0.5 text-[9px] uppercase tracking-[0.15em] text-text-secondary">
+                      Interno
+                    </span>
+                  )}
+                  <span className="text-xs text-text-secondary max-w-[140px] truncate">
+                    {profile.login_amigavel ?? profile.nome_completo ?? profile.email}
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={() => signOut()}
+                className="flex items-center gap-1.5 text-text-secondary hover:text-gold transition"
+                title={profile?.nome_completo ?? profile?.email ?? "Sair"}
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden lg:inline text-xs uppercase tracking-wider">
+                  Sair
+                </span>
+              </button>
+            </div>
           ) : (
             <Link
               to="/login"
