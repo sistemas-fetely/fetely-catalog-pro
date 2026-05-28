@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type AppRole = "master" | "admin" | "vendedor";
 
+export type TipoVendedor = "interno" | "representante";
+
 export interface Profile {
   id: string;
   email: string;
@@ -11,6 +13,15 @@ export interface Profile {
   telefone: string | null;
   codigo_vendedor: string | null;
   ativo: boolean;
+  tipo_vendedor: TipoVendedor | null;
+  regiao: string | null;
+  comissao_percent: number | null;
+  cargo: string | null;
+  supervisor: string | null;
+  cnpj_cpf: string | null;
+  empresa: string | null;
+  observacoes: string | null;
+  login_amigavel: string | null;
 }
 
 interface AuthState {
