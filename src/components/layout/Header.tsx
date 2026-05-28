@@ -101,7 +101,8 @@ export function Header() {
                 className={`hidden md:flex items-center gap-1.5 uppercase tracking-wider text-xs transition ${
                   pathname.startsWith("/photos") ||
                   pathname.startsWith("/commercial") ||
-                  pathname.startsWith("/import")
+                  pathname.startsWith("/import") ||
+                  pathname.startsWith("/admin")
                     ? "text-gold"
                     : "text-text-secondary hover:text-text-primary"
                 }`}
@@ -116,7 +117,7 @@ export function Header() {
               className="w-52 bg-surface border border-border"
             >
               <DropdownMenuLabel className="text-[10px] uppercase tracking-[0.2em] text-text-secondary">
-                Gestão de catálogo
+                Gestão do sistema
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem asChild>
@@ -137,22 +138,19 @@ export function Header() {
                   <span className="text-xs uppercase tracking-wider">Fotos</span>
                 </Link>
               </DropdownMenuItem>
+              {session && isAdminOrMaster() && (
+                <>
+                  <DropdownMenuSeparator className="bg-border" />
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin/users" className="flex items-center gap-2 cursor-pointer">
+                      <Users className="h-4 w-4 text-gold-muted" />
+                      <span className="text-xs uppercase tracking-wider">Usuários</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {session && isAdminOrMaster() && (
-            <Link
-              to="/admin/users"
-              className={`hidden md:flex items-center gap-1.5 uppercase tracking-wider text-xs transition ${
-                pathname.startsWith("/admin")
-                  ? "text-gold"
-                  : "text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              <Users className="h-4 w-4" />
-              <span className="hidden lg:inline">Usuários</span>
-            </Link>
-          )}
           {negociacaoAtiva && (
             <Link
               to="/cart"
