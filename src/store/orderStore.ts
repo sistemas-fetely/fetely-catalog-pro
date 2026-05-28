@@ -73,6 +73,8 @@ export const useOrder = create<OrderState>()(
         const total =
           commercial?.totalFinal ??
           items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
+        const auth = useAuth.getState();
+        const profile = auth.profile;
         const order: SavedOrder = {
           id: `PED-${Date.now()}`,
           createdAt: new Date().toISOString(),
@@ -80,10 +82,15 @@ export const useOrder = create<OrderState>()(
           meta,
           total,
           commercial,
+          vendedorId: auth.user?.id,
+          vendedorNome: profile?.nome_completo ?? profile?.email ?? null ?? undefined,
+          vendedorLogin: profile?.login_amigavel ?? profile?.email ?? undefined,
+          vendedorTipo: profile?.tipo_vendedor ?? null,
         };
         set((s) => ({ history: [order, ...s.history].slice(0, 30) }));
         return order;
       },
+
     }),
     { name: "fetely-order", storage: createJSONStorage(safeStorage) },
   ),
