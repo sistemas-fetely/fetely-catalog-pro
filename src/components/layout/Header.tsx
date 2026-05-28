@@ -33,6 +33,8 @@ export function Header() {
   const toggleTheme = useUI((s) => s.toggleTheme);
   const profile = useAuth((s) => s.profile);
   const session = useAuth((s) => s.session);
+  const authLoading = useAuth((s) => s.loading);
+  const roles = useAuth((s) => s.roles);
   const isAdminOrMaster = useAuth((s) => s.isAdminOrMaster);
   const signOut = useAuth((s) => s.signOut);
   const negociacaoAtiva = useNegotiation((s) => s.ativo);
@@ -62,7 +64,11 @@ export function Header() {
       .join("");
   })();
 
-  const roleLabel = isAdminOrMaster()
+  const roleLabel = authLoading
+    ? "Carregando"
+    : roles.includes("master")
+    ? "Master"
+    : roles.includes("admin")
     ? "Admin"
     : profile?.tipo_vendedor === "representante"
     ? "Representante"
@@ -223,7 +229,11 @@ export function Header() {
                       {profile?.email}
                     </p>
                     <div className="mt-1.5 inline-flex items-center gap-1.5">
-                      {isAdminOrMaster() ? (
+                      {roles.includes("master") ? (
+                        <span className="rounded-full border border-gold/40 bg-gold/15 px-2 py-0.5 text-[9px] uppercase tracking-[0.15em] text-gold font-medium">
+                          Master
+                        </span>
+                      ) : roles.includes("admin") ? (
                         <span className="rounded-full border border-gold/40 bg-gold/15 px-2 py-0.5 text-[9px] uppercase tracking-[0.15em] text-gold font-medium">
                           Admin
                         </span>
