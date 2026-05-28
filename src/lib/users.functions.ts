@@ -25,6 +25,44 @@ async function assertCallerCan(
   }
 }
 
+function slugifyNome(nome: string): string {
+  return nome
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function baseLogin(nome: string, tipo: "interno" | "representante" | null | undefined): string {
+  const partes = slugifyNome(nome).split(" ").filter(Boolean);
+  const primeiro = partes[0] ?? "user";
+  const ultimaInicial = partes.length > 1 ? partes[partes.length - 1][0] : "";
+  const prefixo = tipo === "representante" ? "rep" : "int";
+  return `${prefixo}.${primeiro}${ultimaInicial}`;
+}
+
+async function gerarLoginUnico(
+  nome: string,
+  tipo: "interno" | "representante" | null | undefined,
+): Promise<string> {
+  const base = baseLogin(nome, tipo);
+  let candidato = base;
+  let n = 2;
+  while (true) {
+    const { data } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .ilike("login_amigavel", candidato)
+      .maybeSingle();
+    if (!data) return candidato;
+    candidato = `${base}${n}`;
+    n++;
+  }
+}
+
 const createUserSchema = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(8).max(72),
@@ -32,6 +70,14 @@ const createUserSchema = z.object({
   telefone: z.string().trim().max(40).optional().nullable(),
   codigo_vendedor: z.string().trim().max(20).optional().nullable(),
   role: z.enum(["master", "admin", "vendedor"]),
+  tipo_vendedor: z.enum(["interno", "representante"]).optional().nullable(),
+  regiao: z.string().trim().max(60).optional().nullable(),
+  comissao_percent: z.number().min(0).max(100).optional().nullable(),
+  cargo: z.string().trim().max(80).optional().nullable(),
+  supervisor: z.string().trim().max(120).optional().nullable(),
+  cnpj_cpf: z.string().trim().max(20).optional().nullable(),
+  empresa: z.string().trim().max(120).optional().nullable(),
+  observacoes: z.string().trim().max(1000).optional().nullable(),
 });
 
 export const createAppUser = createServerFn({ method: "POST" })
@@ -58,6 +104,11 @@ export const createAppUser = createServerFn({ method: "POST" })
 
     const newUserId = created.user.id;
 
+    const loginAmigavel =
+      data.role === "vendedor"
+        ? await gerarLoginUnico(data.nome_completo, data.tipo_vendedor ?? "interno")
+        : null;
+
     // Profile is auto-created by trigger; make sure data is set
     await supabaseAdmin
       .from("profiles")
@@ -65,6 +116,15 @@ export const createAppUser = createServerFn({ method: "POST" })
         nome_completo: data.nome_completo,
         telefone: data.telefone ?? null,
         codigo_vendedor: data.codigo_vendedor ?? null,
+        tipo_vendedor: data.tipo_vendedor ?? null,
+        regiao: data.regiao ?? null,
+        comissao_percent: data.comissao_percent ?? null,
+        cargo: data.cargo ?? null,
+        supervisor: data.supervisor ?? null,
+        cnpj_cpf: data.cnpj_cpf ?? null,
+        empresa: data.empresa ?? null,
+        observacoes: data.observacoes ?? null,
+        login_amigavel: loginAmigavel,
       })
       .eq("id", newUserId);
 
@@ -73,7 +133,37 @@ export const createAppUser = createServerFn({ method: "POST" })
       .insert({ user_id: newUserId, role: data.role });
     if (roleErr) throw new Error(roleErr.message);
 
-    return { id: newUserId };
+    return { id: newUserId, login_amigavel: loginAmigavel };
+  });
+
+const updateUserSchema = z.object({
+  user_id: z.string().uuid(),
+  nome_completo: z.string().trim().min(1).max(120).optional(),
+  telefone: z.string().trim().max(40).optional().nullable(),
+  codigo_vendedor: z.string().trim().max(20).optional().nullable(),
+  tipo_vendedor: z.enum(["interno", "representante"]).optional().nullable(),
+  regiao: z.string().trim().max(60).optional().nullable(),
+  comissao_percent: z.number().min(0).max(100).optional().nullable(),
+  cargo: z.string().trim().max(80).optional().nullable(),
+  supervisor: z.string().trim().max(120).optional().nullable(),
+  cnpj_cpf: z.string().trim().max(20).optional().nullable(),
+  empresa: z.string().trim().max(120).optional().nullable(),
+  observacoes: z.string().trim().max(1000).optional().nullable(),
+});
+
+export const updateAppUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => updateUserSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as { userId: string };
+    await assertCallerCan(userId, "vendedor");
+    const { user_id, ...patch } = data;
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update(patch)
+      .eq("id", user_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const listAppUsers = createServerFn({ method: "POST" })
