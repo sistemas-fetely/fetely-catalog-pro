@@ -6,6 +6,7 @@ import { ChevronRight, X } from "lucide-react";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { NumericalCandleGrid } from "@/components/catalog/NumericalCandleGrid";
+import { CollectionBulkFiller } from "@/components/catalog/CollectionBulkFiller";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import {
   useCatalog,
