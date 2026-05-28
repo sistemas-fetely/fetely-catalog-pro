@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Copy, Home } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
-import { useOrder } from "@/store/orderStore";
+import { useVisibleOrders } from "@/store/orderStore";
 import type { SavedOrder } from "@/types";
 import { z } from "zod";
 
