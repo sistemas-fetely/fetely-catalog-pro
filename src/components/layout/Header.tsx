@@ -129,64 +129,27 @@ export function Header() {
               </Link>
             )}
 
-            {/* Settings dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      className={`hidden md:flex items-center justify-center p-2 rounded-md transition ${
-                        pathname.startsWith("/photos") ||
-                        pathname.startsWith("/commercial") ||
-                        pathname.startsWith("/import") ||
-                        pathname.startsWith("/admin")
-                          ? "text-gold bg-surface-hover"
-                          : "text-text-secondary hover:text-gold hover:bg-surface-hover"
-                      }`}
-                      aria-label="Configurações"
-                    >
-                      <Settings className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Configurações</TooltipContent>
-                </Tooltip>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52 bg-surface border border-border">
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-[0.2em] text-text-secondary">
-                  Gestão do sistema
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-border" />
-                <DropdownMenuItem asChild>
-                  <Link to="/import" className="flex items-center gap-2 cursor-pointer">
-                    <Upload className="h-4 w-4 text-gold-muted" />
-                    <span className="text-xs uppercase tracking-wider">Importar</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/commercial" className="flex items-center gap-2 cursor-pointer">
-                    <BookOpen className="h-4 w-4 text-gold-muted" />
-                    <span className="text-xs uppercase tracking-wider">Cartilhas</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/photos" className="flex items-center gap-2 cursor-pointer">
-                    <Camera className="h-4 w-4 text-gold-muted" />
-                    <span className="text-xs uppercase tracking-wider">Fotos</span>
-                  </Link>
-                </DropdownMenuItem>
-                {session && isAdminOrMaster() && (
-                  <>
-                    <DropdownMenuSeparator className="bg-border" />
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin/users" className="flex items-center gap-2 cursor-pointer">
-                        <Users className="h-4 w-4 text-gold-muted" />
-                        <span className="text-xs uppercase tracking-wider">Usuários</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Settings link */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to="/settings"
+                  className={`hidden md:flex items-center justify-center p-2 rounded-md transition ${
+                    pathname.startsWith("/settings") ||
+                    pathname.startsWith("/photos") ||
+                    pathname.startsWith("/commercial") ||
+                    pathname.startsWith("/import") ||
+                    pathname.startsWith("/admin")
+                      ? "text-gold bg-surface-hover"
+                      : "text-text-secondary hover:text-gold hover:bg-surface-hover"
+                  }`}
+                  aria-label="Configurações"
+                >
+                  <Settings className="h-4 w-4" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Configurações</TooltipContent>
+            </Tooltip>
 
             {/* Theme toggle */}
             <Tooltip>
