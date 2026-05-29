@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Copy, Trash2, UserPlus, Power, Search } from "lucide-react";
+import { useRegioes } from "@/hooks/useRegioes";
 import { useAuth, type AppRole, type TipoVendedor } from "@/store/authStore";
 import {
   createAppUser,
@@ -14,18 +15,6 @@ import {
 export const Route = createFileRoute("/admin/users")({
   component: AdminUsersPage,
 });
-
-const REGIOES = [
-  "SP Capital",
-  "SP Interior",
-  "Sul",
-  "Nordeste",
-  "Centro-Oeste",
-  "Norte",
-  "RJ",
-  "MG",
-  "Outro",
-];
 
 function slugifyPreview(nome: string, tipo: TipoVendedor): string {
   const partes = nome
@@ -66,6 +55,8 @@ function AdminUsersPage() {
   }, [loading, session, isAdminOrMaster, navigate]);
 
   const qc = useQueryClient();
+  const { data: regioes = [] } = useRegioes();
+
   const usersQ = useQuery({
     queryKey: ["app-users"],
     queryFn: () => listFn(),
@@ -112,7 +103,7 @@ function AdminUsersPage() {
     codigo_vendedor: "",
     role: "vendedor" as AppRole,
     tipo_vendedor: "interno" as TipoVendedor,
-    regiao: "SP Capital",
+    regiao: "",
     comissao_percent: "",
     cargo: "",
     supervisor: "",
@@ -120,6 +111,13 @@ function AdminUsersPage() {
     empresa: "",
     observacoes: "",
   });
+
+  useEffect(() => {
+    if (regioes.length > 0 && !form.regiao) {
+      setForm((prev) => ({ ...prev, regiao: regioes[0].nome }));
+    }
+  }, [regioes, form.regiao]);
+
   const [formError, setFormError] = useState<string | null>(null);
   const [credModal, setCredModal] = useState<{
     login: string | null;
@@ -322,8 +320,10 @@ function AdminUsersPage() {
                   onChange={(e) => setForm({ ...form, regiao: e.target.value })}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text-primary focus:border-gold focus:outline-none"
                 >
-                  {REGIOES.map((r) => (
-                    <option key={r}>{r}</option>
+                  {regioes.map((r) => (
+                    <option key={r.id} value={r.nome}>
+                      {r.nome}
+                    </option>
                   ))}
                 </select>
               </div>
