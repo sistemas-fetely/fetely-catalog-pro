@@ -85,6 +85,8 @@ export interface OrderMeta {
   // Vínculo com cadastro de clientes (V6)
   clienteId?: string;
   clienteSnapshot?: import("./cliente").ClienteSnapshot;
+  // V7: quando o carrinho vem de uma provisão convertida
+  provisaoOrigemId?: string;
 }
 
 export interface OrderCommercial {

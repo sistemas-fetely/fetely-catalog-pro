@@ -1,12 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Copy, Home } from "lucide-react";
+import { Check, Copy, Home, FileClock } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
 import { useVisibleOrders } from "@/store/orderStore";
+import { useProvisao } from "@/store/provisaoStore";
 import type { SavedOrder } from "@/types";
 import { z } from "zod";
 
-const search = z.object({ id: z.string().optional() });
+const search = z.object({
+  id: z.string().optional(),
+  provisaoId: z.string().optional(),
+});
 
 export const Route = createFileRoute("/confirmation")({
   validateSearch: search,
@@ -100,9 +104,14 @@ function formatOrderText(order: SavedOrder): string {
 }
 
 function Confirmation() {
-  const { id } = Route.useSearch();
+  const { id, provisaoId } = Route.useSearch();
   const history = useVisibleOrders();
+  const provisoes = useProvisao((s) => s.provisoes);
   const order = useMemo(() => history.find((o) => o.id === id) ?? history[0], [history, id]);
+  const provisao = useMemo(
+    () => (provisaoId ? provisoes.find((p) => p.id === provisaoId) : undefined),
+    [provisoes, provisaoId],
+  );
 
   const [copied, setCopied] = useState(false);
 
@@ -183,6 +192,33 @@ function Confirmation() {
           </div>
         </div>
       </div>
+
+      {provisao && (
+        <div className="mt-6 rounded-lg border border-stock-pre/40 bg-stock-pre/5 p-6">
+          <div className="flex items-start gap-3">
+            <FileClock className="h-6 w-6 text-stock-pre shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-[0.25em] text-stock-pre font-semibold">
+                📋 Provisão futura gerada
+              </div>
+              <div className="font-display text-2xl mt-1">{provisao.id}</div>
+              <p className="text-sm text-text-secondary mt-1">
+                {provisao.itens.length} {provisao.itens.length === 1 ? "item" : "itens"} · Prev. {provisao.proximaPrevisao} · Ref. {formatBRL(provisao.totalReferencia)}
+              </p>
+              <p className="text-xs text-text-muted mt-1">
+                Salva como rascunho — você será notificado quando o estoque liberar.
+              </p>
+              <Link
+                to="/provisoes"
+                search={{ highlight: provisao.id }}
+                className="inline-flex mt-3 items-center gap-2 text-xs uppercase tracking-wider text-stock-pre hover:text-stock-pre/80"
+              >
+                Ver provisão →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

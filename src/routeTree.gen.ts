@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ProvisoesRouteImport } from './routes/provisoes'
 import { Route as ProdutoRouteImport } from './routes/produto'
 import { Route as PhotosRouteImport } from './routes/photos'
 import { Route as OrdersRouteImport } from './routes/orders'
@@ -28,6 +29,11 @@ import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProvisoesRoute = ProvisoesRouteImport.update({
+  id: '/provisoes',
+  path: '/provisoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProdutoRoute = ProdutoRouteImport.update({
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/orders': typeof OrdersRoute
   '/photos': typeof PhotosRoute
   '/produto': typeof ProdutoRoute
+  '/provisoes': typeof ProvisoesRoute
   '/settings': typeof SettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/orders': typeof OrdersRoute
   '/photos': typeof PhotosRoute
   '/produto': typeof ProdutoRoute
+  '/provisoes': typeof ProvisoesRoute
   '/settings': typeof SettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/orders': typeof OrdersRoute
   '/photos': typeof PhotosRoute
   '/produto': typeof ProdutoRoute
+  '/provisoes': typeof ProvisoesRoute
   '/settings': typeof SettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/photos'
     | '/produto'
+    | '/provisoes'
     | '/settings'
     | '/admin/users'
     | '/catalog/categoria/$categoria'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/photos'
     | '/produto'
+    | '/provisoes'
     | '/settings'
     | '/admin/users'
     | '/catalog/categoria/$categoria'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/photos'
     | '/produto'
+    | '/provisoes'
     | '/settings'
     | '/admin/users'
     | '/catalog/categoria/$categoria'
@@ -221,6 +233,7 @@ export interface RootRouteChildren {
   OrdersRoute: typeof OrdersRoute
   PhotosRoute: typeof PhotosRoute
   ProdutoRoute: typeof ProdutoRoute
+  ProvisoesRoute: typeof ProvisoesRoute
   SettingsRoute: typeof SettingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
 }
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/provisoes': {
+      id: '/provisoes'
+      path: '/provisoes'
+      fullPath: '/provisoes'
+      preLoaderRoute: typeof ProvisoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/produto': {
@@ -359,19 +379,10 @@ const rootRouteChildren: RootRouteChildren = {
   OrdersRoute: OrdersRoute,
   PhotosRoute: PhotosRoute,
   ProdutoRoute: ProdutoRoute,
+  ProvisoesRoute: ProvisoesRoute,
   SettingsRoute: SettingsRoute,
   AdminUsersRoute: AdminUsersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

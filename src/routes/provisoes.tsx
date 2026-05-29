@@ -1,0 +1,334 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { z } from "zod";
+import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight } from "lucide-react";
+import { formatBRL } from "@/lib/format";
+import { useProvisao, useVisibleProvisoes } from "@/store/provisaoStore";
+import { useAuth } from "@/store/authStore";
+import { useCatalog } from "@/store/catalogStore";
+import { useOrder } from "@/store/orderStore";
+import { STATUS_PROVISAO_LABEL, type ProvisaoFutura, type StatusProvisao } from "@/types/provisao";
+
+const search = z.object({
+  highlight: z.string().optional(),
+});
+
+export const Route = createFileRoute("/provisoes")({
+  validateSearch: search,
+  head: () => ({
+    meta: [
+      { title: "Provisões — Fetély B2B" },
+      { name: "description", content: "Provisões futuras aguardando estoque." },
+    ],
+  }),
+  component: ProvisoesPage,
+});
+
+type Tab = "aguardando" | "liberado" | "todas";
+
+function statusBadge(status: StatusProvisao) {
+  const map: Record<StatusProvisao, string> = {
+    aguardando_estoque: "bg-stock-pre/15 text-stock-pre border-stock-pre/30",
+    estoque_liberado: "bg-stock-in/15 text-stock-in border-stock-in/30",
+    convertido_em_pedido: "bg-gold/15 text-gold border-gold/30",
+    cancelado: "bg-stock-out/15 text-stock-out border-stock-out/30",
+  };
+  return map[status];
+}
+
+function ProvisoesPage() {
+  const { highlight } = Route.useSearch();
+  const provisoes = useVisibleProvisoes();
+  const [tab, setTab] = useState<Tab>("aguardando");
+  const [openId, setOpenId] = useState<string | null>(highlight ?? null);
+
+  const filtered = useMemo(() => {
+    if (tab === "aguardando") return provisoes.filter((p) => p.status === "aguardando_estoque");
+    if (tab === "liberado") return provisoes.filter((p) => p.status === "estoque_liberado");
+    return provisoes;
+  }, [provisoes, tab]);
+
+  const aguardandoCount = provisoes.filter((p) => p.status === "aguardando_estoque").length;
+  const liberadoCount = provisoes.filter((p) => p.status === "estoque_liberado").length;
+  const open = openId ? provisoes.find((p) => p.id === openId) ?? null : null;
+
+  return (
+    <main className="mx-auto max-w-[1400px] px-3 py-4 sm:px-6 sm:py-10">
+      <div className="mb-5 sm:mb-8">
+        <div className="text-[10px] uppercase tracking-[0.3em] text-gold">Pipeline</div>
+        <h1 className="font-display text-2xl sm:text-4xl mt-1">Provisões Futuras</h1>
+        <p className="text-text-secondary text-sm mt-1">
+          Rascunhos de pedidos aguardando liberação de estoque.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-1 mb-5 bg-surface-2 p-1 rounded-md w-fit">
+        <TabBtn active={tab === "aguardando"} onClick={() => setTab("aguardando")}>
+          Aguardando ({aguardandoCount})
+        </TabBtn>
+        <TabBtn active={tab === "liberado"} onClick={() => setTab("liberado")}>
+          Liberado ({liberadoCount})
+        </TabBtn>
+        <TabBtn active={tab === "todas"} onClick={() => setTab("todas")}>
+          Todas ({provisoes.length})
+        </TabBtn>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-lg gold-border bg-surface p-12 text-center">
+          <Package className="h-10 w-10 text-text-muted mx-auto mb-3" />
+          <p className="text-text-secondary text-sm">Nenhuma provisão nesta visão.</p>
+        </div>
+      ) : (
+        <div className="rounded-lg gold-border bg-surface overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-surface-2 text-[10px] uppercase tracking-wider text-text-muted">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium">#</th>
+                <th className="text-left px-4 py-3 font-medium">Cliente</th>
+                <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Vendedor</th>
+                <th className="text-center px-4 py-3 font-medium">Itens</th>
+                <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Próx. previsão</th>
+                <th className="text-right px-4 py-3 font-medium">Ref.</th>
+                <th className="text-left px-4 py-3 font-medium">Status</th>
+                <th className="w-8"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((p) => (
+                <tr
+                  key={p.id}
+                  onClick={() => setOpenId(p.id)}
+                  className={`border-t border-border/50 hover:bg-surface-hover cursor-pointer transition ${
+                    p.id === highlight ? "bg-gold/5" : ""
+                  }`}
+                >
+                  <td className="px-4 py-3 font-mono text-xs text-gold">{p.id}</td>
+                  <td className="px-4 py-3">
+                    <div className="text-text-primary truncate max-w-[200px]">
+                      {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
+                    </div>
+                    {p.pedidoFirmeId && (
+                      <div className="text-[10px] text-text-muted">vinc. {p.pedidoFirmeId}</div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-text-secondary text-xs hidden sm:table-cell">
+                    {p.vendedorNome}
+                  </td>
+                  <td className="px-4 py-3 text-center">{p.itens.length}</td>
+                  <td className="px-4 py-3 text-text-secondary text-xs hidden md:table-cell">
+                    {p.proximaPrevisao}
+                  </td>
+                  <td className="px-4 py-3 text-right text-stock-pre">
+                    {formatBRL(p.totalReferencia)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${statusBadge(p.status)}`}>
+                      {STATUS_PROVISAO_LABEL[p.status]}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <ChevronRight className="h-4 w-4 text-text-muted" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {open && <ProvisaoDetail provisao={open} onClose={() => setOpenId(null)} />}
+    </main>
+  );
+}
+
+function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1.5 text-[11px] uppercase tracking-wider rounded ${
+        active ? "bg-gold text-background" : "text-text-secondary hover:text-text-primary"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClose: () => void }) {
+  const isAdmin = useAuth((s) => s.roles.includes("admin") || s.roles.includes("master"));
+  const updateStatus = useProvisao((s) => s.updateStatus);
+  const setObservacoes = useProvisao((s) => s.setObservacoes);
+  const cancelar = useProvisao((s) => s.cancelar);
+  const products = useCatalog((s) => s.products);
+  const addBulk = useOrder((s) => s.addBulk);
+  const setMeta = useOrder((s) => s.setMeta);
+  const clearCart = useOrder((s) => s.clearCart);
+  const navigate = useNavigate();
+  const [obs, setObs] = useState(provisao.observacoes ?? "");
+
+  const itemsComStatus = useMemo(() => {
+    return provisao.itens.map((i) => {
+      const atual = products.find((p) => p.sku === i.sku);
+      return {
+        ...i,
+        produtoAtual: atual,
+        precoAtualDiff: atual ? atual.precoAtacado - i.precoAtacadoReferencia : 0,
+        statusAtual: atual?.statusEstoque ?? i.statusEstoque,
+      };
+    });
+  }, [provisao.itens, products]);
+
+  const handleConverter = () => {
+    clearCart();
+    const entries = itemsComStatus
+      .map((i) => (i.produtoAtual ? { product: i.produtoAtual, quantity: i.quantidade } : null))
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+    if (entries.length === 0) {
+      alert("Nenhum produto da provisão está disponível no catálogo atual.");
+      return;
+    }
+    addBulk(entries);
+    setMeta({
+      clienteId: provisao.clienteId,
+      cliente: provisao.clienteSnapshot.razaoSocial,
+      nomeFantasia: provisao.clienteSnapshot.nomeFantasia,
+      cnpj: provisao.clienteSnapshot.cnpj,
+      email: provisao.clienteSnapshot.contatoEmail,
+      telefone: provisao.clienteSnapshot.contatoTelefone,
+      municipio: provisao.clienteSnapshot.cidade,
+      uf: provisao.clienteSnapshot.estado,
+      clienteSnapshot: provisao.clienteSnapshot,
+      provisaoOrigemId: provisao.id,
+    });
+    navigate({ to: "/cart" });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-stretch justify-end bg-background/80 backdrop-blur-sm">
+      <div className="w-full max-w-2xl bg-surface border-l gold-border overflow-y-auto">
+        <div className="sticky top-0 z-10 bg-surface border-b border-border px-6 py-4 flex items-center justify-between">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.25em] text-gold">Provisão</div>
+            <h2 className="font-display text-2xl">{provisao.id}</h2>
+          </div>
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          <div>
+            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-wider ${statusBadge(provisao.status)}`}>
+              {STATUS_PROVISAO_LABEL[provisao.status]}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <Info label="Cliente" value={provisao.clienteSnapshot.razaoSocial} />
+            <Info label="CNPJ" value={provisao.clienteSnapshot.cnpj} />
+            <Info label="Vendedor" value={provisao.vendedorNome} />
+            <Info label="Próx. previsão" value={provisao.proximaPrevisao} />
+            <Info label="Criada em" value={new Date(provisao.criadoEm).toLocaleString("pt-BR")} />
+            {provisao.pedidoFirmeId && <Info label="Pedido firme vinc." value={provisao.pedidoFirmeId} />}
+            {provisao.pedidoConvertidoId && <Info label="Convertida em" value={provisao.pedidoConvertidoId} />}
+          </div>
+
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-text-muted mb-2">
+              Itens ({provisao.itens.length})
+            </div>
+            <div className="rounded-md border border-border overflow-hidden">
+              {itemsComStatus.map((i) => (
+                <div key={i.sku} className="flex items-center gap-3 px-3 py-2.5 border-b border-border/50 last:border-b-0 text-xs">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-text-primary truncate">{i.nomeComercial}</div>
+                    <div className="font-mono text-[10px] text-text-muted">{i.sku}</div>
+                    {Math.abs(i.precoAtualDiff) > 0.01 && i.produtoAtual && (
+                      <div className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-stock-out">
+                        <AlertTriangle className="h-3 w-3" />
+                        Preço mudou: {formatBRL(i.precoAtacadoReferencia)} → {formatBRL(i.produtoAtual.precoAtacado)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-text-secondary text-center w-16">
+                    {i.quantidade} un
+                  </div>
+                  <div className="text-stock-pre w-24 text-right">
+                    {formatBRL(i.quantidade * i.precoAtacadoReferencia)}
+                  </div>
+                  <div className="w-24">
+                    <span className="inline-flex text-[9px] uppercase tracking-wider rounded-full border border-stock-pre/30 bg-stock-pre/10 text-stock-pre px-1.5 py-0.5">
+                      {i.statusAtual}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-xs uppercase tracking-wider text-text-muted">Total de referência</span>
+              <span className="font-display text-2xl text-stock-pre">{formatBRL(provisao.totalReferencia)}</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1.5">Observações</div>
+            <textarea
+              value={obs}
+              onChange={(e) => setObs(e.target.value)}
+              onBlur={() => setObservacoes(provisao.id, obs)}
+              rows={3}
+              className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm resize-none focus:border-gold outline-none"
+              placeholder="Notas internas sobre esta provisão..."
+            />
+          </div>
+
+          <div className="flex flex-col gap-2 pt-2 border-t border-border">
+            {provisao.status === "aguardando_estoque" && isAdmin && (
+              <button
+                onClick={() => updateStatus(provisao.id, "estoque_liberado")}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-stock-in/20 border border-stock-in/40 text-stock-in py-2.5 text-xs uppercase tracking-wider hover:bg-stock-in/30"
+              >
+                <CheckCircle2 className="h-4 w-4" /> Marcar estoque como liberado
+              </button>
+            )}
+            {(provisao.status === "aguardando_estoque" || provisao.status === "estoque_liberado") && (
+              <button
+                onClick={handleConverter}
+                className={`w-full inline-flex items-center justify-center gap-2 rounded-md py-2.5 text-xs font-semibold uppercase tracking-wider ${
+                  provisao.status === "estoque_liberado"
+                    ? "bg-gold text-background hover:bg-gold-light"
+                    : "border border-gold/40 text-gold hover:bg-gold/10"
+                }`}
+              >
+                <Package className="h-4 w-4" /> Converter em pedido
+              </button>
+            )}
+            {provisao.status !== "cancelado" && provisao.status !== "convertido_em_pedido" && (
+              <button
+                onClick={() => {
+                  if (confirm(`Cancelar a provisão ${provisao.id}?`)) {
+                    cancelar(provisao.id);
+                    onClose();
+                  }
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-stock-out/30 text-stock-out py-2 text-[11px] uppercase tracking-wider hover:bg-stock-out/10"
+              >
+                <Clock className="h-3 w-3" /> Cancelar provisão
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-wider text-text-muted">{label}</div>
+      <div className="text-sm text-text-primary mt-0.5 truncate">{value}</div>
+    </div>
+  );
+}

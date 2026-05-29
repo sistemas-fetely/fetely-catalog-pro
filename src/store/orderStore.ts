@@ -23,9 +23,10 @@ interface OrderState {
   addBulk: (entries: { product: Product; quantity: number }[]) => void;
   updateQty: (sku: string, quantity: number) => void;
   removeItem: (sku: string) => void;
+  removeItems: (skus: string[]) => void;
   clearCart: () => void;
   setMeta: (m: Partial<OrderMeta>) => void;
-  saveOrder: (commercial?: OrderCommercial) => SavedOrder;
+  saveOrder: (commercial?: OrderCommercial, itemsOverride?: CartItem[]) => SavedOrder;
   reassignOrder: (
     orderId: string,
     novo: { vendedorId: string; vendedorNome?: string | null; vendedorLogin?: string | null; vendedorTipo?: "interno" | "representante" | null },
@@ -71,10 +72,15 @@ export const useOrder = create<OrderState>()(
         }));
       },
       removeItem: (sku) => set((s) => ({ items: s.items.filter((i) => i.sku !== sku) })),
+      removeItems: (skus) => {
+        const set_ = new Set(skus);
+        set((s) => ({ items: s.items.filter((i) => !set_.has(i.sku)) }));
+      },
       clearCart: () => set({ items: [], meta: defaultMeta }),
       setMeta: (m) => set((s) => ({ meta: { ...s.meta, ...m } })),
-      saveOrder: (commercial) => {
-        const { items, meta } = get();
+      saveOrder: (commercial, itemsOverride) => {
+        const { items: allItems, meta } = get();
+        const items = itemsOverride ?? allItems;
         const total =
           commercial?.totalFinal ??
           items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
