@@ -73,7 +73,12 @@ export interface Cliente {
   tags?: string[];
 
   ativo: boolean;
+
+  // V13 — Condições comerciais homologadas (opcional)
+  premissasComerciais?: PremissasComerciais;
 }
+
+// dummy line kept for offset stability ----------------------
 
 export interface ClienteSnapshot {
   clienteId: string;
