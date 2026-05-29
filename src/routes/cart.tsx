@@ -7,8 +7,14 @@ import { useOrder, cartTotal } from "@/store/orderStore";
 import { useNegotiation, registrarNegociacao } from "@/store/negotiationStore";
 import { CartCommercialPanel, type CommercialState } from "@/components/cart/CartCommercialPanel";
 import { ClienteSelector } from "@/components/clientes/ClienteSelector";
+import { MixedCartBanner } from "@/components/cart/MixedCartBanner";
+import { ProvisaoSection } from "@/components/cart/ProvisaoSection";
+import { FinalConfirmModal } from "@/components/cart/FinalConfirmModal";
+import { classificarItem, extrairDataPrevisao, compararPrevisao } from "@/lib/classifyItem";
+import { useProvisao } from "@/store/provisaoStore";
 import type { CartItem, OrderCommercial } from "@/types";
-import type { Cliente } from "@/types/cliente";
+import type { Cliente, ClienteSnapshot } from "@/types/cliente";
+import type { ItemProvisao } from "@/types/provisao";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -20,6 +26,38 @@ export const Route = createFileRoute("/cart")({
   component: CartPage,
 });
 
+function buildClienteSnapshot(c: Cliente): ClienteSnapshot {
+  const endereco = c.enderecoEntregaIgual
+    ? `${c.logradouro ?? ""}${c.numero ? `, ${c.numero}` : ""} — ${c.bairro ?? ""}, ${c.cidade ?? ""}/${c.estado ?? ""} · ${c.cep ?? ""}`
+    : `${c.entregaLogradouro ?? ""}${c.entregaNumero ? `, ${c.entregaNumero}` : ""} — ${c.entregaBairro ?? ""}, ${c.entregaCidade ?? ""}/${c.entregaEstado ?? ""} · ${c.entregaCep ?? ""}`;
+  return {
+    clienteId: c.id,
+    cnpj: c.cnpjFormatado,
+    razaoSocial: c.razaoSocial,
+    nomeFantasia: c.nomeFantasia,
+    cidade: c.cidade,
+    estado: c.estado,
+    contatoNome: c.contatoNome,
+    contatoEmail: c.contatoEmail,
+    contatoTelefone: c.contatoTelefone,
+    enderecoEntrega: endereco,
+  };
+}
+
+function toItemProvisao(i: CartItem): ItemProvisao {
+  return {
+    sku: i.sku,
+    nomeComercial: i.product.nomeComercial,
+    colecao: i.product.colecao,
+    corNome: i.product.corNome,
+    tamanhoNumero: i.product.tamanhoNumero,
+    quantidade: i.quantity,
+    precoAtacadoReferencia: i.product.precoAtacado,
+    statusEstoque: i.product.statusEstoque,
+    previsaoData: extrairDataPrevisao(i.product.statusEstoque),
+  };
+}
+
 function CartPage() {
   const items = useOrder((s) => s.items);
   const meta = useOrder((s) => s.meta);
@@ -27,6 +65,7 @@ function CartPage() {
   const updateQty = useOrder((s) => s.updateQty);
   const removeItem = useOrder((s) => s.removeItem);
   const saveOrder = useOrder((s) => s.saveOrder);
+  const removeItems = useOrder((s) => s.removeItems);
   const clearCart = useOrder((s) => s.clearCart);
   const negotiationAtivo = useNegotiation((s) => s.ativo);
   const negDescontoPct = useNegotiation((s) => s.descontoPct);
@@ -34,23 +73,41 @@ function CartPage() {
   const negObservacaoInterna = useNegotiation((s) => s.observacaoInterna);
   const negUsarReservada = useNegotiation((s) => s.usarReservada);
   const resetNegotiation = useNegotiation((s) => s.resetSession);
+  const createProvisao = useProvisao((s) => s.createProvisao);
+  const updateProvisaoStatus = useProvisao((s) => s.updateStatus);
   const navigate = useNavigate();
 
   const [commercial, setCommercial] = useState<CommercialState | null>(null);
+  const [showFinalConfirm, setShowFinalConfirm] = useState(false);
   const handleCommercialChange = useCallback((s: CommercialState) => setCommercial(s), []);
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, CartItem[]>();
+  // Split firme / provisao
+  const { itensFirmes, itensProvisao } = useMemo(() => {
+    const firmes: CartItem[] = [];
+    const provisao: CartItem[] = [];
     items.forEach((i) => {
+      if (classificarItem(i.product.statusEstoque) === "firme") firmes.push(i);
+      else provisao.push(i);
+    });
+    return { itensFirmes: firmes, itensProvisao: provisao };
+  }, [items]);
+
+  const isMisto = itensFirmes.length > 0 && itensProvisao.length > 0;
+  const apenasProvisao = itensFirmes.length === 0 && itensProvisao.length > 0;
+
+  const totalFirme = cartTotal(itensFirmes);
+  const totalProvisaoRef = cartTotal(itensProvisao);
+
+  const groupedFirmes = useMemo(() => {
+    const map = new Map<string, CartItem[]>();
+    itensFirmes.forEach((i) => {
       const key = i.product.colecao;
       const arr = map.get(key) ?? [];
       arr.push(i);
       map.set(key, arr);
     });
     return Array.from(map.entries());
-  }, [items]);
-
-  const total = cartTotal(items);
+  }, [itensFirmes]);
 
   const handleSelectCliente = useCallback(
     (c: Cliente) => {
@@ -95,9 +152,27 @@ function CartPage() {
     });
   }, [setMeta]);
 
+  // Resolve cliente from clienteStore for snapshot (lazy read of localStorage)
+  const resolveClienteSnapshot = useCallback((): ClienteSnapshot | null => {
+    if (meta.clienteSnapshot) return meta.clienteSnapshot;
+    if (!meta.clienteId || typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem("fetely_clientes_v1");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      const list: Cliente[] = parsed?.state?.clientes ?? [];
+      const c = list.find((x) => x.id === meta.clienteId);
+      return c ? buildClienteSnapshot(c) : null;
+    } catch {
+      return null;
+    }
+  }, [meta.clienteId, meta.clienteSnapshot]);
 
-  const handleConfirm = () => {
-    if (!meta.clienteId) return alert("Selecione um cliente cadastrado.");
+  const executeConfirm = () => {
+    const snapshot = resolveClienteSnapshot();
+    if (!snapshot) return alert("Selecione um cliente cadastrado.");
+
+    // Build commercial object for firme order
     if (!commercial?.podeFinalizar || !commercial.calculo.faixa || !commercial.condicao) {
       return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
     }
@@ -125,7 +200,7 @@ function CartPage() {
     };
 
     setMeta({ condicaoPagamento: commercial.condicao.descricao });
-    const order = saveOrder(orderCommercial);
+    const order = saveOrder(orderCommercial, itensFirmes);
 
     if (orderCommercial.negociacao && orderCommercial.descontoMasterPct > 0) {
       registrarNegociacao({
@@ -139,9 +214,56 @@ function CartPage() {
       });
     }
 
+    let provisaoId: string | undefined;
+    if (itensProvisao.length > 0) {
+      const prov = createProvisao({
+        clienteId: meta.clienteId!,
+        clienteSnapshot: snapshot,
+        itens: itensProvisao.map(toItemProvisao),
+        pedidoFirmeId: order.id,
+        observacoes: meta.observacoes || undefined,
+      });
+      provisaoId = prov.id;
+    }
+
+    // If converting from provisao, mark the source as converted
+    if (meta.provisaoOrigemId) {
+      updateProvisaoStatus(meta.provisaoOrigemId, "convertido_em_pedido", {
+        pedidoConvertidoId: order.id,
+      });
+    }
+
     clearCart();
     resetNegotiation();
-    navigate({ to: "/confirmation", search: { id: order.id } });
+    setShowFinalConfirm(false);
+    navigate({
+      to: "/confirmation",
+      search: provisaoId ? { id: order.id, provisaoId } : { id: order.id },
+    });
+  };
+
+  const handleConfirm = () => {
+    if (!meta.clienteId) return alert("Selecione um cliente cadastrado.");
+    if (itensProvisao.length > 0) {
+      setShowFinalConfirm(true);
+      return;
+    }
+    executeConfirm();
+  };
+
+  // Salvar tudo como provisão (carrinho 100% previsão)
+  const handleSaveOnlyProvisao = () => {
+    const snapshot = resolveClienteSnapshot();
+    if (!snapshot) return alert("Selecione um cliente cadastrado.");
+    const prov = createProvisao({
+      clienteId: meta.clienteId!,
+      clienteSnapshot: snapshot,
+      itens: itensProvisao.map(toItemProvisao),
+      observacoes: meta.observacoes || undefined,
+    });
+    clearCart();
+    resetNegotiation();
+    navigate({ to: "/provisoes", search: { highlight: prov.id } as never });
   };
 
   if (items.length === 0) {
@@ -177,9 +299,31 @@ function CartPage() {
         </Link>
       </div>
 
+      {meta.provisaoOrigemId && (
+        <div className="mb-4 rounded-md border border-stock-pre/40 bg-stock-pre/10 px-4 py-3 text-xs text-stock-pre">
+          ⚡ Estes itens vieram da Provisão <strong>{meta.provisaoOrigemId}</strong>. Verifique quantidades e condições antes de confirmar.
+        </div>
+      )}
+
+      {isMisto && (
+        <div className="mb-5">
+          <MixedCartBanner
+            firmeCount={itensFirmes.length}
+            firmeTotal={totalFirme}
+            provisaoCount={itensProvisao.length}
+            provisaoTotal={totalProvisaoRef}
+          />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 lg:gap-8">
         <div className="space-y-4 sm:space-y-6">
-          {grouped.map(([col, group]) => {
+          {groupedFirmes.length > 0 && (
+            <div className="text-[10px] uppercase tracking-[0.25em] text-stock-in font-semibold">
+              📦 Pedido firme — pronta entrega
+            </div>
+          )}
+          {groupedFirmes.map(([col, group]) => {
             const sub = group.reduce(
               (s, i) => s + i.quantity * i.product.precoAtacado,
               0,
@@ -245,10 +389,31 @@ function CartPage() {
               </section>
             );
           })}
+
+          {itensProvisao.length > 0 && <ProvisaoSection items={itensProvisao} />}
         </div>
 
         <aside className="lg:sticky lg:top-24 lg:self-start space-y-4">
-          <CartCommercialPanel bruto={total} onChange={handleCommercialChange} />
+          {!apenasProvisao && (
+            <CartCommercialPanel bruto={totalFirme} onChange={handleCommercialChange} />
+          )}
+
+          {apenasProvisao && (
+            <div className="rounded-lg border border-stock-pre/40 bg-stock-pre/5 p-5 space-y-2">
+              <h3 className="text-[10px] uppercase tracking-[0.25em] text-stock-pre font-semibold">
+                ⚠ Carrinho 100% previsão
+              </h3>
+              <p className="text-sm text-text-secondary">
+                Todos os itens estão com previsão de estoque. Não é possível gerar um pedido firme agora.
+              </p>
+              <p className="text-xs text-text-muted">
+                Salve como provisão futura para faturamento quando o estoque liberar.
+              </p>
+              <div className="text-xs text-text-muted">
+                Referência: <span className="text-stock-pre font-medium">{formatBRL(totalProvisaoRef)}</span>
+              </div>
+            </div>
+          )}
 
           <div className="rounded-lg gold-border bg-surface p-5 space-y-4">
             <h2 className="font-display text-2xl">Dados do pedido</h2>
@@ -275,32 +440,94 @@ function CartPage() {
             </Field>
           </div>
 
-
           <div className="rounded-lg gold-border bg-surface p-5">
-            {commercial?.motivoBloqueio && (
-              <p className="mb-3 text-xs text-stock-out">{commercial.motivoBloqueio}</p>
+            {apenasProvisao ? (
+              <>
+                <p className="mb-3 text-xs text-stock-pre">
+                  Todos os itens são de previsão. Salve como provisão futura.
+                </p>
+                <button
+                  onClick={handleSaveOnlyProvisao}
+                  disabled={!meta.clienteId}
+                  className="w-full rounded-md border border-stock-pre/60 bg-stock-pre/15 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-stock-pre hover:bg-stock-pre/25 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Salvar como Provisão →
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Descartar todo o carrinho?")) {
+                      clearCart();
+                      resetNegotiation();
+                    }
+                  }}
+                  className="mt-2 w-full text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-out"
+                >
+                  Descartar
+                </button>
+              </>
+            ) : (
+              <>
+                {commercial?.motivoBloqueio && (
+                  <p className="mb-3 text-xs text-stock-out">
+                    {!commercial.calculo.faixa && isMisto
+                      ? `O valor dos itens em estoque (${formatBRL(totalFirme)}) está abaixo do pedido mínimo. Os itens de previsão não contam para este cálculo.`
+                      : commercial.motivoBloqueio}
+                  </p>
+                )}
+                <button
+                  onClick={handleConfirm}
+                  disabled={!commercial?.podeFinalizar}
+                  className="w-full rounded-md bg-gold py-3 text-xs font-semibold uppercase tracking-[0.18em] text-background hover:bg-gold-light disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isMisto ? "Confirmar pedido + provisão" : "Confirmar pedido"}
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Limpar todo o carrinho?")) {
+                      clearCart();
+                      resetNegotiation();
+                    }
+                  }}
+                  className="mt-2 w-full text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-out"
+                >
+                  Limpar carrinho
+                </button>
+                {isMisto && (
+                  <button
+                    onClick={() => {
+                      if (confirm("Remover todos os itens de previsão do carrinho?")) {
+                        removeItems(itensProvisao.map((i) => i.sku));
+                      }
+                    }}
+                    className="mt-1 w-full text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-pre"
+                  >
+                    Remover só os itens de previsão
+                  </button>
+                )}
+              </>
             )}
-            <button
-              onClick={handleConfirm}
-              disabled={!commercial?.podeFinalizar}
-              className="w-full rounded-md bg-gold py-3 text-xs font-semibold uppercase tracking-[0.18em] text-background hover:bg-gold-light disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Confirmar pedido
-            </button>
-            <button
-              onClick={() => {
-                if (confirm("Limpar todo o carrinho?")) {
-                  clearCart();
-                  resetNegotiation();
-                }
-              }}
-              className="mt-2 w-full text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-out"
-            >
-              Limpar carrinho
-            </button>
           </div>
         </aside>
       </div>
+
+      {showFinalConfirm && commercial?.calculo.faixa && commercial.condicao && (
+        <FinalConfirmModal
+          data={{
+            firmeCount: itensFirmes.length,
+            firmeTotal: commercial.calculo.total,
+            faixaNome: commercial.calculo.faixa.nome,
+            condicaoDescricao: commercial.condicao.descricao,
+            frete: commercial.calculo.faixa.frete,
+            provisaoCount: itensProvisao.length,
+            provisaoTotal: totalProvisaoRef,
+            proximaPrevisao: Array.from(
+              new Set(itensProvisao.map((i) => extrairDataPrevisao(i.product.statusEstoque))),
+            ).sort(compararPrevisao)[0],
+          }}
+          onConfirm={executeConfirm}
+          onCancel={() => setShowFinalConfirm(false)}
+        />
+      )}
 
       <style>{`
         .input {
