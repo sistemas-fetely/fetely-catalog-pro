@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Copy, Download, Home, FileClock } from "lucide-react";
+import { Check, Copy, Download, Home, FileClock, Mail, Printer, Send } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
 import { useVisibleOrders } from "@/store/orderStore";
 import { useProvisao } from "@/store/provisaoStore";
 import type { SavedOrder } from "@/types";
 import { ExportModal } from "@/components/export/ExportModal";
+import { EnviarEmailDialog } from "@/components/EnviarEmailDialog";
+import { openOrderPDFInNewTab } from "@/lib/orderPdf";
 import { z } from "zod";
 
 const search = z.object({
