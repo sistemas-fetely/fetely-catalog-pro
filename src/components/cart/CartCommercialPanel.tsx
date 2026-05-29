@@ -147,23 +147,51 @@ export function CartCommercialPanel({
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-[10px] uppercase tracking-[0.25em] text-gold-muted">
-                  Faixa {faixa.id}
+                  {premissas ? "Condições homologadas" : `Faixa ${faixa.id}`}
                 </div>
                 <div className="font-display text-2xl text-gold flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" /> {faixa.nome}
+                  {premissas ? (
+                    <>
+                      <Award className="h-4 w-4" /> Comerciais Homologadas
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" /> {faixa.nome}
+                    </>
+                  )}
                 </div>
               </div>
-              {ativo && (
-                <span className="rounded-full bg-gold/15 px-3 py-1 text-[10px] uppercase tracking-wider text-gold border border-gold/40">
-                  Negociação
-                </span>
-              )}
+              <div className="flex flex-col items-end gap-1">
+                {premissas && (
+                  <span className="rounded-full bg-gold/20 px-3 py-1 text-[10px] uppercase tracking-wider text-gold border border-gold/50 inline-flex items-center gap-1">
+                    🏅 Homologadas
+                  </span>
+                )}
+                {ativo && (
+                  <span className="rounded-full bg-gold/15 px-3 py-1 text-[10px] uppercase tracking-wider text-gold border border-gold/40">
+                    Negociação
+                  </span>
+                )}
+              </div>
             </div>
+
+            {premissas && (
+              <p className="text-[11px] text-gold-muted">
+                Faixa-base: {faixa.nome}
+                {premissas.vigenciaFim
+                  ? ` · vigência até ${new Date(premissas.vigenciaFim).toLocaleDateString("pt-BR")}`
+                  : " · sem expiração"}
+              </p>
+            )}
 
             <ul className="text-sm space-y-1.5">
               <Row label="Valor do pedido" value={formatBRL(bruto)} />
               <Row
-                label={`Desconto Celebra (${faixa.descontoCelebra}%)`}
+                label={
+                  premissas?.temDescontoHomologado
+                    ? `Desconto homologado (${descontoEfetivoPct}%${premissas.descontoHomologadoSobrePos ? " · acumula" : " · substitui"})`
+                    : `Desconto Celebra (${descontoEfetivoPct}%)`
+                }
                 value={`– ${formatBRL(calculo.descontoCelebraValor)}`}
                 accent
               />
@@ -176,7 +204,7 @@ export function CartCommercialPanel({
               )}
               {calculo.aplicouPix && (
                 <Row
-                  label={`Bônus PIX (${faixa.bonusPix}%)`}
+                  label={`Bônus PIX (${bonusPixEfetivoPct}%${premissas?.bonusPixPersonalizado ? " · personalizado" : ""})`}
                   value={`– ${formatBRL(calculo.bonusPixValor)}`}
                   accent
                 />
@@ -202,13 +230,15 @@ export function CartCommercialPanel({
 
             <div className="flex items-center gap-2 rounded-md bg-surface-2 px-3 py-2 text-xs">
               <Truck className="h-4 w-4 text-gold" />
-              {faixa.frete === "CIF" ? (
+              {freteEfetivo === "CIF" ? (
                 <span>
-                  Frete <strong className="text-gold">CIF</strong> — Fetély entrega ✨
+                  Frete <strong className="text-gold">CIF</strong>
+                  {premissas?.freteFixo ? " — acordado (sempre)" : " — Fetély entrega ✨"}
                 </span>
               ) : (
                 <span>
-                  Frete <strong>FOB</strong> — por conta do lojista
+                  Frete <strong>FOB</strong>
+                  {premissas?.freteFixo ? " — acordado (sempre)" : " — por conta do lojista"}
                 </span>
               )}
             </div>
