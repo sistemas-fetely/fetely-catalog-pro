@@ -92,6 +92,10 @@ export interface PedidoExportavel {
   comissaoEstimadaValor?: number;
   observacoesVendedor?: string;
   observacoesInternas?: string;
+  // V13 — Premissas comerciais homologadas aplicadas
+  premissasAplicadas: boolean;
+  premissasResumo: string[];
+  premissasVigenciaFim: string;
 }
 
 export interface ExportOptions {
@@ -212,6 +216,43 @@ export function buildPedidoExportavel(order: SavedOrder): PedidoExportavel {
     totalSkus: order.items.length,
     observacoesVendedor: order.meta.observacoes,
     observacoesInternas: c?.observacaoInterna,
+    ...buildPremissasResumo(snap?.premissasAplicadas ?? null, c),
+  };
+}
+
+function buildPremissasResumo(
+  p: import("@/types/cliente").PremissasComerciais | null,
+  c: import("@/types").OrderCommercial | undefined,
+): { premissasAplicadas: boolean; premissasResumo: string[]; premissasVigenciaFim: string } {
+  const aplicou = !!p && (c?.premissasAplicadas ?? true);
+  if (!p || !aplicou) {
+    return { premissasAplicadas: false, premissasResumo: [], premissasVigenciaFim: "" };
+  }
+  const linhas: string[] = [];
+  if (p.temDescontoHomologado) {
+    linhas.push(
+      `Desconto homologado: ${p.descontoHomologadoPercent}% ${p.descontoHomologadoSobrePos ? "(acumula sobre faixa)" : "(substitui faixa)"}`,
+    );
+  }
+  if (p.temFaixaFixa && p.faixaFixaId != null) {
+    const faixa = FAIXAS.find((f) => f.id === p.faixaFixaId);
+    if (faixa) linhas.push(`Faixa fixa: ${faixa.nome}`);
+  }
+  if (p.bonusPixPersonalizado) linhas.push(`Bônus PIX personalizado: ${p.bonusPixPercent}%`);
+  if (p.freteFixo && p.freteTipo) linhas.push(`Frete fixo: ${p.freteTipo}`);
+  if (p.temPedidoMinimoPersonalizado) {
+    linhas.push(`Pedido mínimo personalizado: ${fmtBRL(p.pedidoMinimoValor)}`);
+  }
+  if (p.temCondicaoPreferencial && p.condicaoPreferencialId != null) {
+    linhas.push(`Condição preferencial: cond. #${p.condicaoPreferencialId}`);
+  }
+  if (linhas.length === 0) linhas.push("Premissas vigentes aplicadas.");
+  return {
+    premissasAplicadas: true,
+    premissasResumo: linhas,
+    premissasVigenciaFim: p.vigenciaFim
+      ? new Date(p.vigenciaFim).toLocaleDateString("pt-BR")
+      : "sem expiração",
   };
 }
 
@@ -408,6 +449,25 @@ export function exportarPDF(
     margin: { left: 15, right: 15 },
   });
 
+  // V13 — Condições comerciais homologadas (premissas)
+  if (pedido.premissasAplicadas) {
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 2,
+      head: [["✦ CONDIÇÕES COMERCIAIS APLICADAS (HOMOLOGADAS)"]],
+      body: [
+        [
+          [
+            ...pedido.premissasResumo.map((l) => `• ${l}`),
+            `Vigência até: ${pedido.premissasVigenciaFim}`,
+          ].join("\n"),
+        ],
+      ],
+      headStyles: { fillColor: GOLD, textColor: [0, 0, 0], fontStyle: "bold", fontSize: 9 },
+      styles: { fontSize: 9, cellPadding: 3 },
+      margin: { left: 15, right: 15 },
+    });
+  }
+
   if (pedido.observacoesVendedor) {
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 2,
@@ -488,6 +548,7 @@ const CSV_HEADERS = [
   "modo_negociacao_usado","negociacao_justificativa",
   "comissao_percent","comissao_estimada_valor",
   "observacoes_vendedor",
+  "premissas_aplicadas","premissas_resumo","premissas_vigencia_fim",
 ];
 
 const csvEscape = (val: unknown): string => {
@@ -525,6 +586,9 @@ function rowsForPedido(pedido: PedidoExportavel): string[][] {
     pedido.vendedorComissaoPercent != null ? String(pedido.vendedorComissaoPercent) : "",
     pedido.comissaoEstimadaValor != null ? pedido.comissaoEstimadaValor.toFixed(2) : "",
     pedido.observacoesVendedor ?? "",
+    String(pedido.premissasAplicadas),
+    pedido.premissasResumo.join(" | "),
+    pedido.premissasVigenciaFim,
   ]);
 }
 

@@ -112,6 +112,8 @@ export interface OrderCommercial {
   justificativa: string;
   observacaoInterna: string;
   usouReservada: boolean;
+  /** V13 — premissas comerciais homologadas foram aplicadas neste pedido */
+  premissasAplicadas?: boolean;
 }
 
 export interface SavedOrder {

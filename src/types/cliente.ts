@@ -91,6 +91,8 @@ export interface ClienteSnapshot {
   contatoEmail: string;
   contatoTelefone: string;
   enderecoEntrega: string;
+  /** V13 — snapshot das premissas vigentes aplicadas no momento do pedido */
+  premissasAplicadas?: PremissasComerciais | null;
 }
 
 // ============================================================

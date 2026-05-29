@@ -15,6 +15,7 @@ import { useProvisao } from "@/store/provisaoStore";
 import type { CartItem, OrderCommercial } from "@/types";
 import type { Cliente, ClienteSnapshot } from "@/types/cliente";
 import type { ItemProvisao } from "@/types/provisao";
+import { getPremissasVigentes } from "@/lib/premissas";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -41,6 +42,7 @@ function buildClienteSnapshot(c: Cliente): ClienteSnapshot {
     contatoEmail: c.contatoEmail,
     contatoTelefone: c.contatoTelefone,
     enderecoEntrega: endereco,
+    premissasAplicadas: getPremissasVigentes(c),
   };
 }
 
@@ -197,6 +199,7 @@ function CartPage() {
       justificativa: negotiationAtivo ? negJustificativa : "",
       observacaoInterna: negotiationAtivo ? negObservacaoInterna : "",
       usouReservada: negotiationAtivo && negUsarReservada,
+      premissasAplicadas: !!c.premissasAplicadas,
     };
 
     setMeta({ condicaoPagamento: commercial.condicao.descricao });
