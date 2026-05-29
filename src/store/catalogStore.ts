@@ -176,8 +176,17 @@ export const useCatalog = create<CatalogState>()(
     {
       name: "fetely-catalog",
       storage: createJSONStorage(safeStorage),
-      version: 6,
-      migrate: (persisted: unknown, version) => {
+      version: 7,
+      migrate: (_persisted: unknown, _version) => {
+        // v7: re-seed defaults to apply new "Acessórios de Mesa" category restructure
+        return {
+          products: DEFAULT_PRODUCTS,
+          audit: [],
+          source: "default" as const,
+          importedAt: null,
+        };
+      },
+      _legacyMigrate: (persisted: unknown, version) => {
         // v5 -> v6: keep persisted products if present, just add audit array
         if (
           persisted &&
