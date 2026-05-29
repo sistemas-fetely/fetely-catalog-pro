@@ -181,7 +181,7 @@ function Confirmation() {
             <div className="text-[10px] uppercase tracking-wider text-text-muted">Total</div>
             <div className="font-display text-3xl text-gold">{formatBRL(order.total)}</div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 print-hide">
             <button
               onClick={handleCopy}
               className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
