@@ -102,38 +102,44 @@ export function Header() {
 
 
           {/* Brand */}
-          <Link to="/" className="group flex items-baseline gap-2 flex-shrink-0">
+          <Link to={isPublic ? "/catalog" : "/"} className="group flex items-baseline gap-2 flex-shrink-0">
             <span className="font-display text-2xl tracking-[0.2em] text-text-primary group-hover:text-gold transition">
               FETÉLY
             </span>
             <span className="hidden sm:inline text-[10px] uppercase tracking-[0.3em] text-gold-muted">
-              B2B Orders
+              {isPublic ? "Catálogo de Produtos" : "B2B Orders"}
             </span>
           </Link>
 
-          {/* Primary nav (left group) */}
-          <nav className="hidden md:flex items-center gap-1 ml-2">
-            <Link to="/catalog" className={navLinkClass(pathname.startsWith("/catalog"))}>
-              <span className="px-2 py-1.5">Catálogo</span>
-            </Link>
-            <Link to="/orders" className={navLinkClass(pathname.startsWith("/orders"))}>
-              <ClipboardList className="h-4 w-4" />
-              <span className="hidden lg:inline px-1 py-1.5">Pedidos</span>
-            </Link>
-            <Link to="/clientes" className={navLinkClass(pathname.startsWith("/clientes"))}>
-              <Users className="h-4 w-4" />
-              <span className="hidden lg:inline px-1 py-1.5">Clientes</span>
-            </Link>
-            <Link to="/provisoes" className={navLinkClass(pathname.startsWith("/provisoes"))}>
-              <FileClock className="h-4 w-4" />
-              <span className="hidden lg:inline px-1 py-1.5">Provisões</span>
-            </Link>
-          </nav>
+          {/* Primary nav (left group) — apenas usuários autenticados */}
+          {!isPublic && (
+            <nav className="hidden md:flex items-center gap-1 ml-2">
+              <Link to="/catalog" className={navLinkClass(pathname.startsWith("/catalog"))}>
+                <span className="px-2 py-1.5">Catálogo</span>
+              </Link>
+              <Link to="/orders" className={navLinkClass(pathname.startsWith("/orders"))}>
+                <ClipboardList className="h-4 w-4" />
+                <span className="hidden lg:inline px-1 py-1.5">Pedidos</span>
+              </Link>
+              <Link to="/clientes" className={navLinkClass(pathname.startsWith("/clientes"))}>
+                <Users className="h-4 w-4" />
+                <span className="hidden lg:inline px-1 py-1.5">Clientes</span>
+              </Link>
+              <Link to="/provisoes" className={navLinkClass(pathname.startsWith("/provisoes"))}>
+                <FileClock className="h-4 w-4" />
+                <span className="hidden lg:inline px-1 py-1.5">Provisões</span>
+              </Link>
+            </nav>
+          )}
 
-          {/* Search (center) */}
-          <div className="hidden md:flex flex-1 justify-center max-w-xl mx-auto">
-            <GlobalSearch />
-          </div>
+          {/* Search (center) — apenas autenticados */}
+          {!isPublic && (
+            <div className="hidden md:flex flex-1 justify-center max-w-xl mx-auto">
+              <GlobalSearch />
+            </div>
+          )}
+          {isPublic && <div className="flex-1" />}
+
 
           {/* Right actions */}
           <div className="ml-auto flex items-center gap-1 md:gap-2">
