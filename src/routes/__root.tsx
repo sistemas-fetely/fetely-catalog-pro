@@ -4,6 +4,8 @@ import {
   Outlet,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
+  useNavigate,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -11,6 +13,7 @@ import {
 import appCss from "../styles.css?url";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
 import "@/store/cartilhasStore"; // side-effect: sincroniza commercial.ts com a cartilha persistida
 
