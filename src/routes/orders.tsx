@@ -143,6 +143,21 @@ function OrdersPage() {
           <table className="w-full text-sm">
             <thead className="bg-surface-2 text-[10px] uppercase tracking-wider text-text-muted">
               <tr>
+                <th className="px-3 py-3 w-8">
+                  <input
+                    type="checkbox"
+                    className="accent-gold"
+                    checked={
+                      filtered.length > 0 &&
+                      filtered.every((o) => selectedIds.has(o.id))
+                    }
+                    onChange={(e) => {
+                      if (e.target.checked)
+                        setSelectedIds(new Set(filtered.map((o) => o.id)));
+                      else setSelectedIds(new Set());
+                    }}
+                  />
+                </th>
                 <th className="text-left px-4 py-3">Pedido</th>
                 <th className="text-left px-4 py-3">Data</th>
                 <th className="text-left px-4 py-3">Cliente</th>
@@ -159,6 +174,14 @@ function OrdersPage() {
                 const isRep = o.vendedorTipo === "representante";
                 return (
                   <tr key={o.id} className="border-t border-border hover:bg-surface-2/50 transition">
+                    <td className="px-3 py-3">
+                      <input
+                        type="checkbox"
+                        className="accent-gold"
+                        checked={selectedIds.has(o.id)}
+                        onChange={() => toggleSelected(o.id)}
+                      />
+                    </td>
                     <td className="px-4 py-3 font-mono text-xs text-gold">{o.id}</td>
                     <td className="px-4 py-3 text-text-secondary">
                       {new Date(o.createdAt).toLocaleString("pt-BR")}
