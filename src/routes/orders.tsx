@@ -29,7 +29,17 @@ function OrdersPage() {
   const [vendedorFilter, setVendedorFilter] = useState<string>("all");
   const [reassignTarget, setReassignTarget] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [exportOrders, setExportOrders] = useState<typeof history | null>(null);
   useEffect(() => setHydrated(true), []);
+
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const fetchUsers = useServerFn(listAppUsers);
   const { data: appUsers } = useQuery({
