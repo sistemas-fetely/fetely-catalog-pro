@@ -82,6 +82,7 @@ function CartPage() {
 
   const [commercial, setCommercial] = useState<CommercialState | null>(null);
   const [showFinalConfirm, setShowFinalConfirm] = useState(false);
+  const [salvandoPedido, setSalvandoPedido] = useState(false);
   const handleCommercialChange = useCallback((s: CommercialState) => setCommercial(s), []);
 
   // Split firme / provisao
