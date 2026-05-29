@@ -275,10 +275,32 @@ function ClientesPage() {
             className="w-full text-left grid grid-cols-[2fr_1.2fr_1.2fr_80px_120px_60px] gap-3 items-center px-4 py-3 border-b border-border/50 last:border-b-0 hover:bg-surface-hover transition"
           >
             <div className="min-w-0">
-              <div className={`text-sm truncate ${c.ativo ? "text-text-primary" : "text-text-muted"}`}>
-                {c.nomeFantasia || c.razaoSocial}
+              <div className={`text-sm truncate flex items-center gap-2 ${c.ativo ? "text-text-primary" : "text-text-muted"}`}>
+                <span className="truncate">{c.nomeFantasia || c.razaoSocial}</span>
+                {(() => {
+                  const st = statusPremissas(c);
+                  if (st === "sem" || st === "inativa") return null;
+                  const dias = diasParaExpirar(c.premissasComerciais?.vigenciaFim ?? null);
+                  const cls =
+                    st === "ativa"
+                      ? "bg-gold/15 border-gold/40 text-gold"
+                      : st === "expirando"
+                      ? "bg-amber-500/15 border-amber-500/40 text-amber-400"
+                      : "bg-stock-out/15 border-stock-out/40 text-stock-out";
+                  const label =
+                    st === "ativa"
+                      ? "✦ Homologadas"
+                      : st === "expirando"
+                      ? `✦ Expira em ${dias}d`
+                      : "✦ Expirada";
+                  return (
+                    <span className={`shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${cls}`}>
+                      {label}
+                    </span>
+                  );
+                })()}
                 {!c.ativo && (
-                  <span className="ml-2 text-[9px] uppercase tracking-wider text-stock-out">
+                  <span className="ml-1 text-[9px] uppercase tracking-wider text-stock-out">
                     inativo
                   </span>
                 )}
