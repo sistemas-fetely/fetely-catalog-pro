@@ -494,10 +494,10 @@ function CartPage() {
                 )}
                 <button
                   onClick={handleConfirm}
-                  disabled={!commercial?.podeFinalizar}
+                  disabled={!commercial?.podeFinalizar || salvandoPedido}
                   className="w-full rounded-md bg-gold py-3 text-xs font-semibold uppercase tracking-[0.18em] text-background hover:bg-gold-light disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {isMisto ? "Confirmar pedido + provisão" : "Confirmar pedido"}
+                  {salvandoPedido ? "Salvando..." : isMisto ? "Confirmar pedido + provisão" : "Confirmar pedido"}
                 </button>
                 <button
                   onClick={() => {
