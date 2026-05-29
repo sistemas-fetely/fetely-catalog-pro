@@ -126,26 +126,23 @@ function Confirmation() {
   const [copied, setCopied] = useState(false);
   const [emailDialogAberto, setEmailDialogAberto] = useState(false);
   const [imprimirDialog, setImprimirDialog] = useState(false);
+  const [printMode, setPrintMode] = useState<"completo" | "resumo">("completo");
 
   function executarImprimir(modo: "completo" | "resumo") {
+    setPrintMode(modo);
     setImprimirDialog(false);
-    if (modo === "resumo") {
-      document.body.classList.add("printing-resumo");
-      // Força reflow pra garantir que CSS foi aplicado antes do print
-      void document.body.offsetHeight;
-    }
-    const cleanup = () => {
-      document.body.classList.remove("printing-resumo");
-      window.removeEventListener("afterprint", cleanup);
-    };
-    window.addEventListener("afterprint", cleanup);
-    // Delay maior + double rAF pra garantir 2 frames de render antes do print
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         window.print();
       });
     });
   }
+
+  useEffect(() => {
+    const cleanup = () => setPrintMode("completo");
+    window.addEventListener("afterprint", cleanup);
+    return () => window.removeEventListener("afterprint", cleanup);
+  }, []);
 
   if (!order) {
     return (
