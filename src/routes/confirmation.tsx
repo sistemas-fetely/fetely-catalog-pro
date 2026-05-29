@@ -131,6 +131,7 @@ function Confirmation() {
   }
 
   const text = formatOrderText(order);
+  const [showExport, setShowExport] = useState(false);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(text);
