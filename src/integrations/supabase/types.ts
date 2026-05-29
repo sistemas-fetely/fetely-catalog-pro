@@ -807,6 +807,7 @@ export type Database = {
           nome_completo: string | null
           observacoes: string | null
           regiao: string | null
+          regiao_id: string | null
           supervisor: string | null
           supervisor_id: string | null
           telefone: string | null
@@ -828,6 +829,7 @@ export type Database = {
           nome_completo?: string | null
           observacoes?: string | null
           regiao?: string | null
+          regiao_id?: string | null
           supervisor?: string | null
           supervisor_id?: string | null
           telefone?: string | null
@@ -849,6 +851,7 @@ export type Database = {
           nome_completo?: string | null
           observacoes?: string | null
           regiao?: string | null
+          regiao_id?: string | null
           supervisor?: string | null
           supervisor_id?: string | null
           telefone?: string | null
@@ -868,6 +871,13 @@ export type Database = {
             columns: ["supervisor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_regiao_id_fkey"
+            columns: ["regiao_id"]
+            isOneToOne: false
+            referencedRelation: "regioes"
             referencedColumns: ["id"]
           },
         ]
@@ -1001,6 +1011,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      regioes: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          criado_em: string
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: []
       }
       regras_gerais: {
         Row: {
