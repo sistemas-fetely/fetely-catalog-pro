@@ -572,6 +572,11 @@ export function ClienteFormModal({
               />
             </Field>
           </TabsContent>
+
+          {/* PREMISSAS COMERCIAIS (V13) */}
+          <TabsContent value="premissas" className="pt-2">
+            <PremissasComercialTab cliente={cliente} onChange={update} />
+          </TabsContent>
         </Tabs>
 
         <div className="flex justify-end gap-3 pt-4 border-t border-border">
