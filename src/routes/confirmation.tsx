@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Copy, Download, Home, FileClock, Mail, Printer, FileText, FileBarChart } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { formatBRL } from "@/lib/format";
 import { useVisibleOrders } from "@/store/orderStore";
 import { useProvisao } from "@/store/provisaoStore";
@@ -126,26 +126,23 @@ function Confirmation() {
   const [copied, setCopied] = useState(false);
   const [emailDialogAberto, setEmailDialogAberto] = useState(false);
   const [imprimirDialog, setImprimirDialog] = useState(false);
+  const [printMode, setPrintMode] = useState<"completo" | "resumo">("completo");
 
   function executarImprimir(modo: "completo" | "resumo") {
+    setPrintMode(modo);
     setImprimirDialog(false);
-    if (modo === "resumo") {
-      document.body.classList.add("printing-resumo");
-      // Força reflow pra garantir que CSS foi aplicado antes do print
-      void document.body.offsetHeight;
-    }
-    const cleanup = () => {
-      document.body.classList.remove("printing-resumo");
-      window.removeEventListener("afterprint", cleanup);
-    };
-    window.addEventListener("afterprint", cleanup);
-    // Delay maior + double rAF pra garantir 2 frames de render antes do print
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         window.print();
       });
     });
   }
+
+  useEffect(() => {
+    const cleanup = () => setPrintMode("completo");
+    window.addEventListener("afterprint", cleanup);
+    return () => window.removeEventListener("afterprint", cleanup);
+  }, []);
 
   if (!order) {
     return (
@@ -173,77 +170,83 @@ function Confirmation() {
   return (
     <main className="mx-auto max-w-4xl px-6 py-16">
       <div className="pedido-print">
-      <div className="text-center mb-12">
-        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gold/15 text-gold mb-4">
-          <Check className="h-8 w-8" />
-        </div>
-        <div className="text-[10px] uppercase tracking-[0.3em] text-gold">Pedido confirmado</div>
-        <h1 className="font-display text-5xl mt-2">{order.id}</h1>
-        <p className="text-text-secondary text-sm mt-2">
-          Gerado em {new Date(order.createdAt).toLocaleString("pt-BR")}
-        </p>
-      </div>
-
-      <div className="rounded-lg gold-border bg-surface p-6 space-y-5">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <Info label="Cliente" value={order.meta.cliente} />
-          <Info label="CNPJ" value={order.meta.cnpj || "—"} />
-          <Info label="Pagamento" value={order.meta.condicaoPagamento} />
-          <Info label="Vendedor" value={order.meta.vendedor} />
-        </div>
-        {order.meta.observacoes && (
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1">
-              Observações
+      {printMode === "completo" ? (
+        <>
+          <div className="text-center mb-12">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gold/15 text-gold mb-4">
+              <Check className="h-8 w-8" />
             </div>
-            <div className="text-sm text-text-secondary italic">{order.meta.observacoes}</div>
+            <div className="text-[10px] uppercase tracking-[0.3em] text-gold">Pedido confirmado</div>
+            <h1 className="font-display text-5xl mt-2">{order.id}</h1>
+            <p className="text-text-secondary text-sm mt-2">
+              Gerado em {new Date(order.createdAt).toLocaleString("pt-BR")}
+            </p>
           </div>
-        )}
 
-        <pre className="bg-surface-2 rounded-md p-4 text-xs font-mono text-text-secondary overflow-x-auto whitespace-pre-wrap max-h-96 scrollbar-thin">
+          <div className="rounded-lg gold-border bg-surface p-6 space-y-5">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <Info label="Cliente" value={order.meta.cliente} />
+              <Info label="CNPJ" value={order.meta.cnpj || "—"} />
+              <Info label="Pagamento" value={order.meta.condicaoPagamento} />
+              <Info label="Vendedor" value={order.meta.vendedor} />
+            </div>
+            {order.meta.observacoes && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1">
+                  Observações
+                </div>
+                <div className="text-sm text-text-secondary italic">{order.meta.observacoes}</div>
+              </div>
+            )}
+
+            <pre className="bg-surface-2 rounded-md p-4 text-xs font-mono text-text-secondary overflow-x-auto whitespace-pre-wrap max-h-96 scrollbar-thin">
 {text}
-        </pre>
+            </pre>
 
-        <div className="flex items-center justify-between pt-3 border-t border-border">
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-text-muted">Total</div>
-            <div className="font-display text-3xl text-gold">{formatBRL(order.total)}</div>
+            <div className="flex items-center justify-between pt-3 border-t border-border">
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-text-muted">Total</div>
+                <div className="font-display text-3xl text-gold">{formatBRL(order.total)}</div>
+              </div>
+              <div className="flex gap-3 print-hide">
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? "Copiado" : "Copiar resumo"}
+                </button>
+                <button
+                  onClick={() => setShowExport(true)}
+                  className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+                >
+                  <Download className="h-4 w-4" /> Exportar
+                </button>
+                <button
+                  onClick={() => setEmailDialogAberto(true)}
+                  className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+                >
+                  <Mail className="h-4 w-4" /> Email
+                </button>
+                <button
+                  onClick={() => setImprimirDialog(true)}
+                  className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+                >
+                  <Printer className="h-4 w-4" /> Imprimir
+                </button>
+                <Link
+                  to="/"
+                  className="flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
+                >
+                  <Home className="h-4 w-4" /> Início
+                </Link>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-3 print-hide">
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
-            >
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copied ? "Copiado" : "Copiar resumo"}
-            </button>
-            <button
-              onClick={() => setShowExport(true)}
-              className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
-            >
-              <Download className="h-4 w-4" /> Exportar
-            </button>
-            <button
-              onClick={() => setEmailDialogAberto(true)}
-              className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
-            >
-              <Mail className="h-4 w-4" /> Email
-            </button>
-            <button
-              onClick={() => setImprimirDialog(true)}
-              className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
-            >
-              <Printer className="h-4 w-4" /> Imprimir
-            </button>
-            <Link
-              to="/"
-              className="flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
-            >
-              <Home className="h-4 w-4" /> Início
-            </Link>
-          </div>
-        </div>
-      </div>
+        </>
+      ) : (
+        <PedidoResumoPrintBlock order={order} />
+      )}
 
       {provisao && (
         <div className="mt-6 rounded-lg border border-stock-pre/40 bg-stock-pre/5 p-6 print-hide">
@@ -282,8 +285,6 @@ function Confirmation() {
         onOpenChange={setEmailDialogAberto}
       />
 
-      {/* Bloco oculto na tela, renderiza só no print modo resumo */}
-      <PedidoResumoPrintBlock order={order} />
 
       {/* Modal de escolha de modo de impressão */}
       <Dialog open={imprimirDialog} onOpenChange={setImprimirDialog}>
@@ -351,7 +352,7 @@ function PedidoResumoPrintBlock({ order }: { order: SavedOrder }) {
   const totalSkus = order.items.length;
 
   return (
-    <div className="print-only-resumo" style={{ fontSize: "9.5pt", lineHeight: 1.4, color: "#000" }}>
+    <div style={{ fontSize: "9.5pt", lineHeight: 1.4, color: "#000" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #000", paddingBottom: "8px", marginBottom: "12px" }}>
         <div>
