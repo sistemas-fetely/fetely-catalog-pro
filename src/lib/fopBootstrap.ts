@@ -1,14 +1,17 @@
-import { useAuth } from "@/store/authStore";
+import { useAuth, type AppRole } from "@/store/authStore";
 import { useOrder, orderToRow, orderItemsToRows } from "@/store/orderStore";
 import { useClientes, clienteToRow } from "@/store/clienteStore";
 import { useProvisao, provisaoToRow, provisaoItensToRows } from "@/store/provisaoStore";
 import { useCartilhas } from "@/store/cartilhasStore";
+import { useCatalog, upsertProductsChunked, productToRow } from "@/store/catalogStore";
+import { PRODUCTS as DEFAULT_PRODUCTS } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import type { SavedOrder } from "@/types";
 import type { Cliente } from "@/types/cliente";
 import type { ProvisaoFutura } from "@/types/provisao";
 
 const MIGRATION_FLAG = "fetely_migracao_v1_concluida";
+const CATALOG_SEED_FLAG = "fetely_catalog_seed_v1";
 
 /**
  * Bootstrap do FOP após login:
