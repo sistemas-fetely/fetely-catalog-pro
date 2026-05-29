@@ -11,6 +11,11 @@ const corsHeaders = {
 
 const DEFAULT_FROM = "Fetely Pedidos <pedidos@notify.fetelycorp.com.br>";
 
+interface EmailAttachment {
+  filename: string;
+  content: string; // base64 sem prefixo data:
+}
+
 interface EmailRequest {
   to: string | string[];
   subject: string;
@@ -19,6 +24,7 @@ interface EmailRequest {
   replyTo?: string;
   cc?: string | string[];
   bcc?: string | string[];
+  attachments?: EmailAttachment[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -29,18 +35,18 @@ const handler = async (req: Request): Promise<Response> => {
   if (req.method !== "POST") {
     return new Response(
       JSON.stringify({ error: "Method not allowed" }),
-      { status: 405, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { status: 405, headers: { "Content-Type": "application/json", ...corsHeaders } },
     );
   }
 
   try {
     const body: EmailRequest = await req.json();
-    const { to, subject, html, from, replyTo, cc, bcc } = body;
+    const { to, subject, html, from, replyTo, cc, bcc, attachments } = body;
 
     if (!to || !subject || !html) {
       return new Response(
         JSON.stringify({ error: "Campos obrigatórios: to, subject, html" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } },
       );
     }
 
@@ -52,27 +58,28 @@ const handler = async (req: Request): Promise<Response> => {
       ...(replyTo && { reply_to: replyTo }),
       ...(cc && { cc: Array.isArray(cc) ? cc : [cc] }),
       ...(bcc && { bcc: Array.isArray(bcc) ? bcc : [bcc] }),
+      ...(attachments && attachments.length > 0 && { attachments }),
     });
 
     if (error) {
       console.error("Erro Resend:", error);
       return new Response(
         JSON.stringify({ error: error.message }),
-        { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders } },
       );
     }
 
-    console.log("Email enviado:", data?.id, "→", to);
+    console.log("Email enviado:", data?.id, "→", to, attachments ? `(${attachments.length} anexo)` : "");
 
     return new Response(
       JSON.stringify({ success: true, id: data?.id }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } },
     );
   } catch (error: any) {
     console.error("Erro inesperado:", error);
     return new Response(
       JSON.stringify({ error: error.message ?? "Erro desconhecido" }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },
     );
   }
 };
