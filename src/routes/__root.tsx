@@ -130,6 +130,13 @@ function BootEffects() {
     initAuth();
   }, [fetchPhotos, initAuth]);
 
+  // Bootstrap FOP: migração one-shot + hidratação dos stores a partir do banco
+  useEffect(() => {
+    if (session && !loading) {
+      void bootstrapFopAfterLogin();
+    }
+  }, [session?.user?.id, loading]);
+
   // Guarda de rotas: rotas públicas = /login, /catalog (e subrotas)
   useEffect(() => {
     if (loading) return;
