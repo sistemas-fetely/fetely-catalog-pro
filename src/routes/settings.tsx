@@ -8,6 +8,7 @@ import {
   Upload,
   Package,
   Users,
+  ExternalLink,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 
@@ -32,6 +33,13 @@ function SettingsPage() {
       description: "Gerenciar cartilhas comerciais",
       to: "/commercial",
       icon: BookOpen,
+    },
+    {
+      label: "Portal do Cliente",
+      description: "Abrir o portal do lojista em uma nova aba",
+      to: "/portal",
+      icon: ExternalLink,
+      external: true,
     },
     {
       label: "Fotos",
@@ -83,26 +91,44 @@ function SettingsPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {items.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="group flex items-center gap-4 rounded-xl border border-border bg-surface p-5 transition hover:border-gold/40 hover:bg-surface-hover"
-            >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-gold/20 bg-gold/10 transition group-hover:bg-gold/20">
-                <item.icon className="h-5 w-5 text-gold" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-text-primary">
-                  {item.label}
-                </h3>
-                <p className="mt-0.5 text-xs text-text-secondary">
-                  {item.description}
-                </p>
-              </div>
-              <ChevronRight className="h-4 w-4 shrink-0 text-text-secondary transition group-hover:translate-x-1 group-hover:text-gold" />
-            </Link>
-          ))}
+          {items.map((item) => {
+            const inner = (
+              <>
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-gold/20 bg-gold/10 transition group-hover:bg-gold/20">
+                  <item.icon className="h-5 w-5 text-gold" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-text-primary">
+                    {item.label}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-text-secondary">
+                    {item.description}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-text-secondary transition group-hover:translate-x-1 group-hover:text-gold" />
+              </>
+            );
+            const className =
+              "group flex items-center gap-4 rounded-xl border border-border bg-surface p-5 transition hover:border-gold/40 hover:bg-surface-hover";
+            if ("external" in item && item.external) {
+              return (
+                <a
+                  key={item.to}
+                  href={item.to}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={className}
+                >
+                  {inner}
+                </a>
+              );
+            }
+            return (
+              <Link key={item.to} to={item.to} className={className}>
+                {inner}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
