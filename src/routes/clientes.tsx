@@ -469,6 +469,33 @@ function ClienteDetail({
   onToggleAtivo: () => void;
 }) {
   const stats = calcClienteStats(cliente.id);
+  const upsertCliente = useClientes((s) => s.upsertCliente);
+  const profile = useAuth((s) => s.profile);
+
+  const handlePremissasChange = (patch: Partial<Cliente>) => {
+    const next: Cliente = { ...cliente, ...patch, atualizadoEm: new Date().toISOString() };
+    if (patch.premissasComerciais) {
+      const alterados = diffPremissas(cliente.premissasComerciais, patch.premissasComerciais);
+      if (alterados.length > 0) {
+        const usuario = profile?.nome_completo ?? profile?.email ?? "—";
+        next.premissasComerciais = {
+          ...patch.premissasComerciais,
+          historico: [
+            ...(patch.premissasComerciais.historico ?? []),
+            {
+              timestamp: new Date().toISOString(),
+              usuarioNome: usuario,
+              descricao: cliente.premissasComerciais
+                ? "Atualização de premissas"
+                : "Criação de premissas",
+              camposAlterados: alterados,
+            },
+          ],
+        };
+      }
+    }
+    upsertCliente(next);
+  };
 
   const faixaMaisFreq = useMemo(() => {
     const map = new Map<string, number>();
