@@ -218,7 +218,7 @@ function Confirmation() {
       </div>
 
       {provisao && (
-        <div className="mt-6 rounded-lg border border-stock-pre/40 bg-stock-pre/5 p-6">
+        <div className="mt-6 rounded-lg border border-stock-pre/40 bg-stock-pre/5 p-6 print-hide">
           <div className="flex items-start gap-3">
             <FileClock className="h-6 w-6 text-stock-pre shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
