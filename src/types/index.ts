@@ -57,7 +57,11 @@ export interface Product {
   // Vela numérica
   isVelaNumerica: boolean;
   numeroVela?: number | null;
+
+  // Gestão (V8)
+  ativo?: boolean;
 }
+
 
 export interface CartItem {
   sku: string;

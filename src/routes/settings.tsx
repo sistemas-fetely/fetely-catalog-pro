@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Settings,
   Upload,
+  Package,
   Users,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
@@ -39,13 +40,22 @@ function SettingsPage() {
   ];
 
   if (session && isAdminOrMaster()) {
-    items.unshift({
-      label: "Usuários",
-      description: "Gerenciar vendedores e acessos do sistema",
-      to: "/admin/users",
-      icon: Users,
-    });
+    items.unshift(
+      {
+        label: "Produtos",
+        description: "Cadastrar, editar e desativar produtos do catálogo",
+        to: "/admin/products",
+        icon: Package,
+      },
+      {
+        label: "Usuários",
+        description: "Gerenciar vendedores e acessos do sistema",
+        to: "/admin/users",
+        icon: Users,
+      },
+    );
   }
+
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background">

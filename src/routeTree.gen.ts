@@ -24,6 +24,7 @@ import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -101,6 +102,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminProductsRoute = AdminProductsRouteImport.update({
+  id: '/admin/products',
+  path: '/admin/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CatalogCategoriaCategoriaRoute =
   CatalogCategoriaCategoriaRouteImport.update({
     id: '/categoria/$categoria',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/settings': typeof SettingsRoute
+  '/admin/products': typeof AdminProductsRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/settings': typeof SettingsRoute
+  '/admin/products': typeof AdminProductsRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/settings': typeof SettingsRoute
+  '/admin/products': typeof AdminProductsRoute
   '/admin/users': typeof AdminUsersRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/produto'
     | '/provisoes'
     | '/settings'
+    | '/admin/products'
     | '/admin/users'
     | '/catalog/categoria/$categoria'
   fileRoutesByTo: FileRoutesByTo
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/produto'
     | '/provisoes'
     | '/settings'
+    | '/admin/products'
     | '/admin/users'
     | '/catalog/categoria/$categoria'
   id:
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/produto'
     | '/provisoes'
     | '/settings'
+    | '/admin/products'
     | '/admin/users'
     | '/catalog/categoria/$categoria'
   fileRoutesById: FileRoutesById
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   ProdutoRoute: typeof ProdutoRoute
   ProvisoesRoute: typeof ProvisoesRoute
   SettingsRoute: typeof SettingsRoute
+  AdminProductsRoute: typeof AdminProductsRoute
   AdminUsersRoute: typeof AdminUsersRoute
 }
 
@@ -345,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/products': {
+      id: '/admin/products'
+      path: '/admin/products'
+      fullPath: '/admin/products'
+      preLoaderRoute: typeof AdminProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/catalog/categoria/$categoria': {
       id: '/catalog/categoria/$categoria'
       path: '/categoria/$categoria'
@@ -381,6 +401,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProdutoRoute: ProdutoRoute,
   ProvisoesRoute: ProvisoesRoute,
   SettingsRoute: SettingsRoute,
+  AdminProductsRoute: AdminProductsRoute,
   AdminUsersRoute: AdminUsersRoute,
 }
 export const routeTree = rootRouteImport
