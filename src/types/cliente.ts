@@ -73,7 +73,12 @@ export interface Cliente {
   tags?: string[];
 
   ativo: boolean;
+
+  // V13 — Condições comerciais homologadas (opcional)
+  premissasComerciais?: PremissasComerciais;
 }
+
+
 
 export interface ClienteSnapshot {
   clienteId: string;
@@ -86,6 +91,82 @@ export interface ClienteSnapshot {
   contatoEmail: string;
   contatoTelefone: string;
   enderecoEntrega: string;
+}
+
+// ============================================================
+// V13 — PREMISSAS COMERCIAIS DO CLIENTE
+// ============================================================
+
+export interface HistoricoPremissa {
+  timestamp: string;
+  usuarioNome: string;
+  descricao: string;
+  camposAlterados: { campo: string; anterior: string; novo: string }[];
+}
+
+export interface PremissasComerciais {
+  temDescontoHomologado: boolean;
+  descontoHomologadoPercent: number;
+  /** true=ACUMULA sobre faixa · false=SUBSTITUI faixa */
+  descontoHomologadoSobrePos: boolean;
+  descontoHomologadoObs?: string;
+
+  bonusPixPersonalizado: boolean;
+  bonusPixPercent: number;
+
+  freteFixo: boolean;
+  freteTipo: "CIF" | "FOB" | null;
+  freteObs?: string;
+
+  temCondicaoPreferencial: boolean;
+  condicoesPermitidas: number[];
+  condicaoPreferencialId: number | null;
+
+  temFaixaFixa: boolean;
+  faixaFixaId: number | null;
+
+  temPedidoMinimoPersonalizado: boolean;
+  pedidoMinimoValor: number;
+
+  vigenciaInicio: string;
+  vigenciaFim: string | null;
+  premissasAtivas: boolean;
+
+  aprovadoPor: string;
+  aprovadoEm: string;
+  atualizadoPor: string;
+  atualizadoEm: string;
+  historico: HistoricoPremissa[];
+}
+
+export function emptyPremissas(usuario: string): PremissasComerciais {
+  const now = new Date().toISOString();
+  return {
+    temDescontoHomologado: false,
+    descontoHomologadoPercent: 0,
+    descontoHomologadoSobrePos: false,
+    descontoHomologadoObs: "",
+    bonusPixPersonalizado: false,
+    bonusPixPercent: 2.5,
+    freteFixo: false,
+    freteTipo: null,
+    freteObs: "",
+    temCondicaoPreferencial: false,
+    condicoesPermitidas: [],
+    condicaoPreferencialId: null,
+    temFaixaFixa: false,
+    faixaFixaId: null,
+    temPedidoMinimoPersonalizado: false,
+    pedidoMinimoValor: 2500,
+    vigenciaInicio: now.slice(0, 10),
+    vigenciaFim: null,
+    premissasAtivas: false,
+    aprovadoPor: usuario,
+    aprovadoEm: now,
+    atualizadoPor: usuario,
+    atualizadoEm: now,
+    historico: [],
+  };
 }
 
 export const SEGMENTO_LABEL: Record<SegmentoCliente, string> = {

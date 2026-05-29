@@ -247,18 +247,55 @@ export interface CalculoPedido {
   total: number;
   totalSemPix: number;
   aplicouPix: boolean;
+  /** V13 — premissas comerciais foram aplicadas neste cálculo */
+  premissasAplicadas?: boolean;
+  /** % efetivo de "desconto Celebra" depois das premissas (mostrado no painel) */
+  descontoCelebraPercentEfetivo?: number;
+  /** % efetivo de bônus PIX aplicado (faixa ou personalizado) */
+  bonusPixPercentEfetivo?: number;
+  /** frete efetivo (faixa ou fixo do cliente) */
+  freteEfetivo?: "CIF" | "FOB";
+  /** pedido mínimo efetivo (pode ser personalizado por cliente) */
+  pedidoMinimoEfetivo?: number;
 }
+
+import type { PremissasComerciais } from "@/types/cliente";
 
 export function calcularPedido(args: {
   bruto: number;
   usarReservada?: boolean;
   descontoMasterPct?: number;
   condicao?: CondicaoPagamento | null;
+  /** V13 — premissas comerciais vigentes do cliente (já validadas como vigentes pelo caller) */
+  premissas?: PremissasComerciais | null;
 }): CalculoPedido {
-  const { bruto, usarReservada = false, descontoMasterPct = 0, condicao = null } = args;
-  const faixa = detectarFaixa(bruto, usarReservada);
+  const {
+    bruto,
+    usarReservada = false,
+    descontoMasterPct = 0,
+    condicao = null,
+    premissas = null,
+  } = args;
 
-  if (!faixa) {
+  // 1. FAIXA — premissa pode forçar faixa fixa
+  let faixa: Faixa | null;
+  if (premissas?.temFaixaFixa && premissas.faixaFixaId != null) {
+    faixa =
+      FAIXAS.find((f) => f.id === premissas.faixaFixaId) ??
+      detectarFaixa(bruto, usarReservada);
+  } else {
+    faixa = detectarFaixa(bruto, usarReservada);
+  }
+
+  // pedido mínimo efetivo (pode ser personalizado)
+  const pedidoMinimoEfetivo = premissas?.temPedidoMinimoPersonalizado
+    ? premissas.pedidoMinimoValor
+    : REGRAS_ATUAIS.pedidoMinimo;
+
+  // se sem faixa fixa e bruto abaixo do mínimo efetivo → bloquear como antes
+  const semFaixa = !faixa || (!premissas?.temFaixaFixa && bruto < pedidoMinimoEfetivo);
+
+  if (semFaixa) {
     return {
       bruto,
       faixa: null,
@@ -269,10 +306,22 @@ export function calcularPedido(args: {
       total: bruto,
       totalSemPix: bruto,
       aplicouPix: false,
+      premissasAplicadas: !!premissas,
+      descontoCelebraPercentEfetivo: 0,
+      bonusPixPercentEfetivo: 0,
+      freteEfetivo: undefined,
+      pedidoMinimoEfetivo,
     };
   }
 
-  const descontoCelebraValor = bruto * (faixa.descontoCelebra / 100);
+  // 2. DESCONTO — homologado substitui ou acumula sobre faixa
+  let descontoCelebraPct = faixa!.descontoCelebra;
+  if (premissas?.temDescontoHomologado) {
+    descontoCelebraPct = premissas.descontoHomologadoSobrePos
+      ? faixa!.descontoCelebra + premissas.descontoHomologadoPercent
+      : premissas.descontoHomologadoPercent;
+  }
+  const descontoCelebraValor = bruto * (descontoCelebraPct / 100);
   const aposCelebra = bruto - descontoCelebraValor;
 
   const masterPct = Math.max(
@@ -282,14 +331,22 @@ export function calcularPedido(args: {
   const descontoMasterValor = aposCelebra * (masterPct / 100);
   const subtotalAposDescontos = aposCelebra - descontoMasterValor;
 
+  // 3. BÔNUS PIX — personalizado sobrepõe faixa
+  const bonusPixPct = premissas?.bonusPixPersonalizado
+    ? premissas.bonusPixPercent
+    : faixa!.bonusPix;
   const aplicouPix =
     !!condicao &&
     condicao.tipo === "pix" &&
-    faixa.bonusPix > 0 &&
-    faixa.bonusPixAplicavel !== false;
+    bonusPixPct > 0 &&
+    faixa!.bonusPixAplicavel !== false;
   const bonusPixValor = aplicouPix
-    ? subtotalAposDescontos * (faixa.bonusPix / 100)
+    ? subtotalAposDescontos * (bonusPixPct / 100)
     : 0;
+
+  // 4. FRETE — fixo do cliente substitui a faixa
+  const freteEfetivo: "CIF" | "FOB" =
+    premissas?.freteFixo && premissas.freteTipo ? premissas.freteTipo : faixa!.frete;
 
   const total = subtotalAposDescontos - bonusPixValor;
   return {
@@ -302,6 +359,11 @@ export function calcularPedido(args: {
     total,
     totalSemPix: subtotalAposDescontos,
     aplicouPix,
+    premissasAplicadas: !!premissas,
+    descontoCelebraPercentEfetivo: descontoCelebraPct,
+    bonusPixPercentEfetivo: aplicouPix ? bonusPixPct : 0,
+    freteEfetivo,
+    pedidoMinimoEfetivo,
   };
 }
 

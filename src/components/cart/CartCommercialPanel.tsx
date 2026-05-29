@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Lock, Settings2, Sparkles, Truck, X } from "lucide-react";
+import { Award, Lock, Settings2, Sparkles, Truck, X } from "lucide-react";
 import {
   CONDICOES_PAGAMENTO,
   DESCONTO_MASTER_MAX,
@@ -13,6 +13,9 @@ import {
 } from "@/lib/commercial";
 import { useNegotiation } from "@/store/negotiationStore";
 import { formatBRL } from "@/lib/format";
+import { useOrder } from "@/store/orderStore";
+import { useClientes } from "@/store/clienteStore";
+import { getPremissasVigentes } from "@/lib/premissas";
 
 export interface CommercialState {
   calculo: CalculoPedido;
@@ -45,26 +48,51 @@ export function CartCommercialPanel({
 
   const [showSenha, setShowSenha] = useState(false);
 
-  // Faixa atual
-  const faixa = useMemo(
-    () => detectarFaixa(bruto, ativo && usarReservada),
-    [bruto, ativo, usarReservada],
+  // V13 — premissas vigentes do cliente atual (se houver)
+  const clienteId = useOrder((s) => s.meta.clienteId);
+  const cliente = useClientes((s) =>
+    clienteId ? s.clientes.find((c) => c.id === clienteId) ?? null : null,
   );
+  const premissas = useMemo(() => getPremissasVigentes(cliente), [cliente]);
+
+  // Faixa atual — faixa fixa do cliente tem prioridade
+  const faixa = useMemo(() => {
+    if (premissas?.temFaixaFixa && premissas.faixaFixaId != null) {
+      return FAIXAS.find((f) => f.id === premissas.faixaFixaId) ?? null;
+    }
+    return detectarFaixa(bruto, ativo && usarReservada);
+  }, [bruto, ativo, usarReservada, premissas]);
 
   // Condições disponíveis
   const condicoesDisponiveis = useMemo<CondicaoPagamento[]>(() => {
     if (!faixa) return [];
     if (ativo) return CONDICOES_PAGAMENTO; // master libera todas
+    // V13 — premissas com condições preferenciais sobrepõem a faixa
+    if (premissas?.temCondicaoPreferencial && premissas.condicoesPermitidas.length > 0) {
+      return CONDICOES_PAGAMENTO.filter((c) =>
+        premissas.condicoesPermitidas.includes(c.id),
+      );
+    }
     return CONDICOES_PAGAMENTO.filter(
       (c) => faixa.condicoesDisponiveis.includes(c.id) && bruto >= c.valorMinimo,
     );
-  }, [faixa, ativo, bruto]);
+  }, [faixa, ativo, bruto, premissas]);
 
-  // Condição selecionada (revalida quando faixa muda)
+  // Condição selecionada
   const condicao = useMemo(
     () => condicoesDisponiveis.find((c) => c.id === condicaoSelecionadaId) ?? null,
     [condicoesDisponiveis, condicaoSelecionadaId],
   );
+
+  // Pré-seleciona condição preferencial do cliente quando nada está selecionado
+  useEffect(() => {
+    if (!condicaoSelecionadaId && premissas?.condicaoPreferencialId) {
+      const existe = condicoesDisponiveis.some(
+        (c) => c.id === premissas.condicaoPreferencialId,
+      );
+      if (existe) setCondicaoSelecionadaId(premissas.condicaoPreferencialId);
+    }
+  }, [premissas, condicoesDisponiveis, condicaoSelecionadaId, setCondicaoSelecionadaId]);
 
   useEffect(() => {
     if (condicaoSelecionadaId && !condicao) setCondicaoSelecionadaId(null);
@@ -77,9 +105,12 @@ export function CartCommercialPanel({
         usarReservada: ativo && usarReservada,
         descontoMasterPct: ativo ? descontoPct : 0,
         condicao,
+        premissas,
       }),
-    [bruto, ativo, usarReservada, descontoPct, condicao],
+    [bruto, ativo, usarReservada, descontoPct, condicao, premissas],
   );
+
+  const pedidoMinimo = calculo.pedidoMinimoEfetivo ?? 2500;
 
   const negociacaoSemJustificativa =
     ativo && descontoPct > 0 && !justificativa;
@@ -88,7 +119,7 @@ export function CartCommercialPanel({
     !!faixa && !!condicao && !negociacaoSemJustificativa;
 
   const motivoBloqueio = !faixa
-    ? `Pedido mínimo: ${formatBRL(2500)}. Adicione mais produtos.`
+    ? `Pedido mínimo: ${formatBRL(pedidoMinimo)}. Adicione mais produtos.`
     : !condicao
       ? "Selecione uma condição de pagamento."
       : negociacaoSemJustificativa
@@ -99,8 +130,13 @@ export function CartCommercialPanel({
     onChange({ calculo, condicao, podeFinalizar, motivoBloqueio });
   }, [calculo, condicao, podeFinalizar, motivoBloqueio, onChange]);
 
-  const prox = proximaFaixa(faixa);
+  const prox = premissas?.temFaixaFixa ? null : proximaFaixa(faixa);
   const faltaProx = prox ? prox.valorMin - bruto : 0;
+  const descontoEfetivoPct = calculo.descontoCelebraPercentEfetivo ?? faixa?.descontoCelebra ?? 0;
+  const bonusPixEfetivoPct = premissas?.bonusPixPersonalizado
+    ? premissas.bonusPixPercent
+    : faixa?.bonusPix ?? 0;
+  const freteEfetivo = calculo.freteEfetivo ?? faixa?.frete;
 
   return (
     <div className="space-y-4">
@@ -111,23 +147,51 @@ export function CartCommercialPanel({
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-[10px] uppercase tracking-[0.25em] text-gold-muted">
-                  Faixa {faixa.id}
+                  {premissas ? "Condições homologadas" : `Faixa ${faixa.id}`}
                 </div>
                 <div className="font-display text-2xl text-gold flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" /> {faixa.nome}
+                  {premissas ? (
+                    <>
+                      <Award className="h-4 w-4" /> Comerciais Homologadas
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" /> {faixa.nome}
+                    </>
+                  )}
                 </div>
               </div>
-              {ativo && (
-                <span className="rounded-full bg-gold/15 px-3 py-1 text-[10px] uppercase tracking-wider text-gold border border-gold/40">
-                  Negociação
-                </span>
-              )}
+              <div className="flex flex-col items-end gap-1">
+                {premissas && (
+                  <span className="rounded-full bg-gold/20 px-3 py-1 text-[10px] uppercase tracking-wider text-gold border border-gold/50 inline-flex items-center gap-1">
+                    🏅 Homologadas
+                  </span>
+                )}
+                {ativo && (
+                  <span className="rounded-full bg-gold/15 px-3 py-1 text-[10px] uppercase tracking-wider text-gold border border-gold/40">
+                    Negociação
+                  </span>
+                )}
+              </div>
             </div>
+
+            {premissas && (
+              <p className="text-[11px] text-gold-muted">
+                Faixa-base: {faixa.nome}
+                {premissas.vigenciaFim
+                  ? ` · vigência até ${new Date(premissas.vigenciaFim).toLocaleDateString("pt-BR")}`
+                  : " · sem expiração"}
+              </p>
+            )}
 
             <ul className="text-sm space-y-1.5">
               <Row label="Valor do pedido" value={formatBRL(bruto)} />
               <Row
-                label={`Desconto Celebra (${faixa.descontoCelebra}%)`}
+                label={
+                  premissas?.temDescontoHomologado
+                    ? `Desconto homologado (${descontoEfetivoPct}%${premissas.descontoHomologadoSobrePos ? " · acumula" : " · substitui"})`
+                    : `Desconto Celebra (${descontoEfetivoPct}%)`
+                }
                 value={`– ${formatBRL(calculo.descontoCelebraValor)}`}
                 accent
               />
@@ -140,7 +204,7 @@ export function CartCommercialPanel({
               )}
               {calculo.aplicouPix && (
                 <Row
-                  label={`Bônus PIX (${faixa.bonusPix}%)`}
+                  label={`Bônus PIX (${bonusPixEfetivoPct}%${premissas?.bonusPixPersonalizado ? " · personalizado" : ""})`}
                   value={`– ${formatBRL(calculo.bonusPixValor)}`}
                   accent
                 />
@@ -166,13 +230,15 @@ export function CartCommercialPanel({
 
             <div className="flex items-center gap-2 rounded-md bg-surface-2 px-3 py-2 text-xs">
               <Truck className="h-4 w-4 text-gold" />
-              {faixa.frete === "CIF" ? (
+              {freteEfetivo === "CIF" ? (
                 <span>
-                  Frete <strong className="text-gold">CIF</strong> — Fetély entrega ✨
+                  Frete <strong className="text-gold">CIF</strong>
+                  {premissas?.freteFixo ? " — acordado (sempre)" : " — Fetély entrega ✨"}
                 </span>
               ) : (
                 <span>
-                  Frete <strong>FOB</strong> — por conta do lojista
+                  Frete <strong>FOB</strong>
+                  {premissas?.freteFixo ? " — acordado (sempre)" : " — por conta do lojista"}
                 </span>
               )}
             </div>
@@ -216,7 +282,7 @@ export function CartCommercialPanel({
         ) : (
           <div className="text-center py-2">
             <div className="text-sm text-stock-out">
-              Pedido mínimo: {formatBRL(2500)}
+              Pedido mínimo: {formatBRL(pedidoMinimo)}
             </div>
             <p className="text-xs text-text-muted mt-1">
               Adicione mais produtos para prosseguir.
