@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { fetchCNPJ, formatCNPJ, isValidCNPJLength, onlyDigits } from "@/lib/cnpj";
 import { useClientes } from "@/store/clienteStore";
 import { useAuth } from "@/store/authStore";
+import { PremissasComercialTab } from "@/components/clientes/PremissasComercialTab";
 import {
   CANAL_LABEL,
   SEGMENTO_LABEL,
