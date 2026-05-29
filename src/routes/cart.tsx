@@ -172,11 +172,11 @@ function CartPage() {
     }
   }, [meta.clienteId, meta.clienteSnapshot]);
 
-  const executeConfirm = () => {
+  const executeConfirm = async () => {
+    if (salvandoPedido) return;
     const snapshot = resolveClienteSnapshot();
     if (!snapshot) return alert("Selecione um cliente cadastrado.");
 
-    // Build commercial object for firme order
     if (!commercial?.podeFinalizar || !commercial.calculo.faixa || !commercial.condicao) {
       return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
     }
@@ -204,47 +204,60 @@ function CartPage() {
       premissasAplicadas: !!c.premissasAplicadas,
     };
 
-    setMeta({ condicaoPagamento: commercial.condicao.descricao });
-    const order = saveOrder(orderCommercial, itensFirmes);
+    setSalvandoPedido(true);
+    try {
+      setMeta({ condicaoPagamento: commercial.condicao.descricao });
+      const order = await saveOrder(orderCommercial, itensFirmes);
 
-    if (orderCommercial.negociacao && orderCommercial.descontoMasterPct > 0) {
-      registrarNegociacao({
-        id: order.id,
-        timestamp: order.createdAt,
-        valorBruto: orderCommercial.bruto,
-        descontoPct: orderCommercial.descontoMasterPct,
-        descontoValor: orderCommercial.descontoMasterValor,
-        justificativa: orderCommercial.justificativa,
-        faixaUsada: orderCommercial.faixaNome,
+      if (orderCommercial.negociacao && orderCommercial.descontoMasterPct > 0) {
+        registrarNegociacao({
+          id: order.id,
+          timestamp: order.createdAt,
+          valorBruto: orderCommercial.bruto,
+          descontoPct: orderCommercial.descontoMasterPct,
+          descontoValor: orderCommercial.descontoMasterValor,
+          justificativa: orderCommercial.justificativa,
+          faixaUsada: orderCommercial.faixaNome,
+        });
+      }
+
+      let provisaoId: string | undefined;
+      if (itensProvisao.length > 0) {
+        const prov = createProvisao({
+          clienteId: meta.clienteId!,
+          clienteSnapshot: snapshot,
+          itens: itensProvisao.map(toItemProvisao),
+          pedidoFirmeId: order.id,
+          observacoes: meta.observacoes || undefined,
+        });
+        provisaoId = prov.id;
+      }
+
+      if (meta.provisaoOrigemId) {
+        updateProvisaoStatus(meta.provisaoOrigemId, "convertido_em_pedido", {
+          pedidoConvertidoId: order.id,
+        });
+      }
+
+      clearCart();
+      resetNegotiation();
+      setShowFinalConfirm(false);
+      navigate({
+        to: "/confirmation",
+        search: provisaoId ? { id: order.id, provisaoId } : { id: order.id },
       });
-    }
-
-    let provisaoId: string | undefined;
-    if (itensProvisao.length > 0) {
-      const prov = createProvisao({
-        clienteId: meta.clienteId!,
-        clienteSnapshot: snapshot,
-        itens: itensProvisao.map(toItemProvisao),
-        pedidoFirmeId: order.id,
-        observacoes: meta.observacoes || undefined,
+    } catch (err: unknown) {
+      console.error("Falha ao confirmar pedido:", err);
+      const msg = err instanceof Error ? err.message : "Não foi possível salvar o pedido";
+      toast.error(msg, {
+        description: "Tente novamente. Se persistir, atualize a página.",
+        duration: 6000,
       });
-      provisaoId = prov.id;
+      setShowFinalConfirm(false);
+      // NÃO limpa carrinho, NÃO navega — usuário tenta de novo
+    } finally {
+      setSalvandoPedido(false);
     }
-
-    // If converting from provisao, mark the source as converted
-    if (meta.provisaoOrigemId) {
-      updateProvisaoStatus(meta.provisaoOrigemId, "convertido_em_pedido", {
-        pedidoConvertidoId: order.id,
-      });
-    }
-
-    clearCart();
-    resetNegotiation();
-    setShowFinalConfirm(false);
-    navigate({
-      to: "/confirmation",
-      search: provisaoId ? { id: order.id, provisaoId } : { id: order.id },
-    });
   };
 
   const handleConfirm = () => {
