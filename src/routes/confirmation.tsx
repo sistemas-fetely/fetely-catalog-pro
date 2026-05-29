@@ -144,6 +144,7 @@ function Confirmation() {
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-16">
+      <div className="pedido-print">
       <div className="text-center mb-12">
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gold/15 text-gold mb-4">
           <Check className="h-8 w-8" />
