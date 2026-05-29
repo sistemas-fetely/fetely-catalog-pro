@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Copy, Download, Home, FileClock, Mail, Printer, Send } from "lucide-react";
+import { Check, Copy, Download, Home, FileClock, Mail, Printer } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
 import { useVisibleOrders } from "@/store/orderStore";
