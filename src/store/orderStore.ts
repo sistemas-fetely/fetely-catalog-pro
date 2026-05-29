@@ -23,9 +23,10 @@ interface OrderState {
   addBulk: (entries: { product: Product; quantity: number }[]) => void;
   updateQty: (sku: string, quantity: number) => void;
   removeItem: (sku: string) => void;
+  removeItems: (skus: string[]) => void;
   clearCart: () => void;
   setMeta: (m: Partial<OrderMeta>) => void;
-  saveOrder: (commercial?: OrderCommercial) => SavedOrder;
+  saveOrder: (commercial?: OrderCommercial, itemsOverride?: CartItem[]) => SavedOrder;
   reassignOrder: (
     orderId: string,
     novo: { vendedorId: string; vendedorNome?: string | null; vendedorLogin?: string | null; vendedorTipo?: "interno" | "representante" | null },
