@@ -158,13 +158,15 @@ function CatalogPage() {
                       </div>
                     )}
                   </div>
-                  <Link
-                    to="/photos"
-                    search={{ tab: "colecao", colecao }}
-                    className="hidden md:inline-flex items-center gap-2 rounded-md gold-border px-3 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10 transition shrink-0"
-                  >
-                    Gerenciar fotos
-                  </Link>
+                  {!isPublic && (
+                    <Link
+                      to="/photos"
+                      search={{ tab: "colecao", colecao }}
+                      className="hidden md:inline-flex items-center gap-2 rounded-md gold-border px-3 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10 transition shrink-0"
+                    >
+                      Gerenciar fotos
+                    </Link>
+                  )}
                 </div>
               </header>
 
