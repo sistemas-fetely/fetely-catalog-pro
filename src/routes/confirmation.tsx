@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Copy, Download, Home, FileClock, Mail, Printer } from "lucide-react";
+import { Check, Copy, Download, Home, FileClock, Mail, Printer, FileText, FileBarChart } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
 import { useVisibleOrders } from "@/store/orderStore";
@@ -7,6 +7,13 @@ import { useProvisao } from "@/store/provisaoStore";
 import type { SavedOrder } from "@/types";
 import { ExportModal } from "@/components/export/ExportModal";
 import { EnviarEmailDialog } from "@/components/EnviarEmailDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 import { z } from "zod";
 
