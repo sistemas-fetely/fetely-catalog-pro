@@ -18,7 +18,8 @@ import { formatBRL } from "@/lib/format";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortalAccessTab } from "@/components/clientes/PortalAccessTab";
-import { statusPremissas, diasParaExpirar } from "@/lib/premissas";
+import { PremissasComercialTab } from "@/components/clientes/PremissasComercialTab";
+import { statusPremissas, diasParaExpirar, diffPremissas } from "@/lib/premissas";
 
 export const Route = createFileRoute("/clientes")({
   head: () => ({
@@ -468,6 +469,33 @@ function ClienteDetail({
   onToggleAtivo: () => void;
 }) {
   const stats = calcClienteStats(cliente.id);
+  const upsertCliente = useClientes((s) => s.upsertCliente);
+  const profile = useAuth((s) => s.profile);
+
+  const handlePremissasChange = (patch: Partial<Cliente>) => {
+    const next: Cliente = { ...cliente, ...patch, atualizadoEm: new Date().toISOString() };
+    if (patch.premissasComerciais) {
+      const alterados = diffPremissas(cliente.premissasComerciais, patch.premissasComerciais);
+      if (alterados.length > 0) {
+        const usuario = profile?.nome_completo ?? profile?.email ?? "—";
+        next.premissasComerciais = {
+          ...patch.premissasComerciais,
+          historico: [
+            ...(patch.premissasComerciais.historico ?? []),
+            {
+              timestamp: new Date().toISOString(),
+              usuarioNome: usuario,
+              descricao: cliente.premissasComerciais
+                ? "Atualização de premissas"
+                : "Criação de premissas",
+              camposAlterados: alterados,
+            },
+          ],
+        };
+      }
+    }
+    upsertCliente(next);
+  };
 
   const faixaMaisFreq = useMemo(() => {
     const map = new Map<string, number>();
@@ -543,8 +571,9 @@ function ClienteDetail({
       </div>
 
       <Tabs defaultValue="perfil" className="flex-1 flex flex-col">
-        <TabsList className="grid grid-cols-4 mx-5 mt-3 bg-surface-2">
+        <TabsList className="grid grid-cols-5 mx-5 mt-3 bg-surface-2">
           <TabsTrigger value="perfil" className="text-xs">Perfil</TabsTrigger>
+          <TabsTrigger value="premissas" className="text-xs text-gold">✦ Premissas</TabsTrigger>
           <TabsTrigger value="pedidos" className="text-xs">Pedidos</TabsTrigger>
           <TabsTrigger value="inteligencia" className="text-xs">Inteligência</TabsTrigger>
           <TabsTrigger value="portal" className="text-xs">Portal</TabsTrigger>
@@ -604,6 +633,12 @@ function ClienteDetail({
             </button>
           </div>
         </TabsContent>
+
+        <TabsContent value="premissas" className="px-5 pb-6 mt-3">
+          <PremissasComercialTab cliente={cliente} onChange={handlePremissasChange} />
+        </TabsContent>
+
+
 
         <TabsContent value="pedidos" className="px-5 pb-6 mt-3">
           {stats.pedidos.length === 0 ? (
