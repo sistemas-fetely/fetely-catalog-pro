@@ -7,7 +7,7 @@ import { useProvisao } from "@/store/provisaoStore";
 import type { SavedOrder } from "@/types";
 import { ExportModal } from "@/components/export/ExportModal";
 import { EnviarEmailDialog } from "@/components/EnviarEmailDialog";
-import { printOrderPDF } from "@/lib/orderPdf";
+
 import { z } from "zod";
 
 const search = z.object({
@@ -144,6 +144,7 @@ function Confirmation() {
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-16">
+      <div className="pedido-print">
       <div className="text-center mb-12">
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gold/15 text-gold mb-4">
           <Check className="h-8 w-8" />
@@ -180,7 +181,7 @@ function Confirmation() {
             <div className="text-[10px] uppercase tracking-wider text-text-muted">Total</div>
             <div className="font-display text-3xl text-gold">{formatBRL(order.total)}</div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 print-hide">
             <button
               onClick={handleCopy}
               className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
@@ -201,7 +202,7 @@ function Confirmation() {
               <Mail className="h-4 w-4" /> Email
             </button>
             <button
-              onClick={() => printOrderPDF(order)}
+              onClick={() => window.print()}
               className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
             >
               <Printer className="h-4 w-4" /> Imprimir
@@ -217,7 +218,7 @@ function Confirmation() {
       </div>
 
       {provisao && (
-        <div className="mt-6 rounded-lg border border-stock-pre/40 bg-stock-pre/5 p-6">
+        <div className="mt-6 rounded-lg border border-stock-pre/40 bg-stock-pre/5 p-6 print-hide">
           <div className="flex items-start gap-3">
             <FileClock className="h-6 w-6 text-stock-pre shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
@@ -252,6 +253,7 @@ function Confirmation() {
         open={emailDialogAberto}
         onOpenChange={setEmailDialogAberto}
       />
+      </div>
     </main>
   );
 }
