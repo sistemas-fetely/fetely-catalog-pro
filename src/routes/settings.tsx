@@ -49,6 +49,12 @@ function SettingsPage() {
         icon: Package,
       },
       {
+        label: "Cartilhas e Níveis",
+        description: "Gerenciar faixas, condições de pagamento e regras gerais",
+        to: "/admin/cartilhas",
+        icon: Layers,
+      },
+      {
         label: "Usuários",
         description: "Gerenciar vendedores e acessos do sistema",
         to: "/admin/users",
