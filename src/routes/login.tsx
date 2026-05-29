@@ -99,6 +99,18 @@ function LoginPage() {
             Acesso restrito. Solicite cadastro ao administrador.
           </p>
         </form>
+
+        <div className="mt-6 rounded-lg border border-border bg-surface/60 p-4 text-center">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-text-muted mb-2">
+            Apenas consulta?
+          </div>
+          <Link
+            to="/catalog"
+            className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-gold hover:text-gold-light transition"
+          >
+            Ver catálogo de produtos →
+          </Link>
+        </div>
       </div>
     </div>
   );
