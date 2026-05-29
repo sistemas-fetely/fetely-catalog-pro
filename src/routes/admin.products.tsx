@@ -311,7 +311,7 @@ function AdminProductsPage() {
                   <td className="px-3 py-2">{p.nomeComercial}</td>
                   <td className="px-3 py-2 text-text-secondary">{p.colecao}</td>
                   <td className="px-3 py-2 text-text-secondary">{p.grupo}</td>
-                  <td className="px-3 py-2 text-right">{fmtBRL(p.precoAtacado || 0)}</td>
+                  <td className="px-3 py-2 text-right">{formatBRL(p.precoAtacado || 0)}</td>
                   <td className="px-3 py-2">{statusBadge(p)}</td>
                   <td className="px-3 py-2">
                     <div className="flex justify-end gap-1">
