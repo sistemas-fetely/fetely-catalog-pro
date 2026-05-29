@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Copy, Home, FileClock } from "lucide-react";
+import { Check, Copy, Download, Home, FileClock } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
 import { useVisibleOrders } from "@/store/orderStore";
 import { useProvisao } from "@/store/provisaoStore";
 import type { SavedOrder } from "@/types";
+import { ExportModal } from "@/components/export/ExportModal";
+import { z } from "zod";
 import { z } from "zod";
 
 const search = z.object({
