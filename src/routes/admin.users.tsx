@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Copy, Trash2, UserPlus, Power, Search } from "lucide-react";
+import { useRegioes } from "@/hooks/useRegioes";
 import { useAuth, type AppRole, type TipoVendedor } from "@/store/authStore";
 import {
   createAppUser,
@@ -14,18 +15,6 @@ import {
 export const Route = createFileRoute("/admin/users")({
   component: AdminUsersPage,
 });
-
-const REGIOES = [
-  "SP Capital",
-  "SP Interior",
-  "Sul",
-  "Nordeste",
-  "Centro-Oeste",
-  "Norte",
-  "RJ",
-  "MG",
-  "Outro",
-];
 
 function slugifyPreview(nome: string, tipo: TipoVendedor): string {
   const partes = nome
