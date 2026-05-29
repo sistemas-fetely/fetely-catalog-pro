@@ -170,3 +170,76 @@
   from { opacity: 0; transform: scale(1.02); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* ================================================================
+ * IMPRESSÃO — apenas área do pedido visível, papel branco
+ * ================================================================ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .pedido-print,
+  .pedido-print * {
+    visibility: visible;
+  }
+
+  .pedido-print {
+    position: absolute !important;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none !important;
+    padding: 20mm !important;
+    margin: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  .pedido-print,
+  .pedido-print > *,
+  .pedido-print [class*="bg-"],
+  .pedido-print [class*="gold-border"] {
+    background: white !important;
+    border-color: #333 !important;
+    box-shadow: none !important;
+  }
+
+  .pedido-print h1,
+  .pedido-print h2,
+  .pedido-print h3,
+  .pedido-print [class*="text-gold"],
+  .pedido-print [class*="text-text-primary"] {
+    color: black !important;
+  }
+  .pedido-print [class*="text-text-secondary"],
+  .pedido-print [class*="text-text-muted"] {
+    color: #444 !important;
+  }
+
+  .pedido-print pre {
+    max-height: none !important;
+    overflow: visible !important;
+    background: white !important;
+    color: black !important;
+    border: 1px solid #ccc;
+    padding: 12px !important;
+    font-size: 9pt !important;
+    page-break-inside: auto;
+  }
+
+  .print-hide,
+  .print-hide * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  @page {
+    margin: 10mm 8mm;
+  }
+
+  html,
+  body {
+    background: white !important;
+  }
+}
