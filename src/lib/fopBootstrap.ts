@@ -31,6 +31,7 @@ export async function bootstrapFopAfterLogin(): Promise<void> {
     useClientes.getState().hydrate(),
     useOrder.getState().hydrate(),
     useProvisao.getState().hydrate(),
+    useCartilhas.getState().hydrate(),
   ]);
 }
 
