@@ -117,6 +117,7 @@ function Confirmation() {
   );
 
   const [copied, setCopied] = useState(false);
+  const [emailDialog, setEmailDialog] = useState<"cliente" | "sops" | null>(null);
 
   if (!order) {
     return (
