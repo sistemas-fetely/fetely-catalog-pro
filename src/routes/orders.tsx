@@ -263,6 +263,10 @@ function OrdersPage() {
           }}
         />
       )}
+
+      {exportOrders && (
+        <ExportModal orders={exportOrders} onClose={() => setExportOrders(null)} />
+      )}
     </main>
   );
 }
