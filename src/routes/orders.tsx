@@ -2,11 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, Package, UserCog } from "lucide-react";
+import { Download, Eye, Package, UserCog } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 import { useOrder, useVisibleOrders } from "@/store/orderStore";
 import { useAuth } from "@/store/authStore";
 import { listAppUsers } from "@/lib/users.functions";
+import { ExportModal } from "@/components/export/ExportModal";
 
 
 export const Route = createFileRoute("/orders")({
@@ -28,7 +29,17 @@ function OrdersPage() {
   const [vendedorFilter, setVendedorFilter] = useState<string>("all");
   const [reassignTarget, setReassignTarget] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [exportOrders, setExportOrders] = useState<typeof history | null>(null);
   useEffect(() => setHydrated(true), []);
+
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const fetchUsers = useServerFn(listAppUsers);
   const { data: appUsers } = useQuery({
@@ -76,7 +87,17 @@ function OrdersPage() {
             {history.length === 1 ? "" : "s"}.
           </p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={() =>
+                setExportOrders(history.filter((o) => selectedIds.has(o.id)))
+              }
+              className="flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
+            >
+              <Download className="h-3.5 w-3.5" /> Exportar {selectedIds.size}
+            </button>
+          )}
           {isAdminOrMaster && vendedores.length > 0 && (
             <select
               value={vendedorFilter}
@@ -122,6 +143,21 @@ function OrdersPage() {
           <table className="w-full text-sm">
             <thead className="bg-surface-2 text-[10px] uppercase tracking-wider text-text-muted">
               <tr>
+                <th className="px-3 py-3 w-8">
+                  <input
+                    type="checkbox"
+                    className="accent-gold"
+                    checked={
+                      filtered.length > 0 &&
+                      filtered.every((o) => selectedIds.has(o.id))
+                    }
+                    onChange={(e) => {
+                      if (e.target.checked)
+                        setSelectedIds(new Set(filtered.map((o) => o.id)));
+                      else setSelectedIds(new Set());
+                    }}
+                  />
+                </th>
                 <th className="text-left px-4 py-3">Pedido</th>
                 <th className="text-left px-4 py-3">Data</th>
                 <th className="text-left px-4 py-3">Cliente</th>
@@ -138,6 +174,14 @@ function OrdersPage() {
                 const isRep = o.vendedorTipo === "representante";
                 return (
                   <tr key={o.id} className="border-t border-border hover:bg-surface-2/50 transition">
+                    <td className="px-3 py-3">
+                      <input
+                        type="checkbox"
+                        className="accent-gold"
+                        checked={selectedIds.has(o.id)}
+                        onChange={() => toggleSelected(o.id)}
+                      />
+                    </td>
                     <td className="px-4 py-3 font-mono text-xs text-gold">{o.id}</td>
                     <td className="px-4 py-3 text-text-secondary">
                       {new Date(o.createdAt).toLocaleString("pt-BR")}
@@ -184,6 +228,13 @@ function OrdersPage() {
                             <UserCog className="h-3 w-3" />
                           </button>
                         )}
+                        <button
+                          onClick={() => setExportOrders([o])}
+                          title="Exportar pedido"
+                          className="inline-flex items-center gap-1 rounded-md gold-border px-2 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
+                        >
+                          <Download className="h-3 w-3" />
+                        </button>
                         <Link
                           to="/confirmation"
                           search={{ id: o.id }}
@@ -211,6 +262,10 @@ function OrdersPage() {
             setReassignTarget(null);
           }}
         />
+      )}
+
+      {exportOrders && (
+        <ExportModal orders={exportOrders} onClose={() => setExportOrders(null)} />
       )}
     </main>
   );

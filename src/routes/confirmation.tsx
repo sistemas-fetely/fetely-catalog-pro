@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Copy, Home, FileClock } from "lucide-react";
+import { Check, Copy, Download, Home, FileClock } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
 import { useVisibleOrders } from "@/store/orderStore";
 import { useProvisao } from "@/store/provisaoStore";
 import type { SavedOrder } from "@/types";
+import { ExportModal } from "@/components/export/ExportModal";
 import { z } from "zod";
 
 const search = z.object({
@@ -130,6 +131,7 @@ function Confirmation() {
   }
 
   const text = formatOrderText(order);
+  const [showExport, setShowExport] = useState(false);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(text);
@@ -183,6 +185,12 @@ function Confirmation() {
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copied ? "Copiado" : "Copiar resumo"}
             </button>
+            <button
+              onClick={() => setShowExport(true)}
+              className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+            >
+              <Download className="h-4 w-4" /> Exportar
+            </button>
             <Link
               to="/"
               className="flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
@@ -218,6 +226,10 @@ function Confirmation() {
             </div>
           </div>
         </div>
+      )}
+
+      {showExport && (
+        <ExportModal orders={[order]} onClose={() => setShowExport(false)} />
       )}
     </main>
   );
