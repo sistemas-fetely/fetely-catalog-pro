@@ -175,10 +175,16 @@ export function cartTotal(items: CartItem[]): number {
 export function useVisibleOrders(): SavedOrder[] {
   const history = useOrder((s) => s.history);
   const user = useAuth((s) => s.user);
+  const profile = useAuth((s) => s.profile);
   const roles = useAuth((s) => s.roles);
   const isAdminOrMaster = roles.includes("admin") || roles.includes("master");
   if (isAdminOrMaster) return history;
   if (!user) return [];
+  if (roles.includes("cliente")) {
+    const cid = profile?.cliente_id ?? null;
+    if (!cid) return [];
+    return history.filter((o) => o.meta.clienteId === cid);
+  }
   return history.filter((o) => o.vendedorId === user.id);
 }
 

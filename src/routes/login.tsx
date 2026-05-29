@@ -11,6 +11,7 @@ function LoginPage() {
   const init = useAuth((s) => s.init);
   const session = useAuth((s) => s.session);
   const loading = useAuth((s) => s.loading);
+  const roles = useAuth((s) => s.roles);
   const signIn = useAuth((s) => s.signIn);
 
   const [email, setEmail] = useState("");
@@ -24,9 +25,13 @@ function LoginPage() {
 
   useEffect(() => {
     if (!loading && session) {
-      navigate({ to: "/catalog" });
+      if (roles.includes("cliente")) {
+        navigate({ to: "/portal" });
+      } else {
+        navigate({ to: "/catalog" });
+      }
     }
-  }, [loading, session, navigate]);
+  }, [loading, session, roles, navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
