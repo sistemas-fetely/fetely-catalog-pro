@@ -8,6 +8,7 @@ import {
   Upload,
   Package,
   Users,
+  ExternalLink,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 
@@ -32,6 +33,13 @@ function SettingsPage() {
       description: "Gerenciar cartilhas comerciais",
       to: "/commercial",
       icon: BookOpen,
+    },
+    {
+      label: "Portal do Cliente",
+      description: "Abrir o portal do lojista em uma nova aba",
+      to: "/portal",
+      icon: ExternalLink,
+      external: true,
     },
     {
       label: "Fotos",
