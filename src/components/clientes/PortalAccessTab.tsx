@@ -211,8 +211,8 @@ function CredentialsModal({
 }) {
   const [copied, setCopied] = useState(false);
 
-  const portalUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/portal` : "/portal";
+  const portalUrl = "https://fetely-catalog-pro.lovable.app/portal";
+
 
   const message = [
     "*Fetély — Acesso ao Portal do Cliente*",
