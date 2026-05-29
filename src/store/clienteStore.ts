@@ -21,9 +21,9 @@ interface ClienteState {
   hidratado: boolean;
   hydrate: () => Promise<void>;
   setClientesFromRows: (clientes: Cliente[]) => void;
-  upsertCliente: (c: Cliente) => void;
-  deleteCliente: (id: string) => void;
-  setAtivo: (id: string, ativo: boolean) => void;
+  upsertCliente: (c: Cliente) => Promise<void>;
+  deleteCliente: (id: string) => Promise<void>;
+  setAtivo: (id: string, ativo: boolean) => Promise<void>;
   findByCnpj: (cnpjDigits: string) => Cliente | undefined;
   getById: (id: string) => Cliente | undefined;
 }
@@ -142,9 +142,21 @@ export const useClientes = create<ClienteState>()(
         }
       },
       setClientesFromRows: (clientes) => set({ clientes }),
-      upsertCliente: (c) => {
+      upsertCliente: async (c) => {
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!c.cadastradoPorVendedorId || !UUID_RE.test(c.cadastradoPorVendedorId)) {
+          throw new Error(
+            "Sessão não está pronta. Atualize a página antes de cadastrar o cliente.",
+          );
+        }
+        if (!c.cnpj || !c.razaoSocial) {
+          throw new Error("CNPJ e razão social são obrigatórios.");
+        }
+
+        const prevList = get().clientes;
+        const i = prevList.findIndex((x) => x.id === c.id);
+
         set((s) => {
-          const i = s.clientes.findIndex((x) => x.id === c.id);
           if (i >= 0) {
             const copy = [...s.clientes];
             copy[i] = c;
@@ -152,37 +164,59 @@ export const useClientes = create<ClienteState>()(
           }
           return { clientes: [c, ...s.clientes] };
         });
-        void supabase
-          .from("clientes")
-          .upsert(clienteToRow(c) as never, { onConflict: "id" })
-          .then(({ error }) => {
-            if (error) console.error("[clienteStore] upsert falhou:", error, c.id);
-          });
+
+        try {
+          const { error } = await supabase
+            .from("clientes")
+            .upsert(clienteToRow(c) as never, { onConflict: "id" });
+          if (error) throw error;
+        } catch (err: any) {
+          set({ clientes: prevList });
+          console.error("[clienteStore] upsert falhou:", err, c.id);
+          throw new Error(
+            err?.message
+              ? `Não foi possível salvar o cliente: ${err.message}`
+              : "Não foi possível salvar o cliente. Verifique sua conexão.",
+          );
+        }
       },
-      deleteCliente: (id) => {
+      deleteCliente: async (id) => {
+        const prevList = get().clientes;
         set((s) => ({ clientes: s.clientes.filter((c) => c.id !== id) }));
-        void supabase
-          .from("clientes")
-          .delete()
-          .eq("id", id)
-          .then(({ error }) => {
-            if (error) console.error("[clienteStore] delete falhou:", error, id);
-          });
+        try {
+          const { error } = await supabase.from("clientes").delete().eq("id", id);
+          if (error) throw error;
+        } catch (err: any) {
+          set({ clientes: prevList });
+          console.error("[clienteStore] delete falhou:", err, id);
+          throw new Error(
+            err?.message
+              ? `Não foi possível excluir o cliente: ${err.message}`
+              : "Não foi possível excluir o cliente.",
+          );
+        }
       },
-      setAtivo: (id, ativo) => {
+      setAtivo: async (id, ativo) => {
+        const prevList = get().clientes;
         const atualizadoEm = new Date().toISOString();
         set((s) => ({
           clientes: s.clientes.map((c) =>
             c.id === id ? { ...c, ativo, atualizadoEm } : c,
           ),
         }));
-        void supabase
-          .from("clientes")
-          .update({ ativo, atualizado_em: atualizadoEm } as never)
-          .eq("id", id)
-          .then(({ error }) => {
-            if (error) console.error("[clienteStore] setAtivo falhou:", error, id);
-          });
+        try {
+          const { error } = await supabase
+            .from("clientes")
+            .update({ ativo, atualizado_em: atualizadoEm } as never)
+            .eq("id", id);
+          if (error) throw error;
+        } catch (err: any) {
+          set({ clientes: prevList });
+          console.error("[clienteStore] setAtivo falhou:", err, id);
+          throw new Error(
+            err?.message ?? "Não foi possível atualizar o status do cliente.",
+          );
+        }
       },
       findByCnpj: (cnpjDigits) =>
         get().clientes.find((c) => c.cnpj === cnpjDigits && c.cnpj !== ""),
