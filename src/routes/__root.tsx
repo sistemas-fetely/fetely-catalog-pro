@@ -120,6 +120,7 @@ function BootEffects() {
   const initAuth = useAuth((s) => s.init);
   const session = useAuth((s) => s.session);
   const loading = useAuth((s) => s.loading);
+  const roles = useAuth((s) => s.roles);
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
 
@@ -130,15 +131,29 @@ function BootEffects() {
 
   // Guarda de rotas: rotas públicas = /login, /catalog (e subrotas)
   useEffect(() => {
-    if (loading || session) return;
-    const isPublic =
-      pathname === "/login" ||
-      pathname === "/catalog" ||
-      pathname.startsWith("/catalog/");
-    if (!isPublic) {
-      navigate({ to: "/login", search: { redirect: pathname } as never });
+    if (loading) return;
+    if (!session) {
+      const isPublic =
+        pathname === "/login" ||
+        pathname === "/catalog" ||
+        pathname.startsWith("/catalog/");
+      if (!isPublic) {
+        navigate({ to: "/login", search: { redirect: pathname } as never });
+      }
+      return;
     }
-  }, [loading, session, pathname, navigate]);
+    // Cliente só pode acessar /portal/* e /catalog/*; demais rotas → /portal
+    if (roles.includes("cliente")) {
+      const allowed =
+        pathname === "/portal" ||
+        pathname.startsWith("/portal/") ||
+        pathname === "/catalog" ||
+        pathname.startsWith("/catalog/");
+      if (!allowed) {
+        navigate({ to: "/portal" });
+      }
+    }
+  }, [loading, session, roles, pathname, navigate]);
 
   return null;
 }

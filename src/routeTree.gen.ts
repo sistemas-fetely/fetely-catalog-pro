@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProvisoesRouteImport } from './routes/provisoes'
 import { Route as ProdutoRouteImport } from './routes/produto'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PhotosRouteImport } from './routes/photos'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as NewOrderRouteImport } from './routes/new-order'
@@ -23,6 +24,10 @@ import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PortalIndexRouteImport } from './routes/portal.index'
+import { Route as PortalProvisoesRouteImport } from './routes/portal.provisoes'
+import { Route as PortalPedidosRouteImport } from './routes/portal.pedidos'
+import { Route as PortalContaRouteImport } from './routes/portal.conta'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
@@ -41,6 +46,11 @@ const ProvisoesRoute = ProvisoesRouteImport.update({
 const ProdutoRoute = ProdutoRouteImport.update({
   id: '/produto',
   path: '/produto',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PhotosRoute = PhotosRouteImport.update({
@@ -98,6 +108,26 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalProvisoesRoute = PortalProvisoesRouteImport.update({
+  id: '/provisoes',
+  path: '/provisoes',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalPedidosRoute = PortalPedidosRouteImport.update({
+  id: '/pedidos',
+  path: '/pedidos',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalContaRoute = PortalContaRouteImport.update({
+  id: '/conta',
+  path: '/conta',
+  getParentRoute: () => PortalRoute,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -132,12 +162,17 @@ export interface FileRoutesByFullPath {
   '/new-order': typeof NewOrderRoute
   '/orders': typeof OrdersRoute
   '/photos': typeof PhotosRoute
+  '/portal': typeof PortalRouteWithChildren
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/settings': typeof SettingsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/portal/conta': typeof PortalContaRoute
+  '/portal/pedidos': typeof PortalPedidosRoute
+  '/portal/provisoes': typeof PortalProvisoesRoute
+  '/portal/': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
 export interface FileRoutesByTo {
@@ -158,6 +193,10 @@ export interface FileRoutesByTo {
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/portal/conta': typeof PortalContaRoute
+  '/portal/pedidos': typeof PortalPedidosRoute
+  '/portal/provisoes': typeof PortalProvisoesRoute
+  '/portal': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
 export interface FileRoutesById {
@@ -173,12 +212,17 @@ export interface FileRoutesById {
   '/new-order': typeof NewOrderRoute
   '/orders': typeof OrdersRoute
   '/photos': typeof PhotosRoute
+  '/portal': typeof PortalRouteWithChildren
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/settings': typeof SettingsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/portal/conta': typeof PortalContaRoute
+  '/portal/pedidos': typeof PortalPedidosRoute
+  '/portal/provisoes': typeof PortalProvisoesRoute
+  '/portal/': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
 export interface FileRouteTypes {
@@ -195,12 +239,17 @@ export interface FileRouteTypes {
     | '/new-order'
     | '/orders'
     | '/photos'
+    | '/portal'
     | '/produto'
     | '/provisoes'
     | '/settings'
     | '/admin/cartilhas'
     | '/admin/products'
     | '/admin/users'
+    | '/portal/conta'
+    | '/portal/pedidos'
+    | '/portal/provisoes'
+    | '/portal/'
     | '/catalog/categoria/$categoria'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -221,6 +270,10 @@ export interface FileRouteTypes {
     | '/admin/cartilhas'
     | '/admin/products'
     | '/admin/users'
+    | '/portal/conta'
+    | '/portal/pedidos'
+    | '/portal/provisoes'
+    | '/portal'
     | '/catalog/categoria/$categoria'
   id:
     | '__root__'
@@ -235,12 +288,17 @@ export interface FileRouteTypes {
     | '/new-order'
     | '/orders'
     | '/photos'
+    | '/portal'
     | '/produto'
     | '/provisoes'
     | '/settings'
     | '/admin/cartilhas'
     | '/admin/products'
     | '/admin/users'
+    | '/portal/conta'
+    | '/portal/pedidos'
+    | '/portal/provisoes'
+    | '/portal/'
     | '/catalog/categoria/$categoria'
   fileRoutesById: FileRoutesById
 }
@@ -256,6 +314,7 @@ export interface RootRouteChildren {
   NewOrderRoute: typeof NewOrderRoute
   OrdersRoute: typeof OrdersRoute
   PhotosRoute: typeof PhotosRoute
+  PortalRoute: typeof PortalRouteWithChildren
   ProdutoRoute: typeof ProdutoRoute
   ProvisoesRoute: typeof ProvisoesRoute
   SettingsRoute: typeof SettingsRoute
@@ -285,6 +344,13 @@ declare module '@tanstack/react-router' {
       path: '/produto'
       fullPath: '/produto'
       preLoaderRoute: typeof ProdutoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/photos': {
@@ -364,6 +430,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/': {
+      id: '/portal/'
+      path: '/'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/provisoes': {
+      id: '/portal/provisoes'
+      path: '/provisoes'
+      fullPath: '/portal/provisoes'
+      preLoaderRoute: typeof PortalProvisoesRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/pedidos': {
+      id: '/portal/pedidos'
+      path: '/pedidos'
+      fullPath: '/portal/pedidos'
+      preLoaderRoute: typeof PortalPedidosRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/conta': {
+      id: '/portal/conta'
+      path: '/conta'
+      fullPath: '/portal/conta'
+      preLoaderRoute: typeof PortalContaRouteImport
+      parentRoute: typeof PortalRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/admin/users'
@@ -406,6 +500,23 @@ const CatalogRouteChildren: CatalogRouteChildren = {
 const CatalogRouteWithChildren =
   CatalogRoute._addFileChildren(CatalogRouteChildren)
 
+interface PortalRouteChildren {
+  PortalContaRoute: typeof PortalContaRoute
+  PortalPedidosRoute: typeof PortalPedidosRoute
+  PortalProvisoesRoute: typeof PortalProvisoesRoute
+  PortalIndexRoute: typeof PortalIndexRoute
+}
+
+const PortalRouteChildren: PortalRouteChildren = {
+  PortalContaRoute: PortalContaRoute,
+  PortalPedidosRoute: PortalPedidosRoute,
+  PortalProvisoesRoute: PortalProvisoesRoute,
+  PortalIndexRoute: PortalIndexRoute,
+}
+
+const PortalRouteWithChildren =
+  PortalRoute._addFileChildren(PortalRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CartRoute: CartRoute,
@@ -418,6 +529,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewOrderRoute: NewOrderRoute,
   OrdersRoute: OrdersRoute,
   PhotosRoute: PhotosRoute,
+  PortalRoute: PortalRouteWithChildren,
   ProdutoRoute: ProdutoRoute,
   ProvisoesRoute: ProvisoesRoute,
   SettingsRoute: SettingsRoute,

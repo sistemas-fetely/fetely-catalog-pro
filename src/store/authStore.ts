@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "master" | "admin" | "vendedor";
+export type AppRole = "master" | "admin" | "vendedor" | "cliente";
 
 export type TipoVendedor = "interno" | "representante";
 
@@ -22,6 +22,7 @@ export interface Profile {
   empresa: string | null;
   observacoes: string | null;
   login_amigavel: string | null;
+  cliente_id: string | null;
 }
 
 interface AuthState {
@@ -38,6 +39,7 @@ interface AuthState {
   isMaster: () => boolean;
   isAdmin: () => boolean;
   isAdminOrMaster: () => boolean;
+  isCliente: () => boolean;
 }
 
 async function loadProfileAndRoles(userId: string): Promise<{ profile: Profile | null; roles: AppRole[] }> {
@@ -113,4 +115,5 @@ export const useAuth = create<AuthState>((set, get) => ({
     const r = get().roles;
     return r.includes("master") || r.includes("admin");
   },
+  isCliente: () => get().roles.includes("cliente"),
 }));

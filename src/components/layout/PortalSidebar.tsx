@@ -1,13 +1,21 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, ClipboardList, Package, BookOpen, User as UserIcon } from "lucide-react";
 
-const items = [
+type Item = {
+  to: string;
+  label: string;
+  Icon: typeof Home;
+  exact?: boolean;
+  divider?: boolean;
+};
+
+const items: Item[] = [
   { to: "/portal", label: "Início", Icon: Home, exact: true },
   { to: "/portal/pedidos", label: "Meus Pedidos", Icon: ClipboardList },
   { to: "/portal/provisoes", label: "Provisões", Icon: Package },
   { to: "/catalog", label: "Catálogo", Icon: BookOpen },
   { to: "/portal/conta", label: "Minha Conta", Icon: UserIcon, divider: true },
-] as const;
+];
 
 export function PortalSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
@@ -26,7 +34,7 @@ export function PortalSidebar({ onNavigate }: { onNavigate?: () => void }) {
             : pathname === it.to || pathname.startsWith(it.to + "/");
           return (
             <span key={it.to}>
-              {"divider" in it && it.divider && (
+              {it.divider && (
                 <div className="my-2 mx-2 h-px bg-border" />
               )}
               <Link

@@ -104,9 +104,15 @@ export const useProvisao = create<ProvisaoState>()(
 export function useVisibleProvisoes(): ProvisaoFutura[] {
   const provisoes = useProvisao((s) => s.provisoes);
   const user = useAuth((s) => s.user);
+  const profile = useAuth((s) => s.profile);
   const roles = useAuth((s) => s.roles);
   const admin = roles.includes("admin") || roles.includes("master");
   if (admin) return provisoes;
   if (!user) return [];
+  if (roles.includes("cliente")) {
+    const cid = profile?.cliente_id ?? null;
+    if (!cid) return [];
+    return provisoes.filter((p) => p.clienteId === cid);
+  }
   return provisoes.filter((p) => p.vendedorId === user.id);
 }
