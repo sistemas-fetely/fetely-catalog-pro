@@ -352,7 +352,7 @@ function PedidoResumoPrintBlock({ order }: { order: SavedOrder }) {
   const totalSkus = order.items.length;
 
   return (
-    <div className="print-only-resumo" style={{ fontSize: "9.5pt", lineHeight: 1.4, color: "#000" }}>
+    <div style={{ fontSize: "9.5pt", lineHeight: 1.4, color: "#000" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #000", paddingBottom: "8px", marginBottom: "12px" }}>
         <div>
