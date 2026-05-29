@@ -7,7 +7,7 @@ import { useProvisao } from "@/store/provisaoStore";
 import type { SavedOrder } from "@/types";
 import { ExportModal } from "@/components/export/ExportModal";
 import { EnviarEmailDialog } from "@/components/EnviarEmailDialog";
-import { openOrderPDFInNewTab } from "@/lib/orderPdf";
+import { printOrderPDF } from "@/lib/orderPdf";
 import { z } from "zod";
 
 const search = z.object({
