@@ -48,3 +48,58 @@ export function getPremissasVigentes(c: Cliente | null | undefined): PremissasCo
   if (!isPremissaVigente(p.vigenciaInicio, p.vigenciaFim)) return null;
   return p;
 }
+
+const CAMPO_LABEL: Record<string, string> = {
+  temDescontoHomologado: "Desconto homologado",
+  descontoHomologadoPercent: "Desconto %",
+  descontoHomologadoSobrePos: "Desconto acumula sobre faixa",
+  descontoHomologadoObs: "Obs. desconto",
+  bonusPixPersonalizado: "Bônus PIX personalizado",
+  bonusPixPercent: "Bônus PIX %",
+  freteFixo: "Frete fixo",
+  freteTipo: "Tipo frete",
+  freteObs: "Obs. frete",
+  temCondicaoPreferencial: "Condição preferencial",
+  condicoesPermitidas: "Condições permitidas",
+  condicaoPreferencialId: "Cond. preferencial",
+  temFaixaFixa: "Faixa fixa",
+  faixaFixaId: "Faixa fixa ID",
+  temPedidoMinimoPersonalizado: "Pedido mínimo personalizado",
+  pedidoMinimoValor: "Pedido mínimo R$",
+  vigenciaInicio: "Vigência início",
+  vigenciaFim: "Vigência fim",
+  premissasAtivas: "Premissas ativas",
+};
+
+const CAMPOS_IGNORE = new Set(["atualizadoPor", "atualizadoEm", "historico", "aprovadoPor", "aprovadoEm"]);
+
+function fmt(v: unknown): string {
+  if (v === null || v === undefined || v === "") return "—";
+  if (Array.isArray(v)) return v.length ? v.join(", ") : "—";
+  if (typeof v === "boolean") return v ? "sim" : "não";
+  return String(v);
+}
+
+/** Compara duas premissas e devolve a lista de campos alterados. */
+export function diffPremissas(
+  antes: PremissasComerciais | null | undefined,
+  depois: PremissasComerciais | null | undefined,
+): { campo: string; anterior: string; novo: string }[] {
+  if (!depois) return [];
+  const a = (antes ?? {}) as Record<string, unknown>;
+  const b = depois as unknown as Record<string, unknown>;
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  const out: { campo: string; anterior: string; novo: string }[] = [];
+  for (const k of keys) {
+    if (CAMPOS_IGNORE.has(k)) continue;
+    const va = a[k];
+    const vb = b[k];
+    const eq = Array.isArray(va) && Array.isArray(vb)
+      ? va.length === vb.length && va.every((x, i) => x === vb[i])
+      : va === vb;
+    if (!eq) {
+      out.push({ campo: CAMPO_LABEL[k] ?? k, anterior: fmt(va), novo: fmt(vb) });
+    }
+  }
+  return out;
+}
