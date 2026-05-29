@@ -87,7 +87,17 @@ function OrdersPage() {
             {history.length === 1 ? "" : "s"}.
           </p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={() =>
+                setExportOrders(history.filter((o) => selectedIds.has(o.id)))
+              }
+              className="flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
+            >
+              <Download className="h-3.5 w-3.5" /> Exportar {selectedIds.size}
+            </button>
+          )}
           {isAdminOrMaster && vendedores.length > 0 && (
             <select
               value={vendedorFilter}
