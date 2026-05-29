@@ -45,6 +45,12 @@ function AdminUsersPage() {
   const deleteFn = useServerFn(deleteAppUser);
 
   useEffect(() => {
+    if (regioes.length > 0 && !form.regiao) {
+      setForm((prev) => ({ ...prev, regiao: regioes[0].nome }));
+    }
+  }, [regioes, form.regiao]);
+
+  useEffect(() => {
     init();
   }, [init]);
 
@@ -55,6 +61,8 @@ function AdminUsersPage() {
   }, [loading, session, isAdminOrMaster, navigate]);
 
   const qc = useQueryClient();
+  const { data: regioes = [] } = useRegioes();
+
   const usersQ = useQuery({
     queryKey: ["app-users"],
     queryFn: () => listFn(),
@@ -101,7 +109,7 @@ function AdminUsersPage() {
     codigo_vendedor: "",
     role: "vendedor" as AppRole,
     tipo_vendedor: "interno" as TipoVendedor,
-    regiao: "SP Capital",
+    regiao: "",
     comissao_percent: "",
     cargo: "",
     supervisor: "",
@@ -311,8 +319,10 @@ function AdminUsersPage() {
                   onChange={(e) => setForm({ ...form, regiao: e.target.value })}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text-primary focus:border-gold focus:outline-none"
                 >
-                  {REGIOES.map((r) => (
-                    <option key={r}>{r}</option>
+                  {regioes.map((r) => (
+                    <option key={r.id} value={r.nome}>
+                      {r.nome}
+                    </option>
                   ))}
                 </select>
               </div>
