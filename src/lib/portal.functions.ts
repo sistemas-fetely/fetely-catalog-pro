@@ -52,6 +52,9 @@ export const createPortalAccess = createServerFn({ method: "POST" })
 
     const password = data.password ?? defaultPortalPassword(data.cnpjDigits);
 
+    let newUserId: string;
+    let createdNow = false;
+
     const { data: created, error: createErr } =
       await supabaseAdmin.auth.admin.createUser({
         email: data.email,
@@ -62,11 +65,50 @@ export const createPortalAccess = createServerFn({ method: "POST" })
           cliente_id: data.clienteId,
         },
       });
-    if (createErr || !created.user) {
-      throw new Error(createErr?.message ?? "Falha ao criar usuário do portal");
-    }
 
-    const newUserId = created.user.id;
+    if (createErr || !created?.user) {
+      const msg = createErr?.message ?? "";
+      const code = (createErr as { code?: string } | null)?.code ?? "";
+      const isDuplicate =
+        code === "email_exists" ||
+        /already.*registered|already exists|email_exists|duplicate/i.test(msg);
+      if (!isDuplicate) {
+        throw new Error(msg || "Falha ao criar usuário do portal");
+      }
+
+      // Usuário já existe no Auth — localizar e reaproveitar
+      const { data: list, error: listErr } =
+        await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      if (listErr) throw new Error(listErr.message);
+      const existing = list.users.find(
+        (u) => (u.email ?? "").toLowerCase() === data.email.toLowerCase(),
+      );
+      if (!existing) {
+        throw new Error(
+          "E-mail já registrado no sistema, mas não foi possível localizar o usuário. Use outro e-mail.",
+        );
+      }
+
+      const { data: existingProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("cliente_id")
+        .eq("id", existing.id)
+        .maybeSingle();
+      if (
+        existingProfile?.cliente_id &&
+        existingProfile.cliente_id !== data.clienteId
+      ) {
+        throw new Error(
+          "Este e-mail já está vinculado a outro cliente. Use um e-mail diferente.",
+        );
+      }
+
+      await supabaseAdmin.auth.admin.updateUserById(existing.id, { password });
+      newUserId = existing.id;
+    } else {
+      newUserId = created.user.id;
+      createdNow = true;
+    }
 
     // profile é auto-criado por trigger; atualizar com nome e cliente_id
     await supabaseAdmin
@@ -79,13 +121,24 @@ export const createPortalAccess = createServerFn({ method: "POST" })
       })
       .eq("id", newUserId);
 
-    const { error: roleErr } = await supabaseAdmin
+    // Garante role 'cliente' (idempotente)
+    const { data: existingRole } = await supabaseAdmin
       .from("user_roles")
-      .insert({ user_id: newUserId, role: "cliente" });
-    if (roleErr) {
-      // rollback do user para não deixar órfão
-      await supabaseAdmin.auth.admin.deleteUser(newUserId);
-      throw new Error(roleErr.message);
+      .select("id")
+      .eq("user_id", newUserId)
+      .eq("role", "cliente")
+      .maybeSingle();
+
+    if (!existingRole) {
+      const { error: roleErr } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: newUserId, role: "cliente" });
+      if (roleErr) {
+        if (createdNow) {
+          await supabaseAdmin.auth.admin.deleteUser(newUserId);
+        }
+        throw new Error(roleErr.message);
+      }
     }
 
     return { userId: newUserId, email: data.email, password };
