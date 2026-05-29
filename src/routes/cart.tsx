@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { formatBRL } from "@/lib/format";
 import { useOrder, cartTotal } from "@/store/orderStore";
