@@ -7,6 +7,7 @@ import { fetchCNPJ, formatCNPJ, isValidCNPJLength, onlyDigits } from "@/lib/cnpj
 import { useClientes } from "@/store/clienteStore";
 import { useAuth } from "@/store/authStore";
 import { PremissasComercialTab } from "@/components/clientes/PremissasComercialTab";
+import { diffPremissas } from "@/lib/premissas";
 import {
   CANAL_LABEL,
   SEGMENTO_LABEL,
@@ -159,8 +160,30 @@ export function ClienteFormModal({
       toast.error("Preencha Razão Social, Nome do contato e Telefone.");
       return;
     }
+    let premissasComerciais = cliente.premissasComerciais;
+    if (premissasComerciais) {
+      const alterados = diffPremissas(initial?.premissasComerciais, premissasComerciais);
+      if (alterados.length > 0) {
+        const usuario = profile?.nome_completo ?? profile?.email ?? "—";
+        premissasComerciais = {
+          ...premissasComerciais,
+          historico: [
+            ...(premissasComerciais.historico ?? []),
+            {
+              timestamp: new Date().toISOString(),
+              usuarioNome: usuario,
+              descricao: initial?.premissasComerciais
+                ? "Atualização de premissas"
+                : "Criação de premissas",
+              camposAlterados: alterados,
+            },
+          ],
+        };
+      }
+    }
     const saved: Cliente = {
       ...cliente,
+      premissasComerciais,
       atualizadoEm: new Date().toISOString(),
     };
     upsert(saved);
@@ -187,11 +210,12 @@ export function ClienteFormModal({
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-surface-2 h-auto">
+          <TabsList className="grid w-full grid-cols-5 bg-surface-2 h-auto">
             <TabsTrigger value="fiscal" className="text-xs">Fiscais</TabsTrigger>
             <TabsTrigger value="endereco" className="text-xs">Endereço</TabsTrigger>
             <TabsTrigger value="contatos" className="text-xs">Contatos</TabsTrigger>
             <TabsTrigger value="comercial" className="text-xs">Comercial</TabsTrigger>
+            <TabsTrigger value="premissas" className="text-xs text-gold">✦ Premissas</TabsTrigger>
           </TabsList>
 
           {/* FISCAL */}
@@ -570,6 +594,11 @@ export function ClienteFormModal({
                 onChange={(e) => update({ observacoes: e.target.value })}
               />
             </Field>
+          </TabsContent>
+
+          {/* PREMISSAS COMERCIAIS (V13) */}
+          <TabsContent value="premissas" className="pt-2">
+            <PremissasComercialTab cliente={cliente} onChange={update} />
           </TabsContent>
         </Tabs>
 
