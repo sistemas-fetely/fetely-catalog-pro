@@ -16,6 +16,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
 import "@/store/cartilhasStore"; // side-effect: sincroniza commercial.ts com a cartilha persistida
+import { bootstrapFopAfterLogin } from "@/lib/fopBootstrap";
 
 function NotFoundComponent() {
   return (
@@ -128,6 +129,13 @@ function BootEffects() {
     void fetchPhotos();
     initAuth();
   }, [fetchPhotos, initAuth]);
+
+  // Bootstrap FOP: migração one-shot + hidratação dos stores a partir do banco
+  useEffect(() => {
+    if (session && !loading) {
+      void bootstrapFopAfterLogin();
+    }
+  }, [session?.user?.id, loading]);
 
   // Guarda de rotas: rotas públicas = /login, /catalog (e subrotas)
   useEffect(() => {

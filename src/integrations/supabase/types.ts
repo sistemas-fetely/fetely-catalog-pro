@@ -14,6 +14,356 @@ export type Database = {
   }
   public: {
     Tables: {
+      clientes: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          bairro: string | null
+          cadastrado_por_vendedor_id: string
+          cadastrado_por_vendedor_nome: string
+          canal: string
+          cep: string | null
+          cidade: string | null
+          cnpj: string
+          cnpj_formatado: string
+          complemento: string | null
+          contato_email: string | null
+          contato_nome: string | null
+          contato_telefone: string | null
+          contato_whatsapp: string | null
+          criado_em: string
+          endereco_entrega_igual: boolean
+          entrega_bairro: string | null
+          entrega_cep: string | null
+          entrega_cidade: string | null
+          entrega_complemento: string | null
+          entrega_estado: string | null
+          entrega_logradouro: string | null
+          entrega_numero: string | null
+          estado: string | null
+          financeiro_email: string | null
+          financeiro_nome: string | null
+          financeiro_telefone: string | null
+          id: string
+          inscricao_estadual: string | null
+          isento_ie: boolean
+          logradouro: string | null
+          nome_fantasia: string
+          numero: string | null
+          observacoes: string | null
+          razao_social: string
+          regiao_atuacao: string | null
+          segmento: string
+          situacao_cadastral: string
+          sncf_bandeira: string | null
+          sncf_cooldown_ate: string | null
+          sncf_limite_credito: number | null
+          sncf_limite_disponivel: number | null
+          sncf_parceiro_id: string | null
+          sncf_perfil_credito: string | null
+          sncf_ultima_sync_em: string | null
+          tags: string[]
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          bairro?: string | null
+          cadastrado_por_vendedor_id: string
+          cadastrado_por_vendedor_nome: string
+          canal?: string
+          cep?: string | null
+          cidade?: string | null
+          cnpj: string
+          cnpj_formatado: string
+          complemento?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          contato_whatsapp?: string | null
+          criado_em?: string
+          endereco_entrega_igual?: boolean
+          entrega_bairro?: string | null
+          entrega_cep?: string | null
+          entrega_cidade?: string | null
+          entrega_complemento?: string | null
+          entrega_estado?: string | null
+          entrega_logradouro?: string | null
+          entrega_numero?: string | null
+          estado?: string | null
+          financeiro_email?: string | null
+          financeiro_nome?: string | null
+          financeiro_telefone?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          isento_ie?: boolean
+          logradouro?: string | null
+          nome_fantasia: string
+          numero?: string | null
+          observacoes?: string | null
+          razao_social: string
+          regiao_atuacao?: string | null
+          segmento?: string
+          situacao_cadastral?: string
+          sncf_bandeira?: string | null
+          sncf_cooldown_ate?: string | null
+          sncf_limite_credito?: number | null
+          sncf_limite_disponivel?: number | null
+          sncf_parceiro_id?: string | null
+          sncf_perfil_credito?: string | null
+          sncf_ultima_sync_em?: string | null
+          tags?: string[]
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          bairro?: string | null
+          cadastrado_por_vendedor_id?: string
+          cadastrado_por_vendedor_nome?: string
+          canal?: string
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string
+          cnpj_formatado?: string
+          complemento?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          contato_whatsapp?: string | null
+          criado_em?: string
+          endereco_entrega_igual?: boolean
+          entrega_bairro?: string | null
+          entrega_cep?: string | null
+          entrega_cidade?: string | null
+          entrega_complemento?: string | null
+          entrega_estado?: string | null
+          entrega_logradouro?: string | null
+          entrega_numero?: string | null
+          estado?: string | null
+          financeiro_email?: string | null
+          financeiro_nome?: string | null
+          financeiro_telefone?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          isento_ie?: boolean
+          logradouro?: string | null
+          nome_fantasia?: string
+          numero?: string | null
+          observacoes?: string | null
+          razao_social?: string
+          regiao_atuacao?: string | null
+          segmento?: string
+          situacao_cadastral?: string
+          sncf_bandeira?: string | null
+          sncf_cooldown_ate?: string | null
+          sncf_limite_credito?: number | null
+          sncf_limite_disponivel?: number | null
+          sncf_parceiro_id?: string | null
+          sncf_perfil_credito?: string | null
+          sncf_ultima_sync_em?: string | null
+          tags?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clientes_cadastrado_por_vendedor_id_fkey"
+            columns: ["cadastrado_por_vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comissoes: {
+        Row: {
+          base_calculo: Json | null
+          created_at: string
+          id: string
+          order_id: string
+          pago_em: string | null
+          percentual_aplicado: number
+          sncf_calculado_em: string
+          status: string
+          valor_comissao: number
+          valor_pedido: number
+          vendedor_id: string
+        }
+        Insert: {
+          base_calculo?: Json | null
+          created_at?: string
+          id?: string
+          order_id: string
+          pago_em?: string | null
+          percentual_aplicado: number
+          sncf_calculado_em: string
+          status?: string
+          valor_comissao: number
+          valor_pedido: number
+          vendedor_id: string
+        }
+        Update: {
+          base_calculo?: Json | null
+          created_at?: string
+          id?: string
+          order_id?: string
+          pago_em?: string | null
+          percentual_aplicado?: number
+          sncf_calculado_em?: string
+          status?: string
+          valor_comissao?: number
+          valor_pedido?: number
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comissoes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comissoes_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          id: string
+          order_id: string
+          posicao: number
+          preco_unit_atacado: number
+          product_snapshot: Json
+          quantity: number
+          sku: string
+          subtotal_bruto: number
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          posicao: number
+          preco_unit_atacado: number
+          product_snapshot: Json
+          quantity: number
+          sku: string
+          subtotal_bruto: number
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          posicao?: number
+          preco_unit_atacado?: number
+          product_snapshot?: Json
+          quantity?: number
+          sku?: string
+          subtotal_bruto?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          cliente_id: string | null
+          cliente_snapshot: Json | null
+          commercial: Json | null
+          created_at: string
+          id: string
+          meta: Json
+          provisao_origem_id: string | null
+          sncf_enviado_em: string | null
+          sncf_estagio: string | null
+          sncf_pedido_id: string | null
+          sncf_status_sync: string
+          sncf_tentativas: number
+          sncf_ultimo_erro: string | null
+          sncf_ultimo_sync_em: string | null
+          total: number
+          total_skus: number
+          total_unidades: number
+          vendedor_id: string
+          vendedor_login: string | null
+          vendedor_nome: string
+          vendedor_tipo: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          cliente_snapshot?: Json | null
+          commercial?: Json | null
+          created_at?: string
+          id: string
+          meta: Json
+          provisao_origem_id?: string | null
+          sncf_enviado_em?: string | null
+          sncf_estagio?: string | null
+          sncf_pedido_id?: string | null
+          sncf_status_sync?: string
+          sncf_tentativas?: number
+          sncf_ultimo_erro?: string | null
+          sncf_ultimo_sync_em?: string | null
+          total: number
+          total_skus?: number
+          total_unidades?: number
+          vendedor_id: string
+          vendedor_login?: string | null
+          vendedor_nome: string
+          vendedor_tipo?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          cliente_snapshot?: Json | null
+          commercial?: Json | null
+          created_at?: string
+          id?: string
+          meta?: Json
+          provisao_origem_id?: string | null
+          sncf_enviado_em?: string | null
+          sncf_estagio?: string | null
+          sncf_pedido_id?: string | null
+          sncf_status_sync?: string
+          sncf_tentativas?: number
+          sncf_ultimo_erro?: string | null
+          sncf_ultimo_sync_em?: string | null
+          total?: number
+          total_skus?: number
+          total_unidades?: number
+          vendedor_id?: string
+          vendedor_login?: string | null
+          vendedor_nome?: string
+          vendedor_tipo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_orders_provisao_origem"
+            columns: ["provisao_origem_id"]
+            isOneToOne: false
+            referencedRelation: "provisoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photos: {
         Row: {
           colecao: string
@@ -250,6 +600,136 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      provisao_itens: {
+        Row: {
+          colecao: string | null
+          cor_nome: string | null
+          id: string
+          nome_comercial: string
+          preco_atacado_referencia: number
+          previsao_data: string | null
+          provisao_id: string
+          quantidade: number
+          sku: string
+          status_estoque: string | null
+          tamanho_numero: string | null
+        }
+        Insert: {
+          colecao?: string | null
+          cor_nome?: string | null
+          id?: string
+          nome_comercial: string
+          preco_atacado_referencia: number
+          previsao_data?: string | null
+          provisao_id: string
+          quantidade: number
+          sku: string
+          status_estoque?: string | null
+          tamanho_numero?: string | null
+        }
+        Update: {
+          colecao?: string | null
+          cor_nome?: string | null
+          id?: string
+          nome_comercial?: string
+          preco_atacado_referencia?: number
+          previsao_data?: string | null
+          provisao_id?: string
+          quantidade?: number
+          sku?: string
+          status_estoque?: string | null
+          tamanho_numero?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provisao_itens_provisao_id_fkey"
+            columns: ["provisao_id"]
+            isOneToOne: false
+            referencedRelation: "provisoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provisoes: {
+        Row: {
+          atualizado_em: string
+          cliente_id: string
+          cliente_snapshot: Json
+          criado_em: string
+          datas_previsao: Json
+          id: string
+          observacoes: string | null
+          pedido_convertido_id: string | null
+          pedido_firme_id: string | null
+          proxima_previsao: string
+          status: string
+          total_referencia: number
+          vendedor_id: string
+          vendedor_nome: string
+        }
+        Insert: {
+          atualizado_em?: string
+          cliente_id: string
+          cliente_snapshot: Json
+          criado_em?: string
+          datas_previsao?: Json
+          id: string
+          observacoes?: string | null
+          pedido_convertido_id?: string | null
+          pedido_firme_id?: string | null
+          proxima_previsao: string
+          status?: string
+          total_referencia?: number
+          vendedor_id: string
+          vendedor_nome: string
+        }
+        Update: {
+          atualizado_em?: string
+          cliente_id?: string
+          cliente_snapshot?: Json
+          criado_em?: string
+          datas_previsao?: Json
+          id?: string
+          observacoes?: string | null
+          pedido_convertido_id?: string | null
+          pedido_firme_id?: string | null
+          proxima_previsao?: string
+          status?: string
+          total_referencia?: number
+          vendedor_id?: string
+          vendedor_nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provisoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provisoes_pedido_convertido_id_fkey"
+            columns: ["pedido_convertido_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provisoes_pedido_firme_id_fkey"
+            columns: ["pedido_firme_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provisoes_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
