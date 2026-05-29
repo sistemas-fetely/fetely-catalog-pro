@@ -192,6 +192,33 @@ function Confirmation() {
           </div>
         </div>
       </div>
+
+      {provisao && (
+        <div className="mt-6 rounded-lg border border-stock-pre/40 bg-stock-pre/5 p-6">
+          <div className="flex items-start gap-3">
+            <FileClock className="h-6 w-6 text-stock-pre shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-[0.25em] text-stock-pre font-semibold">
+                📋 Provisão futura gerada
+              </div>
+              <div className="font-display text-2xl mt-1">{provisao.id}</div>
+              <p className="text-sm text-text-secondary mt-1">
+                {provisao.itens.length} {provisao.itens.length === 1 ? "item" : "itens"} · Prev. {provisao.proximaPrevisao} · Ref. {formatBRL(provisao.totalReferencia)}
+              </p>
+              <p className="text-xs text-text-muted mt-1">
+                Salva como rascunho — você será notificado quando o estoque liberar.
+              </p>
+              <Link
+                to="/provisoes"
+                search={{ highlight: provisao.id }}
+                className="inline-flex mt-3 items-center gap-2 text-xs uppercase tracking-wider text-stock-pre hover:text-stock-pre/80"
+              >
+                Ver provisão →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
