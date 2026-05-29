@@ -72,6 +72,7 @@ function rowToCliente(row: Record<string, unknown>): Cliente {
     observacoes: (row.observacoes as string | null) ?? undefined,
     tags: (row.tags as string[] | null) ?? [],
     ativo: (row.ativo as boolean) ?? true,
+    premissasComerciais: (row.premissas_comerciais as import("@/types/cliente").PremissasComerciais | null) ?? undefined,
   };
 }
 
@@ -117,6 +118,7 @@ export function clienteToRow(c: Cliente): Record<string, unknown> {
     observacoes: c.observacoes ?? null,
     tags: c.tags ?? [],
     ativo: c.ativo,
+    premissas_comerciais: c.premissasComerciais ?? null,
   };
 }
 

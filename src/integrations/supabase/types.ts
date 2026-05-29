@@ -51,6 +51,10 @@ export type Database = {
           nome_fantasia: string
           numero: string | null
           observacoes: string | null
+          premissas_ativas: boolean
+          premissas_comerciais: Json | null
+          premissas_vigencia_fim: string | null
+          premissas_vigencia_inicio: string | null
           razao_social: string
           regiao_atuacao: string | null
           segmento: string
@@ -100,6 +104,10 @@ export type Database = {
           nome_fantasia: string
           numero?: string | null
           observacoes?: string | null
+          premissas_ativas?: boolean
+          premissas_comerciais?: Json | null
+          premissas_vigencia_fim?: string | null
+          premissas_vigencia_inicio?: string | null
           razao_social: string
           regiao_atuacao?: string | null
           segmento?: string
@@ -149,6 +157,10 @@ export type Database = {
           nome_fantasia?: string
           numero?: string | null
           observacoes?: string | null
+          premissas_ativas?: boolean
+          premissas_comerciais?: Json | null
+          premissas_vigencia_fim?: string | null
+          premissas_vigencia_inicio?: string | null
           razao_social?: string
           regiao_atuacao?: string | null
           segmento?: string
