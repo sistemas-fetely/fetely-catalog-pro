@@ -252,6 +252,15 @@ function Confirmation() {
       {showExport && (
         <ExportModal orders={[order]} onClose={() => setShowExport(false)} />
       )}
+
+      {emailDialog && (
+        <EnviarEmailDialog
+          order={order}
+          tipo={emailDialog}
+          open={true}
+          onOpenChange={(o) => !o && setEmailDialog(null)}
+        />
+      )}
     </main>
   );
 }
