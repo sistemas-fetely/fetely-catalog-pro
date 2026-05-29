@@ -25,7 +25,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { fmtBRL } from "@/lib/format";
+import { formatBRL } from "@/lib/format";
 
 export const Route = createFileRoute("/admin/products")({
   component: AdminProductsPage,
