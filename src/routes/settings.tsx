@@ -41,7 +41,7 @@ function SettingsPage() {
     },
   ];
 
-  if (session && isAdminOrMaster()) {
+  if (session && isAdminOrMaster) {
     items.unshift(
       {
         label: "Produtos",
