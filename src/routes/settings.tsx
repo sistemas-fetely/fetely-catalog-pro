@@ -16,8 +16,9 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-  const isAdminOrMaster = useAuth((s) => s.isAdminOrMaster);
   const session = useAuth((s) => s.session);
+  const roles = useAuth((s) => s.roles);
+  const isAdminOrMaster = roles.includes("admin") || roles.includes("master");
 
   const items = [
     {
@@ -40,7 +41,7 @@ function SettingsPage() {
     },
   ];
 
-  if (session && isAdminOrMaster()) {
+  if (session && isAdminOrMaster) {
     items.unshift(
       {
         label: "Produtos",
