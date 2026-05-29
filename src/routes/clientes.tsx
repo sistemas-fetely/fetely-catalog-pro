@@ -634,6 +634,12 @@ function ClienteDetail({
           </div>
         </TabsContent>
 
+        <TabsContent value="premissas" className="px-5 pb-6 mt-3">
+          <PremissasComercialTab cliente={cliente} onChange={handlePremissasChange} />
+        </TabsContent>
+
+
+
         <TabsContent value="pedidos" className="px-5 pb-6 mt-3">
           {stats.pedidos.length === 0 ? (
             <p className="text-sm text-text-muted py-6 text-center">
