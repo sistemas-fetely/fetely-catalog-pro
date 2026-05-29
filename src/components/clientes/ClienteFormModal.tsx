@@ -86,19 +86,20 @@ export function ClienteFormModal({
   const findByCnpj = useClientes((s) => s.findByCnpj);
 
   const [cliente, setCliente] = useState<Cliente>(() =>
-    initial ?? emptyCliente(user?.id ?? "anon", profile?.nome_completo ?? profile?.email ?? "—"),
+    initial ?? emptyCliente(user?.id ?? "", profile?.nome_completo ?? profile?.email ?? ""),
   );
   const [tab, setTab] = useState("fiscal");
   const [cnpjLoading, setCnpjLoading] = useState(false);
   const [cnpjError, setCnpjError] = useState<string | null>(null);
   const [duplicateWarn, setDuplicateWarn] = useState<Cliente | null>(null);
   const [tagInput, setTagInput] = useState("");
+  const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
     if (open) {
       setCliente(
         initial ??
-          emptyCliente(user?.id ?? "anon", profile?.nome_completo ?? profile?.email ?? "—"),
+          emptyCliente(user?.id ?? "", profile?.nome_completo ?? profile?.email ?? ""),
       );
       setTab("fiscal");
       setCnpjError(null);
@@ -155,9 +156,14 @@ export function ClienteFormModal({
     );
   }, [cliente]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!podeSalvar) {
       toast.error("Preencha Razão Social, Nome do contato e Telefone.");
+      return;
+    }
+    if (salvando) return;
+    if (!user?.id) {
+      toast.error("Sua sessão ainda está carregando. Atualize a página antes de continuar.");
       return;
     }
     let premissasComerciais = cliente.premissasComerciais;
@@ -186,10 +192,20 @@ export function ClienteFormModal({
       premissasComerciais,
       atualizadoEm: new Date().toISOString(),
     };
-    upsert(saved);
-    toast.success("Cliente salvo.");
-    onSaved?.(saved);
-    onOpenChange(false);
+    setSalvando(true);
+    try {
+      await upsert(saved);
+      toast.success("Cliente salvo.");
+      onSaved?.(saved);
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Não foi possível salvar o cliente", {
+        description: "Tente novamente. Se persistir, atualize a página.",
+        duration: 6000,
+      });
+    } finally {
+      setSalvando(false);
+    }
   };
 
   const addTag = () => {
@@ -613,10 +629,10 @@ export function ClienteFormModal({
           <button
             type="button"
             onClick={handleSave}
-            disabled={!podeSalvar}
+            disabled={!podeSalvar || salvando}
             className="px-5 py-2 rounded-md bg-gold text-background text-xs font-semibold uppercase tracking-[0.15em] hover:bg-gold-light disabled:opacity-40"
           >
-            Salvar e selecionar →
+            {salvando ? "Salvando..." : "Salvar e selecionar →"}
           </button>
         </div>
 

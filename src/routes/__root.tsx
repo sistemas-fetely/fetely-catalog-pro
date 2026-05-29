@@ -17,6 +17,7 @@ import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
 import "@/store/cartilhasStore"; // side-effect: sincroniza commercial.ts com a cartilha persistida
 import { bootstrapFopAfterLogin } from "@/lib/fopBootstrap";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -112,6 +113,7 @@ function RootComponent() {
         <Outlet />
         <BottomNav />
       </div>
+      <Toaster />
     </QueryClientProvider>
   );
 }

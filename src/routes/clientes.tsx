@@ -472,7 +472,7 @@ function ClienteDetail({
   const upsertCliente = useClientes((s) => s.upsertCliente);
   const profile = useAuth((s) => s.profile);
 
-  const handlePremissasChange = (patch: Partial<Cliente>) => {
+  const handlePremissasChange = async (patch: Partial<Cliente>) => {
     const next: Cliente = { ...cliente, ...patch, atualizadoEm: new Date().toISOString() };
     if (patch.premissasComerciais) {
       const alterados = diffPremissas(cliente.premissasComerciais, patch.premissasComerciais);
@@ -494,7 +494,12 @@ function ClienteDetail({
         };
       }
     }
-    upsertCliente(next);
+    try {
+      await upsertCliente(next);
+      toast.success("Premissas atualizadas.");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Não foi possível salvar as premissas");
+    }
   };
 
   const faixaMaisFreq = useMemo(() => {
