@@ -199,6 +199,7 @@ function CartPage() {
       justificativa: negotiationAtivo ? negJustificativa : "",
       observacaoInterna: negotiationAtivo ? negObservacaoInterna : "",
       usouReservada: negotiationAtivo && negUsarReservada,
+      premissasAplicadas: !!c.premissasAplicadas,
     };
 
     setMeta({ condicaoPagamento: commercial.condicao.descricao });
