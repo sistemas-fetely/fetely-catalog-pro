@@ -1,4 +1,5 @@
 // Regras comerciais Fetély — faixas, condições de pagamento, cálculo de pedido.
+// V10: valores agora são *vivos* — mantidos em sincronia pelo cartilhasStore.
 
 export type FreteTipo = "FOB" | "CIF";
 
@@ -6,7 +7,7 @@ export interface Faixa {
   id: number;
   nome: string;
   valorMin: number;
-  valorMax: number;
+  valorMax: number; // use Infinity para "sem limite"
   frete: FreteTipo;
   descontoCelebra: number;
   bonusPix: number;
@@ -16,6 +17,17 @@ export interface Faixa {
   prazoMedioBoleto: number;
   condicoesDisponiveis: number[];
   requerSenhaMaster?: boolean;
+  bonusPixAplicavel?: boolean;
+  cor?: string;
+  icone?: string;
+  descricao?: string;
+  ativa?: boolean;
+  ordem?: number;
+  freteObservacao?: string;
+  criadoEm?: string;
+  atualizadoEm?: string;
+  criadoPor?: string;
+  atualizadoPor?: string;
 }
 
 export interface CondicaoPagamento {
@@ -23,9 +35,32 @@ export interface CondicaoPagamento {
   descricao: string;
   valorMinimo: number;
   tipo: "pix" | "boleto" | "cartao";
+  numeroParcelas?: number;
+  diasParcelas?: number[];
+  semJuros?: boolean;
+  temBonusPix?: boolean;
+  ativa?: boolean;
+  exibirParaVendedor?: boolean;
+  destaque?: boolean;
+  ordem?: number;
+  criadoEm?: string;
+  atualizadoEm?: string;
+  criadoPor?: string;
 }
 
-export const FAIXAS: Faixa[] = [
+export interface RegrasGerais {
+  pedidoMinimo: number;
+  descontoMasterMax: number;
+  tentativasSenhaMaster: number;
+  bloqueioSenhaMasterMinutos: number;
+  provisaoExpirarDias: number;
+  faixaReservadaNome: string;
+  bonusPixPadrao: number;
+  atualizadoEm?: string;
+  atualizadoPor?: string;
+}
+
+export const FAIXAS_DEFAULT: Faixa[] = [
   {
     id: 1,
     nome: "Convidado",
@@ -39,6 +74,10 @@ export const FAIXAS: Faixa[] = [
     boletoAte: "2x (0/30)",
     prazoMedioBoleto: 15,
     condicoesDisponiveis: [1, 2, 3, 8, 9, 10, 13],
+    cor: "#94A3B8",
+    bonusPixAplicavel: true,
+    ativa: true,
+    ordem: 1,
   },
   {
     id: 2,
@@ -53,6 +92,11 @@ export const FAIXAS: Faixa[] = [
     boletoAte: "3x (0/30/60 ou 15/30/45)",
     prazoMedioBoleto: 30,
     condicoesDisponiveis: [1, 2, 3, 4, 5, 8, 9, 10, 13],
+    cor: "#C9A84C",
+    icone: "✨",
+    bonusPixAplicavel: true,
+    ativa: true,
+    ordem: 2,
   },
   {
     id: 3,
@@ -67,6 +111,10 @@ export const FAIXAS: Faixa[] = [
     boletoAte: "4x (0/30/60/90)",
     prazoMedioBoleto: 45,
     condicoesDisponiveis: [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13],
+    cor: "#D4A574",
+    bonusPixAplicavel: true,
+    ativa: true,
+    ordem: 3,
   },
   {
     id: 4,
@@ -81,6 +129,10 @@ export const FAIXAS: Faixa[] = [
     boletoAte: "5x (0/30/60/90/120)",
     prazoMedioBoleto: 60,
     condicoesDisponiveis: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+    cor: "#E8C07A",
+    bonusPixAplicavel: true,
+    ativa: true,
+    ordem: 4,
   },
   {
     id: 5,
@@ -96,41 +148,93 @@ export const FAIXAS: Faixa[] = [
     prazoMedioBoleto: 60,
     condicoesDisponiveis: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
     requerSenhaMaster: true,
+    bonusPixAplicavel: false,
+    cor: "#9B72CF",
+    icone: "🔐",
+    ativa: true,
+    ordem: 5,
   },
 ];
 
-export const CONDICOES_PAGAMENTO: CondicaoPagamento[] = [
-  { id: 1, descricao: "PIX antecipado", valorMinimo: 2500, tipo: "pix" },
-  { id: 2, descricao: "Boleto à vista", valorMinimo: 2500, tipo: "boleto" },
-  { id: 3, descricao: "Boleto 0/30 (2x)", valorMinimo: 2500, tipo: "boleto" },
-  { id: 4, descricao: "Boleto 0/30/60 (3x)", valorMinimo: 5000, tipo: "boleto" },
-  { id: 5, descricao: "Boleto 15/30/45 (3x)", valorMinimo: 5000, tipo: "boleto" },
-  { id: 6, descricao: "Boleto 0/30/60/90 (4x)", valorMinimo: 8000, tipo: "boleto" },
-  { id: 7, descricao: "Boleto 0/30/60/90/120 (5x)", valorMinimo: 12000, tipo: "boleto" },
-  { id: 8, descricao: "Cartão à vista", valorMinimo: 2500, tipo: "cartao" },
-  { id: 9, descricao: "Cartão 2x sem juros", valorMinimo: 2500, tipo: "cartao" },
-  { id: 10, descricao: "Cartão 3x sem juros (0/30/60)", valorMinimo: 2500, tipo: "cartao" },
-  { id: 11, descricao: "Cartão 4x sem juros (0/30/60/90)", valorMinimo: 8000, tipo: "cartao" },
-  { id: 12, descricao: "Cartão 5x sem juros (0/30/60/90/120)", valorMinimo: 12000, tipo: "cartao" },
-  { id: 13, descricao: "Boleto 0/15 (à vista + 1)", valorMinimo: 2500, tipo: "boleto" },
+export const CONDICOES_DEFAULT: CondicaoPagamento[] = [
+  { id: 1, descricao: "PIX antecipado", valorMinimo: 2500, tipo: "pix", numeroParcelas: 1, diasParcelas: [0], temBonusPix: true, destaque: true, ativa: true, exibirParaVendedor: true, ordem: 1 },
+  { id: 2, descricao: "Boleto à vista", valorMinimo: 2500, tipo: "boleto", numeroParcelas: 1, diasParcelas: [0], ativa: true, exibirParaVendedor: true, ordem: 2 },
+  { id: 3, descricao: "Boleto 0/30 (2x)", valorMinimo: 2500, tipo: "boleto", numeroParcelas: 2, diasParcelas: [0, 30], ativa: true, exibirParaVendedor: true, ordem: 3 },
+  { id: 4, descricao: "Boleto 0/30/60 (3x)", valorMinimo: 5000, tipo: "boleto", numeroParcelas: 3, diasParcelas: [0, 30, 60], ativa: true, exibirParaVendedor: true, ordem: 4 },
+  { id: 5, descricao: "Boleto 15/30/45 (3x)", valorMinimo: 5000, tipo: "boleto", numeroParcelas: 3, diasParcelas: [15, 30, 45], ativa: true, exibirParaVendedor: true, ordem: 5 },
+  { id: 6, descricao: "Boleto 0/30/60/90 (4x)", valorMinimo: 8000, tipo: "boleto", numeroParcelas: 4, diasParcelas: [0, 30, 60, 90], ativa: true, exibirParaVendedor: true, ordem: 6 },
+  { id: 7, descricao: "Boleto 0/30/60/90/120 (5x)", valorMinimo: 12000, tipo: "boleto", numeroParcelas: 5, diasParcelas: [0, 30, 60, 90, 120], ativa: true, exibirParaVendedor: true, ordem: 7 },
+  { id: 8, descricao: "Cartão à vista", valorMinimo: 2500, tipo: "cartao", numeroParcelas: 1, diasParcelas: [0], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 8 },
+  { id: 9, descricao: "Cartão 2x sem juros", valorMinimo: 2500, tipo: "cartao", numeroParcelas: 2, diasParcelas: [0, 30], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 9 },
+  { id: 10, descricao: "Cartão 3x sem juros (0/30/60)", valorMinimo: 2500, tipo: "cartao", numeroParcelas: 3, diasParcelas: [0, 30, 60], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 10 },
+  { id: 11, descricao: "Cartão 4x sem juros (0/30/60/90)", valorMinimo: 8000, tipo: "cartao", numeroParcelas: 4, diasParcelas: [0, 30, 60, 90], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 11 },
+  { id: 12, descricao: "Cartão 5x sem juros (0/30/60/90/120)", valorMinimo: 12000, tipo: "cartao", numeroParcelas: 5, diasParcelas: [0, 30, 60, 90, 120], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 12 },
+  { id: 13, descricao: "Boleto 0/15 (à vista + 1)", valorMinimo: 2500, tipo: "boleto", numeroParcelas: 2, diasParcelas: [0, 15], ativa: true, exibirParaVendedor: true, ordem: 13 },
 ];
 
-export const PEDIDO_MINIMO = 2500;
-export const DESCONTO_MASTER_MAX = 15;
+export const REGRAS_DEFAULT: RegrasGerais = {
+  pedidoMinimo: 2500,
+  descontoMasterMax: 15,
+  tentativasSenhaMaster: 3,
+  bloqueioSenhaMasterMinutos: 30,
+  provisaoExpirarDias: 90,
+  faixaReservadaNome: "Reservada",
+  bonusPixPadrao: 2.5,
+};
+
+// === LIVE BINDINGS — mantidos em sincronia pelo cartilhasStore via _syncCommercial() ===
+export const FAIXAS: Faixa[] = [...FAIXAS_DEFAULT];
+export const CONDICOES_PAGAMENTO: CondicaoPagamento[] = [...CONDICOES_DEFAULT];
+export let REGRAS_ATUAIS: RegrasGerais = { ...REGRAS_DEFAULT };
+export let PEDIDO_MINIMO = REGRAS_ATUAIS.pedidoMinimo;
+export let DESCONTO_MASTER_MAX = REGRAS_ATUAIS.descontoMasterMax;
+
+/**
+ * Replace in-place os arrays/regras vigentes. Chamado pelo cartilhasStore.
+ * Mantém referência dos arrays — todos os consumidores existentes continuam funcionando.
+ */
+export function _syncCommercial(
+  faixas: Faixa[],
+  condicoes: CondicaoPagamento[],
+  regras: RegrasGerais,
+): void {
+  const fAtivas = faixas
+    .filter((f) => f.ativa !== false)
+    .sort((a, b) => (a.ordem ?? a.id) - (b.ordem ?? b.id));
+  FAIXAS.length = 0;
+  FAIXAS.push(...fAtivas);
+
+  const cAtivas = condicoes
+    .filter((c) => c.ativa !== false && c.exibirParaVendedor !== false)
+    .sort((a, b) => (a.ordem ?? a.id) - (b.ordem ?? b.id));
+  CONDICOES_PAGAMENTO.length = 0;
+  CONDICOES_PAGAMENTO.push(...cAtivas);
+
+  REGRAS_ATUAIS = { ...regras };
+  PEDIDO_MINIMO = regras.pedidoMinimo;
+  DESCONTO_MASTER_MAX = regras.descontoMasterMax;
+}
 
 export function detectarFaixa(totalBruto: number, usarReservada = false): Faixa | null {
-  if (totalBruto < PEDIDO_MINIMO) return null;
-  if (usarReservada && totalBruto >= 12000) return FAIXAS[4];
-  if (totalBruto >= 12000) return FAIXAS[3];
-  if (totalBruto >= 8000) return FAIXAS[2];
-  if (totalBruto >= 5000) return FAIXAS[1];
-  return FAIXAS[0];
+  if (totalBruto < REGRAS_ATUAIS.pedidoMinimo) return null;
+  const sorted = [...FAIXAS].sort((a, b) => b.valorMin - a.valorMin);
+  if (usarReservada) {
+    const reservada = sorted.find((f) => f.requerSenhaMaster && totalBruto >= f.valorMin);
+    if (reservada) return reservada;
+  }
+  return (
+    sorted.find(
+      (f) => !f.requerSenhaMaster && totalBruto >= f.valorMin && totalBruto <= f.valorMax,
+    ) ?? null
+  );
 }
 
 export function proximaFaixa(faixaAtual: Faixa | null): Faixa | null {
-  if (!faixaAtual) return FAIXAS[0];
-  if (faixaAtual.id >= 4) return null;
-  return FAIXAS[faixaAtual.id]; // index = id (1-based step)
+  const sorted = [...FAIXAS]
+    .filter((f) => !f.requerSenhaMaster)
+    .sort((a, b) => a.valorMin - b.valorMin);
+  if (!faixaAtual) return sorted[0] ?? null;
+  return sorted.find((f) => f.valorMin > faixaAtual.valorMin) ?? null;
 }
 
 export interface CalculoPedido {
@@ -171,11 +275,18 @@ export function calcularPedido(args: {
   const descontoCelebraValor = bruto * (faixa.descontoCelebra / 100);
   const aposCelebra = bruto - descontoCelebraValor;
 
-  const masterPct = Math.max(0, Math.min(DESCONTO_MASTER_MAX, descontoMasterPct));
+  const masterPct = Math.max(
+    0,
+    Math.min(REGRAS_ATUAIS.descontoMasterMax, descontoMasterPct),
+  );
   const descontoMasterValor = aposCelebra * (masterPct / 100);
   const subtotalAposDescontos = aposCelebra - descontoMasterValor;
 
-  const aplicouPix = !!condicao && condicao.tipo === "pix" && faixa.bonusPix > 0;
+  const aplicouPix =
+    !!condicao &&
+    condicao.tipo === "pix" &&
+    faixa.bonusPix > 0 &&
+    faixa.bonusPixAplicavel !== false;
   const bonusPixValor = aplicouPix
     ? subtotalAposDescontos * (faixa.bonusPix / 100)
     : 0;
