@@ -1,0 +1,292 @@
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import type { SavedOrder } from "@/types";
+
+const COLORS = {
+  black: "#1a1a1a",
+  gold: "#b8923a",
+  textSecondary: "#6a6a6a",
+  separator: "#e0e0e0",
+};
+
+function formatBRL(n: number): string {
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function sanitizeFilename(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9\-_]/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 60);
+}
+
+export interface OrderPDFResult {
+  blob: Blob;
+  base64: string;
+  filename: string;
+  dataUrl: string;
+}
+
+export function generateOrderPDF(order: SavedOrder): OrderPDFResult {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 15;
+  const contentWidth = pageWidth - margin * 2;
+
+  // ─── HEADER ───
+  doc.setFillColor(COLORS.black);
+  doc.rect(0, 0, pageWidth, 28, "F");
+
+  doc.setTextColor(COLORS.gold);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(22);
+  doc.text("FETÉLY", margin, 17);
+
+  doc.setFontSize(7);
+  doc.setTextColor("#cccccc");
+  doc.text("B2B ORDERS", margin, 22);
+
+  doc.setTextColor("#ffffff");
+  doc.setFontSize(9);
+  doc.text("PEDIDO", pageWidth - margin, 14, { align: "right" });
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.text(order.id, pageWidth - margin, 20, { align: "right" });
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor("#cccccc");
+  doc.text(
+    new Date(order.createdAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }),
+    pageWidth - margin,
+    25,
+    { align: "right" },
+  );
+
+  // ─── BLOCO CLIENTE ───
+  let y = 38;
+  doc.setTextColor(COLORS.black);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(COLORS.textSecondary);
+  doc.text("CLIENTE", margin, y);
+
+  y += 5;
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(COLORS.black);
+  doc.text(order.meta.cliente || "—", margin, y);
+
+  y += 5;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(COLORS.textSecondary);
+  const linha1: string[] = [];
+  if (order.meta.cnpj) linha1.push(`CNPJ ${order.meta.cnpj}`);
+  if (order.meta.nomeFantasia) linha1.push(order.meta.nomeFantasia);
+  if (linha1.length) {
+    doc.text(linha1.join("   ·   "), margin, y);
+    y += 5;
+  }
+
+  const linha2: string[] = [];
+  if (order.meta.telefone) linha2.push(`Tel ${order.meta.telefone}`);
+  if (order.meta.email) linha2.push(order.meta.email);
+  if (linha2.length) {
+    doc.text(linha2.join("   ·   "), margin, y);
+    y += 5;
+  }
+
+  const enderecoPartes = [
+    [order.meta.logradouro, order.meta.numero].filter(Boolean).join(", "),
+    order.meta.bairro,
+    [order.meta.municipio, order.meta.uf].filter(Boolean).join(" — "),
+    order.meta.cep,
+  ].filter(Boolean);
+  if (enderecoPartes.length) {
+    doc.text(enderecoPartes.join("   ·   "), margin, y);
+    y += 5;
+  }
+
+  // separador
+  y += 2;
+  doc.setDrawColor(COLORS.separator);
+  doc.setLineWidth(0.2);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 6;
+
+  // ─── TABELA DE ITENS ───
+  const rows = order.items.map((item) => {
+    const subtotal = item.product.precoAtacado * item.quantity;
+    return [
+      item.sku,
+      item.product.nomeComercial || item.product.nomeCompleto || "",
+      `${item.quantity}`,
+      formatBRL(item.product.precoAtacado),
+      formatBRL(subtotal),
+    ];
+  });
+
+  autoTable(doc, {
+    startY: y,
+    head: [["SKU", "Descrição", "Qtd", "Unit", "Subtotal"]],
+    body: rows,
+    margin: { left: margin, right: margin },
+    theme: "plain",
+    styles: {
+      fontSize: 8.5,
+      cellPadding: 2.5,
+      textColor: COLORS.black,
+      lineColor: COLORS.separator,
+      lineWidth: 0.1,
+    },
+    headStyles: {
+      fontStyle: "bold",
+      fontSize: 8,
+      textColor: COLORS.gold,
+      fillColor: false as unknown as undefined,
+      lineWidth: { bottom: 0.5 },
+      lineColor: COLORS.black,
+    },
+    columnStyles: {
+      0: { cellWidth: 28 },
+      2: { cellWidth: 12, halign: "right" },
+      3: { cellWidth: 25, halign: "right" },
+      4: { cellWidth: 28, halign: "right" },
+    },
+  });
+
+  let yAfterTable: number = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+
+  // ─── RESUMO FINANCEIRO ───
+  const c = order.commercial;
+  const blocoX = pageWidth - margin - 70;
+
+  if (c) {
+    const items: Array<[string, string]> = [
+      ["Subtotal bruto", formatBRL(c.bruto)],
+    ];
+    if (c.descontoCelebraValor > 0) {
+      items.push([`Desconto ${c.faixaNome} (${c.descontoCelebraPct}%)`, `− ${formatBRL(c.descontoCelebraValor)}`]);
+    }
+    if (c.descontoMasterValor > 0) {
+      items.push([`Desconto Master (${c.descontoMasterPct}%)`, `− ${formatBRL(c.descontoMasterValor)}`]);
+    }
+    if (c.aplicouPix && c.bonusPixValor > 0) {
+      items.push([`Bônus PIX`, `− ${formatBRL(c.bonusPixValor)}`]);
+    }
+
+    doc.setFontSize(8.5);
+    doc.setFont("helvetica", "normal");
+    for (const [label, valor] of items) {
+      doc.setTextColor(COLORS.textSecondary);
+      doc.text(label, blocoX, yAfterTable);
+      doc.setTextColor(COLORS.black);
+      doc.text(valor, pageWidth - margin, yAfterTable, { align: "right" });
+      yAfterTable += 5;
+    }
+
+    yAfterTable += 2;
+    doc.setDrawColor(COLORS.black);
+    doc.setLineWidth(0.3);
+    doc.line(blocoX, yAfterTable, pageWidth - margin, yAfterTable);
+
+    yAfterTable += 6;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(COLORS.black);
+    doc.text("TOTAL FINAL", blocoX, yAfterTable);
+    doc.setFontSize(13);
+    doc.setTextColor(COLORS.gold);
+    doc.text(formatBRL(order.total), pageWidth - margin, yAfterTable, { align: "right" });
+    yAfterTable += 10;
+  } else {
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(COLORS.black);
+    doc.text("TOTAL", blocoX, yAfterTable);
+    doc.setFontSize(13);
+    doc.setTextColor(COLORS.gold);
+    doc.text(formatBRL(order.total), pageWidth - margin, yAfterTable, { align: "right" });
+    yAfterTable += 10;
+  }
+
+  // ─── CONDIÇÕES COMERCIAIS ───
+  doc.setDrawColor(COLORS.separator);
+  doc.setLineWidth(0.2);
+  doc.line(margin, yAfterTable, pageWidth - margin, yAfterTable);
+  yAfterTable += 6;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(COLORS.textSecondary);
+  doc.text("CONDIÇÕES COMERCIAIS", margin, yAfterTable);
+  yAfterTable += 5;
+
+  const cond: Array<[string, string]> = [];
+  if (c) {
+    cond.push(["Faixa", c.faixaNome]);
+    cond.push(["Frete", `${c.frete}${c.frete === "CIF" ? " — Fetély entrega" : " — Cliente retira"}`]);
+    cond.push(["Pagamento", c.condicaoDescricao || order.meta.condicaoPagamento]);
+  } else {
+    cond.push(["Pagamento", order.meta.condicaoPagamento]);
+  }
+  cond.push(["Vendedor", order.vendedorNome || order.meta.vendedor]);
+
+  doc.setFontSize(9);
+  for (const [label, valor] of cond) {
+    doc.setTextColor(COLORS.textSecondary);
+    doc.text(label, margin, yAfterTable);
+    doc.setTextColor(COLORS.black);
+    doc.text(valor, margin + 30, yAfterTable);
+    yAfterTable += 4.5;
+  }
+
+  // ─── OBSERVAÇÕES (se houver) ───
+  if (order.meta.observacoes) {
+    yAfterTable += 4;
+    doc.setFontSize(8);
+    doc.setTextColor(COLORS.textSecondary);
+    doc.text("OBSERVAÇÕES", margin, yAfterTable);
+    yAfterTable += 5;
+    doc.setFontSize(9);
+    doc.setTextColor(COLORS.black);
+    const splitObs = doc.splitTextToSize(order.meta.observacoes, contentWidth);
+    doc.text(splitObs, margin, yAfterTable);
+    yAfterTable += splitObs.length * 4.5;
+  }
+
+  // ─── RODAPÉ ───
+  const pageHeight = doc.internal.pageSize.getHeight();
+  doc.setFontSize(7);
+  doc.setTextColor(COLORS.textSecondary);
+  doc.text(
+    `Documento gerado em ${new Date().toLocaleString("pt-BR")}`,
+    margin,
+    pageHeight - 10,
+  );
+  doc.text("fetelycorp.com.br", pageWidth - margin, pageHeight - 10, { align: "right" });
+
+  // ─── OUTPUTS ───
+  const blob = doc.output("blob");
+  const dataUrl = doc.output("datauristring");
+  const base64 = dataUrl.split(",")[1];
+  const filename = `Pedido-${sanitizeFilename(order.id)}-${sanitizeFilename(order.meta.cliente || "cliente")}.pdf`;
+
+  return { blob, base64, filename, dataUrl };
+}
+
+export function openOrderPDFInNewTab(order: SavedOrder): void {
+  const { blob, filename } = generateOrderPDF(order);
+  const url = URL.createObjectURL(blob);
+  const newWindow = window.open(url, "_blank");
+  if (!newWindow) {
+    // Pop-up bloqueado — fallback download
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
