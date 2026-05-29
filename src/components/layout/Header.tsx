@@ -74,8 +74,15 @@ export function Header() {
     ? "Representante"
     : "Interno";
 
+  const isPublic = !session;
+
   return (
     <TooltipProvider delayDuration={200}>
+      {isPublic && (
+        <div className="w-full bg-gold/10 border-b border-gold/30 text-center py-1.5 text-[10px] uppercase tracking-[0.18em] text-gold">
+          Modo visualização — Faça login para acessar o sistema completo
+        </div>
+      )}
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md h-16">
         <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-4 px-4 md:px-6">
           {/* Mobile: hamburger */}
@@ -93,43 +100,50 @@ export function Header() {
             </SheetContent>
           </Sheet>
 
+
           {/* Brand */}
-          <Link to="/" className="group flex items-baseline gap-2 flex-shrink-0">
+          <Link to={isPublic ? "/catalog" : "/"} className="group flex items-baseline gap-2 flex-shrink-0">
             <span className="font-display text-2xl tracking-[0.2em] text-text-primary group-hover:text-gold transition">
               FETÉLY
             </span>
             <span className="hidden sm:inline text-[10px] uppercase tracking-[0.3em] text-gold-muted">
-              B2B Orders
+              {isPublic ? "Catálogo de Produtos" : "B2B Orders"}
             </span>
           </Link>
 
-          {/* Primary nav (left group) */}
-          <nav className="hidden md:flex items-center gap-1 ml-2">
-            <Link to="/catalog" className={navLinkClass(pathname.startsWith("/catalog"))}>
-              <span className="px-2 py-1.5">Catálogo</span>
-            </Link>
-            <Link to="/orders" className={navLinkClass(pathname.startsWith("/orders"))}>
-              <ClipboardList className="h-4 w-4" />
-              <span className="hidden lg:inline px-1 py-1.5">Pedidos</span>
-            </Link>
-            <Link to="/clientes" className={navLinkClass(pathname.startsWith("/clientes"))}>
-              <Users className="h-4 w-4" />
-              <span className="hidden lg:inline px-1 py-1.5">Clientes</span>
-            </Link>
-            <Link to="/provisoes" className={navLinkClass(pathname.startsWith("/provisoes"))}>
-              <FileClock className="h-4 w-4" />
-              <span className="hidden lg:inline px-1 py-1.5">Provisões</span>
-            </Link>
-          </nav>
+          {/* Primary nav (left group) — apenas usuários autenticados */}
+          {!isPublic && (
+            <nav className="hidden md:flex items-center gap-1 ml-2">
+              <Link to="/catalog" className={navLinkClass(pathname.startsWith("/catalog"))}>
+                <span className="px-2 py-1.5">Catálogo</span>
+              </Link>
+              <Link to="/orders" className={navLinkClass(pathname.startsWith("/orders"))}>
+                <ClipboardList className="h-4 w-4" />
+                <span className="hidden lg:inline px-1 py-1.5">Pedidos</span>
+              </Link>
+              <Link to="/clientes" className={navLinkClass(pathname.startsWith("/clientes"))}>
+                <Users className="h-4 w-4" />
+                <span className="hidden lg:inline px-1 py-1.5">Clientes</span>
+              </Link>
+              <Link to="/provisoes" className={navLinkClass(pathname.startsWith("/provisoes"))}>
+                <FileClock className="h-4 w-4" />
+                <span className="hidden lg:inline px-1 py-1.5">Provisões</span>
+              </Link>
+            </nav>
+          )}
 
-          {/* Search (center) */}
-          <div className="hidden md:flex flex-1 justify-center max-w-xl mx-auto">
-            <GlobalSearch />
-          </div>
+          {/* Search (center) — apenas autenticados */}
+          {!isPublic && (
+            <div className="hidden md:flex flex-1 justify-center max-w-xl mx-auto">
+              <GlobalSearch />
+            </div>
+          )}
+          {isPublic && <div className="flex-1" />}
+
 
           {/* Right actions */}
           <div className="ml-auto flex items-center gap-1 md:gap-2">
-            {negociacaoAtiva && (
+            {!isPublic && negociacaoAtiva && (
               <Link
                 to="/cart"
                 className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-gold/60 bg-gold/15 px-2.5 py-1 text-[10px] uppercase tracking-wider text-gold shadow-[0_0_0_0_rgba(201,168,76,0.5)] animate-pulse"
@@ -144,26 +158,28 @@ export function Header() {
             )}
 
             {/* Settings link */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/settings"
-                  className={`hidden md:flex items-center justify-center p-2 rounded-md transition ${
-                    pathname.startsWith("/settings") ||
-                    pathname.startsWith("/photos") ||
-                    pathname.startsWith("/commercial") ||
-                    pathname.startsWith("/import") ||
-                    pathname.startsWith("/admin")
-                      ? "text-gold bg-surface-hover"
-                      : "text-text-secondary hover:text-gold hover:bg-surface-hover"
-                  }`}
-                  aria-label="Configurações"
-                >
-                  <Settings className="h-4 w-4" />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Configurações</TooltipContent>
-            </Tooltip>
+            {!isPublic && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    to="/settings"
+                    className={`hidden md:flex items-center justify-center p-2 rounded-md transition ${
+                      pathname.startsWith("/settings") ||
+                      pathname.startsWith("/photos") ||
+                      pathname.startsWith("/commercial") ||
+                      pathname.startsWith("/import") ||
+                      pathname.startsWith("/admin")
+                        ? "text-gold bg-surface-hover"
+                        : "text-text-secondary hover:text-gold hover:bg-surface-hover"
+                    }`}
+                    aria-label="Configurações"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Configurações</TooltipContent>
+              </Tooltip>
+            )}
 
             {/* Theme toggle */}
             <Tooltip>
@@ -181,30 +197,33 @@ export function Header() {
               </TooltipContent>
             </Tooltip>
 
-            {/* Cart icon */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/cart"
-                  className={`relative ${iconBtnClass} ${
-                    pathname.startsWith("/cart") ? "text-gold" : ""
-                  }`}
-                  aria-label="Carrinho"
-                >
-                  <ShoppingBag className="h-4 w-4" />
-                  {count > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-semibold text-background">
-                      {count}
-                    </span>
-                  )}
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                Carrinho{count > 0 ? ` (${count})` : ""}
-              </TooltipContent>
-            </Tooltip>
+            {/* Cart icon — só autenticados */}
+            {!isPublic && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    to="/cart"
+                    className={`relative ${iconBtnClass} ${
+                      pathname.startsWith("/cart") ? "text-gold" : ""
+                    }`}
+                    aria-label="Carrinho"
+                  >
+                    <ShoppingBag className="h-4 w-4" />
+                    {count > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-semibold text-background">
+                        {count}
+                      </span>
+                    )}
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Carrinho{count > 0 ? ` (${count})` : ""}
+                </TooltipContent>
+              </Tooltip>
+            )}
 
             <div className="hidden md:block h-6 w-px bg-border mx-1" />
+
 
             {/* Profile menu */}
             {session ? (
@@ -274,18 +293,21 @@ export function Header() {
             ) : (
               <Link
                 to="/login"
-                className="text-xs uppercase tracking-wider text-text-secondary hover:text-gold transition px-2"
+                className="inline-flex items-center gap-1.5 rounded-md border border-gold/40 px-3 py-1.5 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
               >
-                Entrar
+                <Lock className="h-3 w-3" /> Entrar
               </Link>
             )}
           </div>
         </div>
 
-        {/* Mobile search row */}
-        <div className="md:hidden border-t border-border px-4 py-2">
-          <GlobalSearch />
-        </div>
+        {/* Mobile search row — apenas autenticados */}
+        {!isPublic && (
+          <div className="md:hidden border-t border-border px-4 py-2">
+            <GlobalSearch />
+          </div>
+        )}
+
       </header>
     </TooltipProvider>
   );

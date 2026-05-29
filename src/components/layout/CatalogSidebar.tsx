@@ -12,6 +12,7 @@ import {
 import { useCatalog } from "@/store/catalogStore";
 import { useUI } from "@/store/uiStore";
 import { useOrder, cartTotal } from "@/store/orderStore";
+import { useAuth } from "@/store/authStore";
 import { formatBRL } from "@/lib/format";
 import type { Product } from "@/types";
 
@@ -80,6 +81,7 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
   const items = useOrder((s) => s.items);
   const total = cartTotal(items);
   const totalUnits = items.reduce((s, i) => s + i.quantity, 0);
+  const isPublic = !useAuth((s) => s.session);
 
   const search = useRouterState({ select: (r) => r.location.search as { colecao?: string; grupo?: string } });
   const pathname = useRouterState({ select: (r) => r.location.pathname });
@@ -258,7 +260,7 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
         ))}
       </nav>
 
-      {!collapsed ? (
+      {!isPublic && (!collapsed ? (
         <div className="border-t border-border p-3 bg-surface-2/40">
           <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted flex items-center gap-1.5">
             <ShoppingBag className="h-3 w-3" /> Carrinho
@@ -293,7 +295,8 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
             </span>
           )}
         </Link>
-      )}
+      ))}
+
     </aside>
   );
 }

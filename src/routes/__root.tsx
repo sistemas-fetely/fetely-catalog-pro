@@ -4,6 +4,8 @@ import {
   Outlet,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
+  useNavigate,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -11,6 +13,7 @@ import {
 import appCss from "../styles.css?url";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
 import "@/store/cartilhasStore"; // side-effect: sincroniza commercial.ts com a cartilha persistida
 
@@ -114,8 +117,29 @@ function RootComponent() {
 
 function BootEffects() {
   const fetchPhotos = usePhotos((s) => s.fetchAll);
+  const initAuth = useAuth((s) => s.init);
+  const session = useAuth((s) => s.session);
+  const loading = useAuth((s) => s.loading);
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const navigate = useNavigate();
+
   useEffect(() => {
     void fetchPhotos();
-  }, [fetchPhotos]);
+    initAuth();
+  }, [fetchPhotos, initAuth]);
+
+  // Guarda de rotas: rotas públicas = /login, /catalog (e subrotas)
+  useEffect(() => {
+    if (loading || session) return;
+    const isPublic =
+      pathname === "/login" ||
+      pathname === "/catalog" ||
+      pathname.startsWith("/catalog/");
+    if (!isPublic) {
+      navigate({ to: "/login", search: { redirect: pathname } as never });
+    }
+  }, [loading, session, pathname, navigate]);
+
   return null;
 }
+

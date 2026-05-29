@@ -15,6 +15,7 @@ import {
 } from "@/store/catalogStore";
 import { useUI } from "@/store/uiStore";
 import { usePhotos, getColecaoPhoto, getProdutoPhoto } from "@/store/photoStore";
+import { useAuth } from "@/store/authStore";
 import type { Product } from "@/types";
 
 const searchSchema = z.object({
@@ -40,6 +41,7 @@ function CatalogPage() {
   const products = useCatalog((s) => s.products);
   const photos = usePhotos();
   const setGroupExpanded = useUI((s) => s.setGroupExpanded);
+  const isPublic = !useAuth((s) => s.session);
   const fadeRef = useRef<HTMLDivElement>(null);
 
   const colecaoProducts = useMemo(
@@ -156,18 +158,20 @@ function CatalogPage() {
                       </div>
                     )}
                   </div>
-                  <Link
-                    to="/photos"
-                    search={{ tab: "colecao", colecao }}
-                    className="hidden md:inline-flex items-center gap-2 rounded-md gold-border px-3 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10 transition shrink-0"
-                  >
-                    Gerenciar fotos
-                  </Link>
+                  {!isPublic && (
+                    <Link
+                      to="/photos"
+                      search={{ tab: "colecao", colecao }}
+                      className="hidden md:inline-flex items-center gap-2 rounded-md gold-border px-3 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10 transition shrink-0"
+                    >
+                      Gerenciar fotos
+                    </Link>
+                  )}
                 </div>
               </header>
 
               {/* Products */}
-              {isNum ? (
+              {isNum && !isPublic ? (
                 <NumericalCandleGrid
                   products={colecaoProducts}
                   colecao={colecao}
@@ -175,7 +179,7 @@ function CatalogPage() {
                 />
               ) : (
                 <>
-                  {meta?.categoria === "Celebrar à Mesa" && (
+                  {!isPublic && meta?.categoria === "Celebrar à Mesa" && (
                     <CollectionBulkFiller products={colecaoProducts} />
                   )}
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">

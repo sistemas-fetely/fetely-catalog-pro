@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { BookOpen, FileClock, ClipboardList, Menu, ShoppingBag } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
+import { useAuth } from "@/store/authStore";
 
 /**
  * Bottom navigation visível apenas em mobile (< md).
@@ -12,6 +13,10 @@ export function BottomNav() {
   const items = useOrder((s) => s.items);
   const count = items.reduce((s, i) => s + i.quantity, 0);
   const setMobileOpen = useUI((s) => s.setMobileSidebarOpen);
+  const session = useAuth((s) => s.session);
+
+  // Em modo público, não mostra o bottom-nav comercial
+  if (!session) return null;
 
   const isActive = (prefix: string) =>
     prefix === "/" ? pathname === "/" : pathname.startsWith(prefix);
