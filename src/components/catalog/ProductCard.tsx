@@ -4,6 +4,7 @@ import { QuantityInput } from "@/components/ui/QuantityInput";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { formatBRL, isValidMultiple } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
+import { useAuth } from "@/store/authStore";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import type { Product } from "@/types";
@@ -16,21 +17,31 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const [qty, setQty] = useState(0);
   const addItem = useOrder((s) => s.addItem);
+  const session = useAuth((s) => s.session);
+  const isPublic = !session;
   const photos = usePhotos();
   const photo =
     getProdutoPhoto(photos, product.colecao, product.sku) ??
     getProdutoPhoto(photos, product.colecao, product.corNome);
-  const indisponivel = product.precoAtacado <= 0;
+  const indisponivel = isPublic
+    ? product.precoVarejo <= 0
+    : product.precoAtacado <= 0;
   const canAdd = qty > 0 && isValidMultiple(qty, product.multiplos) && !indisponivel;
+
+  // Em modo público, não vinculamos para /produto (essa rota exige login)
+  const ImageWrapper: React.ElementType = isPublic ? "div" : Link;
+  const imageWrapperProps = isPublic
+    ? { className: "relative aspect-square overflow-hidden block" }
+    : {
+        to: "/produto",
+        search: { sku: product.sku },
+        className: "relative aspect-square overflow-hidden block",
+        "aria-label": `Ver detalhes de ${product.nomeComercial}`,
+      };
 
   return (
     <article className="group flex flex-col rounded-lg bg-surface gold-border gold-border-hover overflow-hidden transition">
-      <Link
-        to="/produto"
-        search={{ sku: product.sku }}
-        className="relative aspect-square overflow-hidden block"
-        aria-label={`Ver detalhes de ${product.nomeComercial}`}
-      >
+      <ImageWrapper {...imageWrapperProps}>
         {photo ? (
           <img
             src={photo}
@@ -54,7 +65,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <StockBadge status={product.statusEstoque} />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent pointer-events-none" />
-      </Link>
+      </ImageWrapper>
 
 
 
@@ -63,59 +74,79 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="text-[10px] uppercase tracking-wider text-text-muted">
             {product.grupo} • {product.tipo}
           </div>
-          <Link
-            to="/produto"
-            search={{ sku: product.sku }}
-            className="font-display text-lg leading-tight text-text-primary mt-1 block hover:text-gold transition"
-          >
-            {product.nomeComercial}
-          </Link>
+          {isPublic ? (
+            <div className="font-display text-lg leading-tight text-text-primary mt-1">
+              {product.nomeComercial}
+            </div>
+          ) : (
+            <Link
+              to="/produto"
+              search={{ sku: product.sku }}
+              className="font-display text-lg leading-tight text-text-primary mt-1 block hover:text-gold transition"
+            >
+              {product.nomeComercial}
+            </Link>
+          )}
           <div className="mt-1 text-xs text-text-secondary">
             {product.corNome} · {product.tamanhoNumero}
           </div>
-          <div className="mt-0.5 text-[10px] text-text-muted font-mono">{product.sku}</div>
-
-        </div>
-
-        <div className="flex items-end justify-between gap-2">
-          <div>
-            <div className="text-[9px] uppercase tracking-[0.18em] text-gold-muted">Atacado</div>
-            <span className="text-xl font-semibold text-gold leading-none">
-              {indisponivel ? "—" : formatBRL(product.precoAtacado)}
-            </span>
-          </div>
-          {!indisponivel && product.precoVarejo > 0 && (
-            <div className="text-right">
-              <div className="text-[9px] uppercase tracking-[0.18em] text-text-muted">Varejo sug.</div>
-              <span className="text-sm text-text-secondary leading-none">
-                {formatBRL(product.precoVarejo)}
-              </span>
-            </div>
+          {!isPublic && (
+            <div className="mt-0.5 text-[10px] text-text-muted font-mono">{product.sku}</div>
           )}
         </div>
 
-        <div className="mt-auto space-y-2 pt-2 border-t border-border/60">
-          <div className="text-[10px] uppercase tracking-wider text-text-muted">
-            Caixa: {product.multiplos} un. — mínimo
+        {isPublic ? (
+          <div>
+            <div className="text-[9px] uppercase tracking-[0.18em] text-gold-muted">
+              Preço sugerido
+            </div>
+            <span className="text-xl font-semibold text-gold leading-none">
+              {indisponivel ? "—" : formatBRL(product.precoVarejo)}
+            </span>
           </div>
-          <QuantityInput
-            value={qty}
-            onChange={setQty}
-            multiplos={product.multiplos}
-            disabled={indisponivel}
-          />
-          <button
-            type="button"
-            disabled={!canAdd}
-            onClick={() => {
-              addItem(product, qty);
-              setQty(0);
-            }}
-            className="w-full rounded-md bg-gold py-2 text-xs font-semibold uppercase tracking-[0.15em] text-background transition hover:bg-gold-light disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            {indisponivel ? "Indisponível" : "Adicionar"}
-          </button>
-        </div>
+        ) : (
+          <div className="flex items-end justify-between gap-2">
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.18em] text-gold-muted">Atacado</div>
+              <span className="text-xl font-semibold text-gold leading-none">
+                {indisponivel ? "—" : formatBRL(product.precoAtacado)}
+              </span>
+            </div>
+            {!indisponivel && product.precoVarejo > 0 && (
+              <div className="text-right">
+                <div className="text-[9px] uppercase tracking-[0.18em] text-text-muted">Varejo sug.</div>
+                <span className="text-sm text-text-secondary leading-none">
+                  {formatBRL(product.precoVarejo)}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!isPublic && (
+          <div className="mt-auto space-y-2 pt-2 border-t border-border/60">
+            <div className="text-[10px] uppercase tracking-wider text-text-muted">
+              Caixa: {product.multiplos} un. — mínimo
+            </div>
+            <QuantityInput
+              value={qty}
+              onChange={setQty}
+              multiplos={product.multiplos}
+              disabled={indisponivel}
+            />
+            <button
+              type="button"
+              disabled={!canAdd}
+              onClick={() => {
+                addItem(product, qty);
+                setQty(0);
+              }}
+              className="w-full rounded-md bg-gold py-2 text-xs font-semibold uppercase tracking-[0.15em] text-background transition hover:bg-gold-light disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              {indisponivel ? "Indisponível" : "Adicionar"}
+            </button>
+          </div>
+        )}
       </div>
     </article>
   );
