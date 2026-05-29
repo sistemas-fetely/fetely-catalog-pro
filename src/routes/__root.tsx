@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { usePhotos } from "@/store/photoStore";
+import "@/store/cartilhasStore"; // side-effect: sincroniza commercial.ts com a cartilha persistida
 
 function NotFoundComponent() {
   return (

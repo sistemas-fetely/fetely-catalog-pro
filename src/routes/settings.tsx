@@ -3,6 +3,7 @@ import {
   BookOpen,
   Camera,
   ChevronRight,
+  Layers,
   Settings,
   Upload,
   Package,
@@ -46,6 +47,12 @@ function SettingsPage() {
         description: "Cadastrar, editar e desativar produtos do catálogo",
         to: "/admin/products",
         icon: Package,
+      },
+      {
+        label: "Cartilhas e Níveis",
+        description: "Gerenciar faixas, condições de pagamento e regras gerais",
+        to: "/admin/cartilhas",
+        icon: Layers,
       },
       {
         label: "Usuários",
