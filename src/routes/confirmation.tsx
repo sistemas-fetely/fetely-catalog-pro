@@ -202,7 +202,7 @@ function Confirmation() {
               <Mail className="h-4 w-4" /> Email
             </button>
             <button
-              onClick={() => printOrderPDF(order)}
+              onClick={() => window.print()}
               className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
             >
               <Printer className="h-4 w-4" /> Imprimir
