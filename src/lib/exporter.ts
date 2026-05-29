@@ -216,6 +216,42 @@ export function buildPedidoExportavel(order: SavedOrder): PedidoExportavel {
     totalSkus: order.items.length,
     observacoesVendedor: order.meta.observacoes,
     observacoesInternas: c?.observacaoInterna,
+    ...buildPremissasResumo(snap?.premissasAplicadas ?? null, c),
+  };
+}
+
+function buildPremissasResumo(
+  p: import("@/types/cliente").PremissasComerciais | null,
+  c: import("@/types").OrderCommercial | undefined,
+): { premissasAplicadas: boolean; premissasResumo: string[]; premissasVigenciaFim: string } {
+  if (!p || !c?.premissasAplicadas) {
+    return { premissasAplicadas: false, premissasResumo: [], premissasVigenciaFim: "" };
+  }
+  const linhas: string[] = [];
+  if (p.temDescontoHomologado) {
+    linhas.push(
+      `Desconto homologado: ${p.descontoHomologadoPercent}% ${p.descontoHomologadoSobrePos ? "(acumula sobre faixa)" : "(substitui faixa)"}`,
+    );
+  }
+  if (p.temFaixaFixa && p.faixaFixaId != null) {
+    const faixa = FAIXAS.find((f) => f.id === p.faixaFixaId);
+    if (faixa) linhas.push(`Faixa fixa: ${faixa.nome}`);
+  }
+  if (p.bonusPixPersonalizado) linhas.push(`Bônus PIX personalizado: ${p.bonusPixPercent}%`);
+  if (p.freteFixo && p.freteTipo) linhas.push(`Frete fixo: ${p.freteTipo}`);
+  if (p.temPedidoMinimoPersonalizado) {
+    linhas.push(`Pedido mínimo personalizado: ${fmtBRL(p.pedidoMinimoValor)}`);
+  }
+  if (p.temCondicaoPreferencial && p.condicaoPreferencialId != null) {
+    linhas.push(`Condição preferencial: cond. #${p.condicaoPreferencialId}`);
+  }
+  if (linhas.length === 0) linhas.push("Premissas vigentes aplicadas.");
+  return {
+    premissasAplicadas: true,
+    premissasResumo: linhas,
+    premissasVigenciaFim: p.vigenciaFim
+      ? new Date(p.vigenciaFim).toLocaleDateString("pt-BR")
+      : "sem expiração",
   };
 }
 
