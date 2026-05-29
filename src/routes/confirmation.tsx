@@ -131,13 +131,20 @@ function Confirmation() {
     setImprimirDialog(false);
     if (modo === "resumo") {
       document.body.classList.add("printing-resumo");
+      // Força reflow pra garantir que CSS foi aplicado antes do print
+      void document.body.offsetHeight;
     }
     const cleanup = () => {
       document.body.classList.remove("printing-resumo");
       window.removeEventListener("afterprint", cleanup);
     };
     window.addEventListener("afterprint", cleanup);
-    setTimeout(() => window.print(), 80);
+    // Delay maior + double rAF pra garantir 2 frames de render antes do print
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.print();
+      });
+    });
   }
 
   if (!order) {
