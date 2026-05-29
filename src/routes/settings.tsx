@@ -3,6 +3,7 @@ import {
   BookOpen,
   Camera,
   ChevronRight,
+  Layers,
   Settings,
   Upload,
   Package,
