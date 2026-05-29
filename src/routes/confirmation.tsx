@@ -194,6 +194,24 @@ function Confirmation() {
             >
               <Download className="h-4 w-4" /> Exportar
             </button>
+            <button
+              onClick={() => setEmailDialog("cliente")}
+              className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+            >
+              <Mail className="h-4 w-4" /> Email cliente
+            </button>
+            <button
+              onClick={() => setEmailDialog("sops")}
+              className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+            >
+              <Send className="h-4 w-4" /> Email SOps
+            </button>
+            <button
+              onClick={() => openOrderPDFInNewTab(order)}
+              className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+            >
+              <Printer className="h-4 w-4" /> Imprimir
+            </button>
             <Link
               to="/"
               className="flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
