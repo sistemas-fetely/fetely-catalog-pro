@@ -143,7 +143,7 @@ export function Header() {
 
           {/* Right actions */}
           <div className="ml-auto flex items-center gap-1 md:gap-2">
-            {negociacaoAtiva && (
+            {!isPublic && negociacaoAtiva && (
               <Link
                 to="/cart"
                 className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-gold/60 bg-gold/15 px-2.5 py-1 text-[10px] uppercase tracking-wider text-gold shadow-[0_0_0_0_rgba(201,168,76,0.5)] animate-pulse"
@@ -158,26 +158,28 @@ export function Header() {
             )}
 
             {/* Settings link */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/settings"
-                  className={`hidden md:flex items-center justify-center p-2 rounded-md transition ${
-                    pathname.startsWith("/settings") ||
-                    pathname.startsWith("/photos") ||
-                    pathname.startsWith("/commercial") ||
-                    pathname.startsWith("/import") ||
-                    pathname.startsWith("/admin")
-                      ? "text-gold bg-surface-hover"
-                      : "text-text-secondary hover:text-gold hover:bg-surface-hover"
-                  }`}
-                  aria-label="Configurações"
-                >
-                  <Settings className="h-4 w-4" />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Configurações</TooltipContent>
-            </Tooltip>
+            {!isPublic && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    to="/settings"
+                    className={`hidden md:flex items-center justify-center p-2 rounded-md transition ${
+                      pathname.startsWith("/settings") ||
+                      pathname.startsWith("/photos") ||
+                      pathname.startsWith("/commercial") ||
+                      pathname.startsWith("/import") ||
+                      pathname.startsWith("/admin")
+                        ? "text-gold bg-surface-hover"
+                        : "text-text-secondary hover:text-gold hover:bg-surface-hover"
+                    }`}
+                    aria-label="Configurações"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Configurações</TooltipContent>
+              </Tooltip>
+            )}
 
             {/* Theme toggle */}
             <Tooltip>
@@ -195,30 +197,33 @@ export function Header() {
               </TooltipContent>
             </Tooltip>
 
-            {/* Cart icon */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/cart"
-                  className={`relative ${iconBtnClass} ${
-                    pathname.startsWith("/cart") ? "text-gold" : ""
-                  }`}
-                  aria-label="Carrinho"
-                >
-                  <ShoppingBag className="h-4 w-4" />
-                  {count > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-semibold text-background">
-                      {count}
-                    </span>
-                  )}
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                Carrinho{count > 0 ? ` (${count})` : ""}
-              </TooltipContent>
-            </Tooltip>
+            {/* Cart icon — só autenticados */}
+            {!isPublic && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    to="/cart"
+                    className={`relative ${iconBtnClass} ${
+                      pathname.startsWith("/cart") ? "text-gold" : ""
+                    }`}
+                    aria-label="Carrinho"
+                  >
+                    <ShoppingBag className="h-4 w-4" />
+                    {count > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-semibold text-background">
+                        {count}
+                      </span>
+                    )}
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Carrinho{count > 0 ? ` (${count})` : ""}
+                </TooltipContent>
+              </Tooltip>
+            )}
 
             <div className="hidden md:block h-6 w-px bg-border mx-1" />
+
 
             {/* Profile menu */}
             {session ? (
