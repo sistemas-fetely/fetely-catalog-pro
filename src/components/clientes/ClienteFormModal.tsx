@@ -160,8 +160,30 @@ export function ClienteFormModal({
       toast.error("Preencha Razão Social, Nome do contato e Telefone.");
       return;
     }
+    let premissasComerciais = cliente.premissasComerciais;
+    if (premissasComerciais) {
+      const alterados = diffPremissas(initial?.premissasComerciais, premissasComerciais);
+      if (alterados.length > 0) {
+        const usuario = profile?.nome_completo ?? profile?.email ?? "—";
+        premissasComerciais = {
+          ...premissasComerciais,
+          historico: [
+            ...(premissasComerciais.historico ?? []),
+            {
+              timestamp: new Date().toISOString(),
+              usuarioNome: usuario,
+              descricao: initial?.premissasComerciais
+                ? "Atualização de premissas"
+                : "Criação de premissas",
+              camposAlterados: alterados,
+            },
+          ],
+        };
+      }
+    }
     const saved: Cliente = {
       ...cliente,
+      premissasComerciais,
       atualizadoEm: new Date().toISOString(),
     };
     upsert(saved);
