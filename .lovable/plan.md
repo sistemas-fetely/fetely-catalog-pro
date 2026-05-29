@@ -1,93 +1,132 @@
-## Evolução do Fetély B2B Orders — Sidebar Hierárquico + Sistema de Fotos
+# V7 — Divisão de Carrinho: Pedido Firme + Provisão Futura
 
-Vou implementar duas grandes evoluções mantendo toda lógica de pedido, múltiplos, vela numérica e carrinho intactas.
-
----
-
-### Parte 1 — Sidebar Hierárquico de Navegação
-
-**Novo componente `src/components/layout/CatalogSidebar.tsx`**
-- Largura 260px desktop, colapsável para 60px via botão toggle (estado em zustand `useUI`)
-- Árvore derivada dinamicamente de `products` agrupados por `categoria → grupo → colecao`
-- Categorias sempre expandidas; grupos expansíveis (chevron rotaciona)
-- Coleções clicáveis com destaque ativo (borda esquerda dourada + bg sutil)
-- Scroll independente (`overflow-y-auto`, altura `calc(100vh - 64px)`)
-- Rodapé sticky com resumo do carrinho (total BRL, unidades, itens) + botão "Revisar Pedido"
-- Mobile: vira drawer via `Sheet` do shadcn, aberto por hambúrguer no header
-
-**Nova rota `src/routes/catalog.tsx`** (substitui o fluxo em etapas)
-- Layout grid `[260px_1fr]` com `CatalogSidebar` à esquerda e painel central
-- Estado da coleção selecionada via search param `?colecao=X&grupo=Y`
-- Breadcrumb no topo: `Categoria > Grupo > Coleção`
-- Renderiza `NumericalCandleGrid` (se vela numérica) ou grid de `ProductCard`
-- Fade-in 150ms na troca de coleção (key + transition)
-
-**`src/routes/new-order.tsx`** — mantém o fluxo em etapas como alternativa, mas a Home (`/`) e o botão "Novo Pedido" passam a apontar para `/catalog`.
-
-**`src/store/uiStore.ts`** — novo store para `sidebarCollapsed`, `expandedGroups`, `photoModalOpen`.
+## Objetivo
+Quando o carrinho mistura itens "em estoque" e itens com previsão (ex: "Prev. Jun 2026"), separar automaticamente em **Pedido Firme** (faturável, com todas as regras comerciais) e **Provisão Futura** (rascunho sem cálculo comercial, salvo para acompanhamento).
 
 ---
 
-### Parte 2 — Sistema de Fotos
+## 1. Tipos e classificação
 
-**`src/store/photoStore.ts`** (zustand + persist com chave `fetely_photos`, separado do catálogo)
-```ts
-{ colecoes: Record<string, string>, produtos: Record<string, string> }
-```
-- `normalizeKey(str)` — remove acentos, lowercase, snake_case
-- `setColecaoPhoto(colecao, base64)`, `setProdutoPhoto(colecao, cor, base64)`
-- `getProdutoPhoto(colecao, cor)` — fallback para foto de coleção, depois placeholder
-- Detecta uso > 4MB e expõe flag de aviso
+**Novo arquivo `src/types/provisao.ts`:**
+- `ProvisaoFutura` (id `P0001`, vendedor, cliente snapshot, itens, datasPrevisao, proximaPrevisao, status, totalReferencia, pedidoFirmeId opcional, observacoes)
+- `ItemProvisao` (sku, nome, coleção, cor, tamanho, quantidade, precoAtacadoReferencia, statusEstoque, previsaoData)
+- `StatusProvisao`: `aguardando_estoque | estoque_liberado | convertido_em_pedido | cancelado`
 
-**`src/lib/image.ts`** — `resizeImage(file, 800)` redimensiona via canvas, JPEG 80%
-
-**Nova rota `src/routes/photos.tsx`**
-- Tabs shadcn: "Fotos de Coleção" | "Fotos por Cor"
-- **Coleção**: grid de cards (uma por coleção única do catálogo), cada um com preview + ícone de câmera
-- **Cor**: filtros (categoria/coleção) → grid de variantes únicas (combinação coleção+cor) com preview
-- Modal de upload (`Dialog`): drag&drop + input file + preview + Salvar
-- Aviso discreto de capacidade quando localStorage > 4MB
-
-**Integração nos componentes existentes**:
-- `ProductCard.tsx`: substitui o swatch atual pelo `<img>` resolvido via `getProdutoPhoto(colecao, cor)`, com fallback para placeholder dourado com inicial
-- `NumericalCandleGrid.tsx`: thumbnail 40x40 por linha usando a foto da cor
-- `CollectionCard` no sidebar e em `/catalog`: usa foto da coleção como background
+**`src/lib/classifyItem.ts`:**
+- `classificarItem(statusEstoque)` → `'firme' | 'provisao'` (apenas `em estoque` = firme)
+- `extrairDataPrevisao(status)` → "Jun 2026" (regex `Prev. <mês> <ano>`)
 
 ---
 
-### Parte 3 — Header
+## 2. Store de provisões
 
-**`src/components/layout/Header.tsx` atualizado**
-- Logo + Busca global (centro) + link Fotos + Carrinho
-- Botão hambúrguer mobile que abre sidebar drawer
-- **Busca global**: input com debounce, mostra dropdown (≥2 chars) com até 10 resultados (nome, coleção, preço atacado, thumbnail). Click navega para `/catalog?colecao=X&highlight=SKU`. ESC fecha.
+**`src/store/provisaoStore.ts`** (zustand + persist `fetely_provisoes_v1`):
+- `provisoes: ProvisaoFutura[]`
+- `counter: number` (persistido em `fetely_provisao_counter`)
+- `createProvisao(input)` → gera ID `P` + zero-pad 4 dígitos
+- `updateStatus(id, status)`
+- `setObservacoes(id, txt)`
+- `cancelar(id)`
+- Hook `useVisibleProvisoes()` — admin/master vê todas, vendedor só as próprias
 
 ---
 
-### Arquivos a criar/editar
+## 3. Carrinho (split visual + comercial)
 
-**Criar:**
-- `src/components/layout/CatalogSidebar.tsx`
-- `src/components/layout/GlobalSearch.tsx`
-- `src/components/photos/PhotoUploadModal.tsx`
-- `src/components/photos/PhotoPlaceholder.tsx`
-- `src/store/photoStore.ts`
-- `src/store/uiStore.ts`
-- `src/lib/image.ts`
-- `src/routes/catalog.tsx`
-- `src/routes/photos.tsx`
+**`src/routes/cart.tsx`:**
+- Computar `itensFirmes` e `itensProvisao` via `classificarItem`
+- Banner topo quando ambos existem ("Carrinho misto detectado")
+- Renderizar dois blocos:
+  - **Pedido Firme** — agrupado por coleção como hoje, com `QuantityInput`/remover/comercial
+  - **Provisão Futura** — bg `#0F0F0F`, opacidade reduzida, badge âmbar com previsão, aviso "Não faturado / sem desconto", subtotal de referência
+- Passar **apenas itens firmes** ao `CartCommercialPanel` (novo prop `items`)
+- Validações:
+  - 100% provisão → bloquear "Confirmar pedido", oferecer "Salvar como Provisão"
+  - Firme < mínimo → mensagem específica explicando que provisão não conta
 
-**Editar:**
-- `src/components/layout/Header.tsx` — busca global + link Fotos + hambúrguer mobile
-- `src/components/catalog/ProductCard.tsx` — foto resolvida do photoStore
-- `src/components/catalog/NumericalCandleGrid.tsx` — thumbnail por cor
-- `src/routes/index.tsx` — CTA principal aponta para `/catalog`
-- `src/routes/new-order.tsx` — mantém, mas adiciona link "ir para navegação por menu"
+**`src/components/cart/CartCommercialPanel.tsx`:** aceitar `items: CartItem[]` opcional e usar para o cálculo bruto (fallback ao comportamento atual). Substituir `cartTotal(items)` da page por `cartTotal(itensFirmes)`.
 
-### Detalhes técnicos
+---
 
-- Toda lógica de pedido, múltiplos, vela numérica, validações permanece intocada
-- Foto: storage separado em `fetely_photos`, evita inflar `fetely-catalog`/`fetely-order`
-- Persistência via `zustand/middleware persist` igual aos stores existentes
-- Identidade visual mantida: bg preto, dourado `#C9A84C`, Cormorant + DM Sans, classes `gold-border`, `text-gold`, `bg-surface`
-- Sem backend / Lovable Cloud — tudo client-side conforme MVP solicitado
+## 4. Confirmação do pedido misto
+
+**`src/routes/cart.tsx` → handleConfirm:**
+- Se há itens de provisão, abrir modal de confirmação final com os dois cards (Pedido Firme #ID temporário + Provisão Futura)
+- Ao confirmar:
+  1. `saveOrder(commercial)` apenas com itens firmes → para isso, temporariamente filtrar items, ou aceitar `saveOrder(commercial, itemsOverride?)`
+  2. `createProvisao({ itens: provisaoItens, clienteSnapshot, pedidoFirmeId: order.id, ... })`
+  3. Limpar carrinho, ir para `/confirmation?id=...&provisaoId=...`
+
+**`src/store/orderStore.ts`:**
+- `saveOrder(commercial?, itemsOverride?)` — usa override se passado, senão `state.items`
+- Após save, limpa apenas os itens consumidos (firmes) — chamada de `clearCart()` continua na page
+
+**`src/routes/confirmation.tsx`:** exibir bloco extra "Provisão Futura #Pxxxx" quando search param `provisaoId` presente, com link para `/provisoes/$id`.
+
+---
+
+## 5. Caso 100% provisão
+
+Botão "Salvar como Provisão" → abre `ClienteSelector` se não houver cliente, depois `createProvisao` sem `pedidoFirmeId`, limpa carrinho, navega para `/provisoes`.
+
+---
+
+## 6. Módulo de Provisões
+
+**`src/routes/provisoes.tsx`** (lista):
+- Tabs status: Aguardando estoque / Estoque liberado / Todas
+- Tabela: #, Cliente, Itens, Próxima previsão, Ref R$, Status
+- Click → drawer/sheet com ficha
+
+**`src/routes/provisoes.$id.tsx`** (ou sheet inline):
+- Itens com status atual (re-leitura de `products`), valor referência, alerta se preço mudou
+- Observações editáveis
+- Botões:
+  - **Converter em Pedido** (sempre disponível; destaque visual quando `estoque_liberado`) → popula carrinho via `useOrder.addBulk`, navega `/cart`, marca provisão como `convertido_em_pedido` apenas após confirmação do pedido (via metadata no carrinho `meta.provisaoOrigemId`)
+  - **Cancelar provisão** (confirm dialog)
+  - **Admin/master**: "Marcar estoque como liberado"
+
+**Header/BottomNav:** adicionar item "Provisões" no menu.
+
+---
+
+## 7. Conversão provisão → pedido
+
+- `useOrder.setMeta({ provisaoOrigemId: id })`
+- Ao salvar pedido, se `meta.provisaoOrigemId`, chamar `useProvisao.getState().updateStatus(id, 'convertido_em_pedido')` e gravar `pedidoFirmeId`
+- Banner amarelo no carrinho enquanto `provisaoOrigemId` ativo
+
+---
+
+## 8. Dashboard (V5)
+
+**`src/routes/index.tsx`** (se já existe seção dashboard): novo card "Provisões em aberto" — totais, próximas liberações por mês, contagem `estoque_liberado`, link para `/provisoes`. Respeita isolamento por vendedor.
+
+---
+
+## Arquivos
+
+**Novos:**
+- `src/types/provisao.ts`
+- `src/lib/classifyItem.ts`
+- `src/store/provisaoStore.ts`
+- `src/components/cart/MixedCartBanner.tsx`
+- `src/components/cart/ProvisaoSection.tsx`
+- `src/components/cart/FinalConfirmModal.tsx`
+- `src/routes/provisoes.tsx`
+- `src/routes/provisoes.$id.tsx`
+
+**Editados:**
+- `src/routes/cart.tsx` — split, modal, fluxo
+- `src/components/cart/CartCommercialPanel.tsx` — aceitar items
+- `src/store/orderStore.ts` — `saveOrder` aceita override; `OrderMeta.provisaoOrigemId`
+- `src/types/index.ts` — campo `provisaoOrigemId` em `OrderMeta`
+- `src/routes/confirmation.tsx` — exibir provisão gerada
+- `src/components/layout/Header.tsx` + `BottomNav.tsx` — link "Provisões"
+- `src/routes/index.tsx` — card dashboard de provisões (se aplicável)
+
+## Notas técnicas
+- IDs `P0001+` via counter persistido
+- Valores de referência sempre `precoAtacado` puro
+- Isolamento por `vendedorId` igual a pedidos
+- Cor de provisão: `bg-[#0F0F0F]` + badge âmbar (`bg-stock-pre` se existir, senão `bg-amber-500/15 text-amber-300`)
