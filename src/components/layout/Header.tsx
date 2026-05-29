@@ -74,8 +74,15 @@ export function Header() {
     ? "Representante"
     : "Interno";
 
+  const isPublic = !session;
+
   return (
     <TooltipProvider delayDuration={200}>
+      {isPublic && (
+        <div className="w-full bg-gold/10 border-b border-gold/30 text-center py-1.5 text-[10px] uppercase tracking-[0.18em] text-gold">
+          Modo visualização — Faça login para acessar o sistema completo
+        </div>
+      )}
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md h-16">
         <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-4 px-4 md:px-6">
           {/* Mobile: hamburger */}
@@ -92,6 +99,7 @@ export function Header() {
               <CatalogSidebar forceExpanded onNavigate={() => setMobileOpen(false)} />
             </SheetContent>
           </Sheet>
+
 
           {/* Brand */}
           <Link to="/" className="group flex items-baseline gap-2 flex-shrink-0">
