@@ -75,6 +75,8 @@ export function Header() {
     : "Interno";
 
   const isPublic = !session;
+  const isClientePortal = roles.includes("cliente");
+  const isInternalUser = !isPublic && !isClientePortal;
 
   return (
     <TooltipProvider delayDuration={200}>
