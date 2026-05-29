@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Copy, Download, Home, FileClock, Mail, Printer, Send } from "lucide-react";
+import { Check, Copy, Download, Home, FileClock, Mail, Printer } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
 import { useVisibleOrders } from "@/store/orderStore";
@@ -117,7 +117,7 @@ function Confirmation() {
   );
 
   const [copied, setCopied] = useState(false);
-  const [emailDialog, setEmailDialog] = useState<"cliente" | "sops" | null>(null);
+  const [emailDialogAberto, setEmailDialogAberto] = useState(false);
 
   if (!order) {
     return (
@@ -195,16 +195,10 @@ function Confirmation() {
               <Download className="h-4 w-4" /> Exportar
             </button>
             <button
-              onClick={() => setEmailDialog("cliente")}
+              onClick={() => setEmailDialogAberto(true)}
               className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
             >
-              <Mail className="h-4 w-4" /> Email cliente
-            </button>
-            <button
-              onClick={() => setEmailDialog("sops")}
-              className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
-            >
-              <Send className="h-4 w-4" /> Email SOps
+              <Mail className="h-4 w-4" /> Email
             </button>
             <button
               onClick={() => openOrderPDFInNewTab(order)}
@@ -253,14 +247,11 @@ function Confirmation() {
         <ExportModal orders={[order]} onClose={() => setShowExport(false)} />
       )}
 
-      {emailDialog && (
-        <EnviarEmailDialog
-          order={order}
-          tipo={emailDialog}
-          open={true}
-          onOpenChange={(o) => !o && setEmailDialog(null)}
-        />
-      )}
+      <EnviarEmailDialog
+        order={order}
+        open={emailDialogAberto}
+        onOpenChange={setEmailDialogAberto}
+      />
     </main>
   );
 }
