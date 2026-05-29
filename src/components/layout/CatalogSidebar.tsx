@@ -260,7 +260,7 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
         ))}
       </nav>
 
-      {!collapsed ? (
+      {!isPublic && (!collapsed ? (
         <div className="border-t border-border p-3 bg-surface-2/40">
           <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted flex items-center gap-1.5">
             <ShoppingBag className="h-3 w-3" /> Carrinho
@@ -295,7 +295,8 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
             </span>
           )}
         </Link>
-      )}
+      ))}
+
     </aside>
   );
 }
