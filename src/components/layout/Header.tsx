@@ -293,18 +293,21 @@ export function Header() {
             ) : (
               <Link
                 to="/login"
-                className="text-xs uppercase tracking-wider text-text-secondary hover:text-gold transition px-2"
+                className="inline-flex items-center gap-1.5 rounded-md border border-gold/40 px-3 py-1.5 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
               >
-                Entrar
+                <Lock className="h-3 w-3" /> Entrar
               </Link>
             )}
           </div>
         </div>
 
-        {/* Mobile search row */}
-        <div className="md:hidden border-t border-border px-4 py-2">
-          <GlobalSearch />
-        </div>
+        {/* Mobile search row — apenas autenticados */}
+        {!isPublic && (
+          <div className="md:hidden border-t border-border px-4 py-2">
+            <GlobalSearch />
+          </div>
+        )}
+
       </header>
     </TooltipProvider>
   );
