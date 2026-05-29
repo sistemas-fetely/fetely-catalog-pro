@@ -54,8 +54,9 @@ function diffProducts(prev: Product, next: Product): AuditCampo[] {
   const keys = new Set<string>([...Object.keys(prev), ...Object.keys(next)]);
   const out: AuditCampo[] = [];
   for (const k of keys) {
-    const a = (prev as Record<string, unknown>)[k];
-    const b = (next as Record<string, unknown>)[k];
+    const a = (prev as unknown as Record<string, unknown>)[k];
+    const b = (next as unknown as Record<string, unknown>)[k];
+
     if (JSON.stringify(a ?? "") !== JSON.stringify(b ?? "")) {
       out.push({ campo: k, valorAnterior: String(a ?? ""), valorNovo: String(b ?? "") });
     }
