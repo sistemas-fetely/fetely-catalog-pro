@@ -227,6 +227,10 @@ function Confirmation() {
           </div>
         </div>
       )}
+
+      {showExport && (
+        <ExportModal orders={[order]} onClose={() => setShowExport(false)} />
+      )}
     </main>
   );
 }
