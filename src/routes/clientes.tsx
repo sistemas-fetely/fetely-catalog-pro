@@ -17,6 +17,7 @@ import {
 import { formatBRL } from "@/lib/format";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PortalAccessTab } from "@/components/clientes/PortalAccessTab";
 
 export const Route = createFileRoute("/clientes")({
   head: () => ({
@@ -519,10 +520,11 @@ function ClienteDetail({
       </div>
 
       <Tabs defaultValue="perfil" className="flex-1 flex flex-col">
-        <TabsList className="grid grid-cols-3 mx-5 mt-3 bg-surface-2">
+        <TabsList className="grid grid-cols-4 mx-5 mt-3 bg-surface-2">
           <TabsTrigger value="perfil" className="text-xs">Perfil</TabsTrigger>
           <TabsTrigger value="pedidos" className="text-xs">Pedidos</TabsTrigger>
           <TabsTrigger value="inteligencia" className="text-xs">Inteligência</TabsTrigger>
+          <TabsTrigger value="portal" className="text-xs">Portal</TabsTrigger>
         </TabsList>
 
         <TabsContent value="perfil" className="px-5 pb-6 space-y-3 mt-3">
@@ -640,6 +642,10 @@ function ClienteDetail({
                 : "—"
             }
           />
+        </TabsContent>
+
+        <TabsContent value="portal" className="px-5 pb-6 mt-3">
+          <PortalAccessTab cliente={cliente} />
         </TabsContent>
       </Tabs>
     </div>

@@ -75,6 +75,8 @@ export function Header() {
     : "Interno";
 
   const isPublic = !session;
+  const isClientePortal = roles.includes("cliente");
+  const isInternalUser = !isPublic && !isClientePortal;
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -102,17 +104,17 @@ export function Header() {
 
 
           {/* Brand */}
-          <Link to={isPublic ? "/catalog" : "/"} className="group flex items-baseline gap-2 flex-shrink-0">
+          <Link to={isClientePortal ? "/portal" : isPublic ? "/catalog" : "/"} className="group flex items-baseline gap-2 flex-shrink-0">
             <span className="font-display text-2xl tracking-[0.2em] text-text-primary group-hover:text-gold transition">
               FETÉLY
             </span>
             <span className="hidden sm:inline text-[10px] uppercase tracking-[0.3em] text-gold-muted">
-              {isPublic ? "Catálogo de Produtos" : "B2B Orders"}
+              {isClientePortal ? "Portal do Cliente" : isPublic ? "Catálogo de Produtos" : "B2B Orders"}
             </span>
           </Link>
 
           {/* Primary nav (left group) — apenas usuários autenticados */}
-          {!isPublic && (
+          {isInternalUser && (
             <nav className="hidden md:flex items-center gap-1 ml-2">
               <Link to="/catalog" className={navLinkClass(pathname.startsWith("/catalog"))}>
                 <span className="px-2 py-1.5">Catálogo</span>
@@ -133,17 +135,17 @@ export function Header() {
           )}
 
           {/* Search (center) — apenas autenticados */}
-          {!isPublic && (
+          {isInternalUser && (
             <div className="hidden md:flex flex-1 justify-center max-w-xl mx-auto">
               <GlobalSearch />
             </div>
           )}
-          {isPublic && <div className="flex-1" />}
+          {!isInternalUser && <div className="flex-1" />}
 
 
           {/* Right actions */}
           <div className="ml-auto flex items-center gap-1 md:gap-2">
-            {!isPublic && negociacaoAtiva && (
+            {isInternalUser && negociacaoAtiva && (
               <Link
                 to="/cart"
                 className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-gold/60 bg-gold/15 px-2.5 py-1 text-[10px] uppercase tracking-wider text-gold shadow-[0_0_0_0_rgba(201,168,76,0.5)] animate-pulse"
@@ -158,7 +160,7 @@ export function Header() {
             )}
 
             {/* Settings link */}
-            {!isPublic && (
+            {isInternalUser && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
@@ -198,7 +200,7 @@ export function Header() {
             </Tooltip>
 
             {/* Cart icon — só autenticados */}
-            {!isPublic && (
+            {isInternalUser && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
@@ -302,7 +304,7 @@ export function Header() {
         </div>
 
         {/* Mobile search row — apenas autenticados */}
-        {!isPublic && (
+        {isInternalUser && (
           <div className="md:hidden border-t border-border px-4 py-2">
             <GlobalSearch />
           </div>
