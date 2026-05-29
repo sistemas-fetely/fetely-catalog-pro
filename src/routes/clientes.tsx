@@ -18,6 +18,7 @@ import { formatBRL } from "@/lib/format";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortalAccessTab } from "@/components/clientes/PortalAccessTab";
+import { statusPremissas, diasParaExpirar } from "@/lib/premissas";
 
 export const Route = createFileRoute("/clientes")({
   head: () => ({
