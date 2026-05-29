@@ -176,25 +176,9 @@ export const useCatalog = create<CatalogState>()(
     {
       name: "fetely-catalog",
       storage: createJSONStorage(safeStorage),
-      version: 6,
-      migrate: (persisted: unknown, version) => {
-        // v5 -> v6: keep persisted products if present, just add audit array
-        if (
-          persisted &&
-          typeof persisted === "object" &&
-          "products" in persisted &&
-          Array.isArray((persisted as { products: unknown }).products) &&
-          (persisted as { products: unknown[] }).products.length > 0
-        ) {
-          const p = persisted as Partial<CatalogState>;
-          return {
-            products: p.products as Product[],
-            audit: (p.audit as AuditEntry[]) ?? [],
-            source: p.source ?? "default",
-            importedAt: p.importedAt ?? null,
-          };
-        }
-        // Fallback: re-seed
+      version: 7,
+      migrate: (_persisted: unknown, _version) => {
+        // v7: re-seed defaults to apply new "Acessórios de Mesa" category restructure
         return {
           products: DEFAULT_PRODUCTS,
           audit: [],
@@ -203,6 +187,7 @@ export const useCatalog = create<CatalogState>()(
         };
       },
     },
+
   ),
 );
 

@@ -18,7 +18,7 @@ import type { Product } from "@/types";
 type Tree = Record<string, Record<string, string[]>>;
 
 // Categorias onde a hierarquia é invertida: Coleção → Grupo (ex.: Celebrar à Mesa)
-const COLECAO_FIRST_CATEGORIES = new Set(["Celebrar à Mesa"]);
+const COLECAO_FIRST_CATEGORIES = new Set(["Celebrar à Mesa", "Acessórios de Mesa"]);
 // Grupos que devem aparecer como subdivisão expansível (em vez de listar coleções soltas)
 const SUBDIVIDED_GROUPS = new Set(["Jogo Americano", "Copos e Taças"]);
 const GRP_PREFIX = "GRP::";
