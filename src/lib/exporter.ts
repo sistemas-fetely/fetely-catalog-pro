@@ -586,6 +586,9 @@ function rowsForPedido(pedido: PedidoExportavel): string[][] {
     pedido.vendedorComissaoPercent != null ? String(pedido.vendedorComissaoPercent) : "",
     pedido.comissaoEstimadaValor != null ? pedido.comissaoEstimadaValor.toFixed(2) : "",
     pedido.observacoesVendedor ?? "",
+    String(pedido.premissasAplicadas),
+    pedido.premissasResumo.join(" | "),
+    pedido.premissasVigenciaFim,
   ]);
 }
 
