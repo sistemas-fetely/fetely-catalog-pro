@@ -41,6 +41,7 @@ function CatalogPage() {
   const products = useCatalog((s) => s.products);
   const photos = usePhotos();
   const setGroupExpanded = useUI((s) => s.setGroupExpanded);
+  const isPublic = !useAuth((s) => s.session);
   const fadeRef = useRef<HTMLDivElement>(null);
 
   const colecaoProducts = useMemo(
