@@ -41,6 +41,7 @@ function buildClienteSnapshot(c: Cliente): ClienteSnapshot {
     contatoEmail: c.contatoEmail,
     contatoTelefone: c.contatoTelefone,
     enderecoEntrega: endereco,
+    premissasAplicadas: getPremissasVigentes(c),
   };
 }
 
