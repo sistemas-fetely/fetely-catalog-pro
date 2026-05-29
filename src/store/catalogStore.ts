@@ -186,32 +186,8 @@ export const useCatalog = create<CatalogState>()(
           importedAt: null,
         };
       },
-      _legacyMigrate: (persisted: unknown, version) => {
-        // v5 -> v6: keep persisted products if present, just add audit array
-        if (
-          persisted &&
-          typeof persisted === "object" &&
-          "products" in persisted &&
-          Array.isArray((persisted as { products: unknown }).products) &&
-          (persisted as { products: unknown[] }).products.length > 0
-        ) {
-          const p = persisted as Partial<CatalogState>;
-          return {
-            products: p.products as Product[],
-            audit: (p.audit as AuditEntry[]) ?? [],
-            source: p.source ?? "default",
-            importedAt: p.importedAt ?? null,
-          };
-        }
-        // Fallback: re-seed
-        return {
-          products: DEFAULT_PRODUCTS,
-          audit: [],
-          source: "default" as const,
-          importedAt: null,
-        };
-      },
     },
+
   ),
 );
 
