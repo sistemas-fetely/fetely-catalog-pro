@@ -274,8 +274,200 @@ function Confirmation() {
         open={emailDialogAberto}
         onOpenChange={setEmailDialogAberto}
       />
+
+      {/* Bloco oculto na tela, renderiza só no print modo resumo */}
+      <PedidoResumoPrintBlock order={order} />
+
+      {/* Modal de escolha de modo de impressão */}
+      <Dialog open={imprimirDialog} onOpenChange={setImprimirDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Printer className="h-5 w-5 text-gold" /> Imprimir {order.id}
+            </DialogTitle>
+            <DialogDescription>Escolha o modo de impressão</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <button
+              onClick={() => executarImprimir("completo")}
+              className="group flex flex-col items-center gap-3 rounded-lg border border-border bg-card hover:border-gold hover:bg-gold/5 transition-all px-4 py-6 text-left"
+            >
+              <FileText className="h-8 w-8 text-gold" />
+              <div className="text-center">
+                <div className="text-sm font-semibold text-text-primary">Completo</div>
+                <div className="text-[11px] text-text-muted mt-1">
+                  Lista item por item · pode ocupar várias páginas
+                </div>
+              </div>
+            </button>
+            <button
+              onClick={() => executarImprimir("resumo")}
+              className="group flex flex-col items-center gap-3 rounded-lg border border-border bg-card hover:border-gold hover:bg-gold/5 transition-all px-4 py-6 text-left"
+            >
+              <FileBarChart className="h-8 w-8 text-gold" />
+              <div className="text-center">
+                <div className="text-sm font-semibold text-text-primary">Resumo</div>
+                <div className="text-[11px] text-text-muted mt-1">
+                  1 página · agrupado por coleção
+                </div>
+              </div>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </main>
+  );
+}
+
+function PedidoResumoPrintBlock({ order }: { order: SavedOrder }) {
+  const c = order.commercial;
+  const fmt = (n: number) =>
+    n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  const grupos = (() => {
+    const map = new Map<string, { skus: number; qtd: number; valor: number }>();
+    for (const item of order.items) {
+      const key = item.product.colecao || "—";
+      const cur = map.get(key) ?? { skus: 0, qtd: 0, valor: 0 };
+      cur.skus += 1;
+      cur.qtd += item.quantity;
+      cur.valor += item.product.precoAtacado * item.quantity;
+      map.set(key, cur);
+    }
+    return Array.from(map.entries())
+      .map(([colecao, dados]) => ({ colecao, ...dados }))
+      .sort((a, b) => b.valor - a.valor);
+  })();
+
+  const totalUnidades = order.items.reduce((s, i) => s + i.quantity, 0);
+  const totalSkus = order.items.length;
+
+  return (
+    <div className="print-only-resumo" style={{ fontSize: "9.5pt", lineHeight: 1.4, color: "#000" }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #000", paddingBottom: "8px", marginBottom: "12px" }}>
+        <div>
+          <div style={{ fontSize: "18pt", fontWeight: 700, letterSpacing: "0.05em" }}>FETÉLY</div>
+          <div style={{ fontSize: "8pt", letterSpacing: "0.2em", color: "#555" }}>B2B ORDERS</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: "8pt", letterSpacing: "0.2em", color: "#555" }}>PEDIDO</div>
+          <div style={{ fontSize: "14pt", fontWeight: 600 }}>{order.id}</div>
+          <div style={{ fontSize: "8.5pt", color: "#555" }}>
+            {new Date(order.createdAt).toLocaleString("pt-BR")}
+          </div>
+        </div>
+      </div>
+
+      {/* Cliente + Vendedor */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "12px" }}>
+        <div>
+          <div style={{ fontSize: "7.5pt", letterSpacing: "0.15em", color: "#666", marginBottom: "2px" }}>CLIENTE</div>
+          <div style={{ fontSize: "11pt", fontWeight: 600 }}>{order.meta.cliente || "—"}</div>
+          <div style={{ fontSize: "8.5pt", color: "#444" }}>
+            CNPJ {order.meta.cnpj || "—"}
+            {order.meta.nomeFantasia ? `   ·   ${order.meta.nomeFantasia}` : ""}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: "7.5pt", letterSpacing: "0.15em", color: "#666", marginBottom: "2px" }}>VENDEDOR</div>
+          <div style={{ fontSize: "11pt", fontWeight: 600 }}>{order.vendedorNome || order.meta.vendedor || "—"}</div>
+        </div>
+      </div>
+
+      {/* Condições comerciais */}
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: "12px", border: "1px solid #ccc", padding: "8px 10px", marginBottom: "12px" }}>
+        <div>
+          <div style={{ fontSize: "7.5pt", letterSpacing: "0.15em", color: "#666" }}>PAGAMENTO</div>
+          <div style={{ fontSize: "9.5pt", fontWeight: 500 }}>{c?.condicaoDescricao || order.meta.condicaoPagamento}</div>
+        </div>
+        {c && (
+          <>
+            <div>
+              <div style={{ fontSize: "7.5pt", letterSpacing: "0.15em", color: "#666" }}>FRETE</div>
+              <div style={{ fontSize: "9.5pt", fontWeight: 500 }}>
+                {c.frete}{c.frete === "CIF" ? " — Fetély entrega" : " — Cliente retira"}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: "7.5pt", letterSpacing: "0.15em", color: "#666" }}>FAIXA</div>
+              <div style={{ fontSize: "9.5pt", fontWeight: 500 }}>{c.faixaNome}</div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Itens por coleção */}
+      <div style={{ marginBottom: "12px" }}>
+        <div style={{ fontSize: "8pt", letterSpacing: "0.15em", color: "#666", marginBottom: "4px" }}>
+          ITENS AGRUPADOS POR COLEÇÃO
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "9pt" }}>
+          <thead>
+            <tr style={{ borderBottom: "1.5px solid #000" }}>
+              <th style={{ textAlign: "left", padding: "4px 6px" }}>Coleção</th>
+              <th style={{ textAlign: "right", padding: "4px 6px", width: "60px" }}>SKUs</th>
+              <th style={{ textAlign: "right", padding: "4px 6px", width: "80px" }}>Unidades</th>
+              <th style={{ textAlign: "right", padding: "4px 6px", width: "100px" }}>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {grupos.map((g) => (
+              <tr key={g.colecao} style={{ borderBottom: "1px solid #eee" }}>
+                <td style={{ padding: "4px 6px" }}>{g.colecao}</td>
+                <td style={{ textAlign: "right", padding: "4px 6px" }}>{g.skus}</td>
+                <td style={{ textAlign: "right", padding: "4px 6px" }}>{g.qtd}</td>
+                <td style={{ textAlign: "right", padding: "4px 6px" }}>{fmt(g.valor)}</td>
+              </tr>
+            ))}
+            <tr style={{ borderTop: "1.5px solid #000", fontWeight: 600 }}>
+              <td style={{ padding: "6px" }}>Total bruto</td>
+              <td style={{ textAlign: "right", padding: "6px" }}>{totalSkus}</td>
+              <td style={{ textAlign: "right", padding: "6px" }}>{totalUnidades}</td>
+              <td style={{ textAlign: "right", padding: "6px" }}>{fmt(c?.bruto || order.total)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Resumo financeiro */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", border: "1px solid #ccc", padding: "10px 12px", marginBottom: "12px" }}>
+        <div style={{ fontSize: "9pt" }}>
+          {c && c.descontoCelebraValor > 0 && (
+            <div>
+              Desconto {c.faixaNome} ({c.descontoCelebraPct}%): − {fmt(c.descontoCelebraValor)}
+            </div>
+          )}
+          {c && c.descontoMasterValor > 0 && (
+            <div>
+              Desconto Master ({c.descontoMasterPct}%): − {fmt(c.descontoMasterValor)}
+            </div>
+          )}
+          {c && c.aplicouPix && c.bonusPixValor > 0 && (
+            <div>Bônus PIX: − {fmt(c.bonusPixValor)}</div>
+          )}
+          {!c && <div>Pagamento: {order.meta.condicaoPagamento}</div>}
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: "8pt", letterSpacing: "0.2em", color: "#666" }}>TOTAL FINAL</div>
+          <div style={{ fontSize: "20pt", fontWeight: 700 }}>{fmt(order.total)}</div>
+        </div>
+      </div>
+
+      {/* Observações */}
+      {order.meta.observacoes && (
+        <div style={{ fontSize: "9pt", marginBottom: "12px", paddingTop: "8px", borderTop: "1px solid #eee" }}>
+          <span style={{ fontWeight: 600 }}>Observações:</span> {order.meta.observacoes}
+        </div>
+      )}
+
+      {/* Rodapé */}
+      <div style={{ borderTop: "1px solid #ccc", paddingTop: "6px", marginTop: "16px", display: "flex", justifyContent: "space-between", fontSize: "7.5pt", color: "#666" }}>
+        <div>Documento gerado em {new Date().toLocaleString("pt-BR")}</div>
+        <div>fetelycorp.com.br</div>
+      </div>
+    </div>
   );
 }
 
