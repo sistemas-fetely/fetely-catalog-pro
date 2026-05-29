@@ -253,6 +253,7 @@ function Confirmation() {
         open={emailDialogAberto}
         onOpenChange={setEmailDialogAberto}
       />
+      </div>
     </main>
   );
 }
