@@ -195,16 +195,10 @@ function Confirmation() {
               <Download className="h-4 w-4" /> Exportar
             </button>
             <button
-              onClick={() => setEmailDialog("cliente")}
+              onClick={() => setEmailDialogAberto(true)}
               className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
             >
-              <Mail className="h-4 w-4" /> Email cliente
-            </button>
-            <button
-              onClick={() => setEmailDialog("sops")}
-              className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
-            >
-              <Send className="h-4 w-4" /> Email SOps
+              <Mail className="h-4 w-4" /> Email
             </button>
             <button
               onClick={() => openOrderPDFInNewTab(order)}
