@@ -192,6 +192,7 @@ export type Database = {
         Row: {
           ativo: boolean
           cargo: string | null
+          cliente_id: string | null
           cnpj_cpf: string | null
           codigo_vendedor: string | null
           comissao_percent: number | null
@@ -211,6 +212,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           cargo?: string | null
+          cliente_id?: string | null
           cnpj_cpf?: string | null
           codigo_vendedor?: string | null
           comissao_percent?: number | null
@@ -230,6 +232,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           cargo?: string | null
+          cliente_id?: string | null
           cnpj_cpf?: string | null
           codigo_vendedor?: string | null
           comissao_percent?: number | null
