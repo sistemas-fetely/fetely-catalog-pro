@@ -15,6 +15,7 @@ import {
 } from "@/store/catalogStore";
 import { useUI } from "@/store/uiStore";
 import { usePhotos, getColecaoPhoto, getProdutoPhoto } from "@/store/photoStore";
+import { useAuth } from "@/store/authStore";
 import type { Product } from "@/types";
 
 const searchSchema = z.object({
