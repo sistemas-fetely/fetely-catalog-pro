@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Settings,
   Upload,
+  Package,
   Users,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
