@@ -224,7 +224,8 @@ function buildPremissasResumo(
   p: import("@/types/cliente").PremissasComerciais | null,
   c: import("@/types").OrderCommercial | undefined,
 ): { premissasAplicadas: boolean; premissasResumo: string[]; premissasVigenciaFim: string } {
-  if (!p || !c?.premissasAplicadas) {
+  const aplicou = !!p && (c?.premissasAplicadas ?? true);
+  if (!p || !aplicou) {
     return { premissasAplicadas: false, premissasResumo: [], premissasVigenciaFim: "" };
   }
   const linhas: string[] = [];
