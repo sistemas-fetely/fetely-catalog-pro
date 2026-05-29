@@ -92,6 +92,10 @@ export interface PedidoExportavel {
   comissaoEstimadaValor?: number;
   observacoesVendedor?: string;
   observacoesInternas?: string;
+  // V13 — Premissas comerciais homologadas aplicadas
+  premissasAplicadas: boolean;
+  premissasResumo: string[];
+  premissasVigenciaFim: string;
 }
 
 export interface ExportOptions {
