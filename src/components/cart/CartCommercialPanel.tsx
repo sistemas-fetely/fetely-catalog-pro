@@ -282,7 +282,7 @@ export function CartCommercialPanel({
         ) : (
           <div className="text-center py-2">
             <div className="text-sm text-stock-out">
-              Pedido mínimo: {formatBRL(2500)}
+              Pedido mínimo: {formatBRL(pedidoMinimo)}
             </div>
             <p className="text-xs text-text-muted mt-1">
               Adicione mais produtos para prosseguir.
