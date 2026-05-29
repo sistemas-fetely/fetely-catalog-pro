@@ -104,12 +104,12 @@ export function Header() {
 
 
           {/* Brand */}
-          <Link to={isPublic ? "/catalog" : "/"} className="group flex items-baseline gap-2 flex-shrink-0">
+          <Link to={isClientePortal ? "/portal" : isPublic ? "/catalog" : "/"} className="group flex items-baseline gap-2 flex-shrink-0">
             <span className="font-display text-2xl tracking-[0.2em] text-text-primary group-hover:text-gold transition">
               FETÉLY
             </span>
             <span className="hidden sm:inline text-[10px] uppercase tracking-[0.3em] text-gold-muted">
-              {isPublic ? "Catálogo de Produtos" : "B2B Orders"}
+              {isClientePortal ? "Portal do Cliente" : isPublic ? "Catálogo de Produtos" : "B2B Orders"}
             </span>
           </Link>
 
@@ -140,7 +140,7 @@ export function Header() {
               <GlobalSearch />
             </div>
           )}
-          {isPublic && <div className="flex-1" />}
+          {!isInternalUser && <div className="flex-1" />}
 
 
           {/* Right actions */}
