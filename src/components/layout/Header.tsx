@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, ClipboardList, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
+import { ChevronDown, ClipboardList, FileClock, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
@@ -115,6 +115,10 @@ export function Header() {
             <Link to="/clientes" className={navLinkClass(pathname.startsWith("/clientes"))}>
               <Users className="h-4 w-4" />
               <span className="hidden lg:inline px-1 py-1.5">Clientes</span>
+            </Link>
+            <Link to="/provisoes" className={navLinkClass(pathname.startsWith("/provisoes"))}>
+              <FileClock className="h-4 w-4" />
+              <span className="hidden lg:inline px-1 py-1.5">Provisões</span>
             </Link>
           </nav>
 

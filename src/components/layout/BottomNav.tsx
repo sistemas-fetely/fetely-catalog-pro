@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, Camera, ClipboardList, Menu, ShoppingBag } from "lucide-react";
+import { BookOpen, FileClock, ClipboardList, Menu, ShoppingBag } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 
@@ -33,7 +33,7 @@ export function BottomNav() {
           </button>
         </li>
         <BottomItem to="/catalog" active={isActive("/catalog")} icon={<BookOpen className="h-5 w-5" />} label="Catálogo" />
-        <BottomItem to="/photos" active={isActive("/photos")} icon={<Camera className="h-5 w-5" />} label="Fotos" />
+        <BottomItem to="/provisoes" active={isActive("/provisoes")} icon={<FileClock className="h-5 w-5" />} label="Provisões" />
         <BottomItem to="/orders" active={isActive("/orders")} icon={<ClipboardList className="h-5 w-5" />} label="Pedidos" />
         <BottomItem
           to="/cart"
