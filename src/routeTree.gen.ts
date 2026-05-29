@@ -113,11 +113,6 @@ const AdminCartilhasRoute = AdminCartilhasRouteImport.update({
   path: '/admin/cartilhas',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminCartilhasRoute = AdminCartilhasRouteImport.update({
-  id: '/admin/cartilhas',
-  path: '/admin/cartilhas',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CatalogCategoriaCategoriaRoute =
   CatalogCategoriaCategoriaRouteImport.update({
     id: '/categoria/$categoria',
