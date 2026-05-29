@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Copy, Download, Home, FileClock } from "lucide-react";
+import { Check, Copy, Download, Home, FileClock, Mail, Printer, Send } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
 import { useVisibleOrders } from "@/store/orderStore";
 import { useProvisao } from "@/store/provisaoStore";
 import type { SavedOrder } from "@/types";
 import { ExportModal } from "@/components/export/ExportModal";
+import { EnviarEmailDialog } from "@/components/EnviarEmailDialog";
+import { openOrderPDFInNewTab } from "@/lib/orderPdf";
 import { z } from "zod";
 
 const search = z.object({
@@ -115,6 +117,7 @@ function Confirmation() {
   );
 
   const [copied, setCopied] = useState(false);
+  const [emailDialog, setEmailDialog] = useState<"cliente" | "sops" | null>(null);
 
   if (!order) {
     return (
@@ -191,6 +194,24 @@ function Confirmation() {
             >
               <Download className="h-4 w-4" /> Exportar
             </button>
+            <button
+              onClick={() => setEmailDialog("cliente")}
+              className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+            >
+              <Mail className="h-4 w-4" /> Email cliente
+            </button>
+            <button
+              onClick={() => setEmailDialog("sops")}
+              className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+            >
+              <Send className="h-4 w-4" /> Email SOps
+            </button>
+            <button
+              onClick={() => openOrderPDFInNewTab(order)}
+              className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+            >
+              <Printer className="h-4 w-4" /> Imprimir
+            </button>
             <Link
               to="/"
               className="flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
@@ -230,6 +251,15 @@ function Confirmation() {
 
       {showExport && (
         <ExportModal orders={[order]} onClose={() => setShowExport(false)} />
+      )}
+
+      {emailDialog && (
+        <EnviarEmailDialog
+          order={order}
+          tipo={emailDialog}
+          open={true}
+          onOpenChange={(o) => !o && setEmailDialog(null)}
+        />
       )}
     </main>
   );
