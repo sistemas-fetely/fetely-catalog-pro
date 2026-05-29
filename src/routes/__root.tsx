@@ -16,6 +16,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
 import "@/store/cartilhasStore"; // side-effect: sincroniza commercial.ts com a cartilha persistida
+import { bootstrapFopAfterLogin } from "@/lib/fopBootstrap";
 
 function NotFoundComponent() {
   return (
