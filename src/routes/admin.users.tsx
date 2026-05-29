@@ -45,12 +45,6 @@ function AdminUsersPage() {
   const deleteFn = useServerFn(deleteAppUser);
 
   useEffect(() => {
-    if (regioes.length > 0 && !form.regiao) {
-      setForm((prev) => ({ ...prev, regiao: regioes[0].nome }));
-    }
-  }, [regioes, form.regiao]);
-
-  useEffect(() => {
     init();
   }, [init]);
 
@@ -117,6 +111,13 @@ function AdminUsersPage() {
     empresa: "",
     observacoes: "",
   });
+
+  useEffect(() => {
+    if (regioes.length > 0 && !form.regiao) {
+      setForm((prev) => ({ ...prev, regiao: regioes[0].nome }));
+    }
+  }, [regioes, form.regiao]);
+
   const [formError, setFormError] = useState<string | null>(null);
   const [credModal, setCredModal] = useState<{
     login: string | null;
