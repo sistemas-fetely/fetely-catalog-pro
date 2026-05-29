@@ -187,11 +187,12 @@ export function ClienteFormModal({
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-surface-2 h-auto">
+          <TabsList className="grid w-full grid-cols-5 bg-surface-2 h-auto">
             <TabsTrigger value="fiscal" className="text-xs">Fiscais</TabsTrigger>
             <TabsTrigger value="endereco" className="text-xs">Endereço</TabsTrigger>
             <TabsTrigger value="contatos" className="text-xs">Contatos</TabsTrigger>
             <TabsTrigger value="comercial" className="text-xs">Comercial</TabsTrigger>
+            <TabsTrigger value="premissas" className="text-xs text-gold">✦ Premissas</TabsTrigger>
           </TabsList>
 
           {/* FISCAL */}
