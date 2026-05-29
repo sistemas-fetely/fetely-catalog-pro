@@ -1,14 +1,17 @@
-import { useAuth } from "@/store/authStore";
+import { useAuth, type AppRole } from "@/store/authStore";
 import { useOrder, orderToRow, orderItemsToRows } from "@/store/orderStore";
 import { useClientes, clienteToRow } from "@/store/clienteStore";
 import { useProvisao, provisaoToRow, provisaoItensToRows } from "@/store/provisaoStore";
 import { useCartilhas } from "@/store/cartilhasStore";
+import { useCatalog, upsertProductsChunked, productToRow } from "@/store/catalogStore";
+import { PRODUCTS as DEFAULT_PRODUCTS } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import type { SavedOrder } from "@/types";
 import type { Cliente } from "@/types/cliente";
 import type { ProvisaoFutura } from "@/types/provisao";
 
 const MIGRATION_FLAG = "fetely_migracao_v1_concluida";
+const CATALOG_SEED_FLAG = "fetely_catalog_seed_v1";
 
 /**
  * Bootstrap do FOP após login:
@@ -32,7 +35,34 @@ export async function bootstrapFopAfterLogin(): Promise<void> {
     useOrder.getState().hydrate(),
     useProvisao.getState().hydrate(),
     useCartilhas.getState().hydrate(),
+    useCatalog.getState().hydrate(),
   ]);
+
+  await maybeSeedCatalog(auth.roles);
+}
+
+async function maybeSeedCatalog(roles: AppRole[]): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem(CATALOG_SEED_FLAG) === "done") return;
+  const isAdminOrMaster = roles.includes("admin") || roles.includes("master");
+  if (!isAdminOrMaster) return;
+  try {
+    const { count, error } = await supabase
+      .from("products")
+      .select("*", { count: "exact", head: true });
+    if (error) throw error;
+    if ((count ?? 0) > 0) {
+      localStorage.setItem(CATALOG_SEED_FLAG, "done");
+      return;
+    }
+    console.info(`[fopBootstrap] populando ${DEFAULT_PRODUCTS.length} produtos default no banco...`);
+    await upsertProductsChunked(DEFAULT_PRODUCTS.map(productToRow));
+    await useCatalog.getState().hydrate();
+    localStorage.setItem(CATALOG_SEED_FLAG, "done");
+    console.info("[fopBootstrap] catálogo default carregado no banco");
+  } catch (err) {
+    console.error("[fopBootstrap] auto-seed catálogo falhou:", err);
+  }
 }
 
 async function maybeRunMigration(): Promise<void> {
