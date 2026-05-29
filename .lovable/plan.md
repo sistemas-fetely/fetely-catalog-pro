@@ -1,132 +1,84 @@
-# V7 — Divisão de Carrinho: Pedido Firme + Provisão Futura
+# V13 — Premissas Comerciais do Cliente
 
-## Objetivo
-Quando o carrinho mistura itens "em estoque" e itens com previsão (ex: "Prev. Jun 2026"), separar automaticamente em **Pedido Firme** (faturável, com todas as regras comerciais) e **Provisão Futura** (rascunho sem cálculo comercial, salvo para acompanhamento).
+Adicionar condições comerciais homologadas por cliente (desconto fixo, frete garantido, condições preferenciais, faixa fixa, pedido mínimo, bônus PIX), aplicadas automaticamente em todo novo pedido.
 
----
+## 1. Modelo de dados
 
-## 1. Tipos e classificação
+`src/types/cliente.ts`
+- Adicionar `PremissasComerciais` e `HistoricoPremissa` (conforme spec).
+- Adicionar campo opcional `premissasComerciais?: PremissasComerciais` em `Cliente`.
 
-**Novo arquivo `src/types/provisao.ts`:**
-- `ProvisaoFutura` (id `P0001`, vendedor, cliente snapshot, itens, datasPrevisao, proximaPrevisao, status, totalReferencia, pedidoFirmeId opcional, observacoes)
-- `ItemProvisao` (sku, nome, coleção, cor, tamanho, quantidade, precoAtacadoReferencia, statusEstoque, previsaoData)
-- `StatusProvisao`: `aguardando_estoque | estoque_liberado | convertido_em_pedido | cancelado`
+## 2. Engine de cálculo
 
-**`src/lib/classifyItem.ts`:**
-- `classificarItem(statusEstoque)` → `'firme' | 'provisao'` (apenas `em estoque` = firme)
-- `extrairDataPrevisao(status)` → "Jun 2026" (regex `Prev. <mês> <ano>`)
+`src/lib/premissas.ts` (novo)
+- `isPremissaVigente(inicio, fim)` — confere data atual contra vigência.
+- `aplicarPremissas(faixaDetectada, premissas, condicaoTipo)` — devolve `{ faixaEfetiva, frete, descontoPercent, bonusPixPercent, pedidoMinimo, condicoesDisponiveis, premissasAplicadas }`.
+- Regra de precedência: Premissa vigente → Faixa → Regras gerais.
+- **Expiradas não aplicam** mas mantêm `premissasAtivas=true` (badge vermelho).
 
----
+`src/lib/commercial.ts`
+- Estender `calcularPedido` aceitando `cliente?: Cliente` opcional. Se cliente tem premissas vigentes, sobrepõe faixa/desconto/bonus.
+- Manter API antiga funcional (cliente é opcional).
 
-## 2. Store de provisões
+## 3. UI — Aba Comercial no cadastro
 
-**`src/store/provisaoStore.ts`** (zustand + persist `fetely_provisoes_v1`):
-- `provisoes: ProvisaoFutura[]`
-- `counter: number` (persistido em `fetely_provisao_counter`)
-- `createProvisao(input)` → gera ID `P` + zero-pad 4 dígitos
-- `updateStatus(id, status)`
-- `setObservacoes(id, txt)`
-- `cancelar(id)`
-- Hook `useVisibleProvisoes()` — admin/master vê todas, vendedor só as próprias
+`src/components/clientes/PremissasComercialTab.tsx` (novo)
+- 7 blocos com toggles conforme spec: Status+Vigência, Desconto homologado, Frete, Condições de pagamento, Faixa fixa, Pedido mínimo, Bônus PIX.
+- Preview em tempo real do desconto (bloco 2).
+- Modo readonly para vendedor (todos campos disabled + badge "🏅 Condições homologadas").
+- Editável só para admin/master.
+- Botão "Ver histórico" → dialog listando `historico[]`.
+- Ao salvar: cria entrada em `historico` com diff de campos, grava em `clienteStore.upsertCliente`, toast.
 
----
+`src/components/clientes/ClienteFormModal.tsx`
+- Adicionar tab "Comercial" entre as existentes.
 
-## 3. Carrinho (split visual + comercial)
+## 4. Integração no carrinho
 
-**`src/routes/cart.tsx`:**
-- Computar `itensFirmes` e `itensProvisao` via `classificarItem`
-- Banner topo quando ambos existem ("Carrinho misto detectado")
-- Renderizar dois blocos:
-  - **Pedido Firme** — agrupado por coleção como hoje, com `QuantityInput`/remover/comercial
-  - **Provisão Futura** — bg `#0F0F0F`, opacidade reduzida, badge âmbar com previsão, aviso "Não faturado / sem desconto", subtotal de referência
-- Passar **apenas itens firmes** ao `CartCommercialPanel` (novo prop `items`)
-- Validações:
-  - 100% provisão → bloquear "Confirmar pedido", oferecer "Salvar como Provisão"
-  - Firme < mínimo → mensagem específica explicando que provisão não conta
+`src/components/cart/CartCommercialPanel.tsx`
+- Detectar `cliente.premissasComerciais` vigentes via `useOrder.meta.clienteId`.
+- Se aplicadas: trocar título "Faixa X" por "✦ Condições Comerciais Homologadas" com badge dourado, exibir desconto homologado (substitui/acumula), bônus PIX personalizado, frete fixo, vigência.
+- Senão: comportamento atual.
 
-**`src/components/cart/CartCommercialPanel.tsx`:** aceitar `items: CartItem[]` opcional e usar para o cálculo bruto (fallback ao comportamento atual). Substituir `cartTotal(items)` da page por `cartTotal(itensFirmes)`.
+`src/store/orderStore.ts` (se necessário)
+- Garantir que ao adicionar/recalcular o pedido, o cliente atual é passado para `calcularPedido`.
 
----
+## 5. Alertas de expiração
 
-## 4. Confirmação do pedido misto
+`src/components/clientes/ClientesList.tsx` (ou onde a lista é renderizada em `clientes.tsx`)
+- Badge âmbar `⚠ Premissas expiram em N dias` se faltam ≤30 dias.
+- Badge vermelho `⛔ Premissas expiradas` se já passou e `premissasAtivas=true`.
+- Badge dourado `🏅 Premissas ativas` quando vigentes.
 
-**`src/routes/cart.tsx` → handleConfirm:**
-- Se há itens de provisão, abrir modal de confirmação final com os dois cards (Pedido Firme #ID temporário + Provisão Futura)
-- Ao confirmar:
-  1. `saveOrder(commercial)` apenas com itens firmes → para isso, temporariamente filtrar items, ou aceitar `saveOrder(commercial, itemsOverride?)`
-  2. `createProvisao({ itens: provisaoItens, clienteSnapshot, pedidoFirmeId: order.id, ... })`
-  3. Limpar carrinho, ir para `/confirmation?id=...&provisaoId=...`
+Dashboard admin (se existir card de cliente, em `src/routes/index.tsx` ou settings): card "🏅 Premissas Comerciais" com 3 contadores. Pular se não houver dashboard relevante.
 
-**`src/store/orderStore.ts`:**
-- `saveOrder(commercial?, itemsOverride?)` — usa override se passado, senão `state.items`
-- Após save, limpa apenas os itens consumidos (firmes) — chamada de `clearCart()` continua na page
+## 6. Exportação
 
-**`src/routes/confirmation.tsx`:** exibir bloco extra "Provisão Futura #Pxxxx" quando search param `provisaoId` presente, com link para `/provisoes/$id`.
+`src/lib/exporter.ts`
+- Se pedido tem `meta.cliente.premissasComerciais` aplicadas no momento da venda, adicionar seção "CONDIÇÕES COMERCIAIS APLICADAS" no PDF e CSV.
 
----
+## 7. Snapshot no pedido
 
-## 5. Caso 100% provisão
+`src/store/orderStore.ts` + tipo do pedido
+- Ao confirmar pedido, salvar snapshot `premissasAplicadas` no order para auditoria.
 
-Botão "Salvar como Provisão" → abre `ClienteSelector` se não houver cliente, depois `createProvisao` sem `pedidoFirmeId`, limpa carrinho, navega para `/provisoes`.
+## Arquivos tocados
 
----
+- src/types/cliente.ts (estender)
+- src/lib/premissas.ts (novo)
+- src/lib/commercial.ts (estender `calcularPedido`)
+- src/components/clientes/PremissasComercialTab.tsx (novo)
+- src/components/clientes/ClienteFormModal.tsx (nova aba)
+- src/components/clientes/ClientesList.tsx (badges expiração)
+- src/components/cart/CartCommercialPanel.tsx (badge + bloco homologadas)
+- src/lib/exporter.ts (seção no PDF/CSV)
+- src/store/orderStore.ts (snapshot)
 
-## 6. Módulo de Provisões
+## Notas
 
-**`src/routes/provisoes.tsx`** (lista):
-- Tabs status: Aguardando estoque / Estoque liberado / Todas
-- Tabela: #, Cliente, Itens, Próxima previsão, Ref R$, Status
-- Click → drawer/sheet com ficha
+- Modo negociação continua somando ao desconto pós-premissas.
+- Portal do cliente (V12) não é tocado — premissas são internas.
+- Histórico imutável: append-only, sem delete.
+- Dados ficam dentro de `Cliente` em `fetely_clientes` (localStorage), sem nova chave de store.
 
-**`src/routes/provisoes.$id.tsx`** (ou sheet inline):
-- Itens com status atual (re-leitura de `products`), valor referência, alerta se preço mudou
-- Observações editáveis
-- Botões:
-  - **Converter em Pedido** (sempre disponível; destaque visual quando `estoque_liberado`) → popula carrinho via `useOrder.addBulk`, navega `/cart`, marca provisão como `convertido_em_pedido` apenas após confirmação do pedido (via metadata no carrinho `meta.provisaoOrigemId`)
-  - **Cancelar provisão** (confirm dialog)
-  - **Admin/master**: "Marcar estoque como liberado"
-
-**Header/BottomNav:** adicionar item "Provisões" no menu.
-
----
-
-## 7. Conversão provisão → pedido
-
-- `useOrder.setMeta({ provisaoOrigemId: id })`
-- Ao salvar pedido, se `meta.provisaoOrigemId`, chamar `useProvisao.getState().updateStatus(id, 'convertido_em_pedido')` e gravar `pedidoFirmeId`
-- Banner amarelo no carrinho enquanto `provisaoOrigemId` ativo
-
----
-
-## 8. Dashboard (V5)
-
-**`src/routes/index.tsx`** (se já existe seção dashboard): novo card "Provisões em aberto" — totais, próximas liberações por mês, contagem `estoque_liberado`, link para `/provisoes`. Respeita isolamento por vendedor.
-
----
-
-## Arquivos
-
-**Novos:**
-- `src/types/provisao.ts`
-- `src/lib/classifyItem.ts`
-- `src/store/provisaoStore.ts`
-- `src/components/cart/MixedCartBanner.tsx`
-- `src/components/cart/ProvisaoSection.tsx`
-- `src/components/cart/FinalConfirmModal.tsx`
-- `src/routes/provisoes.tsx`
-- `src/routes/provisoes.$id.tsx`
-
-**Editados:**
-- `src/routes/cart.tsx` — split, modal, fluxo
-- `src/components/cart/CartCommercialPanel.tsx` — aceitar items
-- `src/store/orderStore.ts` — `saveOrder` aceita override; `OrderMeta.provisaoOrigemId`
-- `src/types/index.ts` — campo `provisaoOrigemId` em `OrderMeta`
-- `src/routes/confirmation.tsx` — exibir provisão gerada
-- `src/components/layout/Header.tsx` + `BottomNav.tsx` — link "Provisões"
-- `src/routes/index.tsx` — card dashboard de provisões (se aplicável)
-
-## Notas técnicas
-- IDs `P0001+` via counter persistido
-- Valores de referência sempre `precoAtacado` puro
-- Isolamento por `vendedorId` igual a pedidos
-- Cor de provisão: `bg-[#0F0F0F]` + badge âmbar (`bg-stock-pre` se existir, senão `bg-amber-500/15 text-amber-300`)
+Aprovar para implementar?
