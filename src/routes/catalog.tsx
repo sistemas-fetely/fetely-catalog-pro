@@ -171,7 +171,7 @@ function CatalogPage() {
               </header>
 
               {/* Products */}
-              {isNum ? (
+              {isNum && !isPublic ? (
                 <NumericalCandleGrid
                   products={colecaoProducts}
                   colecao={colecao}
@@ -179,7 +179,7 @@ function CatalogPage() {
                 />
               ) : (
                 <>
-                  {meta?.categoria === "Celebrar à Mesa" && (
+                  {!isPublic && meta?.categoria === "Celebrar à Mesa" && (
                     <CollectionBulkFiller products={colecaoProducts} />
                   )}
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
