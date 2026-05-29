@@ -1,12 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Copy, Home } from "lucide-react";
+import { Check, Copy, Home, FileClock } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
 import { useVisibleOrders } from "@/store/orderStore";
+import { useProvisao } from "@/store/provisaoStore";
 import type { SavedOrder } from "@/types";
 import { z } from "zod";
 
-const search = z.object({ id: z.string().optional() });
+const search = z.object({
+  id: z.string().optional(),
+  provisaoId: z.string().optional(),
+});
 
 export const Route = createFileRoute("/confirmation")({
   validateSearch: search,
@@ -100,9 +104,14 @@ function formatOrderText(order: SavedOrder): string {
 }
 
 function Confirmation() {
-  const { id } = Route.useSearch();
+  const { id, provisaoId } = Route.useSearch();
   const history = useVisibleOrders();
+  const provisoes = useProvisao((s) => s.provisoes);
   const order = useMemo(() => history.find((o) => o.id === id) ?? history[0], [history, id]);
+  const provisao = useMemo(
+    () => (provisaoId ? provisoes.find((p) => p.id === provisaoId) : undefined),
+    [provisoes, provisaoId],
+  );
 
   const [copied, setCopied] = useState(false);
 
