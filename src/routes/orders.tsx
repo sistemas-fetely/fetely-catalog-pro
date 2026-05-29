@@ -228,6 +228,13 @@ function OrdersPage() {
                             <UserCog className="h-3 w-3" />
                           </button>
                         )}
+                        <button
+                          onClick={() => setExportOrders([o])}
+                          title="Exportar pedido"
+                          className="inline-flex items-center gap-1 rounded-md gold-border px-2 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
+                        >
+                          <Download className="h-3 w-3" />
+                        </button>
                         <Link
                           to="/confirmation"
                           search={{ id: o.id }}
