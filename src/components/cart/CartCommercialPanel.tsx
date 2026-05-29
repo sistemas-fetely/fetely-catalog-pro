@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Lock, Settings2, Sparkles, Truck, X } from "lucide-react";
+import { Award, Lock, Settings2, Sparkles, Truck, X } from "lucide-react";
 import {
   CONDICOES_PAGAMENTO,
   DESCONTO_MASTER_MAX,
@@ -13,6 +13,9 @@ import {
 } from "@/lib/commercial";
 import { useNegotiation } from "@/store/negotiationStore";
 import { formatBRL } from "@/lib/format";
+import { useOrder } from "@/store/orderStore";
+import { useClientes } from "@/store/clienteStore";
+import { getPremissasVigentes } from "@/lib/premissas";
 
 export interface CommercialState {
   calculo: CalculoPedido;
