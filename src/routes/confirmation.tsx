@@ -125,6 +125,20 @@ function Confirmation() {
 
   const [copied, setCopied] = useState(false);
   const [emailDialogAberto, setEmailDialogAberto] = useState(false);
+  const [imprimirDialog, setImprimirDialog] = useState(false);
+
+  function executarImprimir(modo: "completo" | "resumo") {
+    setImprimirDialog(false);
+    if (modo === "resumo") {
+      document.body.classList.add("printing-resumo");
+    }
+    const cleanup = () => {
+      document.body.classList.remove("printing-resumo");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    setTimeout(() => window.print(), 80);
+  }
 
   if (!order) {
     return (
