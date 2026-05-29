@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type { Cliente } from "@/types/cliente";
 import { useAuth } from "@/store/authStore";
 import { useOrder } from "@/store/orderStore";
+import { supabase } from "@/integrations/supabase/client";
 
 const noopStorage: Storage = {
   length: 0,
@@ -17,6 +18,9 @@ const safeStorage = (): Storage =>
 
 interface ClienteState {
   clientes: Cliente[];
+  hidratado: boolean;
+  hydrate: () => Promise<void>;
+  setClientesFromRows: (clientes: Cliente[]) => void;
   upsertCliente: (c: Cliente) => void;
   deleteCliente: (id: string) => void;
   setAtivo: (id: string, ativo: boolean) => void;
@@ -24,11 +28,119 @@ interface ClienteState {
   getById: (id: string) => Cliente | undefined;
 }
 
+// --- Mappers TS <-> Banco ----------------------------------------------------
+
+function rowToCliente(row: Record<string, unknown>): Cliente {
+  return {
+    id: row.id as string,
+    criadoEm: row.criado_em as string,
+    atualizadoEm: row.atualizado_em as string,
+    cadastradoPorVendedorId: row.cadastrado_por_vendedor_id as string,
+    cadastradoPorVendedorNome: row.cadastrado_por_vendedor_nome as string,
+    cnpj: (row.cnpj as string) ?? "",
+    cnpjFormatado: (row.cnpj_formatado as string) ?? "",
+    razaoSocial: (row.razao_social as string) ?? "",
+    nomeFantasia: (row.nome_fantasia as string) ?? "",
+    inscricaoEstadual: (row.inscricao_estadual as string | null) ?? undefined,
+    isentoIE: (row.isento_ie as boolean) ?? false,
+    situacaoCadastral: (row.situacao_cadastral as Cliente["situacaoCadastral"]) ?? "desconhecida",
+    logradouro: (row.logradouro as string) ?? "",
+    numero: (row.numero as string) ?? "",
+    complemento: (row.complemento as string | null) ?? undefined,
+    bairro: (row.bairro as string) ?? "",
+    cidade: (row.cidade as string) ?? "",
+    estado: (row.estado as string) ?? "",
+    cep: (row.cep as string) ?? "",
+    enderecoEntregaIgual: (row.endereco_entrega_igual as boolean) ?? true,
+    entregaLogradouro: (row.entrega_logradouro as string | null) ?? undefined,
+    entregaNumero: (row.entrega_numero as string | null) ?? undefined,
+    entregaComplemento: (row.entrega_complemento as string | null) ?? undefined,
+    entregaBairro: (row.entrega_bairro as string | null) ?? undefined,
+    entregaCidade: (row.entrega_cidade as string | null) ?? undefined,
+    entregaEstado: (row.entrega_estado as string | null) ?? undefined,
+    entregaCep: (row.entrega_cep as string | null) ?? undefined,
+    contatoNome: (row.contato_nome as string) ?? "",
+    contatoEmail: (row.contato_email as string) ?? "",
+    contatoTelefone: (row.contato_telefone as string) ?? "",
+    contatoWhatsapp: (row.contato_whatsapp as string | null) ?? undefined,
+    financeiroNome: (row.financeiro_nome as string | null) ?? undefined,
+    financeiroEmail: (row.financeiro_email as string | null) ?? undefined,
+    financeiroTelefone: (row.financeiro_telefone as string | null) ?? undefined,
+    segmento: (row.segmento as Cliente["segmento"]) ?? "outro",
+    canal: (row.canal as Cliente["canal"]) ?? "outro",
+    regiaoAtuacao: (row.regiao_atuacao as string | null) ?? undefined,
+    observacoes: (row.observacoes as string | null) ?? undefined,
+    tags: (row.tags as string[] | null) ?? [],
+    ativo: (row.ativo as boolean) ?? true,
+  };
+}
+
+export function clienteToRow(c: Cliente): Record<string, unknown> {
+  return {
+    id: c.id,
+    criado_em: c.criadoEm,
+    atualizado_em: c.atualizadoEm,
+    cadastrado_por_vendedor_id: c.cadastradoPorVendedorId,
+    cadastrado_por_vendedor_nome: c.cadastradoPorVendedorNome,
+    cnpj: c.cnpj,
+    cnpj_formatado: c.cnpjFormatado,
+    razao_social: c.razaoSocial,
+    nome_fantasia: c.nomeFantasia,
+    inscricao_estadual: c.inscricaoEstadual ?? null,
+    isento_ie: c.isentoIE ?? false,
+    situacao_cadastral: c.situacaoCadastral,
+    logradouro: c.logradouro,
+    numero: c.numero,
+    complemento: c.complemento ?? null,
+    bairro: c.bairro,
+    cidade: c.cidade,
+    estado: c.estado,
+    cep: c.cep,
+    endereco_entrega_igual: c.enderecoEntregaIgual,
+    entrega_logradouro: c.entregaLogradouro ?? null,
+    entrega_numero: c.entregaNumero ?? null,
+    entrega_complemento: c.entregaComplemento ?? null,
+    entrega_bairro: c.entregaBairro ?? null,
+    entrega_cidade: c.entregaCidade ?? null,
+    entrega_estado: c.entregaEstado ?? null,
+    entrega_cep: c.entregaCep ?? null,
+    contato_nome: c.contatoNome,
+    contato_email: c.contatoEmail,
+    contato_telefone: c.contatoTelefone,
+    contato_whatsapp: c.contatoWhatsapp ?? null,
+    financeiro_nome: c.financeiroNome ?? null,
+    financeiro_email: c.financeiroEmail ?? null,
+    financeiro_telefone: c.financeiroTelefone ?? null,
+    segmento: c.segmento,
+    canal: c.canal,
+    regiao_atuacao: c.regiaoAtuacao ?? null,
+    observacoes: c.observacoes ?? null,
+    tags: c.tags ?? [],
+    ativo: c.ativo,
+  };
+}
+
 export const useClientes = create<ClienteState>()(
   persist(
     (set, get) => ({
       clientes: [],
-      upsertCliente: (c) =>
+      hidratado: false,
+      hydrate: async () => {
+        try {
+          const { data, error } = await supabase
+            .from("clientes")
+            .select("*")
+            .order("criado_em", { ascending: false });
+          if (error) throw error;
+          const clientes = (data ?? []).map((r) => rowToCliente(r as Record<string, unknown>));
+          set({ clientes, hidratado: true });
+        } catch (err) {
+          console.error("[clienteStore] hydrate falhou:", err);
+          set({ hidratado: true });
+        }
+      },
+      setClientesFromRows: (clientes) => set({ clientes }),
+      upsertCliente: (c) => {
         set((s) => {
           const i = s.clientes.findIndex((x) => x.id === c.id);
           if (i >= 0) {
@@ -37,24 +149,51 @@ export const useClientes = create<ClienteState>()(
             return { clientes: copy };
           }
           return { clientes: [c, ...s.clientes] };
-        }),
-      deleteCliente: (id) =>
-        set((s) => ({ clientes: s.clientes.filter((c) => c.id !== id) })),
-      setAtivo: (id, ativo) =>
+        });
+        void supabase
+          .from("clientes")
+          .upsert(clienteToRow(c) as never, { onConflict: "id" })
+          .then(({ error }) => {
+            if (error) console.error("[clienteStore] upsert falhou:", error, c.id);
+          });
+      },
+      deleteCliente: (id) => {
+        set((s) => ({ clientes: s.clientes.filter((c) => c.id !== id) }));
+        void supabase
+          .from("clientes")
+          .delete()
+          .eq("id", id)
+          .then(({ error }) => {
+            if (error) console.error("[clienteStore] delete falhou:", error, id);
+          });
+      },
+      setAtivo: (id, ativo) => {
+        const atualizadoEm = new Date().toISOString();
         set((s) => ({
           clientes: s.clientes.map((c) =>
-            c.id === id ? { ...c, ativo, atualizadoEm: new Date().toISOString() } : c,
+            c.id === id ? { ...c, ativo, atualizadoEm } : c,
           ),
-        })),
+        }));
+        void supabase
+          .from("clientes")
+          .update({ ativo, atualizado_em: atualizadoEm } as never)
+          .eq("id", id)
+          .then(({ error }) => {
+            if (error) console.error("[clienteStore] setAtivo falhou:", error, id);
+          });
+      },
       findByCnpj: (cnpjDigits) =>
         get().clientes.find((c) => c.cnpj === cnpjDigits && c.cnpj !== ""),
       getById: (id) => get().clientes.find((c) => c.id === id),
     }),
-    { name: "fetely_clientes_v1", storage: createJSONStorage(safeStorage) },
+    {
+      name: "fetely_clientes_v1",
+      storage: createJSONStorage(safeStorage),
+      partialize: (state) => ({ clientes: state.clientes }) as Partial<ClienteState>,
+    },
   ),
 );
 
-/** Visible to current user — vendedor sees own; admin/master see all */
 export function useVisibleClientes(): Cliente[] {
   const clientes = useClientes((s) => s.clientes);
   const user = useAuth((s) => s.user);
@@ -65,7 +204,6 @@ export function useVisibleClientes(): Cliente[] {
   return clientes.filter((c) => c.cadastradoPorVendedorId === user.id);
 }
 
-/** Search ALL clients for order flow — avoid duplicates across sellers */
 export function searchClientesForOrder(query: string, limit = 8): Cliente[] {
   const all = useClientes.getState().clientes;
   const q = query.trim().toLowerCase();
@@ -83,7 +221,6 @@ export function searchClientesForOrder(query: string, limit = 8): Cliente[] {
     .slice(0, limit);
 }
 
-/** Calculate aggregated stats from saved orders */
 export function calcClienteStats(clienteId: string) {
   const history = useOrder.getState().history;
   const pedidos = history.filter((o) => o.meta.clienteId === clienteId);
