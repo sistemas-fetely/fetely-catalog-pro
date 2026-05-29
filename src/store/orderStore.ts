@@ -29,7 +29,7 @@ interface OrderState {
   removeItems: (skus: string[]) => void;
   clearCart: () => void;
   setMeta: (m: Partial<OrderMeta>) => void;
-  saveOrder: (commercial?: OrderCommercial, itemsOverride?: CartItem[]) => SavedOrder;
+  saveOrder: (commercial?: OrderCommercial, itemsOverride?: CartItem[]) => Promise<SavedOrder>;
   reassignOrder: (
     orderId: string,
     novo: { vendedorId: string; vendedorNome?: string | null; vendedorLogin?: string | null; vendedorTipo?: "interno" | "representante" | null },
@@ -172,14 +172,26 @@ export const useOrder = create<OrderState>()(
       },
       clearCart: () => set({ items: [], meta: defaultMeta }),
       setMeta: (m) => set((s) => ({ meta: { ...s.meta, ...m } })),
-      saveOrder: (commercial, itemsOverride) => {
+      saveOrder: async (commercial, itemsOverride) => {
         const { items: allItems, meta } = get();
         const items = itemsOverride ?? allItems;
         const total =
           commercial?.totalFinal ??
           items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
+
+        // ── GUARD: session pronta e usuário identificado ──
         const auth = useAuth.getState();
+        if (!auth.session || !auth.user?.id) {
+          throw new Error(
+            "Sua sessão expirou ou ainda está carregando. Atualize a página e tente novamente.",
+          );
+        }
         const profile = auth.profile;
+        const vendedorNomeFinal =
+          profile?.nome_completo ?? profile?.email ?? auth.user.email;
+        if (!vendedorNomeFinal) {
+          throw new Error("Perfil do vendedor não está disponível. Atualize a página.");
+        }
 
         let metaWithSnapshot = meta;
         if (meta.clienteId && !meta.clienteSnapshot && typeof window !== "undefined") {
@@ -189,7 +201,7 @@ export const useOrder = create<OrderState>()(
               const parsed = JSON.parse(raw);
               const list: Array<Record<string, unknown>> = parsed?.state?.clientes ?? [];
               const c = list.find((x) => x.id === meta.clienteId) as
-                | (Record<string, string | boolean | undefined>)
+                | Record<string, string | boolean | undefined>
                 | undefined;
               if (c) {
                 const endereco = c.enderecoEntregaIgual
@@ -224,32 +236,39 @@ export const useOrder = create<OrderState>()(
           meta: metaWithSnapshot,
           total,
           commercial,
-          vendedorId: auth.user?.id,
-          vendedorNome: profile?.nome_completo ?? profile?.email ?? undefined,
+          vendedorId: auth.user.id,
+          vendedorNome: vendedorNomeFinal,
           vendedorLogin: profile?.login_amigavel ?? profile?.email ?? undefined,
           vendedorTipo: profile?.tipo_vendedor ?? null,
         };
 
-        set((s) => ({ history: [order, ...s.history].slice(0, 200) }));
+        // ── SAVE NO BANCO COM AWAIT REAL ──
+        try {
+          const { error: errO } = await supabase
+            .from("orders")
+            .upsert(orderToRow(order) as never, { onConflict: "id" });
+          if (errO) throw errO;
 
-        void (async () => {
-          try {
-            const { error: errO } = await supabase
-              .from("orders")
-              .upsert(orderToRow(order) as never, { onConflict: "id" });
-            if (errO) throw errO;
-            const itemRows = orderItemsToRows(order);
-            if (itemRows.length > 0) {
-              await supabase.from("order_items").delete().eq("order_id", order.id);
-              const { error: errI } = await supabase
-                .from("order_items")
-                .insert(itemRows as never);
-              if (errI) throw errI;
-            }
-          } catch (err) {
-            console.error("[orderStore] saveOrder banco falhou:", err, order.id);
+          const itemRows = orderItemsToRows(order);
+          if (itemRows.length > 0) {
+            await supabase.from("order_items").delete().eq("order_id", order.id);
+            const { error: errI } = await supabase
+              .from("order_items")
+              .insert(itemRows as never);
+            if (errI) throw errI;
           }
-        })();
+        } catch (err: unknown) {
+          console.error("[orderStore] saveOrder banco falhou:", err, order.id);
+          const msg = err instanceof Error ? err.message : String(err);
+          throw new Error(
+            msg
+              ? `Não foi possível salvar o pedido no banco: ${msg}`
+              : "Não foi possível salvar o pedido. Verifique sua conexão e tente novamente.",
+          );
+        }
+
+        // ── SÓ ADICIONA AO HISTORY APÓS SUCESSO NO BANCO ──
+        set((s) => ({ history: [order, ...s.history].slice(0, 200) }));
 
         return order;
       },
