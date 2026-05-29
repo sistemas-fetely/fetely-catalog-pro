@@ -48,26 +48,51 @@ export function CartCommercialPanel({
 
   const [showSenha, setShowSenha] = useState(false);
 
-  // Faixa atual
-  const faixa = useMemo(
-    () => detectarFaixa(bruto, ativo && usarReservada),
-    [bruto, ativo, usarReservada],
+  // V13 — premissas vigentes do cliente atual (se houver)
+  const clienteId = useOrder((s) => s.meta.clienteId);
+  const cliente = useClientes((s) =>
+    clienteId ? s.clientes.find((c) => c.id === clienteId) ?? null : null,
   );
+  const premissas = useMemo(() => getPremissasVigentes(cliente), [cliente]);
+
+  // Faixa atual — faixa fixa do cliente tem prioridade
+  const faixa = useMemo(() => {
+    if (premissas?.temFaixaFixa && premissas.faixaFixaId != null) {
+      return FAIXAS.find((f) => f.id === premissas.faixaFixaId) ?? null;
+    }
+    return detectarFaixa(bruto, ativo && usarReservada);
+  }, [bruto, ativo, usarReservada, premissas]);
 
   // Condições disponíveis
   const condicoesDisponiveis = useMemo<CondicaoPagamento[]>(() => {
     if (!faixa) return [];
     if (ativo) return CONDICOES_PAGAMENTO; // master libera todas
+    // V13 — premissas com condições preferenciais sobrepõem a faixa
+    if (premissas?.temCondicaoPreferencial && premissas.condicoesPermitidas.length > 0) {
+      return CONDICOES_PAGAMENTO.filter((c) =>
+        premissas.condicoesPermitidas.includes(c.id),
+      );
+    }
     return CONDICOES_PAGAMENTO.filter(
       (c) => faixa.condicoesDisponiveis.includes(c.id) && bruto >= c.valorMinimo,
     );
-  }, [faixa, ativo, bruto]);
+  }, [faixa, ativo, bruto, premissas]);
 
-  // Condição selecionada (revalida quando faixa muda)
+  // Condição selecionada
   const condicao = useMemo(
     () => condicoesDisponiveis.find((c) => c.id === condicaoSelecionadaId) ?? null,
     [condicoesDisponiveis, condicaoSelecionadaId],
   );
+
+  // Pré-seleciona condição preferencial do cliente quando nada está selecionado
+  useEffect(() => {
+    if (!condicaoSelecionadaId && premissas?.condicaoPreferencialId) {
+      const existe = condicoesDisponiveis.some(
+        (c) => c.id === premissas.condicaoPreferencialId,
+      );
+      if (existe) setCondicaoSelecionadaId(premissas.condicaoPreferencialId);
+    }
+  }, [premissas, condicoesDisponiveis, condicaoSelecionadaId, setCondicaoSelecionadaId]);
 
   useEffect(() => {
     if (condicaoSelecionadaId && !condicao) setCondicaoSelecionadaId(null);
@@ -80,9 +105,12 @@ export function CartCommercialPanel({
         usarReservada: ativo && usarReservada,
         descontoMasterPct: ativo ? descontoPct : 0,
         condicao,
+        premissas,
       }),
-    [bruto, ativo, usarReservada, descontoPct, condicao],
+    [bruto, ativo, usarReservada, descontoPct, condicao, premissas],
   );
+
+  const pedidoMinimo = calculo.pedidoMinimoEfetivo ?? 2500;
 
   const negociacaoSemJustificativa =
     ativo && descontoPct > 0 && !justificativa;
@@ -91,7 +119,7 @@ export function CartCommercialPanel({
     !!faixa && !!condicao && !negociacaoSemJustificativa;
 
   const motivoBloqueio = !faixa
-    ? `Pedido mínimo: ${formatBRL(2500)}. Adicione mais produtos.`
+    ? `Pedido mínimo: ${formatBRL(pedidoMinimo)}. Adicione mais produtos.`
     : !condicao
       ? "Selecione uma condição de pagamento."
       : negociacaoSemJustificativa
@@ -102,8 +130,13 @@ export function CartCommercialPanel({
     onChange({ calculo, condicao, podeFinalizar, motivoBloqueio });
   }, [calculo, condicao, podeFinalizar, motivoBloqueio, onChange]);
 
-  const prox = proximaFaixa(faixa);
+  const prox = premissas?.temFaixaFixa ? null : proximaFaixa(faixa);
   const faltaProx = prox ? prox.valorMin - bruto : 0;
+  const descontoEfetivoPct = calculo.descontoCelebraPercentEfetivo ?? faixa?.descontoCelebra ?? 0;
+  const bonusPixEfetivoPct = premissas?.bonusPixPersonalizado
+    ? premissas.bonusPixPercent
+    : faixa?.bonusPix ?? 0;
+  const freteEfetivo = calculo.freteEfetivo ?? faixa?.frete;
 
   return (
     <div className="space-y-4">
