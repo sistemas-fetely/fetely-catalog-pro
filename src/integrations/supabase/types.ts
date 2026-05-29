@@ -58,6 +58,47 @@ export type Database = {
           },
         ]
       }
+      catalog_audit: {
+        Row: {
+          acao: Database["public"]["Enums"]["catalog_acao"]
+          campos_alterados: Json | null
+          criado_em: string
+          id: string
+          produto_nome: string
+          produto_sku: string
+          usuario_id: string | null
+          usuario_nome: string
+        }
+        Insert: {
+          acao: Database["public"]["Enums"]["catalog_acao"]
+          campos_alterados?: Json | null
+          criado_em?: string
+          id?: string
+          produto_nome: string
+          produto_sku: string
+          usuario_id?: string | null
+          usuario_nome: string
+        }
+        Update: {
+          acao?: Database["public"]["Enums"]["catalog_acao"]
+          campos_alterados?: Json | null
+          criado_em?: string
+          id?: string
+          produto_nome?: string
+          produto_sku?: string
+          usuario_id?: string | null
+          usuario_nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_audit_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           ativo: boolean
@@ -609,6 +650,7 @@ export type Database = {
       products: {
         Row: {
           altura_cm: number
+          ativo: boolean
           categoria: string
           cest: string | null
           cod_cadastro: string | null
@@ -655,6 +697,7 @@ export type Database = {
         }
         Insert: {
           altura_cm?: number
+          ativo?: boolean
           categoria: string
           cest?: string | null
           cod_cadastro?: string | null
@@ -701,6 +744,7 @@ export type Database = {
         }
         Update: {
           altura_cm?: number
+          ativo?: boolean
           categoria?: string
           cest?: string | null
           cod_cadastro?: string | null
@@ -1082,6 +1126,13 @@ export type Database = {
         | "reativado"
         | "reordenado"
       cartilha_entidade: "faixa" | "condicao" | "regras_gerais"
+      catalog_acao:
+        | "criado"
+        | "editado"
+        | "desativado"
+        | "reativado"
+        | "duplicado"
+        | "importado"
       tipo_condicao_pagamento: "pix" | "boleto" | "cartao"
       tipo_frete: "CIF" | "FOB"
       tipo_vendedor: "interno" | "representante"
@@ -1221,6 +1272,14 @@ export const Constants = {
         "reordenado",
       ],
       cartilha_entidade: ["faixa", "condicao", "regras_gerais"],
+      catalog_acao: [
+        "criado",
+        "editado",
+        "desativado",
+        "reativado",
+        "duplicado",
+        "importado",
+      ],
       tipo_condicao_pagamento: ["pix", "boleto", "cartao"],
       tipo_frete: ["CIF", "FOB"],
       tipo_vendedor: ["interno", "representante"],
