@@ -26,7 +26,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
-import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -107,6 +106,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
 const AdminProductsRoute = AdminProductsRouteImport.update({
   id: '/admin/products',
   path: '/admin/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCartilhasRoute = AdminCartilhasRouteImport.update({
+  id: '/admin/cartilhas',
+  path: '/admin/cartilhas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminCartilhasRoute = AdminCartilhasRouteImport.update({
