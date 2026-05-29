@@ -290,3 +290,51 @@ export function openOrderPDFInNewTab(order: SavedOrder): void {
   }
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
+
+/**
+ * Imprime o PDF do pedido direto na impressora física.
+ * Gera o PDF em memória, cria iframe escondido, espera load e dispara print().
+ * Sem abrir aba nova nem baixar arquivo.
+ */
+export function printOrderPDF(order: SavedOrder): void {
+  const { blob } = generateOrderPDF(order);
+  const url = URL.createObjectURL(blob);
+
+  // Remove iframe anterior se ainda existir (em caso de cliques múltiplos)
+  const old = document.getElementById("__print_order_iframe");
+  if (old) old.remove();
+
+  // Cria iframe escondido (fora da tela mas no DOM)
+  const iframe = document.createElement("iframe");
+  iframe.id = "__print_order_iframe";
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.style.visibility = "hidden";
+  iframe.src = url;
+  document.body.appendChild(iframe);
+
+  iframe.addEventListener("load", () => {
+    // Delay pequeno pro viewer de PDF do browser inicializar antes do print
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch (err) {
+        console.error("[printOrderPDF] print direto falhou, abrindo nova aba:", err);
+        // Fallback: abre em nova aba pro usuário usar o Ctrl+P manual
+        window.open(url, "_blank");
+      }
+    }, 300);
+  });
+
+  // Limpeza após 1 minuto (tempo suficiente pro usuário terminar o print)
+  setTimeout(() => {
+    document.getElementById("__print_order_iframe")?.remove();
+    URL.revokeObjectURL(url);
+  }, 60_000);
+}
