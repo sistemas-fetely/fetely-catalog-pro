@@ -21,7 +21,7 @@ import {
 function emptyCliente(vendedorId: string, vendedorNome: string): Cliente {
   const now = new Date().toISOString();
   return {
-    id: `CLI-${Date.now()}`,
+    id: crypto.randomUUID(),
     criadoEm: now,
     atualizadoEm: now,
     cadastradoPorVendedorId: vendedorId,
