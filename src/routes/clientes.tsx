@@ -544,8 +544,9 @@ function ClienteDetail({
       </div>
 
       <Tabs defaultValue="perfil" className="flex-1 flex flex-col">
-        <TabsList className="grid grid-cols-4 mx-5 mt-3 bg-surface-2">
+        <TabsList className="grid grid-cols-5 mx-5 mt-3 bg-surface-2">
           <TabsTrigger value="perfil" className="text-xs">Perfil</TabsTrigger>
+          <TabsTrigger value="premissas" className="text-xs text-gold">✦ Premissas</TabsTrigger>
           <TabsTrigger value="pedidos" className="text-xs">Pedidos</TabsTrigger>
           <TabsTrigger value="inteligencia" className="text-xs">Inteligência</TabsTrigger>
           <TabsTrigger value="portal" className="text-xs">Portal</TabsTrigger>
