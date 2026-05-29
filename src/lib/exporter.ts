@@ -449,6 +449,25 @@ export function exportarPDF(
     margin: { left: 15, right: 15 },
   });
 
+  // V13 — Condições comerciais homologadas (premissas)
+  if (pedido.premissasAplicadas) {
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 2,
+      head: [["✦ CONDIÇÕES COMERCIAIS APLICADAS (HOMOLOGADAS)"]],
+      body: [
+        [
+          [
+            ...pedido.premissasResumo.map((l) => `• ${l}`),
+            `Vigência até: ${pedido.premissasVigenciaFim}`,
+          ].join("\n"),
+        ],
+      ],
+      headStyles: { fillColor: GOLD, textColor: [0, 0, 0], fontStyle: "bold", fontSize: 9 },
+      styles: { fontSize: 9, cellPadding: 3 },
+      margin: { left: 15, right: 15 },
+    });
+  }
+
   if (pedido.observacoesVendedor) {
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 2,
