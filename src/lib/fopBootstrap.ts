@@ -2,6 +2,7 @@ import { useAuth } from "@/store/authStore";
 import { useOrder, orderToRow, orderItemsToRows } from "@/store/orderStore";
 import { useClientes, clienteToRow } from "@/store/clienteStore";
 import { useProvisao, provisaoToRow, provisaoItensToRows } from "@/store/provisaoStore";
+import { useCartilhas } from "@/store/cartilhasStore";
 import { supabase } from "@/integrations/supabase/client";
 import type { SavedOrder } from "@/types";
 import type { Cliente } from "@/types/cliente";

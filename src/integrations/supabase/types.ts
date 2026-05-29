@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      cartilhas_audit: {
+        Row: {
+          acao: Database["public"]["Enums"]["cartilha_acao"]
+          campos_alterados: Json | null
+          criado_em: string
+          entidade: Database["public"]["Enums"]["cartilha_entidade"]
+          entidade_id: string
+          entidade_nome: string
+          id: string
+          usuario_id: string | null
+          usuario_nome: string
+        }
+        Insert: {
+          acao: Database["public"]["Enums"]["cartilha_acao"]
+          campos_alterados?: Json | null
+          criado_em?: string
+          entidade: Database["public"]["Enums"]["cartilha_entidade"]
+          entidade_id: string
+          entidade_nome: string
+          id?: string
+          usuario_id?: string | null
+          usuario_nome: string
+        }
+        Update: {
+          acao?: Database["public"]["Enums"]["cartilha_acao"]
+          campos_alterados?: Json | null
+          criado_em?: string
+          entidade?: Database["public"]["Enums"]["cartilha_entidade"]
+          entidade_id?: string
+          entidade_nome?: string
+          id?: string
+          usuario_id?: string | null
+          usuario_nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cartilhas_audit_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           ativo: boolean
@@ -241,6 +285,141 @@ export type Database = {
           },
         ]
       }
+      condicoes_pagamento: {
+        Row: {
+          ativa: boolean
+          atualizado_em: string
+          criado_em: string
+          criado_por: string | null
+          descricao: string
+          destaque: boolean
+          dias_parcelas: number[] | null
+          exibir_para_vendedor: boolean
+          id: number
+          numero_parcelas: number | null
+          ordem: number
+          sem_juros: boolean
+          tem_bonus_pix: boolean
+          tipo: Database["public"]["Enums"]["tipo_condicao_pagamento"]
+          valor_minimo: number
+        }
+        Insert: {
+          ativa?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          descricao: string
+          destaque?: boolean
+          dias_parcelas?: number[] | null
+          exibir_para_vendedor?: boolean
+          id: number
+          numero_parcelas?: number | null
+          ordem?: number
+          sem_juros?: boolean
+          tem_bonus_pix?: boolean
+          tipo: Database["public"]["Enums"]["tipo_condicao_pagamento"]
+          valor_minimo?: number
+        }
+        Update: {
+          ativa?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          descricao?: string
+          destaque?: boolean
+          dias_parcelas?: number[] | null
+          exibir_para_vendedor?: boolean
+          id?: number
+          numero_parcelas?: number | null
+          ordem?: number
+          sem_juros?: boolean
+          tem_bonus_pix?: boolean
+          tipo?: Database["public"]["Enums"]["tipo_condicao_pagamento"]
+          valor_minimo?: number
+        }
+        Relationships: []
+      }
+      faixas: {
+        Row: {
+          ativa: boolean
+          atualizado_em: string
+          atualizado_por: string | null
+          boleto_ate: string
+          bonus_pix: number
+          bonus_pix_aplicavel: boolean
+          cartao_ate: string
+          condicoes_disponiveis: number[]
+          cor: string | null
+          criado_em: string
+          criado_por: string | null
+          desconto_celebra: number
+          descricao: string | null
+          frete: Database["public"]["Enums"]["tipo_frete"]
+          frete_observacao: string | null
+          icone: string | null
+          id: number
+          nome: string
+          ordem: number
+          prazo_medio_boleto: number
+          requer_senha_master: boolean
+          total_com_pix: number
+          valor_max: number | null
+          valor_min: number
+        }
+        Insert: {
+          ativa?: boolean
+          atualizado_em?: string
+          atualizado_por?: string | null
+          boleto_ate?: string
+          bonus_pix?: number
+          bonus_pix_aplicavel?: boolean
+          cartao_ate?: string
+          condicoes_disponiveis?: number[]
+          cor?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          desconto_celebra: number
+          descricao?: string | null
+          frete: Database["public"]["Enums"]["tipo_frete"]
+          frete_observacao?: string | null
+          icone?: string | null
+          id: number
+          nome: string
+          ordem?: number
+          prazo_medio_boleto?: number
+          requer_senha_master?: boolean
+          total_com_pix: number
+          valor_max?: number | null
+          valor_min: number
+        }
+        Update: {
+          ativa?: boolean
+          atualizado_em?: string
+          atualizado_por?: string | null
+          boleto_ate?: string
+          bonus_pix?: number
+          bonus_pix_aplicavel?: boolean
+          cartao_ate?: string
+          condicoes_disponiveis?: number[]
+          cor?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          desconto_celebra?: number
+          descricao?: string | null
+          frete?: Database["public"]["Enums"]["tipo_frete"]
+          frete_observacao?: string | null
+          icone?: string | null
+          id?: number
+          nome?: string
+          ordem?: number
+          prazo_medio_boleto?: number
+          requer_senha_master?: boolean
+          total_com_pix?: number
+          valor_max?: number | null
+          valor_min?: number
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           id: string
@@ -288,6 +467,8 @@ export type Database = {
           cliente_snapshot: Json | null
           commercial: Json | null
           created_at: string
+          forma_pagamento: string | null
+          frete: string | null
           id: string
           meta: Json
           provisao_origem_id: string | null
@@ -298,9 +479,13 @@ export type Database = {
           sncf_tentativas: number
           sncf_ultimo_erro: string | null
           sncf_ultimo_sync_em: string | null
+          tem_negociacao: boolean
+          tem_premissa_aplicada: boolean
           total: number
           total_skus: number
           total_unidades: number
+          valor_bruto: number | null
+          valor_liquido: number | null
           vendedor_id: string
           vendedor_login: string | null
           vendedor_nome: string
@@ -311,6 +496,8 @@ export type Database = {
           cliente_snapshot?: Json | null
           commercial?: Json | null
           created_at?: string
+          forma_pagamento?: string | null
+          frete?: string | null
           id: string
           meta: Json
           provisao_origem_id?: string | null
@@ -321,9 +508,13 @@ export type Database = {
           sncf_tentativas?: number
           sncf_ultimo_erro?: string | null
           sncf_ultimo_sync_em?: string | null
+          tem_negociacao?: boolean
+          tem_premissa_aplicada?: boolean
           total: number
           total_skus?: number
           total_unidades?: number
+          valor_bruto?: number | null
+          valor_liquido?: number | null
           vendedor_id: string
           vendedor_login?: string | null
           vendedor_nome: string
@@ -334,6 +525,8 @@ export type Database = {
           cliente_snapshot?: Json | null
           commercial?: Json | null
           created_at?: string
+          forma_pagamento?: string | null
+          frete?: string | null
           id?: string
           meta?: Json
           provisao_origem_id?: string | null
@@ -344,9 +537,13 @@ export type Database = {
           sncf_tentativas?: number
           sncf_ultimo_erro?: string | null
           sncf_ultimo_sync_em?: string | null
+          tem_negociacao?: boolean
+          tem_premissa_aplicada?: boolean
           total?: number
           total_skus?: number
           total_unidades?: number
+          valor_bruto?: number | null
+          valor_liquido?: number | null
           vendedor_id?: string
           vendedor_login?: string | null
           vendedor_nome?: string
@@ -567,6 +764,7 @@ export type Database = {
           observacoes: string | null
           regiao: string | null
           supervisor: string | null
+          supervisor_id: string | null
           telefone: string | null
           tipo_vendedor: Database["public"]["Enums"]["tipo_vendedor"] | null
           updated_at: string
@@ -587,6 +785,7 @@ export type Database = {
           observacoes?: string | null
           regiao?: string | null
           supervisor?: string | null
+          supervisor_id?: string | null
           telefone?: string | null
           tipo_vendedor?: Database["public"]["Enums"]["tipo_vendedor"] | null
           updated_at?: string
@@ -607,11 +806,27 @@ export type Database = {
           observacoes?: string | null
           regiao?: string | null
           supervisor?: string | null
+          supervisor_id?: string | null
           telefone?: string | null
           tipo_vendedor?: Database["public"]["Enums"]["tipo_vendedor"] | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_cliente"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_profiles_supervisor"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       provisao_itens: {
         Row: {
@@ -743,6 +958,86 @@ export type Database = {
           },
         ]
       }
+      regras_gerais: {
+        Row: {
+          atualizado_em: string
+          atualizado_por: string | null
+          bloqueio_senha_master_minutos: number
+          bonus_pix_padrao: number
+          desconto_master_max: number
+          faixa_reservada_nome: string
+          id: number
+          pedido_minimo: number
+          provisao_expirar_dias: number
+          tentativas_senha_master: number
+        }
+        Insert: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          bloqueio_senha_master_minutos?: number
+          bonus_pix_padrao?: number
+          desconto_master_max?: number
+          faixa_reservada_nome?: string
+          id?: number
+          pedido_minimo?: number
+          provisao_expirar_dias?: number
+          tentativas_senha_master?: number
+        }
+        Update: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          bloqueio_senha_master_minutos?: number
+          bonus_pix_padrao?: number
+          desconto_master_max?: number
+          faixa_reservada_nome?: string
+          id?: number
+          pedido_minimo?: number
+          provisao_expirar_dias?: number
+          tentativas_senha_master?: number
+        }
+        Relationships: []
+      }
+      representantes: {
+        Row: {
+          cnpj_cpf: string
+          contrato_fim: string | null
+          contrato_inicio: string | null
+          created_at: string
+          empresa: string
+          observacoes: string | null
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          cnpj_cpf: string
+          contrato_fim?: string | null
+          contrato_inicio?: string | null
+          created_at?: string
+          empresa: string
+          observacoes?: string | null
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          cnpj_cpf?: string
+          contrato_fim?: string | null
+          contrato_inicio?: string | null
+          created_at?: string
+          empresa?: string
+          observacoes?: string | null
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "representantes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -780,6 +1075,15 @@ export type Database = {
     }
     Enums: {
       app_role: "master" | "admin" | "vendedor" | "cliente"
+      cartilha_acao:
+        | "criado"
+        | "editado"
+        | "desativado"
+        | "reativado"
+        | "reordenado"
+      cartilha_entidade: "faixa" | "condicao" | "regras_gerais"
+      tipo_condicao_pagamento: "pix" | "boleto" | "cartao"
+      tipo_frete: "CIF" | "FOB"
       tipo_vendedor: "interno" | "representante"
     }
     CompositeTypes: {
@@ -909,6 +1213,16 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["master", "admin", "vendedor", "cliente"],
+      cartilha_acao: [
+        "criado",
+        "editado",
+        "desativado",
+        "reativado",
+        "reordenado",
+      ],
+      cartilha_entidade: ["faixa", "condicao", "regras_gerais"],
+      tipo_condicao_pagamento: ["pix", "boleto", "cartao"],
+      tipo_frete: ["CIF", "FOB"],
       tipo_vendedor: ["interno", "representante"],
     },
   },
