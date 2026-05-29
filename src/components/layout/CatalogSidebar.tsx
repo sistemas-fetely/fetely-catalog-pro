@@ -81,6 +81,7 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
   const items = useOrder((s) => s.items);
   const total = cartTotal(items);
   const totalUnits = items.reduce((s, i) => s + i.quantity, 0);
+  const isPublic = !useAuth((s) => s.session);
 
   const search = useRouterState({ select: (r) => r.location.search as { colecao?: string; grupo?: string } });
   const pathname = useRouterState({ select: (r) => r.location.pathname });
