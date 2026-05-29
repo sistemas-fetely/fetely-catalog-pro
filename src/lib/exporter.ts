@@ -548,6 +548,7 @@ const CSV_HEADERS = [
   "modo_negociacao_usado","negociacao_justificativa",
   "comissao_percent","comissao_estimada_valor",
   "observacoes_vendedor",
+  "premissas_aplicadas","premissas_resumo","premissas_vigencia_fim",
 ];
 
 const csvEscape = (val: unknown): string => {
