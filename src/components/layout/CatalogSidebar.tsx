@@ -12,6 +12,7 @@ import {
 import { useCatalog } from "@/store/catalogStore";
 import { useUI } from "@/store/uiStore";
 import { useOrder, cartTotal } from "@/store/orderStore";
+import { useAuth } from "@/store/authStore";
 import { formatBRL } from "@/lib/format";
 import type { Product } from "@/types";
 
