@@ -78,7 +78,7 @@ export interface Cliente {
   premissasComerciais?: PremissasComerciais;
 }
 
-// dummy line kept for offset stability ----------------------
+
 
 export interface ClienteSnapshot {
   clienteId: string;
