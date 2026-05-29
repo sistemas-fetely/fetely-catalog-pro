@@ -2,7 +2,8 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import JSZip from "jszip";
-import { saveAs } from "file-saver";
+import FileSaver from "file-saver";
+const { saveAs } = FileSaver;
 import type { SavedOrder, CartItem } from "@/types";
 import { FAIXAS } from "@/lib/commercial";
 
