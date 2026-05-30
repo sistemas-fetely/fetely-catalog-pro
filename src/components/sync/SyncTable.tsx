@@ -131,7 +131,8 @@ export function SyncTable({
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
+
               );
             })}
             {rows.length === 0 && (
