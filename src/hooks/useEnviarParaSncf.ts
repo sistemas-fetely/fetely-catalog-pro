@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,8 +26,6 @@ export function useEnviarParaSncf(orderId: string) {
     enviadoEm: null,
   });
   const [isEnviando, setIsEnviando] = useState(false);
-  const autoTriggered = useRef(false);
-  const initialLoaded = useRef(false);
 
   // Load initial state
   useEffect(() => {
@@ -41,10 +39,7 @@ export function useEnviarParaSncf(orderId: string) {
         .eq("id", orderId)
         .maybeSingle();
       if (cancelled) return;
-      if (error || !data) {
-        initialLoaded.current = true;
-        return;
-      }
+      if (error || !data) return;
       const status = (data.sncf_status_sync as SncfStatus | null) ?? "nao_enviado";
       setState({
         status,
