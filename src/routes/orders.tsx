@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Eye, Package, UserCog } from "lucide-react";
+import { BotaoEnviarSncf } from "@/components/BotaoEnviarSncf";
 import { formatBRL } from "@/lib/format";
 import { useOrder, useVisibleOrders } from "@/store/orderStore";
 import { useAuth } from "@/store/authStore";
@@ -235,6 +236,7 @@ function OrdersPage() {
                         >
                           <Download className="h-3 w-3" />
                         </button>
+                        <BotaoEnviarSncf orderId={o.id} />
                         <Link
                           to="/confirmation"
                           search={{ id: o.id }}
