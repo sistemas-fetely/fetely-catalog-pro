@@ -48,7 +48,7 @@ export function useEnviarParaSncf(orderId: string) {
         erro: data.sncf_ultimo_erro ?? null,
         enviadoEm: data.sncf_enviado_em ?? null,
       });
-      initialLoaded.current = true;
+      
     })();
     return () => {
       cancelled = true;
