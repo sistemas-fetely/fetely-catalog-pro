@@ -91,8 +91,9 @@ export function SyncTable({
               const isExpanded = expanded.has(r.id);
               const isRetryable = RETRY_STATUSES.includes(r.sncf_status_sync);
               return (
-                <>
-                  <tr key={r.id} className="border-b border-border/50 hover:bg-surface-hover/40">
+                <Fragment key={r.id}>
+                  <tr className="border-b border-border/50 hover:bg-surface-hover/40">
+
                     <td className="px-3 py-2">
                       {isRetryable && (
                         <input
