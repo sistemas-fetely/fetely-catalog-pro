@@ -283,6 +283,14 @@ export function Header() {
                     </div>
                   </div>
                   <DropdownMenuSeparator className="bg-border" />
+                  {isAdminOrMaster() && (
+                    <DropdownMenuItem asChild className="cursor-pointer text-text-secondary focus:text-gold">
+                      <Link to="/admin/sincronizacao-sncf" className="flex items-center gap-2">
+                        <FileClock className="h-4 w-4" />
+                        <span className="text-xs uppercase tracking-wider">Sincronização SNCF</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     onClick={() => signOut()}
                     className="flex items-center gap-2 cursor-pointer text-text-secondary focus:text-gold"
@@ -292,6 +300,7 @@ export function Header() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
             ) : (
               <Link
                 to="/login"
