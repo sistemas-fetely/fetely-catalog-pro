@@ -106,15 +106,6 @@ export function useEnviarParaSncf(orderId: string) {
     }
   }, [orderId]);
 
-  // Auto-send once if nao_enviado after initial load
-  useEffect(() => {
-    if (!initialLoaded.current) return;
-    if (autoTriggered.current) return;
-    if (state.status === "nao_enviado") {
-      autoTriggered.current = true;
-      enviar();
-    }
-  }, [state.status, enviar]);
 
   return {
     status: state.status,
