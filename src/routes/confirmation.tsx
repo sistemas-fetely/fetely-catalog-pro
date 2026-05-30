@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Copy, Download, Home, FileClock, Mail, Printer, FileText, FileBarChart } from "lucide-react";
-import { BotaoEnviarSncf } from "@/components/BotaoEnviarSncf";
 import { useMemo, useState, useEffect } from "react";
 import { formatBRL } from "@/lib/format";
 import { useVisibleOrders } from "@/store/orderStore";
@@ -235,7 +234,6 @@ function Confirmation() {
                 >
                   <Printer className="h-4 w-4" /> Imprimir
                 </button>
-                <BotaoEnviarSncf orderId={order.id} />
                 <Link
                   to="/"
                   className="flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"

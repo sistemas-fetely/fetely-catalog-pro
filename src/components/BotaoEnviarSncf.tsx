@@ -3,34 +3,27 @@ import { useEnviarParaSncf } from "@/hooks/useEnviarParaSncf";
 
 function formatData(iso: string): string {
   const d = new Date(iso);
-  const now = new Date();
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
-  const sameDay =
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate();
-  if (sameDay) return `hoje ${hh}h${mm}`;
   const dd = String(d.getDate()).padStart(2, "0");
   const mo = String(d.getMonth() + 1).padStart(2, "0");
   return `${dd}/${mo} ${hh}h${mm}`;
 }
 
-function truncate(s: string, max = 40): string {
-  if (s.length <= max) return s;
-  return s.slice(0, max - 1) + "…";
-}
-
 const BASE =
-  "flex items-center gap-2 rounded-md px-4 py-2 text-xs uppercase tracking-wider transition";
+  "flex items-center justify-center rounded-md border w-8 h-8 transition";
 
 export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
   const { status, estagio, erro, enviadoEm, enviar } = useEnviarParaSncf(orderId);
 
   if (status === "pendente") {
     return (
-      <button disabled className={`${BASE} gold-border text-gold opacity-60`}>
-        <Loader2 className="h-4 w-4 animate-spin" /> Enviando...
+      <button
+        disabled
+        title="Enviando..."
+        className={`${BASE} border-gold/40 text-gold opacity-60`}
+      >
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
       </button>
     );
   }
@@ -41,10 +34,10 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
     return (
       <button
         disabled
-        className={`${BASE} border border-green-500/40 text-green-500`}
+        title={`Enviado em ${quando}${onde ? ` • em ${onde}` : ""}`}
+        className={`${BASE} border-green-500/40 text-green-500`}
       >
-        <Check className="h-4 w-4" /> Enviado {quando}
-        {onde ? ` • em ${onde}` : ""}
+        <Check className="h-3.5 w-3.5" />
       </button>
     );
   }
@@ -53,9 +46,10 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
     return (
       <button
         onClick={() => enviar()}
-        className={`${BASE} border border-amber-500/40 text-amber-500 hover:bg-amber-500/10`}
+        title={`Falhou: ${erro ?? "erro"} (clique pra tentar de novo)`}
+        className={`${BASE} border-amber-500/40 text-amber-500 hover:bg-amber-500/10`}
       >
-        <AlertTriangle className="h-4 w-4" /> Falhou • tentar de novo
+        <AlertTriangle className="h-3.5 w-3.5" />
       </button>
     );
   }
@@ -64,20 +58,21 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
     return (
       <button
         disabled
-        className={`${BASE} border border-red-500/40 text-red-500`}
+        title={`Rejeitado: ${erro ?? "erro"}`}
+        className={`${BASE} border-red-500/40 text-red-500`}
       >
-        <X className="h-4 w-4" /> Rejeitado: {truncate(erro ?? "erro", 40)}
+        <X className="h-3.5 w-3.5" />
       </button>
     );
   }
 
-  // nao_enviado
   return (
     <button
       onClick={() => enviar()}
+      title="Enviar pra SNCF"
       className={`${BASE} gold-border text-gold hover:bg-gold/10`}
     >
-      <Send className="h-4 w-4" /> Enviar pra SNCF
+      <Send className="h-3.5 w-3.5" />
     </button>
   );
 }
