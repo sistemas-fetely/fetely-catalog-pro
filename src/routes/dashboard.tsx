@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  TrendingUp, Package, DollarSign, ShoppingBag, Users, Trophy, Percent, Sparkles,
+  TrendingUp, Package, DollarSign, ShoppingBag, Users, Trophy, Percent, Sparkles, Boxes, Layers,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 import { supabase } from "@/integrations/supabase/client";
