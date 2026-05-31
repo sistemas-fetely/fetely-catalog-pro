@@ -38,11 +38,15 @@ export function CartCommercialPanel({
     observacaoInterna,
     usarReservada,
     condicaoSelecionadaId,
+    freteGratis,
+    liberarTodasCondicoes,
     setDescontoPct,
     setJustificativa,
     setObservacaoInterna,
     setUsarReservada,
     setCondicaoSelecionadaId,
+    setFreteGratis,
+    setLiberarTodasCondicoes,
     desativar,
   } = useNegotiation();
 
