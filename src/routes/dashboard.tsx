@@ -493,21 +493,21 @@ function DashboardPage() {
               <AreaChart data={timeseries} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="evoFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--gold))" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="hsl(var(--gold))" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--gold)" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="var(--gold)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fill: "hsl(var(--text-muted))", fontSize: 10 }}
+                  tick={{ fill: "var(--text-muted)", fontSize: 10 }}
                   tickLine={false}
-                  axisLine={{ stroke: "hsl(var(--border))" }}
+                  axisLine={{ stroke: "var(--border)" }}
                   interval="preserveStartEnd"
                   minTickGap={24}
                 />
                 <YAxis
-                  tick={{ fill: "hsl(var(--text-muted))", fontSize: 10 }}
+                  tick={{ fill: "var(--text-muted)", fontSize: 10 }}
                   tickLine={false}
                   axisLine={false}
                   width={chartMetric === "valor" ? 64 : 36}
@@ -521,12 +521,12 @@ function DashboardPage() {
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "hsl(var(--surface-2))",
-                    border: "1px solid hsl(var(--border))",
+                    background: "var(--surface-2)",
+                    border: "1px solid var(--border)",
                     borderRadius: 8,
                     fontSize: 12,
                   }}
-                  labelStyle={{ color: "hsl(var(--text-muted))", fontSize: 11 }}
+                  labelStyle={{ color: "var(--text-muted)", fontSize: 11 }}
                   formatter={(value: number) =>
                     chartMetric === "valor"
                       ? [formatBRL(value), "Faturamento"]
@@ -536,7 +536,7 @@ function DashboardPage() {
                 <Area
                   type="monotone"
                   dataKey={chartMetric}
-                  stroke="hsl(var(--gold))"
+                  stroke="var(--gold)"
                   strokeWidth={2}
                   fill="url(#evoFill)"
                 />
