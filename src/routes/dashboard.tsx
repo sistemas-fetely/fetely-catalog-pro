@@ -2,8 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  TrendingUp, Package, DollarSign, ShoppingBag, Users, Trophy, Percent, Sparkles, Boxes, Layers,
+  TrendingUp, Package, DollarSign, ShoppingBag, Users, Trophy, Percent, Sparkles, Boxes, Layers, LineChart as LineChartIcon,
 } from "lucide-react";
+import {
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
+} from "recharts";
 import { useAuth } from "@/store/authStore";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
@@ -89,6 +92,7 @@ function DashboardPage() {
 
   const [periodo, setPeriodo] = useState<Periodo>("mes_atual");
   const [rankingMetric, setRankingMetric] = useState<"valor" | "quantidade">("valor");
+  const [chartMetric, setChartMetric] = useState<"valor" | "pedidos">("valor");
   const [vendedorFiltro, setVendedorFiltro] = useState<string>("todos");
   const range = useMemo(() => rangeFor(periodo), [periodo]);
   const rangeAnterior = useMemo(() => {
@@ -259,6 +263,39 @@ function DashboardPage() {
     return c ? { key: c, nome: c } : null;
   });
 
+  // ─── Série temporal (evolução diária) ─────────────────────────────────
+  const timeseries = (() => {
+    const buckets = new Map<string, { valor: number; pedidos: number }>();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const totalDays = Math.min(
+      Math.ceil((range.to.getTime() - range.from.getTime()) / dayMs),
+      92,
+    );
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(range.from.getTime() + i * dayMs);
+      const k = d.toISOString().slice(0, 10);
+      buckets.set(k, { valor: 0, pedidos: 0 });
+    }
+    orders.forEach((o) => {
+      const k = new Date(o.created_at).toISOString().slice(0, 10);
+      const cur = buckets.get(k) ?? { valor: 0, pedidos: 0 };
+      cur.valor += Number(o.total || 0);
+      cur.pedidos += 1;
+      buckets.set(k, cur);
+    });
+    return Array.from(buckets.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, v]) => ({
+        date,
+        label: new Date(date + "T00:00:00").toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+        }),
+        valor: Math.round(v.valor),
+        pedidos: v.pedidos,
+      }));
+  })();
+
 
   // ─── Desconto médio (vendedor) ────────────────────────────────────────
   const descontoMedio =
@@ -405,6 +442,108 @@ function DashboardPage() {
             />
           </>
         )}
+      </section>
+
+      {/* Evolução no período */}
+      <section className="rounded-lg gold-border bg-surface overflow-hidden">
+        <header className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-border bg-surface-2">
+          <div className="flex items-center gap-2">
+            <LineChartIcon className="h-4 w-4 text-gold" />
+            <h2 className="font-display text-lg sm:text-xl">Evolução no período</h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline text-[10px] uppercase tracking-wider text-text-muted">
+              {range.label}
+            </span>
+            <div className="inline-flex rounded-md border border-border bg-surface p-0.5 text-[10px] uppercase tracking-wider">
+              <button
+                type="button"
+                onClick={() => setChartMetric("valor")}
+                className={
+                  "px-3 py-1.5 rounded " +
+                  (chartMetric === "valor"
+                    ? "bg-gold text-background"
+                    : "text-text-secondary hover:text-text-primary")
+                }
+              >
+                Faturamento
+              </button>
+              <button
+                type="button"
+                onClick={() => setChartMetric("pedidos")}
+                className={
+                  "px-3 py-1.5 rounded " +
+                  (chartMetric === "pedidos"
+                    ? "bg-gold text-background"
+                    : "text-text-secondary hover:text-text-primary")
+                }
+              >
+                Pedidos
+              </button>
+            </div>
+          </div>
+        </header>
+        <div className="p-3 sm:p-4 h-[260px] sm:h-[300px]">
+          {loadingOrders ? (
+            <div className="h-full flex items-center justify-center text-sm text-text-muted">
+              Carregando...
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={timeseries} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="evoFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--gold)" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="var(--gold)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: "var(--text-muted)", fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={{ stroke: "var(--border)" }}
+                  interval="preserveStartEnd"
+                  minTickGap={24}
+                />
+                <YAxis
+                  tick={{ fill: "var(--text-muted)", fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={chartMetric === "valor" ? 64 : 36}
+                  tickFormatter={(v) =>
+                    chartMetric === "valor"
+                      ? v >= 1000
+                        ? `${(v / 1000).toFixed(0)}k`
+                        : String(v)
+                      : String(v)
+                  }
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--surface-2)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                  labelStyle={{ color: "var(--text-muted)", fontSize: 11 }}
+                  formatter={(value: number) =>
+                    chartMetric === "valor"
+                      ? [formatBRL(value), "Faturamento"]
+                      : [String(value), "Pedidos"]
+                  }
+                />
+                <Area
+                  type="monotone"
+                  dataKey={chartMetric}
+                  stroke="var(--gold)"
+                  strokeWidth={2}
+                  fill="url(#evoFill)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
       </section>
 
       {/* Ranking de vendedores — somente admin/master */}
