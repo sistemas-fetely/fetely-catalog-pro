@@ -411,6 +411,62 @@ function DashboardPage() {
         </section>
       )}
 
+      {/* Ranking de produtos e coleções */}
+      {(rankingProdutos.length > 0 || rankingColecoes.length > 0 || loadingItems) && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-lg sm:text-xl">Top produtos & coleções</h2>
+            <div className="inline-flex rounded-md border border-border bg-surface-2 p-0.5 text-[10px] uppercase tracking-wider">
+              <button
+                type="button"
+                onClick={() => setRankingMetric("valor")}
+                className={
+                  "px-3 py-1.5 rounded " +
+                  (rankingMetric === "valor"
+                    ? "bg-gold text-background"
+                    : "text-text-secondary hover:text-text-primary")
+                }
+              >
+                Por valor
+              </button>
+              <button
+                type="button"
+                onClick={() => setRankingMetric("quantidade")}
+                className={
+                  "px-3 py-1.5 rounded " +
+                  (rankingMetric === "quantidade"
+                    ? "bg-gold text-background"
+                    : "text-text-secondary hover:text-text-primary")
+                }
+              >
+                Por quantidade
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+            <RankingList
+              icon={<Boxes className="h-4 w-4 text-gold" />}
+              title="Produtos"
+              rows={rankingProdutos.slice(0, 8)}
+              metric={rankingMetric}
+              loading={loadingItems}
+              emptyLabel="Nenhum produto neste período."
+            />
+            <RankingList
+              icon={<Layers className="h-4 w-4 text-gold" />}
+              title="Coleções"
+              rows={rankingColecoes.slice(0, 8)}
+              metric={rankingMetric}
+              loading={loadingItems}
+              emptyLabel="Nenhuma coleção neste período."
+            />
+          </div>
+        </section>
+      )}
+
+
+
       {/* Tabela de pedidos */}
       <section className="rounded-lg gold-border bg-surface overflow-hidden">
         <header className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-border bg-surface-2">
