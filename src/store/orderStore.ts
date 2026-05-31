@@ -306,6 +306,88 @@ export const useOrder = create<OrderState>()(
             if (error) console.error("[orderStore] reassignOrder falhou:", error, orderId);
           });
       },
+      deleteOrder: async (orderId) => {
+        const prev = get().history;
+        set((s) => ({ history: s.history.filter((o) => o.id !== orderId) }));
+        try {
+          await supabase.from("order_items").delete().eq("order_id", orderId);
+          const { error } = await supabase.from("orders").delete().eq("id", orderId);
+          if (error) throw error;
+        } catch (err) {
+          console.error("[orderStore] deleteOrder falhou:", err, orderId);
+          set({ history: prev });
+          throw err instanceof Error ? err : new Error(String(err));
+        }
+      },
+      reprovarOrder: async (orderId, motivo) => {
+        const auth = useAuth.getState();
+        if (!auth.user?.id) throw new Error("Sessão expirada.");
+        const reprovadoEm = new Date().toISOString();
+        const reprovadoPorNome =
+          auth.profile?.nome_completo ?? auth.profile?.email ?? auth.user.email ?? "—";
+        const prev = get().history;
+        set((s) => ({
+          history: s.history.map((o) =>
+            o.id === orderId
+              ? {
+                  ...o,
+                  reprovado: true,
+                  reprovadoEm,
+                  reprovadoMotivo: motivo,
+                  reprovadoPorId: auth.user!.id,
+                  reprovadoPorNome,
+                }
+              : o,
+          ),
+        }));
+        const { error } = await supabase
+          .from("orders")
+          .update({
+            reprovado: true,
+            reprovado_em: reprovadoEm,
+            reprovado_motivo: motivo,
+            reprovado_por_id: auth.user.id,
+            reprovado_por_nome: reprovadoPorNome,
+          } as never)
+          .eq("id", orderId);
+        if (error) {
+          console.error("[orderStore] reprovarOrder falhou:", error, orderId);
+          set({ history: prev });
+          throw new Error(error.message);
+        }
+      },
+      desfazerReprovacao: async (orderId) => {
+        const prev = get().history;
+        set((s) => ({
+          history: s.history.map((o) =>
+            o.id === orderId
+              ? {
+                  ...o,
+                  reprovado: false,
+                  reprovadoEm: null,
+                  reprovadoMotivo: null,
+                  reprovadoPorId: null,
+                  reprovadoPorNome: null,
+                }
+              : o,
+          ),
+        }));
+        const { error } = await supabase
+          .from("orders")
+          .update({
+            reprovado: false,
+            reprovado_em: null,
+            reprovado_motivo: null,
+            reprovado_por_id: null,
+            reprovado_por_nome: null,
+          } as never)
+          .eq("id", orderId);
+        if (error) {
+          console.error("[orderStore] desfazerReprovacao falhou:", error, orderId);
+          set({ history: prev });
+          throw new Error(error.message);
+        }
+      },
     }),
     {
       name: "fetely-order",
