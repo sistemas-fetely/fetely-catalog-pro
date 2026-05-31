@@ -23,6 +23,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const photo =
     getProdutoPhoto(photos, product.colecao, product.sku) ??
     getProdutoPhoto(photos, product.colecao, product.corNome);
+  const isVelaCategory = product.categoria === "Luz e Momento";
+  const showUnitPrice = !isVelaCategory && product.qtdKit > 1;
   const indisponivel = isPublic
     ? product.precoVarejo <= 0
     : product.precoAtacado <= 0;
@@ -103,7 +105,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <span className="text-xl font-semibold text-gold leading-none">
               {indisponivel ? "—" : formatBRL(product.precoVarejo)}
             </span>
-            {!indisponivel && product.qtdKit > 1 && product.precoVarejo > 0 && (
+            {!indisponivel && showUnitPrice && product.precoVarejo > 0 && (
               <div className="mt-1 text-[10px] text-text-muted">
                 {formatBRL(product.precoVarejo / product.qtdKit)} / un. ({product.qtdKit} un. por kit)
               </div>
@@ -116,7 +118,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <span className="text-xl font-semibold text-gold leading-none">
                 {indisponivel ? "—" : formatBRL(product.precoAtacado)}
               </span>
-              {!indisponivel && product.qtdKit > 1 && product.precoAtacado > 0 && (
+              {!indisponivel && showUnitPrice && product.precoAtacado > 0 && (
                 <div className="mt-1 text-[10px] text-text-muted">
                   {formatBRL(product.precoAtacado / product.qtdKit)} / un.
                 </div>
@@ -128,7 +130,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 <span className="text-sm text-text-secondary leading-none">
                   {formatBRL(product.precoVarejo)}
                 </span>
-                {product.qtdKit > 1 && (
+                {showUnitPrice && (
                   <div className="mt-1 text-[10px] text-text-muted">
                     {formatBRL(product.precoVarejo / product.qtdKit)} / un.
                   </div>
@@ -137,7 +139,7 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
         )}
-        {!isPublic && product.qtdKit > 1 && (
+        {!isPublic && showUnitPrice && (
           <div className="text-[10px] text-text-muted -mt-1">
             Kit com {product.qtdKit} un.
           </div>
