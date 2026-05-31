@@ -108,8 +108,8 @@ export function CutleryGrid({ products, colecao, onColorChange }: Props) {
         </div>
       </div>
 
-      {/* Preencher coleção (todas as cores) */}
-      <CollectionBulkFiller products={products} />
+      {/* Preencher (cor atual) */}
+      <CollectionBulkFiller key={color} products={filtered} />
 
       {/* Atalhos por caixa (cor atual) */}
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-gold/30 bg-surface-2/60 p-4">
