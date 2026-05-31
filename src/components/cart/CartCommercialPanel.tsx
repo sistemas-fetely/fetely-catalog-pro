@@ -155,7 +155,7 @@ export function CartCommercialPanel({
                 <div className="text-[10px] uppercase tracking-[0.25em] text-gold-muted">
                   {premissas ? "Condições homologadas" : `Faixa ${faixa.id}`}
                 </div>
-                <div className="font-display text-2xl text-gold flex items-center gap-2">
+                <div className="font-display text-xl sm:text-2xl text-gold flex items-center gap-2">
                   {premissas ? (
                     <>
                       <Award className="h-4 w-4" /> Comerciais Homologadas
