@@ -7,7 +7,17 @@ const corsHeaders = {
 };
 
 const SNCF_URL = "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/recebe-pedido";
-const SNCF_ORIGENS_ACEITAS = ["fetely", "lovable", "sistema", "manual", "importacao"];
+const SNCF_ORIGENS_ACEITAS = [
+  "pedido_b2b",
+  "integracao",
+  "integracao_fetely",
+  "portal_b2b",
+  "sistema",
+  "manual",
+  "importacao",
+  "fetely",
+  "lovable",
+];
 
 function isErroOrigem(body: any): boolean {
   return body?.code === "23514" && String(body?.error ?? "").includes("origem_check");
