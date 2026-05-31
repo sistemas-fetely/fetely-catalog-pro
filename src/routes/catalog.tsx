@@ -179,6 +179,12 @@ function CatalogPage() {
                   colecao={colecao}
                   onColorChange={handleColorChange}
                 />
+              ) : isCutlery && !isPublic ? (
+                <CutleryGrid
+                  products={colecaoProducts}
+                  colecao={colecao}
+                  onColorChange={handleColorChange}
+                />
               ) : (
                 <>
                   {!isPublic && meta?.categoria === "Celebrar à Mesa" && (
