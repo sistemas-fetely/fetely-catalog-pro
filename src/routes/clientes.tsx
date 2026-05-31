@@ -568,11 +568,19 @@ function ClienteDetail({
           <div className="text-[10px] uppercase tracking-[0.25em] text-gold-muted">
             Ficha do cliente
           </div>
-          <h2 className="font-display text-2xl text-text-primary truncate mt-1">
-            {cliente.nomeFantasia || cliente.razaoSocial}
+          <h2 className="font-display text-2xl text-text-primary truncate mt-1 flex items-center gap-2">
+            <span className="truncate">{cliente.nomeFantasia || cliente.razaoSocial}</span>
+            {cliente.isInternacional && (
+              <span className="shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full border bg-gold/10 border-gold/40 text-gold">
+                🌐 Internacional
+              </span>
+            )}
           </h2>
           <div className="text-xs text-text-secondary mt-1">
-            {cliente.cnpjFormatado || "Sem CNPJ"} · {cliente.cidade}/{cliente.estado}
+            {cliente.isInternacional
+              ? `${cliente.pais ?? "—"} · ${cliente.documentoTipo ?? ""} ${cliente.documentoNumero ?? ""}`.trim()
+              : cliente.cnpjFormatado || "Sem CNPJ"}{" "}
+            · {cliente.cidade || "—"}/{cliente.estado || "—"}
           </div>
         </div>
         <button
