@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, ClipboardList, FileClock, LayoutDashboard, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
+import { BarChart3, ChevronDown, ClipboardList, FileClock, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
@@ -116,10 +116,6 @@ export function Header() {
           {/* Primary nav (left group) — apenas usuários autenticados */}
           {isInternalUser && (
             <nav className="hidden md:flex items-center gap-1 ml-2">
-              <Link to="/dashboard" className={navLinkClass(pathname.startsWith("/dashboard"))}>
-                <LayoutDashboard className="h-4 w-4" />
-                <span className="hidden lg:inline px-1 py-1.5">Dashboard</span>
-              </Link>
               <Link to="/catalog" className={navLinkClass(pathname.startsWith("/catalog"))}>
                 <span className="px-2 py-1.5">Catálogo</span>
               </Link>
@@ -162,6 +158,26 @@ export function Header() {
                 </span>
                 <Lock className="h-3 w-3" /> Negociação
               </Link>
+            )}
+
+            {/* Dashboard link */}
+            {isInternalUser && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    to="/dashboard"
+                    className={`hidden md:flex items-center justify-center p-2 rounded-md transition ${
+                      pathname.startsWith("/dashboard")
+                        ? "text-gold bg-surface-hover"
+                        : "text-text-secondary hover:text-gold hover:bg-surface-hover"
+                    }`}
+                    aria-label="Dashboard"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Dashboard</TooltipContent>
+              </Tooltip>
             )}
 
             {/* Settings link */}
