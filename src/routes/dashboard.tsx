@@ -125,13 +125,15 @@ function DashboardPage() {
   // Período anterior para deltas
   const { data: ordersPrev = [] } = useQuery({
     enabled: !!session && !isCliente,
-    queryKey: ["dashboard-orders-prev", rangeAnterior.from.toISOString(), rangeAnterior.to.toISOString()],
+    queryKey: ["dashboard-orders-prev", rangeAnterior.from.toISOString(), rangeAnterior.to.toISOString(), vendedorFiltro],
     queryFn: async (): Promise<OrderRow[]> => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("orders")
         .select("total, total_unidades")
         .gte("created_at", rangeAnterior.from.toISOString())
         .lt("created_at", rangeAnterior.to.toISOString());
+      if (vendedorFiltro !== "todos") q = q.eq("vendedor_id", vendedorFiltro);
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as OrderRow[];
     },
@@ -141,13 +143,15 @@ function DashboardPage() {
   // RLS em order_items filtra automaticamente pelo perfil
   const { data: items = [], isLoading: loadingItems } = useQuery({
     enabled: !!session && !isCliente,
-    queryKey: ["dashboard-items", range.from.toISOString(), range.to.toISOString()],
+    queryKey: ["dashboard-items", range.from.toISOString(), range.to.toISOString(), vendedorFiltro],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("order_items")
-        .select("sku, quantity, subtotal_bruto, product_snapshot, orders!inner(created_at)")
+        .select("sku, quantity, subtotal_bruto, product_snapshot, orders!inner(created_at, vendedor_id)")
         .gte("orders.created_at", range.from.toISOString())
         .lt("orders.created_at", range.to.toISOString());
+      if (vendedorFiltro !== "todos") q = q.eq("orders.vendedor_id", vendedorFiltro);
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as Array<{
         sku: string;
@@ -155,6 +159,25 @@ function DashboardPage() {
         subtotal_bruto: number;
         product_snapshot: { nomeComercial?: string; colecao?: string; corNome?: string } | null;
       }>;
+    },
+  });
+
+  // Lista de vendedores para o filtro (admin/master)
+  const { data: vendedoresList = [] } = useQuery({
+    enabled: !!session && isAdminOrMaster,
+    queryKey: ["dashboard-vendedores-list"],
+    queryFn: async (): Promise<Array<{ id: string; nome: string }>> => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, nome_completo")
+        .not("tipo_vendedor", "is", null)
+        .eq("ativo", true)
+        .order("nome_completo", { ascending: true });
+      if (error) throw error;
+      return (data ?? []).map((p) => ({
+        id: p.id as string,
+        nome: (p.nome_completo as string) ?? "—",
+      }));
     },
   });
 
