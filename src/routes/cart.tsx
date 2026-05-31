@@ -303,6 +303,9 @@ function CartPage() {
       observacaoInterna: negotiationAtivo ? negObservacaoInterna : "",
       usouReservada: negotiationAtivo && negUsarReservada,
       premissasAplicadas: !!c.premissasAplicadas,
+      freteValor: c.freteValor ?? 0,
+      fretePercent: c.fretePercent,
+      freteIsento: c.freteIsento ?? false,
     };
     const metaCompleto = {
       ...meta,
