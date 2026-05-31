@@ -5,6 +5,7 @@ import { formatBRL } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
+import { CollectionBulkFiller } from "@/components/catalog/CollectionBulkFiller";
 import type { Product } from "@/types";
 
 interface Props {
