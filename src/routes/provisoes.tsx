@@ -117,9 +117,21 @@ function ProvisoesPage() {
                   onClick={() => setOpenId(p.id)}
                   className={`border-t border-border/50 hover:bg-surface-hover cursor-pointer transition ${
                     p.id === highlight ? "bg-gold/5" : ""
-                  }`}
+                  } ${p.reprovado ? "bg-stock-out/5" : ""}`}
                 >
-                  <td className="px-4 py-3 font-mono text-xs text-gold">{p.id}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-gold">
+                    <div className="flex items-center gap-2">
+                      {p.id}
+                      {p.reprovado && (
+                        <span
+                          title={p.reprovadoMotivo ?? ""}
+                          className="inline-flex items-center gap-1 rounded-full border border-stock-out/40 bg-stock-out/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-stock-out"
+                        >
+                          <XCircle className="h-2.5 w-2.5" /> Reprovada
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="text-text-primary truncate max-w-[200px]">
                       {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
