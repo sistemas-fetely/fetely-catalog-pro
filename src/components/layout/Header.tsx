@@ -315,6 +315,13 @@ export function Header() {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
+                    onClick={() => setChangePwOpen(true)}
+                    className="flex items-center gap-2 cursor-pointer text-text-secondary focus:text-gold"
+                  >
+                    <KeyRound className="h-4 w-4" />
+                    <span className="text-xs uppercase tracking-wider">Mudar senha</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
                     onClick={() => signOut()}
                     className="flex items-center gap-2 cursor-pointer text-text-secondary focus:text-gold"
                   >
