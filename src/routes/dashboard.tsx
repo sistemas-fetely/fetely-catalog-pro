@@ -263,6 +263,40 @@ function DashboardPage() {
     return c ? { key: c, nome: c } : null;
   });
 
+  // ─── Série temporal (evolução diária) ─────────────────────────────────
+  const timeseries = useMemo(() => {
+    const buckets = new Map<string, { valor: number; pedidos: number }>();
+    // Pré-popula dias do período para curvas contínuas (até 92 dias)
+    const dayMs = 24 * 60 * 60 * 1000;
+    const totalDays = Math.min(
+      Math.ceil((range.to.getTime() - range.from.getTime()) / dayMs),
+      92,
+    );
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(range.from.getTime() + i * dayMs);
+      const k = d.toISOString().slice(0, 10);
+      buckets.set(k, { valor: 0, pedidos: 0 });
+    }
+    orders.forEach((o) => {
+      const k = new Date(o.created_at).toISOString().slice(0, 10);
+      const cur = buckets.get(k) ?? { valor: 0, pedidos: 0 };
+      cur.valor += Number(o.total || 0);
+      cur.pedidos += 1;
+      buckets.set(k, cur);
+    });
+    return Array.from(buckets.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, v]) => ({
+        date,
+        label: new Date(date + "T00:00:00").toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+        }),
+        valor: Math.round(v.valor),
+        pedidos: v.pedidos,
+      }));
+  }, [orders, range]);
+
 
   // ─── Desconto médio (vendedor) ────────────────────────────────────────
   const descontoMedio =
