@@ -10,6 +10,8 @@ import { PremissasComercialTab } from "@/components/clientes/PremissasComercialT
 import { diffPremissas } from "@/lib/premissas";
 import {
   CANAL_LABEL,
+  DOCUMENTO_TIPOS,
+  PAISES_LIST,
   SEGMENTO_LABEL,
   UF_LIST,
   type CanalCliente,
