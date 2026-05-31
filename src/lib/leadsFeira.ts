@@ -7,6 +7,7 @@ export type SegmentoLead =
   | "buffet_eventos"
   | "floricultura"
   | "decoradora"
+  | "representacao"
   | "outro";
 
 export interface Lead {
@@ -28,6 +29,7 @@ export const SEGMENTO_LABEL: Record<SegmentoLead, string> = {
   buffet_eventos: "Buffet & Eventos",
   floricultura: "Floricultura",
   decoradora: "Decoradora",
+  representacao: "Representação",
   outro: "Outro",
 };
 
