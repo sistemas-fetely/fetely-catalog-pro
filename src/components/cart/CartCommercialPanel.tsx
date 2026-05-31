@@ -146,7 +146,8 @@ export function CartCommercialPanel({
   return (
     <div className="space-y-4">
       {/* Painel de faixa */}
-      <div className="rounded-lg gold-border bg-surface p-5 space-y-3">
+      <div className="rounded-lg gold-border bg-surface p-4 sm:p-5 space-y-3">
+
         {faixa ? (
           <>
             <div className="flex items-center justify-between">
@@ -154,7 +155,7 @@ export function CartCommercialPanel({
                 <div className="text-[10px] uppercase tracking-[0.25em] text-gold-muted">
                   {premissas ? "Condições homologadas" : `Faixa ${faixa.id}`}
                 </div>
-                <div className="font-display text-2xl text-gold flex items-center gap-2">
+                <div className="font-display text-xl sm:text-2xl text-gold flex items-center gap-2">
                   {premissas ? (
                     <>
                       <Award className="h-4 w-4" /> Comerciais Homologadas
@@ -256,7 +257,7 @@ export function CartCommercialPanel({
                 <span className="text-xs uppercase tracking-wider text-text-secondary">
                   {calculo.aplicouPix ? "Valor com PIX" : "Valor final"}
                 </span>
-                <span className="font-display text-3xl text-gold">
+                <span className="font-display text-2xl sm:text-3xl text-gold">
                   {formatBRL(calculo.total)}
                 </span>
               </div>
@@ -337,7 +338,7 @@ export function CartCommercialPanel({
 
       {/* Seletor de pagamento */}
       {faixa && (
-        <div className="rounded-lg gold-border bg-surface p-5 space-y-3">
+        <div className="rounded-lg gold-border bg-surface p-4 sm:p-5 space-y-3">
           <h3 className="text-xs uppercase tracking-[0.2em] text-gold-muted">
             Forma de pagamento
           </h3>
@@ -352,7 +353,7 @@ export function CartCommercialPanel({
 
       {/* Modo negociação ativo */}
       {ativo && faixa && (
-        <div className="rounded-lg border border-gold/50 bg-gold/5 p-5 space-y-4">
+        <div className="rounded-lg border border-gold/50 bg-gold/5 p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-gold">
               <Lock className="h-4 w-4" />

@@ -303,11 +303,11 @@ function CartPage() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-3 py-4 sm:px-6 sm:py-10">
-      <div className="mb-5 sm:mb-8 flex items-center justify-between gap-3">
+    <main className="mx-auto max-w-[1400px] px-3 py-4 sm:px-6 sm:py-8 lg:py-10 pb-28 lg:pb-10">
+      <div className="mb-4 sm:mb-6 lg:mb-8 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-[0.3em] text-gold">Revisão</div>
-          <h1 className="font-display text-2xl sm:text-4xl mt-1 truncate">Carrinho do Pedido</h1>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl mt-1 truncate">Carrinho do Pedido</h1>
         </div>
         <Link
           to="/new-order"
@@ -318,13 +318,13 @@ function CartPage() {
       </div>
 
       {meta.provisaoOrigemId && (
-        <div className="mb-4 rounded-md border border-stock-pre/40 bg-stock-pre/10 px-4 py-3 text-xs text-stock-pre">
+        <div className="mb-4 rounded-md border border-stock-pre/40 bg-stock-pre/10 px-3 py-2.5 sm:px-4 sm:py-3 text-xs text-stock-pre">
           ⚡ Estes itens vieram da Provisão <strong>{meta.provisaoOrigemId}</strong>. Verifique quantidades e condições antes de confirmar.
         </div>
       )}
 
       {isMisto && (
-        <div className="mb-5">
+        <div className="mb-4 sm:mb-5">
           <MixedCartBanner
             firmeCount={itensFirmes.length}
             firmeTotal={totalFirme}
@@ -334,7 +334,8 @@ function CartPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-5 lg:gap-7 xl:gap-8">
+
         <div className="space-y-4 sm:space-y-6">
           {groupedFirmes.length > 0 && (
             <div className="text-[10px] uppercase tracking-[0.25em] text-stock-in font-semibold">
@@ -417,7 +418,7 @@ function CartPage() {
           )}
 
           {apenasProvisao && (
-            <div className="rounded-lg border border-stock-pre/40 bg-stock-pre/5 p-5 space-y-2">
+            <div className="rounded-lg border border-stock-pre/40 bg-stock-pre/5 p-4 sm:p-5 space-y-2">
               <h3 className="text-[10px] uppercase tracking-[0.25em] text-stock-pre font-semibold">
                 ⚠ Carrinho 100% previsão
               </h3>
@@ -433,8 +434,9 @@ function CartPage() {
             </div>
           )}
 
-          <div className="rounded-lg gold-border bg-surface p-5 space-y-4">
-            <h2 className="font-display text-2xl">Dados do pedido</h2>
+          <div className="rounded-lg gold-border bg-surface p-4 sm:p-5 space-y-4">
+            <h2 className="font-display text-xl sm:text-2xl">Dados do pedido</h2>
+
 
             <div>
               <div className="text-[10px] uppercase tracking-[0.18em] text-text-muted mb-1.5">
@@ -458,7 +460,7 @@ function CartPage() {
             </Field>
           </div>
 
-          <div className="rounded-lg gold-border bg-surface p-5">
+          <div className="rounded-lg gold-border bg-surface p-4 sm:p-5">
             {apenasProvisao ? (
               <>
                 <p className="mb-3 text-xs text-stock-pre">
@@ -527,6 +529,42 @@ function CartPage() {
           </div>
         </aside>
       </div>
+
+      {/* Sticky mobile/tablet bottom bar */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-gold/30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-3 py-3 shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.5)]">
+        <div className="mx-auto max-w-[1400px] flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="text-[9px] uppercase tracking-[0.2em] text-text-muted">
+              {apenasProvisao ? "Referência" : commercial?.calculo.aplicouPix ? "Valor com PIX" : "Total"}
+            </div>
+            <div className="font-display text-xl text-gold truncate leading-tight">
+              {formatBRL(
+                apenasProvisao
+                  ? totalProvisaoRef
+                  : commercial?.calculo.total ?? totalFirme,
+              )}
+            </div>
+          </div>
+          {apenasProvisao ? (
+            <button
+              onClick={handleSaveOnlyProvisao}
+              disabled={!meta.clienteId}
+              className="shrink-0 rounded-md border border-stock-pre/60 bg-stock-pre/15 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-stock-pre disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Salvar Provisão
+            </button>
+          ) : (
+            <button
+              onClick={handleConfirm}
+              disabled={!commercial?.podeFinalizar || salvandoPedido}
+              className="shrink-0 rounded-md bg-gold px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-background disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {salvandoPedido ? "Salvando..." : "Confirmar"}
+            </button>
+          )}
+        </div>
+      </div>
+
 
       {showFinalConfirm && commercial?.calculo.faixa && commercial.condicao && (
         <FinalConfirmModal
