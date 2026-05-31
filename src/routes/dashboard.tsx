@@ -264,9 +264,8 @@ function DashboardPage() {
   });
 
   // ─── Série temporal (evolução diária) ─────────────────────────────────
-  const timeseries = useMemo(() => {
+  const timeseries = (() => {
     const buckets = new Map<string, { valor: number; pedidos: number }>();
-    // Pré-popula dias do período para curvas contínuas (até 92 dias)
     const dayMs = 24 * 60 * 60 * 1000;
     const totalDays = Math.min(
       Math.ceil((range.to.getTime() - range.from.getTime()) / dayMs),
@@ -295,7 +294,7 @@ function DashboardPage() {
         valor: Math.round(v.valor),
         pedidos: v.pedidos,
       }));
-  }, [orders, range]);
+  })();
 
 
   // ─── Desconto médio (vendedor) ────────────────────────────────────────
