@@ -14,7 +14,7 @@ import { FinalConfirmModal } from "@/components/cart/FinalConfirmModal";
 import { classificarItem, extrairDataPrevisao, compararPrevisao } from "@/lib/classifyItem";
 import { useProvisao } from "@/store/provisaoStore";
 import { useCotacao } from "@/store/cotacaoStore";
-import type { CartItem, OrderCommercial } from "@/types";
+import type { CartItem, OrderCommercial, OrderMeta } from "@/types";
 import type { Cliente, ClienteSnapshot } from "@/types/cliente";
 import type { ItemProvisao } from "@/types/provisao";
 import { getPremissasVigentes } from "@/lib/premissas";
