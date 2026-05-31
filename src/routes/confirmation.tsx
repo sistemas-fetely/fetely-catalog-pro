@@ -91,6 +91,9 @@ function formatOrderText(order: SavedOrder): string {
     if (c.aplicouPix) {
       lines.push(`Bônus PIX (2,5%):              – ${formatBRL(c.bonusPixValor)}`);
     }
+    if (c.frete === "FOB" && (c.freteValor ?? 0) > 0) {
+      lines.push(`Frete FOB (${(c.fretePercent ?? 0).toFixed(1).replace(".", ",")}%):              + ${formatBRL(c.freteValor ?? 0)}`);
+    }
     lines.push(sub);
     lines.push(`TOTAL FINAL:                   ${formatBRL(c.totalFinal)}`);
     lines.push("");
@@ -543,6 +546,11 @@ function PedidoResumoPrintBlock({ order }: { order: SavedOrder }) {
           )}
           {c && c.aplicouPix && c.bonusPixValor > 0 && (
             <div>Bônus PIX: − {fmt(c.bonusPixValor)}</div>
+          )}
+          {c && c.frete === "FOB" && (c.freteValor ?? 0) > 0 && (
+            <div style={{ fontWeight: 600 }}>
+              Frete FOB{c.fretePercent ? ` (${c.fretePercent.toFixed(1).replace(".", ",")}%)` : ""}: + {fmt(c.freteValor ?? 0)}
+            </div>
           )}
           {!c && <div>Pagamento: {order.meta.condicaoPagamento}</div>}
         </div>

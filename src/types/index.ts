@@ -117,6 +117,12 @@ export interface OrderCommercial {
   usouReservada: boolean;
   /** V13 — premissas comerciais homologadas foram aplicadas neste pedido */
   premissasAplicadas?: boolean;
+  /** V15 — valor de frete efetivamente cobrado (0 quando CIF/isento) */
+  freteValor?: number;
+  /** V15 — percentual usado no cálculo do frete (referência) */
+  fretePercent?: number;
+  /** V15 — true quando frete não foi cobrado (CIF ou negociação grátis) */
+  freteIsento?: boolean;
 }
 
 export interface SavedOrder {

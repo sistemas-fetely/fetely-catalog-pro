@@ -264,7 +264,17 @@ function OrdersPage() {
                     <td className="px-4 py-3 text-text-secondary">{o.meta.cnpj || "—"}</td>
                     <td className="px-4 py-3 text-right">{qty}</td>
                     <td className="px-4 py-3 text-right font-semibold text-gold">
-                      {formatBRL(o.total)}
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span>{formatBRL(o.total)}</span>
+                        {o.commercial?.frete === "FOB" && (o.commercial?.freteValor ?? 0) > 0 && (
+                          <span
+                            title={`Frete FOB cobrado${o.commercial?.fretePercent ? ` (${o.commercial.fretePercent.toFixed(1).replace(".", ",")}%)` : ""}`}
+                            className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300"
+                          >
+                            🚚 Frete FOB + {formatBRL(o.commercial.freteValor ?? 0)}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-1.5 flex-wrap justify-end">
