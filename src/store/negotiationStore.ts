@@ -25,6 +25,8 @@ interface SessionState {
   observacaoInterna: string;
   usarReservada: boolean;
   condicaoSelecionadaId: number | null;
+  freteGratis: boolean;
+  liberarTodasCondicoes: boolean;
 }
 
 interface NegotiationStore extends PersistState, SessionState {
@@ -37,6 +39,8 @@ interface NegotiationStore extends PersistState, SessionState {
   setObservacaoInterna: (v: string) => void;
   setUsarReservada: (v: boolean) => void;
   setCondicaoSelecionadaId: (id: number | null) => void;
+  setFreteGratis: (v: boolean) => void;
+  setLiberarTodasCondicoes: (v: boolean) => void;
   resetSession: () => void;
 }
 
@@ -48,6 +52,8 @@ const defaultSession: SessionState = {
   observacaoInterna: "",
   usarReservada: false,
   condicaoSelecionadaId: null,
+  freteGratis: false,
+  liberarTodasCondicoes: true,
 };
 
 export const useNegotiation = create<NegotiationStore>()(
