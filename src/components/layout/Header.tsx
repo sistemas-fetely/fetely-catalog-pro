@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BarChart3, ChevronDown, ClipboardList, FileClock, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
+import { BarChart3, ChevronDown, ClipboardList, FileClock, KeyRound, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
+import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
@@ -38,6 +39,7 @@ export function Header() {
   const isAdminOrMaster = useAuth((s) => s.isAdminOrMaster);
   const signOut = useAuth((s) => s.signOut);
   const negociacaoAtiva = useNegotiation((s) => s.ativo);
+  const [changePwOpen, setChangePwOpen] = useState(false);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -313,6 +315,13 @@ export function Header() {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
+                    onClick={() => setChangePwOpen(true)}
+                    className="flex items-center gap-2 cursor-pointer text-text-secondary focus:text-gold"
+                  >
+                    <KeyRound className="h-4 w-4" />
+                    <span className="text-xs uppercase tracking-wider">Mudar senha</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
                     onClick={() => signOut()}
                     className="flex items-center gap-2 cursor-pointer text-text-secondary focus:text-gold"
                   >
@@ -341,6 +350,7 @@ export function Header() {
         )}
 
       </header>
+      <ChangePasswordDialog open={changePwOpen} onOpenChange={setChangePwOpen} />
     </TooltipProvider>
   );
 }
