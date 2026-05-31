@@ -268,6 +268,46 @@ function Confirmation() {
                 >
                   <Printer className="h-4 w-4" /> Imprimir
                 </button>
+                {canReprovar && !order.reprovado && (
+                  <button
+                    onClick={() => setReprovarOpen(true)}
+                    className="flex items-center gap-2 rounded-md border border-stock-out/40 px-4 py-2 text-xs uppercase tracking-wider text-stock-out hover:bg-stock-out/10 transition"
+                  >
+                    <XCircle className="h-4 w-4" /> Reprovar
+                  </button>
+                )}
+                {canReprovar && order.reprovado && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await desfazerReprovacao(order.id);
+                        toast.success("Reprovação desfeita");
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "Erro ao desfazer");
+                      }
+                    }}
+                    className="flex items-center gap-2 rounded-md border border-stock-in/40 px-4 py-2 text-xs uppercase tracking-wider text-stock-in hover:bg-stock-in/10 transition"
+                  >
+                    <RotateCcw className="h-4 w-4" /> Desfazer reprovação
+                  </button>
+                )}
+                {isMaster && (
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Deletar definitivamente o pedido ${order.id}? Esta ação não pode ser desfeita.`)) return;
+                      try {
+                        await deleteOrder(order.id);
+                        toast.success("Pedido deletado");
+                        navigate({ to: "/orders" });
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "Erro ao deletar");
+                      }
+                    }}
+                    className="flex items-center gap-2 rounded-md border border-stock-out/50 px-4 py-2 text-xs uppercase tracking-wider text-stock-out hover:bg-stock-out/15 transition"
+                  >
+                    <Trash2 className="h-4 w-4" /> Deletar
+                  </button>
+                )}
                 <Link
                   to="/"
                   className="flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
