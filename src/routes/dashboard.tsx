@@ -102,9 +102,9 @@ function DashboardPage() {
   // Query principal — RLS filtra automaticamente pelo perfil do usuário
   const { data: orders = [], isLoading: loadingOrders } = useQuery({
     enabled: !!session && !isCliente,
-    queryKey: ["dashboard-orders", range.from.toISOString(), range.to.toISOString()],
+    queryKey: ["dashboard-orders", range.from.toISOString(), range.to.toISOString(), vendedorFiltro],
     queryFn: async (): Promise<OrderRow[]> => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("orders")
         .select(
           "id, created_at, vendedor_id, vendedor_nome, cliente_id, cliente_snapshot, total, total_unidades, forma_pagamento, commercial",
@@ -112,6 +112,8 @@ function DashboardPage() {
         .gte("created_at", range.from.toISOString())
         .lt("created_at", range.to.toISOString())
         .order("created_at", { ascending: false });
+      if (vendedorFiltro !== "todos") q = q.eq("vendedor_id", vendedorFiltro);
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as OrderRow[];
     },
