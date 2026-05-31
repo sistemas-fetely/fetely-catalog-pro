@@ -193,6 +193,30 @@ function Confirmation() {
             </p>
           </div>
 
+          {order.reprovado && (
+            <div className="mb-6 rounded-lg border border-stock-out/40 bg-stock-out/10 p-4 print-hide">
+              <div className="flex items-start gap-3">
+                <XCircle className="h-5 w-5 text-stock-out shrink-0 mt-0.5" />
+                <div className="flex-1 text-sm">
+                  <div className="font-semibold text-stock-out uppercase tracking-wider text-xs">
+                    Pedido reprovado
+                  </div>
+                  <p className="text-text-secondary mt-1">
+                    {order.reprovadoMotivo || "Sem motivo informado."}
+                  </p>
+                  <p className="text-[11px] text-text-muted mt-1">
+                    Por {order.reprovadoPorNome ?? "—"} em{" "}
+                    {order.reprovadoEm
+                      ? new Date(order.reprovadoEm).toLocaleString("pt-BR")
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+
+
           <div className="rounded-lg gold-border bg-surface p-6 space-y-5">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <Info label="Cliente" value={order.meta.cliente} />
