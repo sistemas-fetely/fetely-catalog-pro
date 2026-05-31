@@ -444,6 +444,108 @@ function DashboardPage() {
         )}
       </section>
 
+      {/* Evolução no período */}
+      <section className="rounded-lg gold-border bg-surface overflow-hidden">
+        <header className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-border bg-surface-2">
+          <div className="flex items-center gap-2">
+            <LineChartIcon className="h-4 w-4 text-gold" />
+            <h2 className="font-display text-lg sm:text-xl">Evolução no período</h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline text-[10px] uppercase tracking-wider text-text-muted">
+              {range.label}
+            </span>
+            <div className="inline-flex rounded-md border border-border bg-surface p-0.5 text-[10px] uppercase tracking-wider">
+              <button
+                type="button"
+                onClick={() => setChartMetric("valor")}
+                className={
+                  "px-3 py-1.5 rounded " +
+                  (chartMetric === "valor"
+                    ? "bg-gold text-background"
+                    : "text-text-secondary hover:text-text-primary")
+                }
+              >
+                Faturamento
+              </button>
+              <button
+                type="button"
+                onClick={() => setChartMetric("pedidos")}
+                className={
+                  "px-3 py-1.5 rounded " +
+                  (chartMetric === "pedidos"
+                    ? "bg-gold text-background"
+                    : "text-text-secondary hover:text-text-primary")
+                }
+              >
+                Pedidos
+              </button>
+            </div>
+          </div>
+        </header>
+        <div className="p-3 sm:p-4 h-[260px] sm:h-[300px]">
+          {loadingOrders ? (
+            <div className="h-full flex items-center justify-center text-sm text-text-muted">
+              Carregando...
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={timeseries} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="evoFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--gold))" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="hsl(var(--gold))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: "hsl(var(--text-muted))", fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={{ stroke: "hsl(var(--border))" }}
+                  interval="preserveStartEnd"
+                  minTickGap={24}
+                />
+                <YAxis
+                  tick={{ fill: "hsl(var(--text-muted))", fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={chartMetric === "valor" ? 64 : 36}
+                  tickFormatter={(v) =>
+                    chartMetric === "valor"
+                      ? v >= 1000
+                        ? `${(v / 1000).toFixed(0)}k`
+                        : String(v)
+                      : String(v)
+                  }
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "hsl(var(--surface-2))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                  labelStyle={{ color: "hsl(var(--text-muted))", fontSize: 11 }}
+                  formatter={(value: number) =>
+                    chartMetric === "valor"
+                      ? [formatBRL(value), "Faturamento"]
+                      : [String(value), "Pedidos"]
+                  }
+                />
+                <Area
+                  type="monotone"
+                  dataKey={chartMetric}
+                  stroke="hsl(var(--gold))"
+                  strokeWidth={2}
+                  fill="url(#evoFill)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </section>
+
       {/* Ranking de vendedores — somente admin/master */}
       {isAdminOrMaster && ranking.length > 0 && (
         <section className="rounded-lg gold-border bg-surface overflow-hidden">
