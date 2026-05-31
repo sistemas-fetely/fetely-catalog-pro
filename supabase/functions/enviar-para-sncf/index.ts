@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const SNCF_URL = "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/recebe-pedido";
+const SNCF_ORIGEM = "api";
 
 function jsonResponse(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -119,7 +120,7 @@ Deno.serve(async (req) => {
       condicao_solicitada: condicao,
       forma_solicitada: formaNormalizada,
       vendedor: pedido.vendedor_nome,
-      origem: "vendedor",
+      origem: SNCF_ORIGEM,
       itens_json: itens,
     };
 
