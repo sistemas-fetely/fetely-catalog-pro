@@ -108,10 +108,13 @@ export function CutleryGrid({ products, colecao, onColorChange }: Props) {
         </div>
       </div>
 
-      {/* Atalhos por caixa */}
+      {/* Preencher coleção (todas as cores) */}
+      <CollectionBulkFiller products={products} />
+
+      {/* Atalhos por caixa (cor atual) */}
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-gold/30 bg-surface-2/60 p-4">
         <span className="text-[10px] uppercase tracking-[0.2em] text-gold-muted mr-2">
-          Preencher (caixas por tipo)
+          Preencher (caixas por tipo) — {color}
         </span>
         {[1, 2, 3, 6].map((n) => (
           <button
