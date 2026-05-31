@@ -23,7 +23,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const photo =
     getProdutoPhoto(photos, product.colecao, product.sku) ??
     getProdutoPhoto(photos, product.colecao, product.corNome);
-  const indisponivel = isPublic
+  const isVelaCategory = product.categoria === "Luz e Momento";
+  const showUnitPrice = !isVelaCategory && product.qtdKit > 1;
     ? product.precoVarejo <= 0
     : product.precoAtacado <= 0;
   const canAdd = qty > 0 && isValidMultiple(qty, product.multiplos) && !indisponivel;
