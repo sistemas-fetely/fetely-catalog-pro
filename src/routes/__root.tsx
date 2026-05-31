@@ -42,6 +42,28 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+
+  const msg = String(error?.message ?? "");
+  const isChunkError =
+    msg.includes("Failed to fetch dynamically imported module") ||
+    msg.includes("Importing a module script failed") ||
+    msg.includes("error loading dynamically imported module");
+
+  useEffect(() => {
+    if (isChunkError && typeof window !== "undefined") {
+      // Chunk obsoleto após deploy — recarrega para pegar o bundle novo.
+      window.location.reload();
+    }
+  }, [isChunkError]);
+
+  if (isChunkError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <p className="text-sm text-text-secondary">Atualizando...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
