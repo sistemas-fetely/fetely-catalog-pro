@@ -15,7 +15,7 @@ function isErroOrigem(body: any): boolean {
 function erroContratoOrigemSncf(body: any) {
   return jsonResponse(502, {
     ok: false,
-    error: "Contrato de origem incompatível no SNCF: parceiros_comerciais aceita origem de fornecedor, enquanto pedidos aceita origem comercial. Ajuste o SNCF para separar as origens ou aceitar um valor comum.",
+    error: "Contrato de origem incompatível no SNCF para clientes novos: origem 'manual' é aceita no cadastro do parceiro, mas recusada no pedido; origem 'fop' é aceita no pedido, mas recusada no cadastro do parceiro. A correção definitiva deve ser feita no SNCF separando origem_parceiro de origem_pedido ou liberando um valor comum.",
     sncf_status: 500,
     sncf_response: body,
   });
