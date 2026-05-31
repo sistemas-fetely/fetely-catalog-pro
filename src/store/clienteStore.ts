@@ -157,8 +157,14 @@ export const useClientes = create<ClienteState>()(
             "Sessão não está pronta. Atualize a página antes de cadastrar o cliente.",
           );
         }
-        if (!c.cnpj || !c.razaoSocial) {
-          throw new Error("CNPJ e razão social são obrigatórios.");
+        if (!c.razaoSocial) {
+          throw new Error("Razão social é obrigatória.");
+        }
+        if (!c.isInternacional && !c.cnpj) {
+          throw new Error("CNPJ é obrigatório (ou marque como cliente internacional).");
+        }
+        if (c.isInternacional && !c.documentoNumero) {
+          throw new Error("Informe o documento de identificação do cliente internacional.");
         }
 
         const prevList = get().clientes;
