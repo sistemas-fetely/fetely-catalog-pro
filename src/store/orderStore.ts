@@ -406,18 +406,23 @@ export function cartTotal(items: CartItem[]): number {
   return items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
 }
 
-export function useVisibleOrders(): SavedOrder[] {
+export function useVisibleOrders(opts?: { includeReprovados?: boolean }): SavedOrder[] {
   const history = useOrder((s) => s.history);
   const user = useAuth((s) => s.user);
   const profile = useAuth((s) => s.profile);
   const roles = useAuth((s) => s.roles);
   const isAdminOrMaster = roles.includes("admin") || roles.includes("master");
-  if (isAdminOrMaster) return history;
+  const filterReprovados = (list: SavedOrder[]) =>
+    opts?.includeReprovados ? list : list.filter((o) => !o.reprovado);
+  if (isAdminOrMaster) return filterReprovados(history);
   if (!user) return [];
   if (roles.includes("cliente")) {
     const cid = profile?.cliente_id ?? null;
     if (!cid) return [];
-    return history.filter((o) => o.meta.clienteId === cid);
+    return filterReprovados(history.filter((o) => o.meta.clienteId === cid));
   }
-  return history.filter((o) => o.vendedorId === user.id);
+  // Vendedor: enxerga próprios pedidos + pedidos de clientes pelos quais é responsável
+  return filterReprovados(
+    history.filter((o) => o.vendedorId === user.id || o.meta.clienteSnapshot?.clienteId === user.id),
+  );
 }
