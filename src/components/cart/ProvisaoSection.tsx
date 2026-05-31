@@ -35,18 +35,18 @@ export function ProvisaoSection({ items }: { items: CartItem[] }) {
           return (
             <li
               key={item.sku}
-              className="flex flex-col sm:grid sm:grid-cols-[1fr_140px_140px_40px] sm:items-center gap-3 sm:gap-4 px-3 py-3 sm:px-5 sm:py-4 border-t border-stock-pre/10 first:border-t-0 opacity-90"
+              className="flex flex-col sm:grid sm:grid-cols-[1fr_140px_140px_40px] sm:items-center gap-3 sm:gap-4 px-3 py-3 sm:px-5 sm:py-4 border-t border-stock-pre/10 first:border-t-0"
             >
               <div className="min-w-0 flex items-start justify-between gap-2 sm:block">
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm text-text-primary line-clamp-2 sm:truncate">
+                  <div className="text-sm font-medium text-text-primary line-clamp-2 sm:truncate">
                     {item.product.nomeComercial}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="text-[10px] font-mono text-text-muted">
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <span className="text-[10px] font-mono text-text-secondary">
                       {item.product.sku} · Caixa {item.product.multiplos}
                     </span>
-                    <span className="inline-flex items-center rounded-full bg-stock-pre/15 border border-stock-pre/40 px-2 py-0.5 text-[10px] uppercase tracking-wider text-stock-pre">
+                    <span className="inline-flex items-center rounded-full bg-stock-pre/20 border border-stock-pre/50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-stock-pre font-semibold">
                       {previsao}
                     </span>
                   </div>
