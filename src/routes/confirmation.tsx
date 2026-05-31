@@ -547,6 +547,11 @@ function PedidoResumoPrintBlock({ order }: { order: SavedOrder }) {
           {c && c.aplicouPix && c.bonusPixValor > 0 && (
             <div>Bônus PIX: − {fmt(c.bonusPixValor)}</div>
           )}
+          {c && c.frete === "FOB" && (c.freteValor ?? 0) > 0 && (
+            <div style={{ fontWeight: 600 }}>
+              Frete FOB{c.fretePercent ? ` (${c.fretePercent.toFixed(1).replace(".", ",")}%)` : ""}: + {fmt(c.freteValor ?? 0)}
+            </div>
+          )}
           {!c && <div>Pagamento: {order.meta.condicaoPagamento}</div>}
         </div>
         <div style={{ textAlign: "right" }}>
