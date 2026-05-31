@@ -603,3 +603,77 @@ function KpiCard({
     </div>
   );
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// Ranking list (produtos / coleções)
+// ──────────────────────────────────────────────────────────────────────────
+
+function RankingList({
+  icon, title, rows, metric, loading, emptyLabel,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  rows: Array<{ key: string; nome: string; valor: number; quantidade: number }>;
+  metric: "valor" | "quantidade";
+  loading?: boolean;
+  emptyLabel: string;
+}) {
+  const max =
+    rows.length > 0
+      ? Math.max(...rows.map((r) => (metric === "valor" ? r.valor : r.quantidade))) || 1
+      : 1;
+
+  return (
+    <div className="rounded-lg gold-border bg-surface overflow-hidden">
+      <header className="flex items-center gap-2 px-4 sm:px-5 py-3 border-b border-border bg-surface-2">
+        {icon}
+        <h3 className="font-display text-base sm:text-lg">{title}</h3>
+        <span className="ml-auto text-[10px] uppercase tracking-wider text-text-muted">
+          {metric === "valor" ? "Valor" : "Quantidade"}
+        </span>
+      </header>
+      {loading ? (
+        <div className="p-6 text-center text-sm text-text-muted">Carregando...</div>
+      ) : rows.length === 0 ? (
+        <div className="p-6 text-center text-sm text-text-secondary">{emptyLabel}</div>
+      ) : (
+        <ul className="divide-y divide-border/50">
+          {rows.map((r, i) => {
+            const v = metric === "valor" ? r.valor : r.quantidade;
+            const pct = (v / max) * 100;
+            return (
+              <li key={r.key} className="px-4 sm:px-5 py-3 flex items-center gap-3 sm:gap-4">
+                <div className="w-6 text-center font-display text-base text-gold shrink-0">
+                  {i + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                    <span className="text-sm text-text-primary truncate">{r.nome}</span>
+                    <span className="text-xs text-text-secondary shrink-0">
+                      {metric === "valor"
+                        ? `${r.quantidade} un.`
+                        : formatBRL(r.valor)}
+                    </span>
+                  </div>
+                  <div className="relative h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                    <div
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-gold/60 to-gold rounded-full"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="text-right shrink-0 w-24 sm:w-28">
+                  <div className="text-gold font-medium text-sm">
+                    {metric === "valor"
+                      ? formatBRL(r.valor)
+                      : `${r.quantidade.toLocaleString("pt-BR")} un.`}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
