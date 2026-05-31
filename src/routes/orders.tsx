@@ -2,11 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Eye, Package, UserCog } from "lucide-react";
+import { toast } from "sonner";
+import { Download, Eye, Package, Trash2, UserCog, XCircle, RotateCcw } from "lucide-react";
 import { BotaoEnviarSncf } from "@/components/BotaoEnviarSncf";
 import { formatBRL } from "@/lib/format";
 import { useOrder, useVisibleOrders } from "@/store/orderStore";
 import { useAuth } from "@/store/authStore";
+import { useClientes } from "@/store/clienteStore";
 import { listAppUsers } from "@/lib/users.functions";
 import { ExportModal } from "@/components/export/ExportModal";
 
@@ -22,13 +24,21 @@ export const Route = createFileRoute("/orders")({
 });
 
 function OrdersPage() {
-  const history = useVisibleOrders();
+  const [showReprovados, setShowReprovados] = useState(false);
+  const history = useVisibleOrders({ includeReprovados: showReprovados });
   const isAdmin = useAuth((s) => s.roles.includes("admin"));
+  const isMaster = useAuth((s) => s.roles.includes("master"));
   const isAdminOrMaster = useAuth((s) => s.roles.includes("admin") || s.roles.includes("master"));
+  const currentUserId = useAuth((s) => s.user?.id);
+  const clientes = useClientes((s) => s.clientes);
   const reassignOrder = useOrder((s) => s.reassignOrder);
+  const deleteOrder = useOrder((s) => s.deleteOrder);
+  const reprovarOrder = useOrder((s) => s.reprovarOrder);
+  const desfazerReprovacao = useOrder((s) => s.desfazerReprovacao);
   const [query, setQuery] = useState("");
   const [vendedorFilter, setVendedorFilter] = useState<string>("all");
   const [reassignTarget, setReassignTarget] = useState<string | null>(null);
+  const [reprovarTarget, setReprovarTarget] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exportOrders, setExportOrders] = useState<typeof history | null>(null);
@@ -111,6 +121,17 @@ function OrdersPage() {
               ))}
             </select>
           )}
+          <button
+            type="button"
+            onClick={() => setShowReprovados((v) => !v)}
+            className={`rounded-md border px-3 py-2 text-[11px] uppercase tracking-wider transition ${
+              showReprovados
+                ? "border-stock-out/50 bg-stock-out/10 text-stock-out"
+                : "border-border text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            {showReprovados ? "Ocultar reprovados" : "Mostrar reprovados"}
+          </button>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}

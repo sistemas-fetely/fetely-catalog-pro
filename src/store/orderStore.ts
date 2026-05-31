@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { CartItem, OrderCommercial, OrderMeta, Product, SavedOrder } from "@/types";
 import { useAuth } from "@/store/authStore";
+import { useClientes } from "@/store/clienteStore";
 import { supabase } from "@/integrations/supabase/client";
 
 const noopStorage: Storage = {
@@ -34,6 +35,9 @@ interface OrderState {
     orderId: string,
     novo: { vendedorId: string; vendedorNome?: string | null; vendedorLogin?: string | null; vendedorTipo?: "interno" | "representante" | null },
   ) => void;
+  deleteOrder: (orderId: string) => Promise<void>;
+  reprovarOrder: (orderId: string, motivo: string) => Promise<void>;
+  desfazerReprovacao: (orderId: string) => Promise<void>;
 }
 
 const defaultMeta: OrderMeta = {
@@ -56,6 +60,11 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
     vendedorNome: (row.vendedor_nome as string | null) ?? undefined,
     vendedorLogin: (row.vendedor_login as string | null) ?? undefined,
     vendedorTipo: (row.vendedor_tipo as "interno" | "representante" | null) ?? null,
+    reprovado: Boolean(row.reprovado ?? false),
+    reprovadoEm: (row.reprovado_em as string | null) ?? null,
+    reprovadoMotivo: (row.reprovado_motivo as string | null) ?? null,
+    reprovadoPorId: (row.reprovado_por_id as string | null) ?? null,
+    reprovadoPorNome: (row.reprovado_por_nome as string | null) ?? null,
   };
 }
 
@@ -298,6 +307,88 @@ export const useOrder = create<OrderState>()(
             if (error) console.error("[orderStore] reassignOrder falhou:", error, orderId);
           });
       },
+      deleteOrder: async (orderId) => {
+        const prev = get().history;
+        set((s) => ({ history: s.history.filter((o) => o.id !== orderId) }));
+        try {
+          await supabase.from("order_items").delete().eq("order_id", orderId);
+          const { error } = await supabase.from("orders").delete().eq("id", orderId);
+          if (error) throw error;
+        } catch (err) {
+          console.error("[orderStore] deleteOrder falhou:", err, orderId);
+          set({ history: prev });
+          throw err instanceof Error ? err : new Error(String(err));
+        }
+      },
+      reprovarOrder: async (orderId, motivo) => {
+        const auth = useAuth.getState();
+        if (!auth.user?.id) throw new Error("Sessão expirada.");
+        const reprovadoEm = new Date().toISOString();
+        const reprovadoPorNome =
+          auth.profile?.nome_completo ?? auth.profile?.email ?? auth.user.email ?? "—";
+        const prev = get().history;
+        set((s) => ({
+          history: s.history.map((o) =>
+            o.id === orderId
+              ? {
+                  ...o,
+                  reprovado: true,
+                  reprovadoEm,
+                  reprovadoMotivo: motivo,
+                  reprovadoPorId: auth.user!.id,
+                  reprovadoPorNome,
+                }
+              : o,
+          ),
+        }));
+        const { error } = await supabase
+          .from("orders")
+          .update({
+            reprovado: true,
+            reprovado_em: reprovadoEm,
+            reprovado_motivo: motivo,
+            reprovado_por_id: auth.user.id,
+            reprovado_por_nome: reprovadoPorNome,
+          } as never)
+          .eq("id", orderId);
+        if (error) {
+          console.error("[orderStore] reprovarOrder falhou:", error, orderId);
+          set({ history: prev });
+          throw new Error(error.message);
+        }
+      },
+      desfazerReprovacao: async (orderId) => {
+        const prev = get().history;
+        set((s) => ({
+          history: s.history.map((o) =>
+            o.id === orderId
+              ? {
+                  ...o,
+                  reprovado: false,
+                  reprovadoEm: null,
+                  reprovadoMotivo: null,
+                  reprovadoPorId: null,
+                  reprovadoPorNome: null,
+                }
+              : o,
+          ),
+        }));
+        const { error } = await supabase
+          .from("orders")
+          .update({
+            reprovado: false,
+            reprovado_em: null,
+            reprovado_motivo: null,
+            reprovado_por_id: null,
+            reprovado_por_nome: null,
+          } as never)
+          .eq("id", orderId);
+        if (error) {
+          console.error("[orderStore] desfazerReprovacao falhou:", error, orderId);
+          set({ history: prev });
+          throw new Error(error.message);
+        }
+      },
     }),
     {
       name: "fetely-order",
@@ -316,18 +407,51 @@ export function cartTotal(items: CartItem[]): number {
   return items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
 }
 
-export function useVisibleOrders(): SavedOrder[] {
+export function useVisibleOrders(opts?: { includeReprovados?: boolean }): SavedOrder[] {
   const history = useOrder((s) => s.history);
   const user = useAuth((s) => s.user);
   const profile = useAuth((s) => s.profile);
   const roles = useAuth((s) => s.roles);
+  const clientes = useClientes((s) => s.clientes);
   const isAdminOrMaster = roles.includes("admin") || roles.includes("master");
-  if (isAdminOrMaster) return history;
+  const filterReprovados = (list: SavedOrder[]) =>
+    opts?.includeReprovados ? list : list.filter((o) => !o.reprovado);
+  if (isAdminOrMaster) return filterReprovados(history);
   if (!user) return [];
   if (roles.includes("cliente")) {
     const cid = profile?.cliente_id ?? null;
     if (!cid) return [];
-    return history.filter((o) => o.meta.clienteId === cid);
+    return filterReprovados(history.filter((o) => o.meta.clienteId === cid));
   }
-  return history.filter((o) => o.vendedorId === user.id);
+  // Vendedor: próprios pedidos + pedidos de clientes que ele cadastrou
+  const meusClienteIds = new Set(
+    clientes.filter((c) => c.cadastradoPorVendedorId === user.id).map((c) => c.id),
+  );
+  return filterReprovados(
+    history.filter(
+      (o) =>
+        o.vendedorId === user.id ||
+        (o.meta.clienteId && meusClienteIds.has(o.meta.clienteId)),
+    ),
+  );
+}
+
+/**
+ * Pode reprovar = admin/master OU vendedor do pedido OU vendedor responsável pelo cliente.
+ */
+export function useCanReprovarOrder(order: SavedOrder | null | undefined): boolean {
+  const user = useAuth((s) => s.user);
+  const roles = useAuth((s) => s.roles);
+  const clientes = useClientes((s) => s.clientes);
+  if (!order || !user) return false;
+  if (roles.includes("admin") || roles.includes("master")) return true;
+  if (order.vendedorId === user.id) return true;
+  const cliente = order.meta.clienteId
+    ? clientes.find((c) => c.id === order.meta.clienteId)
+    : null;
+  return !!cliente && cliente.cadastradoPorVendedorId === user.id;
+}
+
+export function useIsMaster(): boolean {
+  return useAuth((s) => s.roles.includes("master"));
 }

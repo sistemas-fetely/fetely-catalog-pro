@@ -513,6 +513,11 @@ export type Database = {
           id: string
           meta: Json
           provisao_origem_id: string | null
+          reprovado: boolean
+          reprovado_em: string | null
+          reprovado_motivo: string | null
+          reprovado_por_id: string | null
+          reprovado_por_nome: string | null
           sncf_enviado_em: string | null
           sncf_estagio: string | null
           sncf_pedido_id: string | null
@@ -542,6 +547,11 @@ export type Database = {
           id: string
           meta: Json
           provisao_origem_id?: string | null
+          reprovado?: boolean
+          reprovado_em?: string | null
+          reprovado_motivo?: string | null
+          reprovado_por_id?: string | null
+          reprovado_por_nome?: string | null
           sncf_enviado_em?: string | null
           sncf_estagio?: string | null
           sncf_pedido_id?: string | null
@@ -571,6 +581,11 @@ export type Database = {
           id?: string
           meta?: Json
           provisao_origem_id?: string | null
+          reprovado?: boolean
+          reprovado_em?: string | null
+          reprovado_motivo?: string | null
+          reprovado_por_id?: string | null
+          reprovado_por_nome?: string | null
           sncf_enviado_em?: string | null
           sncf_estagio?: string | null
           sncf_pedido_id?: string | null
@@ -944,6 +959,11 @@ export type Database = {
           pedido_convertido_id: string | null
           pedido_firme_id: string | null
           proxima_previsao: string
+          reprovado: boolean
+          reprovado_em: string | null
+          reprovado_motivo: string | null
+          reprovado_por_id: string | null
+          reprovado_por_nome: string | null
           status: string
           total_referencia: number
           vendedor_id: string
@@ -960,6 +980,11 @@ export type Database = {
           pedido_convertido_id?: string | null
           pedido_firme_id?: string | null
           proxima_previsao: string
+          reprovado?: boolean
+          reprovado_em?: string | null
+          reprovado_motivo?: string | null
+          reprovado_por_id?: string | null
+          reprovado_por_nome?: string | null
           status?: string
           total_referencia?: number
           vendedor_id: string
@@ -976,6 +1001,11 @@ export type Database = {
           pedido_convertido_id?: string | null
           pedido_firme_id?: string | null
           proxima_previsao?: string
+          reprovado?: boolean
+          reprovado_em?: string | null
+          reprovado_motivo?: string | null
+          reprovado_por_id?: string | null
+          reprovado_por_nome?: string | null
           status?: string
           total_referencia?: number
           vendedor_id?: string

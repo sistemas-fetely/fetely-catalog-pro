@@ -128,5 +128,11 @@ export interface SavedOrder {
   vendedorNome?: string;
   vendedorLogin?: string;
   vendedorTipo?: "interno" | "representante" | null;
+  // Reprovação (vendedor responsável pelo cliente ou admin/master)
+  reprovado?: boolean;
+  reprovadoEm?: string | null;
+  reprovadoMotivo?: string | null;
+  reprovadoPorId?: string | null;
+  reprovadoPorNome?: string | null;
 }
 

@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type { ItemProvisao, ProvisaoFutura, StatusProvisao } from "@/types/provisao";
 import type { ClienteSnapshot } from "@/types/cliente";
 import { useAuth } from "@/store/authStore";
+import { useClientes } from "@/store/clienteStore";
 import { compararPrevisao } from "@/lib/classifyItem";
 import { supabase } from "@/integrations/supabase/client";
 
