@@ -114,6 +114,8 @@ function DashboardPage() {
       return (data ?? []) as unknown as OrderRow[];
     },
   });
+  const [rankingMetric, setRankingMetric] = useState<"valor" | "quantidade">("valor");
+
 
   // Período anterior para deltas
   const { data: ordersPrev = [] } = useQuery({
