@@ -110,7 +110,7 @@ export const useNegotiation = create<NegotiationStore>()(
       resetSession: () => set({ ...defaultSession, tentativas: 0 }),
     }),
     {
-      name: "fetely-negotiation",
+      name: "fetely-negotiation-v2",
       storage: createJSONStorage(safeStorage),
       partialize: (s) => ({ masterHash: s.masterHash }),
     },
