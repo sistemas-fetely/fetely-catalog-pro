@@ -247,17 +247,25 @@ export interface CalculoPedido {
   total: number;
   totalSemPix: number;
   aplicouPix: boolean;
-  /** V13 — premissas comerciais foram aplicadas neste cálculo */
   premissasAplicadas?: boolean;
-  /** % efetivo de "desconto Celebra" depois das premissas (mostrado no painel) */
   descontoCelebraPercentEfetivo?: number;
-  /** % efetivo de bônus PIX aplicado (faixa ou personalizado) */
   bonusPixPercentEfetivo?: number;
-  /** frete efetivo (faixa ou fixo do cliente) */
   freteEfetivo?: "CIF" | "FOB";
-  /** pedido mínimo efetivo (pode ser personalizado por cliente) */
   pedidoMinimoEfetivo?: number;
+  /** Valor base de frete (3,5% do subtotal após descontos) */
+  freteBase?: number;
+  /** Valor de frete efetivamente cobrado (somado ao total quando FOB) */
+  freteValor?: number;
+  /** Percentual usado para o cálculo do frete */
+  fretePercent?: number;
+  /** true quando frete não é cobrado (CIF ou negociação grátis) */
+  freteIsento?: boolean;
+  /** true quando a isenção veio da negociação master */
+  freteGratisNegociado?: boolean;
 }
+
+/** Percentual padrão de frete sobre o subtotal após descontos. */
+export const FRETE_PERCENT = 3.5;
 
 import type { PremissasComerciais } from "@/types/cliente";
 
@@ -354,7 +362,14 @@ export function calcularPedido(args: {
       ? premissas.freteTipo
       : faixa!.frete;
 
-  const total = subtotalAposDescontos - bonusPixValor;
+  // 5. FRETE — 3,5% sobre subtotal após descontos
+  const freteBase = subtotalAposDescontos * (FRETE_PERCENT / 100);
+  const isentoPorCif = freteEfetivo === "CIF";
+  const freteIsento = freteGratisOverride || isentoPorCif;
+  const freteValor = freteIsento ? 0 : freteBase;
+
+  const subtotalComBonus = subtotalAposDescontos - bonusPixValor;
+  const total = subtotalComBonus + freteValor;
   return {
     bruto,
     faixa,
@@ -363,13 +378,18 @@ export function calcularPedido(args: {
     subtotalAposDescontos,
     bonusPixValor,
     total,
-    totalSemPix: subtotalAposDescontos,
+    totalSemPix: subtotalAposDescontos + freteValor,
     aplicouPix,
     premissasAplicadas: !!premissas,
     descontoCelebraPercentEfetivo: descontoCelebraPct,
     bonusPixPercentEfetivo: aplicouPix ? bonusPixPct : 0,
     freteEfetivo,
     pedidoMinimoEfetivo,
+    freteBase,
+    freteValor,
+    fretePercent: FRETE_PERCENT,
+    freteIsento,
+    freteGratisNegociado: freteGratisOverride,
   };
 }
 
