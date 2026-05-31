@@ -1,12 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
+import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight, XCircle, Trash2, RotateCcw } from "lucide-react";
 import { formatBRL } from "@/lib/format";
-import { useProvisao, useVisibleProvisoes } from "@/store/provisaoStore";
+import { useProvisao, useVisibleProvisoes, useCanReprovarProvisao } from "@/store/provisaoStore";
 import { useAuth } from "@/store/authStore";
 import { useCatalog } from "@/store/catalogStore";
 import { useOrder } from "@/store/orderStore";
+import { ReprovarDialog } from "@/components/ReprovarDialog";
 import { STATUS_PROVISAO_LABEL, type ProvisaoFutura, type StatusProvisao } from "@/types/provisao";
 
 const search = z.object({
