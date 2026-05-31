@@ -122,11 +122,15 @@ function ClientesPage() {
 
   const exportCSV = (subset: { cliente: Cliente; stats: ReturnType<typeof calcClienteStats> }[]) => {
     const header = [
-      "Razao Social","Nome Fantasia","CNPJ","IE","Cidade","Estado","CEP",
+      "Razao Social","Nome Fantasia","Internacional","Pais","Documento Tipo","Documento Numero",
+      "CNPJ","IE","Cidade","Estado","CEP",
       "Contato","Email","Telefone","Segmento","Canal","Total Pedidos","Total Faturado","Ultimo Pedido","Vendedor",
     ];
     const rows = subset.map(({ cliente: c, stats }) => [
-      c.razaoSocial, c.nomeFantasia, c.cnpjFormatado, c.inscricaoEstadual ?? "",
+      c.razaoSocial, c.nomeFantasia,
+      c.isInternacional ? "Sim" : "Nao",
+      c.pais ?? "", c.documentoTipo ?? "", c.documentoNumero ?? "",
+      c.cnpjFormatado, c.inscricaoEstadual ?? "",
       c.cidade, c.estado, c.cep, c.contatoNome, c.contatoEmail, c.contatoTelefone,
       SEGMENTO_LABEL[c.segmento], CANAL_LABEL[c.canal],
       String(stats.totalPedidos), stats.totalFaturado.toFixed(2),
