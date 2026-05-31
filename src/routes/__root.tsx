@@ -177,7 +177,9 @@ function BootEffects() {
       const isPublic =
         pathname === "/login" ||
         pathname === "/catalog" ||
-        pathname.startsWith("/catalog/");
+        pathname.startsWith("/catalog/") ||
+        pathname === "/stand" ||
+        pathname.startsWith("/stand/");
       if (!isPublic) {
         navigate({ to: "/login", search: { redirect: pathname } as never });
       }
