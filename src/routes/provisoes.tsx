@@ -65,16 +65,29 @@ function ProvisoesPage() {
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-1 mb-5 bg-surface-2 p-1 rounded-md w-fit">
-        <TabBtn active={tab === "aguardando"} onClick={() => setTab("aguardando")}>
-          Aguardando ({aguardandoCount})
-        </TabBtn>
-        <TabBtn active={tab === "liberado"} onClick={() => setTab("liberado")}>
-          Liberado ({liberadoCount})
-        </TabBtn>
-        <TabBtn active={tab === "todas"} onClick={() => setTab("todas")}>
-          Todas ({provisoes.length})
-        </TabBtn>
+      <div className="flex flex-wrap items-center gap-2 mb-5">
+        <div className="flex flex-wrap gap-1 bg-surface-2 p-1 rounded-md w-fit">
+          <TabBtn active={tab === "aguardando"} onClick={() => setTab("aguardando")}>
+            Aguardando ({aguardandoCount})
+          </TabBtn>
+          <TabBtn active={tab === "liberado"} onClick={() => setTab("liberado")}>
+            Liberado ({liberadoCount})
+          </TabBtn>
+          <TabBtn active={tab === "todas"} onClick={() => setTab("todas")}>
+            Todas ({provisoes.length})
+          </TabBtn>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowReprovados((v) => !v)}
+          className={`rounded-md border px-3 py-1.5 text-[11px] uppercase tracking-wider transition ${
+            showReprovados
+              ? "border-stock-out/50 bg-stock-out/10 text-stock-out"
+              : "border-border text-text-secondary hover:text-text-primary"
+          }`}
+        >
+          {showReprovados ? "Ocultar reprovadas" : "Mostrar reprovadas"}
+        </button>
       </div>
 
       {filtered.length === 0 ? (
