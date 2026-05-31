@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BookOpen,
+  Building,
   Camera,
   ChevronRight,
   Layers,
@@ -40,6 +41,12 @@ function SettingsPage() {
       to: "/portal",
       icon: ExternalLink,
       external: true,
+    },
+    {
+      label: "Captação de Leads",
+      description: "Tela para cadastro de visitantes no stand em feiras",
+      to: "/stand",
+      icon: Building,
     },
     {
       label: "Fotos",
