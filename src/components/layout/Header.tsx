@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BarChart3, ChevronDown, ClipboardList, FileClock, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
+import { BarChart3, ChevronDown, ClipboardList, FileClock, KeyRound, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
+import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
