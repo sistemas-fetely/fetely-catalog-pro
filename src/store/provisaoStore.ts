@@ -36,6 +36,9 @@ interface ProvisaoState {
   updateStatus: (id: string, status: StatusProvisao, extra?: Partial<ProvisaoFutura>) => void;
   setObservacoes: (id: string, txt: string) => void;
   cancelar: (id: string) => void;
+  deleteProvisao: (id: string) => Promise<void>;
+  reprovarProvisao: (id: string, motivo: string) => Promise<void>;
+  desfazerReprovacaoProvisao: (id: string) => Promise<void>;
 }
 
 function rowToProvisao(row: Record<string, unknown>, itens: ItemProvisao[]): ProvisaoFutura {
@@ -55,6 +58,11 @@ function rowToProvisao(row: Record<string, unknown>, itens: ItemProvisao[]): Pro
     proximaPrevisao: row.proxima_previsao as string,
     observacoes: (row.observacoes as string | null) ?? undefined,
     totalReferencia: Number(row.total_referencia ?? 0),
+    reprovado: Boolean(row.reprovado ?? false),
+    reprovadoEm: (row.reprovado_em as string | null) ?? null,
+    reprovadoMotivo: (row.reprovado_motivo as string | null) ?? null,
+    reprovadoPorId: (row.reprovado_por_id as string | null) ?? null,
+    reprovadoPorNome: (row.reprovado_por_nome as string | null) ?? null,
   };
 }
 
