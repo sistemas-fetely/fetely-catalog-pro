@@ -75,6 +75,8 @@ function ClientesPage() {
         c.nomeFantasia.toLowerCase().includes(q) ||
         (digits && c.cnpj.includes(digits)) ||
         c.cidade.toLowerCase().includes(q) ||
+        (c.pais ?? "").toLowerCase().includes(q) ||
+        (c.documentoNumero ?? "").toLowerCase().includes(q) ||
         (c.tags ?? []).some((t) => t.toLowerCase().includes(q))
       );
     });
