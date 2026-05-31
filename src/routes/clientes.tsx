@@ -75,6 +75,8 @@ function ClientesPage() {
         c.nomeFantasia.toLowerCase().includes(q) ||
         (digits && c.cnpj.includes(digits)) ||
         c.cidade.toLowerCase().includes(q) ||
+        (c.pais ?? "").toLowerCase().includes(q) ||
+        (c.documentoNumero ?? "").toLowerCase().includes(q) ||
         (c.tags ?? []).some((t) => t.toLowerCase().includes(q))
       );
     });
@@ -120,11 +122,15 @@ function ClientesPage() {
 
   const exportCSV = (subset: { cliente: Cliente; stats: ReturnType<typeof calcClienteStats> }[]) => {
     const header = [
-      "Razao Social","Nome Fantasia","CNPJ","IE","Cidade","Estado","CEP",
+      "Razao Social","Nome Fantasia","Internacional","Pais","Documento Tipo","Documento Numero",
+      "CNPJ","IE","Cidade","Estado","CEP",
       "Contato","Email","Telefone","Segmento","Canal","Total Pedidos","Total Faturado","Ultimo Pedido","Vendedor",
     ];
     const rows = subset.map(({ cliente: c, stats }) => [
-      c.razaoSocial, c.nomeFantasia, c.cnpjFormatado, c.inscricaoEstadual ?? "",
+      c.razaoSocial, c.nomeFantasia,
+      c.isInternacional ? "Sim" : "Nao",
+      c.pais ?? "", c.documentoTipo ?? "", c.documentoNumero ?? "",
+      c.cnpjFormatado, c.inscricaoEstadual ?? "",
       c.cidade, c.estado, c.cep, c.contatoNome, c.contatoEmail, c.contatoTelefone,
       SEGMENTO_LABEL[c.segmento], CANAL_LABEL[c.canal],
       String(stats.totalPedidos), stats.totalFaturado.toFixed(2),
@@ -278,6 +284,11 @@ function ClientesPage() {
             <div className="min-w-0">
               <div className={`text-sm truncate flex items-center gap-2 ${c.ativo ? "text-text-primary" : "text-text-muted"}`}>
                 <span className="truncate">{c.nomeFantasia || c.razaoSocial}</span>
+                {c.isInternacional && (
+                  <span className="shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full border bg-gold/10 border-gold/40 text-gold">
+                    🌐 Internacional
+                  </span>
+                )}
                 {(() => {
                   const st = statusPremissas(c);
                   if (st === "sem" || st === "inativa") return null;
@@ -320,7 +331,9 @@ function ClientesPage() {
               )}
             </div>
             <div className="text-xs text-text-secondary font-mono truncate">
-              {c.cnpjFormatado || "—"}
+              {c.isInternacional
+                ? `${c.pais ?? "—"} · ${c.documentoTipo ?? ""} ${c.documentoNumero ?? ""}`.trim()
+                : c.cnpjFormatado || "—"}
             </div>
             <div className="text-xs text-text-secondary truncate">
               {c.cidade}/{c.estado}
@@ -559,11 +572,19 @@ function ClienteDetail({
           <div className="text-[10px] uppercase tracking-[0.25em] text-gold-muted">
             Ficha do cliente
           </div>
-          <h2 className="font-display text-2xl text-text-primary truncate mt-1">
-            {cliente.nomeFantasia || cliente.razaoSocial}
+          <h2 className="font-display text-2xl text-text-primary truncate mt-1 flex items-center gap-2">
+            <span className="truncate">{cliente.nomeFantasia || cliente.razaoSocial}</span>
+            {cliente.isInternacional && (
+              <span className="shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full border bg-gold/10 border-gold/40 text-gold">
+                🌐 Internacional
+              </span>
+            )}
           </h2>
           <div className="text-xs text-text-secondary mt-1">
-            {cliente.cnpjFormatado || "Sem CNPJ"} · {cliente.cidade}/{cliente.estado}
+            {cliente.isInternacional
+              ? `${cliente.pais ?? "—"} · ${cliente.documentoTipo ?? ""} ${cliente.documentoNumero ?? ""}`.trim()
+              : cliente.cnpjFormatado || "Sem CNPJ"}{" "}
+            · {cliente.cidade || "—"}/{cliente.estado || "—"}
           </div>
         </div>
         <button
@@ -587,8 +608,20 @@ function ClienteDetail({
         <TabsContent value="perfil" className="px-5 pb-6 space-y-3 mt-3">
           <DetailRow label="Razão Social" value={cliente.razaoSocial} />
           <DetailRow label="Nome Fantasia" value={cliente.nomeFantasia} />
-          <DetailRow label="Inscrição Estadual" value={cliente.inscricaoEstadual || (cliente.isentoIE ? "Isento" : "—")} />
-          <DetailRow label="Situação" value={cliente.situacaoCadastral} />
+          {cliente.isInternacional ? (
+            <>
+              <DetailRow label="País" value={cliente.pais || "—"} />
+              <DetailRow
+                label="Documento"
+                value={`${cliente.documentoTipo ?? "—"} ${cliente.documentoNumero ?? ""}`.trim() || "—"}
+              />
+            </>
+          ) : (
+            <>
+              <DetailRow label="Inscrição Estadual" value={cliente.inscricaoEstadual || (cliente.isentoIE ? "Isento" : "—")} />
+              <DetailRow label="Situação" value={cliente.situacaoCadastral} />
+            </>
+          )}
           <DetailRow
             label="Endereço"
             value={`${cliente.logradouro}${cliente.numero ? `, ${cliente.numero}` : ""} — ${cliente.bairro}, ${cliente.cidade}/${cliente.estado} · ${cliente.cep}`}

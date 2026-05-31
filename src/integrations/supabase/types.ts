@@ -117,6 +117,8 @@ export type Database = {
           contato_telefone: string | null
           contato_whatsapp: string | null
           criado_em: string
+          documento_numero: string | null
+          documento_tipo: string | null
           endereco_entrega_igual: boolean
           entrega_bairro: string | null
           entrega_cep: string | null
@@ -131,11 +133,13 @@ export type Database = {
           financeiro_telefone: string | null
           id: string
           inscricao_estadual: string | null
+          is_internacional: boolean
           isento_ie: boolean
           logradouro: string | null
           nome_fantasia: string
           numero: string | null
           observacoes: string | null
+          pais: string | null
           premissas_ativas: boolean
           premissas_comerciais: Json | null
           premissas_vigencia_fim: string | null
@@ -170,6 +174,8 @@ export type Database = {
           contato_telefone?: string | null
           contato_whatsapp?: string | null
           criado_em?: string
+          documento_numero?: string | null
+          documento_tipo?: string | null
           endereco_entrega_igual?: boolean
           entrega_bairro?: string | null
           entrega_cep?: string | null
@@ -184,11 +190,13 @@ export type Database = {
           financeiro_telefone?: string | null
           id?: string
           inscricao_estadual?: string | null
+          is_internacional?: boolean
           isento_ie?: boolean
           logradouro?: string | null
           nome_fantasia: string
           numero?: string | null
           observacoes?: string | null
+          pais?: string | null
           premissas_ativas?: boolean
           premissas_comerciais?: Json | null
           premissas_vigencia_fim?: string | null
@@ -223,6 +231,8 @@ export type Database = {
           contato_telefone?: string | null
           contato_whatsapp?: string | null
           criado_em?: string
+          documento_numero?: string | null
+          documento_tipo?: string | null
           endereco_entrega_igual?: boolean
           entrega_bairro?: string | null
           entrega_cep?: string | null
@@ -237,11 +247,13 @@ export type Database = {
           financeiro_telefone?: string | null
           id?: string
           inscricao_estadual?: string | null
+          is_internacional?: boolean
           isento_ie?: boolean
           logradouro?: string | null
           nome_fantasia?: string
           numero?: string | null
           observacoes?: string | null
+          pais?: string | null
           premissas_ativas?: boolean
           premissas_comerciais?: Json | null
           premissas_vigencia_fim?: string | null

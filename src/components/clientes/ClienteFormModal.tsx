@@ -10,6 +10,8 @@ import { PremissasComercialTab } from "@/components/clientes/PremissasComercialT
 import { diffPremissas } from "@/lib/premissas";
 import {
   CANAL_LABEL,
+  DOCUMENTO_TIPOS,
+  PAISES_LIST,
   SEGMENTO_LABEL,
   UF_LIST,
   type CanalCliente,
@@ -54,6 +56,10 @@ function emptyCliente(vendedorId: string, vendedorNome: string): Cliente {
     observacoes: "",
     tags: [],
     ativo: true,
+    isInternacional: false,
+    pais: "",
+    documentoTipo: "Passport",
+    documentoNumero: "",
   };
 }
 
@@ -149,11 +155,15 @@ export function ClienteFormModal({
   };
 
   const podeSalvar = useMemo(() => {
-    return (
+    const base =
       cliente.razaoSocial.trim().length > 0 &&
       cliente.contatoNome.trim().length > 0 &&
-      cliente.contatoTelefone.trim().length > 0
-    );
+      cliente.contatoTelefone.trim().length > 0;
+    if (!base) return false;
+    if (cliente.isInternacional) {
+      return Boolean(cliente.pais && cliente.documentoNumero?.trim());
+    }
+    return true;
   }, [cliente]);
 
   const handleSave = async () => {
@@ -236,50 +246,118 @@ export function ClienteFormModal({
 
           {/* FISCAL */}
           <TabsContent value="fiscal" className="space-y-3 pt-2">
-            <Field label="CNPJ">
-              <div className="flex gap-2">
+            {!cliente.isInternacional ? (
+              <Field label="CNPJ">
+                <div className="flex gap-2">
+                  <input
+                    className="input flex-1"
+                    inputMode="numeric"
+                    maxLength={18}
+                    value={cliente.cnpjFormatado}
+                    placeholder="00.000.000/0000-00"
+                    onChange={(e) => {
+                      const v = formatCNPJ(e.target.value);
+                      update({ cnpjFormatado: v, cnpj: onlyDigits(v) });
+                      setDuplicateWarn(null);
+                      setCnpjError(null);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCnpjLookup}
+                    disabled={cnpjLoading}
+                    className="px-3 rounded-md bg-surface-2 border border-border text-gold hover:border-gold disabled:opacity-40"
+                    aria-label="Buscar CNPJ"
+                  >
+                    {cnpjLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                {cnpjError && (
+                  <p className="mt-1 text-[11px] text-stock-out">{cnpjError}</p>
+                )}
+                {cliente.situacaoCadastral !== "desconhecida" && !cnpjError && (
+                  <p className="mt-1 text-[10px] uppercase tracking-wider text-gold-muted">
+                    Situação: {cliente.situacaoCadastral}
+                  </p>
+                )}
+                {duplicateWarn && (
+                  <p className="mt-1 text-[11px] text-stock-out">
+                    CNPJ já cadastrado como{" "}
+                    <span className="font-medium">{duplicateWarn.razaoSocial}</span>.
+                  </p>
+                )}
+              </Field>
+            ) : null}
+
+            {/* V15.1 — Toggle Cliente Internacional (só antes do CNPJ ser buscado/preenchido) */}
+            {!cliente.cnpj && (
+              <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer select-none">
                 <input
-                  className="input flex-1"
-                  inputMode="numeric"
-                  maxLength={18}
-                  value={cliente.cnpjFormatado}
-                  placeholder="00.000.000/0000-00"
+                  type="checkbox"
+                  checked={cliente.isInternacional ?? false}
                   onChange={(e) => {
-                    const v = formatCNPJ(e.target.value);
-                    update({ cnpjFormatado: v, cnpj: onlyDigits(v) });
-                    setDuplicateWarn(null);
+                    const checked = e.target.checked;
+                    update({
+                      isInternacional: checked,
+                      ...(checked
+                        ? { cnpj: "", cnpjFormatado: "", situacaoCadastral: "desconhecida" }
+                        : { pais: "", documentoNumero: "" }),
+                    });
                     setCnpjError(null);
+                    setDuplicateWarn(null);
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={handleCnpjLookup}
-                  disabled={cnpjLoading}
-                  className="px-3 rounded-md bg-surface-2 border border-border text-gold hover:border-gold disabled:opacity-40"
-                  aria-label="Buscar CNPJ"
-                >
-                  {cnpjLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Search className="h-4 w-4" />
-                  )}
-                </button>
+                🌐 Cliente internacional — isento de CNPJ
+              </label>
+            )}
+
+            {cliente.isInternacional && (
+              <div className="space-y-3 p-3 rounded-md border border-gold/30 bg-gold/5">
+                <Field label="País *">
+                  <select
+                    className="input"
+                    value={cliente.pais ?? ""}
+                    onChange={(e) => update({ pais: e.target.value })}
+                  >
+                    <option value="">Selecione…</option>
+                    {PAISES_LIST.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <div className="grid grid-cols-[140px_1fr] gap-3">
+                  <Field label="Documento">
+                    <select
+                      className="input"
+                      value={cliente.documentoTipo ?? "Passport"}
+                      onChange={(e) => update({ documentoTipo: e.target.value })}
+                    >
+                      {DOCUMENTO_TIPOS.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Número do documento *">
+                    <input
+                      className="input"
+                      value={cliente.documentoNumero ?? ""}
+                      onChange={(e) => update({ documentoNumero: e.target.value })}
+                    />
+                  </Field>
+                </div>
+                <p className="text-[10px] uppercase tracking-wider text-gold-muted">
+                  Razão social preenchida manualmente · sem busca na Receita Federal
+                </p>
               </div>
-              {cnpjError && (
-                <p className="mt-1 text-[11px] text-stock-out">{cnpjError}</p>
-              )}
-              {cliente.situacaoCadastral !== "desconhecida" && !cnpjError && (
-                <p className="mt-1 text-[10px] uppercase tracking-wider text-gold-muted">
-                  Situação: {cliente.situacaoCadastral}
-                </p>
-              )}
-              {duplicateWarn && (
-                <p className="mt-1 text-[11px] text-stock-out">
-                  CNPJ já cadastrado como{" "}
-                  <span className="font-medium">{duplicateWarn.razaoSocial}</span>.
-                </p>
-              )}
-            </Field>
+            )}
 
             <Field label="Razão Social *">
               <input

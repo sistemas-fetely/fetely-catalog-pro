@@ -44,6 +44,10 @@ function rowToCliente(row: Record<string, unknown>): Cliente {
     inscricaoEstadual: (row.inscricao_estadual as string | null) ?? undefined,
     isentoIE: (row.isento_ie as boolean) ?? false,
     situacaoCadastral: (row.situacao_cadastral as Cliente["situacaoCadastral"]) ?? "desconhecida",
+    isInternacional: (row.is_internacional as boolean) ?? false,
+    pais: (row.pais as string | null) ?? undefined,
+    documentoTipo: (row.documento_tipo as string | null) ?? undefined,
+    documentoNumero: (row.documento_numero as string | null) ?? undefined,
     logradouro: (row.logradouro as string) ?? "",
     numero: (row.numero as string) ?? "",
     complemento: (row.complemento as string | null) ?? undefined,
@@ -90,6 +94,10 @@ export function clienteToRow(c: Cliente): Record<string, unknown> {
     inscricao_estadual: c.inscricaoEstadual ?? null,
     isento_ie: c.isentoIE ?? false,
     situacao_cadastral: c.situacaoCadastral,
+    is_internacional: c.isInternacional ?? false,
+    pais: c.pais ?? null,
+    documento_tipo: c.documentoTipo ?? null,
+    documento_numero: c.documentoNumero ?? null,
     logradouro: c.logradouro,
     numero: c.numero,
     complemento: c.complemento ?? null,
@@ -149,8 +157,14 @@ export const useClientes = create<ClienteState>()(
             "Sessão não está pronta. Atualize a página antes de cadastrar o cliente.",
           );
         }
-        if (!c.cnpj || !c.razaoSocial) {
-          throw new Error("CNPJ e razão social são obrigatórios.");
+        if (!c.razaoSocial) {
+          throw new Error("Razão social é obrigatória.");
+        }
+        if (!c.isInternacional && !c.cnpj) {
+          throw new Error("CNPJ é obrigatório (ou marque como cliente internacional).");
+        }
+        if (c.isInternacional && !c.documentoNumero) {
+          throw new Error("Informe o documento de identificação do cliente internacional.");
         }
 
         const prevList = get().clientes;
