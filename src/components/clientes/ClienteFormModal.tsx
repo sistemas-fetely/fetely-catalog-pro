@@ -56,6 +56,10 @@ function emptyCliente(vendedorId: string, vendedorNome: string): Cliente {
     observacoes: "",
     tags: [],
     ativo: true,
+    isInternacional: false,
+    pais: "",
+    documentoTipo: "Passport",
+    documentoNumero: "",
   };
 }
 
