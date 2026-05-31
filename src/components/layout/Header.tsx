@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, ClipboardList, FileClock, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
+import { ChevronDown, ClipboardList, FileClock, LayoutDashboard, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
@@ -116,9 +116,14 @@ export function Header() {
           {/* Primary nav (left group) — apenas usuários autenticados */}
           {isInternalUser && (
             <nav className="hidden md:flex items-center gap-1 ml-2">
+              <Link to="/dashboard" className={navLinkClass(pathname.startsWith("/dashboard"))}>
+                <LayoutDashboard className="h-4 w-4" />
+                <span className="hidden lg:inline px-1 py-1.5">Dashboard</span>
+              </Link>
               <Link to="/catalog" className={navLinkClass(pathname.startsWith("/catalog"))}>
                 <span className="px-2 py-1.5">Catálogo</span>
               </Link>
+
               <Link to="/orders" className={navLinkClass(pathname.startsWith("/orders"))}>
                 <ClipboardList className="h-4 w-4" />
                 <span className="hidden lg:inline px-1 py-1.5">Pedidos</span>
