@@ -18,6 +18,7 @@ import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as NewOrderRouteImport } from './routes/new-order'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ImportRouteImport } from './routes/import'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ConfirmationRouteImport } from './routes/confirmation'
 import { Route as CommercialRouteImport } from './routes/commercial'
 import { Route as ClientesRouteImport } from './routes/clientes'
@@ -77,6 +78,11 @@ const LoginRoute = LoginRouteImport.update({
 const ImportRoute = ImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfirmationRoute = ConfirmationRouteImport.update({
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
   '/confirmation': typeof ConfirmationRoute
+  '/dashboard': typeof DashboardRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
@@ -189,6 +196,7 @@ export interface FileRoutesByTo {
   '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
   '/confirmation': typeof ConfirmationRoute
+  '/dashboard': typeof DashboardRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
   '/confirmation': typeof ConfirmationRoute
+  '/dashboard': typeof DashboardRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
@@ -243,6 +252,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/commercial'
     | '/confirmation'
+    | '/dashboard'
     | '/import'
     | '/login'
     | '/new-order'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/commercial'
     | '/confirmation'
+    | '/dashboard'
     | '/import'
     | '/login'
     | '/new-order'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/commercial'
     | '/confirmation'
+    | '/dashboard'
     | '/import'
     | '/login'
     | '/new-order'
@@ -321,6 +333,7 @@ export interface RootRouteChildren {
   ClientesRoute: typeof ClientesRoute
   CommercialRoute: typeof CommercialRoute
   ConfirmationRoute: typeof ConfirmationRoute
+  DashboardRoute: typeof DashboardRoute
   ImportRoute: typeof ImportRoute
   LoginRoute: typeof LoginRoute
   NewOrderRoute: typeof NewOrderRoute
@@ -399,6 +412,13 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/import'
       preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/confirmation': {
@@ -544,6 +564,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClientesRoute: ClientesRoute,
   CommercialRoute: CommercialRoute,
   ConfirmationRoute: ConfirmationRoute,
+  DashboardRoute: DashboardRoute,
   ImportRoute: ImportRoute,
   LoginRoute: LoginRoute,
   NewOrderRoute: NewOrderRoute,
