@@ -103,6 +103,11 @@ export function ProductCard({ product }: ProductCardProps) {
             <span className="text-xl font-semibold text-gold leading-none">
               {indisponivel ? "—" : formatBRL(product.precoVarejo)}
             </span>
+            {!indisponivel && product.qtdKit > 1 && product.precoVarejo > 0 && (
+              <div className="mt-1 text-[10px] text-text-muted">
+                {formatBRL(product.precoVarejo / product.qtdKit)} / un. ({product.qtdKit} un. por kit)
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex items-end justify-between gap-2">
@@ -111,6 +116,11 @@ export function ProductCard({ product }: ProductCardProps) {
               <span className="text-xl font-semibold text-gold leading-none">
                 {indisponivel ? "—" : formatBRL(product.precoAtacado)}
               </span>
+              {!indisponivel && product.qtdKit > 1 && product.precoAtacado > 0 && (
+                <div className="mt-1 text-[10px] text-text-muted">
+                  {formatBRL(product.precoAtacado / product.qtdKit)} / un.
+                </div>
+              )}
             </div>
             {!indisponivel && product.precoVarejo > 0 && (
               <div className="text-right">
@@ -118,8 +128,18 @@ export function ProductCard({ product }: ProductCardProps) {
                 <span className="text-sm text-text-secondary leading-none">
                   {formatBRL(product.precoVarejo)}
                 </span>
+                {product.qtdKit > 1 && (
+                  <div className="mt-1 text-[10px] text-text-muted">
+                    {formatBRL(product.precoVarejo / product.qtdKit)} / un.
+                  </div>
+                )}
               </div>
             )}
+          </div>
+        )}
+        {!isPublic && product.qtdKit > 1 && (
+          <div className="text-[10px] text-text-muted -mt-1">
+            Kit com {product.qtdKit} un.
           </div>
         )}
 
