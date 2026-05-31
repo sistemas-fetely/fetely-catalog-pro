@@ -87,6 +87,7 @@ function CatalogPage() {
   }, [highlight, colecao]);
 
   const isNum = colecao ? isNumericCollection(colecao) : false;
+  const isCutlery = !!colecao && colecaoProducts.length > 0 && colecaoProducts.every((p) => p.grupo === "Talheres");
   const [activeColor, setActiveColor] = useState<string | undefined>(undefined);
 
   // Reset selected color when collection changes
