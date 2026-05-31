@@ -2,13 +2,25 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Copy as CopyIcon,
+  Download,
+  FileJson,
   Pencil,
   Plus,
   Power,
   Search,
+  Table as TableIcon,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { exportProductsCSV, exportProductsJSON } from "@/lib/productExporter";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/store/authStore";
 import { useCatalog, nextSkuFor } from "@/store/catalogStore";
 import type { Product } from "@/types";
