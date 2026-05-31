@@ -13,6 +13,7 @@ import { ProvisaoSection } from "@/components/cart/ProvisaoSection";
 import { FinalConfirmModal } from "@/components/cart/FinalConfirmModal";
 import { classificarItem, extrairDataPrevisao, compararPrevisao } from "@/lib/classifyItem";
 import { useProvisao } from "@/store/provisaoStore";
+import { useCotacao } from "@/store/cotacaoStore";
 import type { CartItem, OrderCommercial } from "@/types";
 import type { Cliente, ClienteSnapshot } from "@/types/cliente";
 import type { ItemProvisao } from "@/types/provisao";
@@ -78,6 +79,8 @@ function CartPage() {
   const resetNegotiation = useNegotiation((s) => s.resetSession);
   const createProvisao = useProvisao((s) => s.createProvisao);
   const updateProvisaoStatus = useProvisao((s) => s.updateStatus);
+  const criarCotacao = useCotacao((s) => s.criarCotacao);
+  const atualizarCotacao = useCotacao((s) => s.atualizarCotacao);
   const navigate = useNavigate();
 
   const [commercial, setCommercial] = useState<CommercialState | null>(null);
