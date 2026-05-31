@@ -146,7 +146,8 @@ export function CartCommercialPanel({
   return (
     <div className="space-y-4">
       {/* Painel de faixa */}
-      <div className="rounded-lg gold-border bg-surface p-5 space-y-3">
+      <div className="rounded-lg gold-border bg-surface p-4 sm:p-5 space-y-3">
+
         {faixa ? (
           <>
             <div className="flex items-center justify-between">
