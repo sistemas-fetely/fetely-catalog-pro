@@ -530,6 +530,42 @@ function CartPage() {
         </aside>
       </div>
 
+      {/* Sticky mobile/tablet bottom bar */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-gold/30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-3 py-3 shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.5)]">
+        <div className="mx-auto max-w-[1400px] flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="text-[9px] uppercase tracking-[0.2em] text-text-muted">
+              {apenasProvisao ? "Referência" : commercial?.calculo.aplicouPix ? "Valor com PIX" : "Total"}
+            </div>
+            <div className="font-display text-xl text-gold truncate leading-tight">
+              {formatBRL(
+                apenasProvisao
+                  ? totalProvisaoRef
+                  : commercial?.calculo.total ?? totalFirme,
+              )}
+            </div>
+          </div>
+          {apenasProvisao ? (
+            <button
+              onClick={handleSaveOnlyProvisao}
+              disabled={!meta.clienteId}
+              className="shrink-0 rounded-md border border-stock-pre/60 bg-stock-pre/15 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-stock-pre disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Salvar Provisão
+            </button>
+          ) : (
+            <button
+              onClick={handleConfirm}
+              disabled={!commercial?.podeFinalizar || salvandoPedido}
+              className="shrink-0 rounded-md bg-gold px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-background disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {salvandoPedido ? "Salvando..." : "Confirmar"}
+            </button>
+          )}
+        </div>
+      </div>
+
+
       {showFinalConfirm && commercial?.calculo.faixa && commercial.condicao && (
         <FinalConfirmModal
           data={{
