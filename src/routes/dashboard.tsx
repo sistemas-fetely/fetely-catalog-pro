@@ -92,6 +92,7 @@ function DashboardPage() {
 
   const [periodo, setPeriodo] = useState<Periodo>("mes_atual");
   const [rankingMetric, setRankingMetric] = useState<"valor" | "quantidade">("valor");
+  const [chartMetric, setChartMetric] = useState<"valor" | "pedidos">("valor");
   const [vendedorFiltro, setVendedorFiltro] = useState<string>("todos");
   const range = useMemo(() => rangeFor(periodo), [periodo]);
   const rangeAnterior = useMemo(() => {
