@@ -1,12 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
+import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight, XCircle, Trash2, RotateCcw } from "lucide-react";
 import { formatBRL } from "@/lib/format";
-import { useProvisao, useVisibleProvisoes } from "@/store/provisaoStore";
+import { useProvisao, useVisibleProvisoes, useCanReprovarProvisao } from "@/store/provisaoStore";
 import { useAuth } from "@/store/authStore";
 import { useCatalog } from "@/store/catalogStore";
 import { useOrder } from "@/store/orderStore";
+import { ReprovarDialog } from "@/components/ReprovarDialog";
 import { STATUS_PROVISAO_LABEL, type ProvisaoFutura, type StatusProvisao } from "@/types/provisao";
 
 const search = z.object({
@@ -38,7 +40,8 @@ function statusBadge(status: StatusProvisao) {
 
 function ProvisoesPage() {
   const { highlight } = Route.useSearch();
-  const provisoes = useVisibleProvisoes();
+  const [showReprovados, setShowReprovados] = useState(false);
+  const provisoes = useVisibleProvisoes({ includeReprovados: showReprovados });
   const [tab, setTab] = useState<Tab>("aguardando");
   const [openId, setOpenId] = useState<string | null>(highlight ?? null);
 
@@ -62,16 +65,29 @@ function ProvisoesPage() {
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-1 mb-5 bg-surface-2 p-1 rounded-md w-fit">
-        <TabBtn active={tab === "aguardando"} onClick={() => setTab("aguardando")}>
-          Aguardando ({aguardandoCount})
-        </TabBtn>
-        <TabBtn active={tab === "liberado"} onClick={() => setTab("liberado")}>
-          Liberado ({liberadoCount})
-        </TabBtn>
-        <TabBtn active={tab === "todas"} onClick={() => setTab("todas")}>
-          Todas ({provisoes.length})
-        </TabBtn>
+      <div className="flex flex-wrap items-center gap-2 mb-5">
+        <div className="flex flex-wrap gap-1 bg-surface-2 p-1 rounded-md w-fit">
+          <TabBtn active={tab === "aguardando"} onClick={() => setTab("aguardando")}>
+            Aguardando ({aguardandoCount})
+          </TabBtn>
+          <TabBtn active={tab === "liberado"} onClick={() => setTab("liberado")}>
+            Liberado ({liberadoCount})
+          </TabBtn>
+          <TabBtn active={tab === "todas"} onClick={() => setTab("todas")}>
+            Todas ({provisoes.length})
+          </TabBtn>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowReprovados((v) => !v)}
+          className={`rounded-md border px-3 py-1.5 text-[11px] uppercase tracking-wider transition ${
+            showReprovados
+              ? "border-stock-out/50 bg-stock-out/10 text-stock-out"
+              : "border-border text-text-secondary hover:text-text-primary"
+          }`}
+        >
+          {showReprovados ? "Ocultar reprovadas" : "Mostrar reprovadas"}
+        </button>
       </div>
 
       {filtered.length === 0 ? (
@@ -101,9 +117,21 @@ function ProvisoesPage() {
                   onClick={() => setOpenId(p.id)}
                   className={`border-t border-border/50 hover:bg-surface-hover cursor-pointer transition ${
                     p.id === highlight ? "bg-gold/5" : ""
-                  }`}
+                  } ${p.reprovado ? "bg-stock-out/5" : ""}`}
                 >
-                  <td className="px-4 py-3 font-mono text-xs text-gold">{p.id}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-gold">
+                    <div className="flex items-center gap-2">
+                      {p.id}
+                      {p.reprovado && (
+                        <span
+                          title={p.reprovadoMotivo ?? ""}
+                          className="inline-flex items-center gap-1 rounded-full border border-stock-out/40 bg-stock-out/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-stock-out"
+                        >
+                          <XCircle className="h-2.5 w-2.5" /> Reprovada
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="text-text-primary truncate max-w-[200px]">
                       {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
@@ -157,15 +185,21 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
 
 function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClose: () => void }) {
   const isAdmin = useAuth((s) => s.roles.includes("admin") || s.roles.includes("master"));
+  const isMaster = useAuth((s) => s.roles.includes("master"));
+  const canReprovar = useCanReprovarProvisao(provisao);
   const updateStatus = useProvisao((s) => s.updateStatus);
   const setObservacoes = useProvisao((s) => s.setObservacoes);
   const cancelar = useProvisao((s) => s.cancelar);
+  const reprovarProvisao = useProvisao((s) => s.reprovarProvisao);
+  const desfazerReprovacaoProvisao = useProvisao((s) => s.desfazerReprovacaoProvisao);
+  const deleteProvisao = useProvisao((s) => s.deleteProvisao);
   const products = useCatalog((s) => s.products);
   const addBulk = useOrder((s) => s.addBulk);
   const setMeta = useOrder((s) => s.setMeta);
   const clearCart = useOrder((s) => s.clearCart);
   const navigate = useNavigate();
   const [obs, setObs] = useState(provisao.observacoes ?? "");
+  const [reprovarOpen, setReprovarOpen] = useState(false);
 
   const itemsComStatus = useMemo(() => {
     return provisao.itens.map((i) => {
@@ -218,11 +252,34 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
         </div>
 
         <div className="p-6 space-y-5">
+          {provisao.reprovado && (
+            <div className="rounded-md border border-stock-out/40 bg-stock-out/10 p-3 text-sm">
+              <div className="flex items-start gap-2">
+                <XCircle className="h-4 w-4 text-stock-out shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div className="font-semibold text-stock-out uppercase tracking-wider text-[10px]">
+                    Provisão reprovada
+                  </div>
+                  <p className="text-text-secondary mt-0.5">
+                    {provisao.reprovadoMotivo || "Sem motivo informado."}
+                  </p>
+                  <p className="text-[10px] text-text-muted mt-0.5">
+                    Por {provisao.reprovadoPorNome ?? "—"} em{" "}
+                    {provisao.reprovadoEm
+                      ? new Date(provisao.reprovadoEm).toLocaleString("pt-BR")
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-wider ${statusBadge(provisao.status)}`}>
               {STATUS_PROVISAO_LABEL[provisao.status]}
             </span>
           </div>
+
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <Info label="Cliente" value={provisao.clienteSnapshot.razaoSocial} />
@@ -317,9 +374,65 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
                 <Clock className="h-3 w-3" /> Cancelar provisão
               </button>
             )}
+            {canReprovar && !provisao.reprovado && provisao.status !== "convertido_em_pedido" && (
+              <button
+                onClick={() => setReprovarOpen(true)}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-stock-out/40 text-stock-out py-2 text-[11px] uppercase tracking-wider hover:bg-stock-out/10"
+              >
+                <XCircle className="h-3 w-3" /> Reprovar provisão
+              </button>
+            )}
+            {canReprovar && provisao.reprovado && (
+              <button
+                onClick={async () => {
+                  try {
+                    await desfazerReprovacaoProvisao(provisao.id);
+                    toast.success("Reprovação desfeita");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Erro ao desfazer");
+                  }
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-stock-in/40 text-stock-in py-2 text-[11px] uppercase tracking-wider hover:bg-stock-in/10"
+              >
+                <RotateCcw className="h-3 w-3" /> Desfazer reprovação
+              </button>
+            )}
+            {isMaster && (
+              <button
+                onClick={async () => {
+                  if (!confirm(`Deletar definitivamente a provisão ${provisao.id}? Esta ação não pode ser desfeita.`)) return;
+                  try {
+                    await deleteProvisao(provisao.id);
+                    toast.success("Provisão deletada");
+                    onClose();
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Erro ao deletar");
+                  }
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-stock-out/50 text-stock-out py-2 text-[11px] uppercase tracking-wider hover:bg-stock-out/15"
+              >
+                <Trash2 className="h-3 w-3" /> Deletar provisão (master)
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      <ReprovarDialog
+        open={reprovarOpen}
+        onOpenChange={setReprovarOpen}
+        entidade="provisão"
+        identificador={provisao.id}
+        onConfirm={async (motivo) => {
+          try {
+            await reprovarProvisao(provisao.id, motivo);
+            toast.success("Provisão reprovada");
+            onClose();
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Erro ao reprovar");
+          }
+        }}
+      />
     </div>
   );
 }

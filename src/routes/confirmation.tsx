@@ -1,12 +1,15 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Copy, Download, Home, FileClock, Mail, Printer, FileText, FileBarChart } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Check, Copy, Download, Home, FileClock, Mail, Printer, FileText, FileBarChart, XCircle, Trash2, RotateCcw } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
+import { toast } from "sonner";
 import { formatBRL } from "@/lib/format";
-import { useVisibleOrders } from "@/store/orderStore";
+import { useVisibleOrders, useOrder, useCanReprovarOrder } from "@/store/orderStore";
+import { useAuth } from "@/store/authStore";
 import { useProvisao } from "@/store/provisaoStore";
 import type { SavedOrder } from "@/types";
 import { ExportModal } from "@/components/export/ExportModal";
 import { EnviarEmailDialog } from "@/components/EnviarEmailDialog";
+import { ReprovarDialog } from "@/components/ReprovarDialog";
 import {
   Dialog,
   DialogContent,
@@ -115,13 +118,20 @@ function formatOrderText(order: SavedOrder): string {
 
 function Confirmation() {
   const { id, provisaoId } = Route.useSearch();
-  const history = useVisibleOrders();
+  const history = useVisibleOrders({ includeReprovados: true });
   const provisoes = useProvisao((s) => s.provisoes);
   const order = useMemo(() => history.find((o) => o.id === id) ?? history[0], [history, id]);
   const provisao = useMemo(
     () => (provisaoId ? provisoes.find((p) => p.id === provisaoId) : undefined),
     [provisoes, provisaoId],
   );
+  const navigate = useNavigate();
+  const isMaster = useAuth((s) => s.roles.includes("master"));
+  const canReprovar = useCanReprovarOrder(order);
+  const reprovarOrder = useOrder((s) => s.reprovarOrder);
+  const desfazerReprovacao = useOrder((s) => s.desfazerReprovacao);
+  const deleteOrder = useOrder((s) => s.deleteOrder);
+  const [reprovarOpen, setReprovarOpen] = useState(false);
 
   const [copied, setCopied] = useState(false);
   const [emailDialogAberto, setEmailDialogAberto] = useState(false);
@@ -183,6 +193,30 @@ function Confirmation() {
             </p>
           </div>
 
+          {order.reprovado && (
+            <div className="mb-6 rounded-lg border border-stock-out/40 bg-stock-out/10 p-4 print-hide">
+              <div className="flex items-start gap-3">
+                <XCircle className="h-5 w-5 text-stock-out shrink-0 mt-0.5" />
+                <div className="flex-1 text-sm">
+                  <div className="font-semibold text-stock-out uppercase tracking-wider text-xs">
+                    Pedido reprovado
+                  </div>
+                  <p className="text-text-secondary mt-1">
+                    {order.reprovadoMotivo || "Sem motivo informado."}
+                  </p>
+                  <p className="text-[11px] text-text-muted mt-1">
+                    Por {order.reprovadoPorNome ?? "—"} em{" "}
+                    {order.reprovadoEm
+                      ? new Date(order.reprovadoEm).toLocaleString("pt-BR")
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+
+
           <div className="rounded-lg gold-border bg-surface p-6 space-y-5">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <Info label="Cliente" value={order.meta.cliente} />
@@ -234,6 +268,46 @@ function Confirmation() {
                 >
                   <Printer className="h-4 w-4" /> Imprimir
                 </button>
+                {canReprovar && !order.reprovado && (
+                  <button
+                    onClick={() => setReprovarOpen(true)}
+                    className="flex items-center gap-2 rounded-md border border-stock-out/40 px-4 py-2 text-xs uppercase tracking-wider text-stock-out hover:bg-stock-out/10 transition"
+                  >
+                    <XCircle className="h-4 w-4" /> Reprovar
+                  </button>
+                )}
+                {canReprovar && order.reprovado && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await desfazerReprovacao(order.id);
+                        toast.success("Reprovação desfeita");
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "Erro ao desfazer");
+                      }
+                    }}
+                    className="flex items-center gap-2 rounded-md border border-stock-in/40 px-4 py-2 text-xs uppercase tracking-wider text-stock-in hover:bg-stock-in/10 transition"
+                  >
+                    <RotateCcw className="h-4 w-4" /> Desfazer reprovação
+                  </button>
+                )}
+                {isMaster && (
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Deletar definitivamente o pedido ${order.id}? Esta ação não pode ser desfeita.`)) return;
+                      try {
+                        await deleteOrder(order.id);
+                        toast.success("Pedido deletado");
+                        navigate({ to: "/orders" });
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "Erro ao deletar");
+                      }
+                    }}
+                    className="flex items-center gap-2 rounded-md border border-stock-out/50 px-4 py-2 text-xs uppercase tracking-wider text-stock-out hover:bg-stock-out/15 transition"
+                  >
+                    <Trash2 className="h-4 w-4" /> Deletar
+                  </button>
+                )}
                 <Link
                   to="/"
                   className="flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
@@ -283,6 +357,21 @@ function Confirmation() {
         order={order}
         open={emailDialogAberto}
         onOpenChange={setEmailDialogAberto}
+      />
+
+      <ReprovarDialog
+        open={reprovarOpen}
+        onOpenChange={setReprovarOpen}
+        entidade="pedido"
+        identificador={order.id}
+        onConfirm={async (motivo) => {
+          try {
+            await reprovarOrder(order.id, motivo);
+            toast.success("Pedido reprovado");
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Erro ao reprovar");
+          }
+        }}
       />
 
 

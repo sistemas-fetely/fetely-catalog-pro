@@ -11,6 +11,7 @@ import { useAuth } from "@/store/authStore";
 import { useClientes } from "@/store/clienteStore";
 import { listAppUsers } from "@/lib/users.functions";
 import { ExportModal } from "@/components/export/ExportModal";
+import { ReprovarDialog } from "@/components/ReprovarDialog";
 
 
 export const Route = createFileRoute("/orders")({
@@ -194,8 +195,22 @@ function OrdersPage() {
               {filtered.map((o) => {
                 const qty = o.items.reduce((s, i) => s + i.quantity, 0);
                 const isRep = o.vendedorTipo === "representante";
+                const cliente = o.meta.clienteId
+                  ? clientes.find((c) => c.id === o.meta.clienteId)
+                  : null;
+                const isResponsavel =
+                  !!cliente && !!currentUserId && cliente.cadastradoPorVendedorId === currentUserId;
+                const canReprovar =
+                  isAdminOrMaster || o.vendedorId === currentUserId || isResponsavel;
                 return (
-                  <tr key={o.id} className="border-t border-border hover:bg-surface-2/50 transition">
+                  <tr
+                    key={o.id}
+                    className={`border-t border-border transition ${
+                      o.reprovado
+                        ? "bg-stock-out/5 hover:bg-stock-out/10"
+                        : "hover:bg-surface-2/50"
+                    }`}
+                  >
                     <td className="px-3 py-3">
                       <input
                         type="checkbox"
@@ -204,7 +219,19 @@ function OrdersPage() {
                         onChange={() => toggleSelected(o.id)}
                       />
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-gold">{o.id}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gold">
+                      <div className="flex items-center gap-2">
+                        {o.id}
+                        {o.reprovado && (
+                          <span
+                            title={o.reprovadoMotivo ?? ""}
+                            className="inline-flex items-center gap-1 rounded-full border border-stock-out/40 bg-stock-out/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-stock-out"
+                          >
+                            <XCircle className="h-2.5 w-2.5" /> Reprovado
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-text-secondary">
                       {new Date(o.createdAt).toLocaleString("pt-BR")}
                     </td>
@@ -240,7 +267,7 @@ function OrdersPage() {
                       {formatBRL(o.total)}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="inline-flex items-center gap-1.5">
+                      <div className="inline-flex items-center gap-1.5 flex-wrap justify-end">
                         {isAdmin && (
                           <button
                             onClick={() => setReassignTarget(o.id)}
@@ -248,6 +275,52 @@ function OrdersPage() {
                             className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 px-2 py-1.5 text-[10px] uppercase tracking-wider text-amber-300 hover:bg-amber-500/10"
                           >
                             <UserCog className="h-3 w-3" />
+                          </button>
+                        )}
+                        {canReprovar && !o.reprovado && (
+                          <button
+                            onClick={() => setReprovarTarget(o.id)}
+                            title="Reprovar pedido"
+                            className="inline-flex items-center gap-1 rounded-md border border-stock-out/40 px-2 py-1.5 text-[10px] uppercase tracking-wider text-stock-out hover:bg-stock-out/10"
+                          >
+                            <XCircle className="h-3 w-3" />
+                          </button>
+                        )}
+                        {canReprovar && o.reprovado && (
+                          <button
+                            onClick={async () => {
+                              try {
+                                await desfazerReprovacao(o.id);
+                                toast.success("Reprovação desfeita");
+                              } catch (err) {
+                                toast.error(
+                                  err instanceof Error ? err.message : "Erro ao desfazer",
+                                );
+                              }
+                            }}
+                            title="Desfazer reprovação"
+                            className="inline-flex items-center gap-1 rounded-md border border-stock-in/40 px-2 py-1.5 text-[10px] uppercase tracking-wider text-stock-in hover:bg-stock-in/10"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                          </button>
+                        )}
+                        {isMaster && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Deletar definitivamente o pedido ${o.id}? Esta ação não pode ser desfeita.`)) return;
+                              try {
+                                await deleteOrder(o.id);
+                                toast.success("Pedido deletado");
+                              } catch (err) {
+                                toast.error(
+                                  err instanceof Error ? err.message : "Erro ao deletar",
+                                );
+                              }
+                            }}
+                            title="Deletar pedido (master)"
+                            className="inline-flex items-center gap-1 rounded-md border border-stock-out/50 px-2 py-1.5 text-[10px] uppercase tracking-wider text-stock-out hover:bg-stock-out/15"
+                          >
+                            <Trash2 className="h-3 w-3" />
                           </button>
                         )}
                         <button
@@ -290,6 +363,23 @@ function OrdersPage() {
       {exportOrders && (
         <ExportModal orders={exportOrders} onClose={() => setExportOrders(null)} />
       )}
+
+      <ReprovarDialog
+        open={!!reprovarTarget}
+        onOpenChange={(o) => !o && setReprovarTarget(null)}
+        entidade="pedido"
+        identificador={reprovarTarget ?? ""}
+        onConfirm={async (motivo) => {
+          if (!reprovarTarget) return;
+          try {
+            await reprovarOrder(reprovarTarget, motivo);
+            toast.success("Pedido reprovado");
+            setReprovarTarget(null);
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Erro ao reprovar");
+          }
+        }}
+      />
     </main>
   );
 }

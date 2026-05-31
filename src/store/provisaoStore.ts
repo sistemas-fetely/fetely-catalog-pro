@@ -36,6 +36,9 @@ interface ProvisaoState {
   updateStatus: (id: string, status: StatusProvisao, extra?: Partial<ProvisaoFutura>) => void;
   setObservacoes: (id: string, txt: string) => void;
   cancelar: (id: string) => void;
+  deleteProvisao: (id: string) => Promise<void>;
+  reprovarProvisao: (id: string, motivo: string) => Promise<void>;
+  desfazerReprovacaoProvisao: (id: string) => Promise<void>;
 }
 
 function rowToProvisao(row: Record<string, unknown>, itens: ItemProvisao[]): ProvisaoFutura {
@@ -55,6 +58,11 @@ function rowToProvisao(row: Record<string, unknown>, itens: ItemProvisao[]): Pro
     proximaPrevisao: row.proxima_previsao as string,
     observacoes: (row.observacoes as string | null) ?? undefined,
     totalReferencia: Number(row.total_referencia ?? 0),
+    reprovado: Boolean(row.reprovado ?? false),
+    reprovadoEm: (row.reprovado_em as string | null) ?? null,
+    reprovadoMotivo: (row.reprovado_motivo as string | null) ?? null,
+    reprovadoPorId: (row.reprovado_por_id as string | null) ?? null,
+    reprovadoPorNome: (row.reprovado_por_nome as string | null) ?? null,
   };
 }
 
@@ -253,6 +261,93 @@ export const useProvisao = create<ProvisaoState>()(
             if (error) console.error("[provisaoStore] cancelar falhou:", error, id);
           });
       },
+      deleteProvisao: async (id) => {
+        const prev = get().provisoes;
+        set((s) => ({ provisoes: s.provisoes.filter((p) => p.id !== id) }));
+        try {
+          await supabase.from("provisao_itens").delete().eq("provisao_id", id);
+          const { error } = await supabase.from("provisoes").delete().eq("id", id);
+          if (error) throw error;
+        } catch (err) {
+          console.error("[provisaoStore] deleteProvisao falhou:", err, id);
+          set({ provisoes: prev });
+          throw err instanceof Error ? err : new Error(String(err));
+        }
+      },
+      reprovarProvisao: async (id, motivo) => {
+        const auth = useAuth.getState();
+        if (!auth.user?.id) throw new Error("Sessão expirada.");
+        const reprovadoEm = new Date().toISOString();
+        const reprovadoPorNome =
+          auth.profile?.nome_completo ?? auth.profile?.email ?? auth.user.email ?? "—";
+        const prev = get().provisoes;
+        set((s) => ({
+          provisoes: s.provisoes.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  reprovado: true,
+                  reprovadoEm,
+                  reprovadoMotivo: motivo,
+                  reprovadoPorId: auth.user!.id,
+                  reprovadoPorNome,
+                  atualizadoEm: reprovadoEm,
+                }
+              : p,
+          ),
+        }));
+        const { error } = await supabase
+          .from("provisoes")
+          .update({
+            reprovado: true,
+            reprovado_em: reprovadoEm,
+            reprovado_motivo: motivo,
+            reprovado_por_id: auth.user.id,
+            reprovado_por_nome: reprovadoPorNome,
+            atualizado_em: reprovadoEm,
+          } as never)
+          .eq("id", id);
+        if (error) {
+          console.error("[provisaoStore] reprovarProvisao falhou:", error, id);
+          set({ provisoes: prev });
+          throw new Error(error.message);
+        }
+      },
+      desfazerReprovacaoProvisao: async (id) => {
+        const prev = get().provisoes;
+        const atualizadoEm = new Date().toISOString();
+        set((s) => ({
+          provisoes: s.provisoes.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  reprovado: false,
+                  reprovadoEm: null,
+                  reprovadoMotivo: null,
+                  reprovadoPorId: null,
+                  reprovadoPorNome: null,
+                  atualizadoEm,
+                }
+              : p,
+          ),
+        }));
+        const { error } = await supabase
+          .from("provisoes")
+          .update({
+            reprovado: false,
+            reprovado_em: null,
+            reprovado_motivo: null,
+            reprovado_por_id: null,
+            reprovado_por_nome: null,
+            atualizado_em: atualizadoEm,
+          } as never)
+          .eq("id", id);
+        if (error) {
+          console.error("[provisaoStore] desfazerReprovacaoProvisao falhou:", error, id);
+          set({ provisoes: prev });
+          throw new Error(error.message);
+        }
+      },
     }),
     {
       name: "fetely_provisoes_v1",
@@ -263,18 +358,39 @@ export const useProvisao = create<ProvisaoState>()(
   ),
 );
 
-export function useVisibleProvisoes(): ProvisaoFutura[] {
+export function useVisibleProvisoes(opts?: { includeReprovados?: boolean }): ProvisaoFutura[] {
   const provisoes = useProvisao((s) => s.provisoes);
   const user = useAuth((s) => s.user);
   const profile = useAuth((s) => s.profile);
   const roles = useAuth((s) => s.roles);
+  const clientes = useClientes((s) => s.clientes);
   const admin = roles.includes("admin") || roles.includes("master");
-  if (admin) return provisoes;
+  const filterReprovados = (list: ProvisaoFutura[]) =>
+    opts?.includeReprovados ? list : list.filter((p) => !p.reprovado);
+  if (admin) return filterReprovados(provisoes);
   if (!user) return [];
   if (roles.includes("cliente")) {
     const cid = profile?.cliente_id ?? null;
     if (!cid) return [];
-    return provisoes.filter((p) => p.clienteId === cid);
+    return filterReprovados(provisoes.filter((p) => p.clienteId === cid));
   }
-  return provisoes.filter((p) => p.vendedorId === user.id);
+  const meusClienteIds = new Set(
+    clientes.filter((c) => c.cadastradoPorVendedorId === user.id).map((c) => c.id),
+  );
+  return filterReprovados(
+    provisoes.filter(
+      (p) => p.vendedorId === user.id || meusClienteIds.has(p.clienteId),
+    ),
+  );
+}
+
+export function useCanReprovarProvisao(provisao: ProvisaoFutura | null | undefined): boolean {
+  const user = useAuth((s) => s.user);
+  const roles = useAuth((s) => s.roles);
+  const clientes = useClientes((s) => s.clientes);
+  if (!provisao || !user) return false;
+  if (roles.includes("admin") || roles.includes("master")) return true;
+  if (provisao.vendedorId === user.id) return true;
+  const cliente = clientes.find((c) => c.id === provisao.clienteId);
+  return !!cliente && cliente.cadastradoPorVendedorId === user.id;
 }
