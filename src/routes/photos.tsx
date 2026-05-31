@@ -193,26 +193,44 @@ function CorTab({
     if (!colecoes.includes(colecao)) setColecao(colecoes[0] ?? "");
   }, [colecoes, colecao]);
 
+  const isCutlery = useMemo(
+    () =>
+      !!colecao &&
+      products.some((p) => p.colecao === colecao) &&
+      products.filter((p) => p.colecao === colecao).every((p) => p.grupo === "Talheres"),
+    [products, colecao],
+  );
+
   const variantes = useMemo(() => {
     if (!colecao) return [];
-    const seen = new Set<string>();
-    return products
-      .filter((p) => p.colecao === colecao)
-      .filter((p) => {
-        if (seen.has(p.sku)) return false;
-        seen.add(p.sku);
+    const list = products.filter((p) => p.colecao === colecao);
+    if (isCutlery) {
+      // Talheres: 1 entrada por cor (não por SKU)
+      const seen = new Set<string>();
+      return list.filter((p) => {
+        if (seen.has(p.corNome)) return false;
+        seen.add(p.corNome);
         return true;
       });
-  }, [products, colecao]);
+    }
+    const seen = new Set<string>();
+    return list.filter((p) => {
+      if (seen.has(p.sku)) return false;
+      seen.add(p.sku);
+      return true;
+    });
+  }, [products, colecao, isCutlery]);
 
   const [open, setOpen] = useState<string | null>(null);
   const setProdutoPhoto = usePhotos((s) => s.setProdutoPhoto);
   const removeProdutoPhoto = usePhotos((s) => s.removeProdutoPhoto);
 
-  const openProduct = variantes.find((p) => p.sku === open) ?? null;
-  const current = openProduct
-    ? getProdutoPhoto(photos, colecao, openProduct.sku) ??
-      getProdutoPhoto(photos, colecao, openProduct.corNome)
+  // Para talheres, "open" é o corNome; para o resto, é o sku.
+  const openProduct = variantes.find((p) => (isCutlery ? p.corNome : p.sku) === open) ?? null;
+  const photoKey = openProduct ? (isCutlery ? openProduct.corNome : openProduct.sku) : null;
+  const current = openProduct && photoKey
+    ? getProdutoPhoto(photos, colecao, photoKey) ??
+      (isCutlery ? undefined : getProdutoPhoto(photos, colecao, openProduct.corNome))
     : undefined;
 
   return (
