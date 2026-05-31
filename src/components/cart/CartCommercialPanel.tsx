@@ -216,27 +216,27 @@ export function CartCommercialPanel({
               )}
             </ul>
 
-            {/* Frete (3,5%) */}
+            {/* Frete */}
             {calculo.freteBase != null && calculo.freteBase > 0 && (
               <div className="rounded-md border border-border bg-surface-2/60 px-3 py-2 text-xs space-y-1">
                 {calculo.freteGratisNegociado ? (
                   <div className="flex items-baseline justify-between">
                     <span className="text-text-secondary">
-                      Frete ({calculo.fretePercent}%) — <span className="text-gold uppercase tracking-wider text-[10px]">Grátis (negociação)</span>
+                      Frete — <span className="text-gold uppercase tracking-wider text-[10px]">Grátis (negociação)</span>
                     </span>
                     <span className="text-gold line-through opacity-70">{formatBRL(calculo.freteBase)}</span>
                   </div>
                 ) : calculo.freteIsento ? (
                   <div className="flex items-baseline justify-between">
                     <span className="text-text-secondary">
-                      Frete ({calculo.fretePercent}%) — <span className="text-gold uppercase tracking-wider text-[10px]">Isento (CIF)</span>
+                      Frete — <span className="text-gold uppercase tracking-wider text-[10px]">Isento (CIF)</span>
                     </span>
                     <span className="text-gold">{formatBRL(calculo.freteBase)}</span>
                   </div>
                 ) : (
                   <div className="flex items-baseline justify-between">
                     <span className="text-text-secondary">
-                      Frete FOB ({calculo.fretePercent}%)
+                      Frete FOB
                     </span>
                     <span className="text-text-primary">+ {formatBRL(calculo.freteValor ?? 0)}</span>
                   </div>
