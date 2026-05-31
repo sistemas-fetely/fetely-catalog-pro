@@ -325,7 +325,9 @@ function ClientesPage() {
               )}
             </div>
             <div className="text-xs text-text-secondary font-mono truncate">
-              {c.cnpjFormatado || "—"}
+              {c.isInternacional
+                ? `${c.pais ?? "—"} · ${c.documentoTipo ?? ""} ${c.documentoNumero ?? ""}`.trim()
+                : c.cnpjFormatado || "—"}
             </div>
             <div className="text-xs text-text-secondary truncate">
               {c.cidade}/{c.estado}
