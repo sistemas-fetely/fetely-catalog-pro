@@ -3,6 +3,7 @@ import { Check, Copy, Download, Home, FileClock, Mail, Printer, FileText, FileBa
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/format";
+import { FRETE_PERCENT } from "@/lib/commercial";
 import { useVisibleOrders, useOrder, useCanReprovarOrder } from "@/store/orderStore";
 import { useAuth } from "@/store/authStore";
 import { useProvisao } from "@/store/provisaoStore";
