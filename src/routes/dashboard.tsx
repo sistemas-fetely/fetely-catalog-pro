@@ -208,6 +208,32 @@ function DashboardPage() {
     : [];
   const melhorVendedor = ranking[0];
 
+  // ─── Ranking de produtos e coleções ───────────────────────────────────
+  type AggRow = { key: string; nome: string; valor: number; quantidade: number };
+  const aggregate = (keyFn: (it: typeof items[number]) => { key: string; nome: string } | null) => {
+    const map = new Map<string, AggRow>();
+    items.forEach((it) => {
+      const k = keyFn(it);
+      if (!k || !k.key) return;
+      const cur = map.get(k.key) ?? { key: k.key, nome: k.nome, valor: 0, quantidade: 0 };
+      cur.valor += Number(it.subtotal_bruto || 0);
+      cur.quantidade += Number(it.quantity || 0);
+      map.set(k.key, cur);
+    });
+    return Array.from(map.values()).sort((a, b) =>
+      rankingMetric === "valor" ? b.valor - a.valor : b.quantidade - a.quantidade,
+    );
+  };
+  const rankingProdutos = aggregate((it) => ({
+    key: it.sku,
+    nome: it.product_snapshot?.nomeComercial ?? it.sku,
+  }));
+  const rankingColecoes = aggregate((it) => {
+    const c = it.product_snapshot?.colecao;
+    return c ? { key: c, nome: c } : null;
+  });
+
+
   // ─── Desconto médio (vendedor) ────────────────────────────────────────
   const descontoMedio =
     orders.length > 0
