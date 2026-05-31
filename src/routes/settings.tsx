@@ -43,6 +43,12 @@ function SettingsPage() {
       external: true,
     },
     {
+      label: "Captação de Leads",
+      description: "Tela para cadastro de visitantes no stand em feiras",
+      to: "/stand",
+      icon: Building,
+    },
+    {
       label: "Fotos",
       description: "Gerenciar fotos do catálogo",
       to: "/photos",
