@@ -303,11 +303,11 @@ function CartPage() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-3 py-4 sm:px-6 sm:py-10">
-      <div className="mb-5 sm:mb-8 flex items-center justify-between gap-3">
+    <main className="mx-auto max-w-[1400px] px-3 py-4 sm:px-6 sm:py-8 lg:py-10 pb-28 lg:pb-10">
+      <div className="mb-4 sm:mb-6 lg:mb-8 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-[0.3em] text-gold">Revisão</div>
-          <h1 className="font-display text-2xl sm:text-4xl mt-1 truncate">Carrinho do Pedido</h1>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl mt-1 truncate">Carrinho do Pedido</h1>
         </div>
         <Link
           to="/new-order"
@@ -318,13 +318,13 @@ function CartPage() {
       </div>
 
       {meta.provisaoOrigemId && (
-        <div className="mb-4 rounded-md border border-stock-pre/40 bg-stock-pre/10 px-4 py-3 text-xs text-stock-pre">
+        <div className="mb-4 rounded-md border border-stock-pre/40 bg-stock-pre/10 px-3 py-2.5 sm:px-4 sm:py-3 text-xs text-stock-pre">
           ⚡ Estes itens vieram da Provisão <strong>{meta.provisaoOrigemId}</strong>. Verifique quantidades e condições antes de confirmar.
         </div>
       )}
 
       {isMisto && (
-        <div className="mb-5">
+        <div className="mb-4 sm:mb-5">
           <MixedCartBanner
             firmeCount={itensFirmes.length}
             firmeTotal={totalFirme}
@@ -334,7 +334,8 @@ function CartPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-5 lg:gap-7 xl:gap-8">
+
         <div className="space-y-4 sm:space-y-6">
           {groupedFirmes.length > 0 && (
             <div className="text-[10px] uppercase tracking-[0.25em] text-stock-in font-semibold">
