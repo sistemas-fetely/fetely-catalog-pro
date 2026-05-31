@@ -380,6 +380,42 @@ export function CartCommercialPanel({
             </label>
           )}
 
+          <div className="rounded-md border border-gold/30 bg-background/30 p-3 space-y-2.5">
+            <div className="text-[10px] uppercase tracking-wider text-gold-muted">
+              Benefícios extras
+            </div>
+
+            <label className="flex items-start gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={freteGratis}
+                onChange={(e) => setFreteGratis(e.target.checked)}
+                className="mt-0.5 accent-[var(--gold)]"
+              />
+              <span>
+                <strong className="text-gold">Frete grátis</strong> (CIF) — Fetély entrega
+                <span className="block text-[11px] text-text-muted">
+                  Força frete CIF mesmo nas faixas FOB.
+                </span>
+              </span>
+            </label>
+
+            <label className="flex items-start gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={liberarTodasCondicoes}
+                onChange={(e) => setLiberarTodasCondicoes(e.target.checked)}
+                className="mt-0.5 accent-[var(--gold)]"
+              />
+              <span>
+                <strong className="text-gold">Liberar todas as formas de pagamento</strong>
+                <span className="block text-[11px] text-text-muted">
+                  Ignora restrições de faixa e valor mínimo das condições.
+                </span>
+              </span>
+            </label>
+          </div>
+
           <div>
             <label className="block text-[10px] uppercase tracking-wider text-text-muted mb-1">
               Observação interna (não vai no resumo do cliente)
