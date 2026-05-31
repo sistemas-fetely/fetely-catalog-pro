@@ -193,26 +193,44 @@ function CorTab({
     if (!colecoes.includes(colecao)) setColecao(colecoes[0] ?? "");
   }, [colecoes, colecao]);
 
+  const isCutlery = useMemo(
+    () =>
+      !!colecao &&
+      products.some((p) => p.colecao === colecao) &&
+      products.filter((p) => p.colecao === colecao).every((p) => p.grupo === "Talheres"),
+    [products, colecao],
+  );
+
   const variantes = useMemo(() => {
     if (!colecao) return [];
-    const seen = new Set<string>();
-    return products
-      .filter((p) => p.colecao === colecao)
-      .filter((p) => {
-        if (seen.has(p.sku)) return false;
-        seen.add(p.sku);
+    const list = products.filter((p) => p.colecao === colecao);
+    if (isCutlery) {
+      // Talheres: 1 entrada por cor (não por SKU)
+      const seen = new Set<string>();
+      return list.filter((p) => {
+        if (seen.has(p.corNome)) return false;
+        seen.add(p.corNome);
         return true;
       });
-  }, [products, colecao]);
+    }
+    const seen = new Set<string>();
+    return list.filter((p) => {
+      if (seen.has(p.sku)) return false;
+      seen.add(p.sku);
+      return true;
+    });
+  }, [products, colecao, isCutlery]);
 
   const [open, setOpen] = useState<string | null>(null);
   const setProdutoPhoto = usePhotos((s) => s.setProdutoPhoto);
   const removeProdutoPhoto = usePhotos((s) => s.removeProdutoPhoto);
 
-  const openProduct = variantes.find((p) => p.sku === open) ?? null;
-  const current = openProduct
-    ? getProdutoPhoto(photos, colecao, openProduct.sku) ??
-      getProdutoPhoto(photos, colecao, openProduct.corNome)
+  // Para talheres, "open" é o corNome; para o resto, é o sku.
+  const openProduct = variantes.find((p) => (isCutlery ? p.corNome : p.sku) === open) ?? null;
+  const photoKey = openProduct ? (isCutlery ? openProduct.corNome : openProduct.sku) : null;
+  const current = openProduct && photoKey
+    ? getProdutoPhoto(photos, colecao, photoKey) ??
+      (isCutlery ? undefined : getProdutoPhoto(photos, colecao, openProduct.corNome))
     : undefined;
 
   return (
@@ -253,44 +271,49 @@ function CorTab({
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {variantes.map((p) => {
+            const key = isCutlery ? p.corNome : p.sku;
             const img =
               getProdutoPhoto(
                 { colecoes: {}, produtos: photos.produtos },
                 colecao,
-                p.sku,
+                key,
               ) ??
-              getProdutoPhoto(
-                { colecoes: {}, produtos: photos.produtos },
-                colecao,
-                p.corNome,
-              );
+              (isCutlery
+                ? undefined
+                : getProdutoPhoto(
+                    { colecoes: {}, produtos: photos.produtos },
+                    colecao,
+                    p.corNome,
+                  ));
             return (
               <button
-                key={p.sku}
-                onClick={() => setOpen(p.sku)}
+                key={key}
+                onClick={() => setOpen(key)}
                 className="text-left rounded-lg overflow-hidden gold-border gold-border-hover bg-surface transition"
               >
                 <div className="relative aspect-square">
                   {img ? (
-                    <img src={img} alt={p.nomeComercial} className="h-full w-full object-cover" />
+                    <img src={img} alt={p.corNome} className="h-full w-full object-cover" />
                   ) : (
                     <PhotoPlaceholder
                       colecao={colecao}
-                      label={`${p.grupo} ${p.tamanhoNumero}`}
+                      label={isCutlery ? p.corNome : `${p.grupo} ${p.tamanhoNumero}`}
                       className="h-full w-full"
                     />
                   )}
                 </div>
                 <div className="p-3">
                   <div className="text-[10px] uppercase tracking-wider text-text-muted">
-                    {p.grupo} • {p.tipo}
+                    {isCutlery ? p.grupo : `${p.grupo} • ${p.tipo}`}
                   </div>
                   <div className="font-display text-base leading-tight mt-0.5">
-                    {p.nomeComercial}
+                    {isCutlery ? p.corNome : p.nomeComercial}
                   </div>
-                  <div className="text-[10px] text-text-muted mt-0.5">
-                    {p.corNome} · {p.tamanhoNumero}
-                  </div>
+                  {!isCutlery && (
+                    <div className="text-[10px] text-text-muted mt-0.5">
+                      {p.corNome} · {p.tamanhoNumero}
+                    </div>
+                  )}
                   <div className="flex items-center gap-1 text-[10px] text-gold mt-1">
                     <Camera className="h-3 w-3" />
                     {img ? "Atualizar" : "Adicionar"}
@@ -305,8 +328,20 @@ function CorTab({
       <PhotoUploadModal
         open={!!open}
         onOpenChange={(v) => !v && setOpen(null)}
-        title={openProduct ? `Foto de ${openProduct.nomeComercial}` : ""}
-        subtitle={openProduct ? `${colecao} · ${openProduct.corNome} · ${openProduct.tamanhoNumero}` : ""}
+        title={
+          openProduct
+            ? isCutlery
+              ? `Foto da cor ${openProduct.corNome}`
+              : `Foto de ${openProduct.nomeComercial}`
+            : ""
+        }
+        subtitle={
+          openProduct
+            ? isCutlery
+              ? `${colecao} · ${openProduct.corNome}`
+              : `${colecao} · ${openProduct.corNome} · ${openProduct.tamanhoNumero}`
+            : ""
+        }
         current={current}
         onSave={async (data) => {
           if (open) await setProdutoPhoto(colecao, open, data);
