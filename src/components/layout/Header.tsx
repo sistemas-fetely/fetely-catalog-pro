@@ -39,6 +39,7 @@ export function Header() {
   const isAdminOrMaster = useAuth((s) => s.isAdminOrMaster);
   const signOut = useAuth((s) => s.signOut);
   const negociacaoAtiva = useNegotiation((s) => s.ativo);
+  const [changePwOpen, setChangePwOpen] = useState(false);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
