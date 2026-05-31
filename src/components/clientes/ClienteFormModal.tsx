@@ -47,6 +47,7 @@ function emptyCliente(vendedorId: string, vendedorNome: string): Cliente {
     contatoEmail: "",
     contatoTelefone: "",
     contatoWhatsapp: "",
+    telefonesInternacionais: false,
     financeiroNome: "",
     financeiroEmail: "",
     financeiroTelefone: "",

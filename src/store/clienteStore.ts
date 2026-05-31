@@ -117,6 +117,7 @@ export function clienteToRow(c: Cliente): Record<string, unknown> {
     contato_email: c.contatoEmail,
     contato_telefone: c.contatoTelefone,
     contato_whatsapp: c.contatoWhatsapp ?? null,
+    telefones_internacionais: c.telefonesInternacionais ?? false,
     financeiro_nome: c.financeiroNome ?? null,
     financeiro_email: c.financeiroEmail ?? null,
     financeiro_telefone: c.financeiroTelefone ?? null,
