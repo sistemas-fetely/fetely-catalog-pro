@@ -156,6 +156,7 @@ export type Database = {
           sncf_perfil_credito: string | null
           sncf_ultima_sync_em: string | null
           tags: string[]
+          telefones_internacionais: boolean
         }
         Insert: {
           ativo?: boolean
@@ -213,6 +214,7 @@ export type Database = {
           sncf_perfil_credito?: string | null
           sncf_ultima_sync_em?: string | null
           tags?: string[]
+          telefones_internacionais?: boolean
         }
         Update: {
           ativo?: boolean
@@ -270,6 +272,7 @@ export type Database = {
           sncf_perfil_credito?: string | null
           sncf_ultima_sync_em?: string | null
           tags?: string[]
+          telefones_internacionais?: boolean
         }
         Relationships: [
           {

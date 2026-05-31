@@ -1,0 +1,1 @@
+ALTER TABLE public.clientes ADD COLUMN telefones_internacionais BOOLEAN NOT NULL DEFAULT false;

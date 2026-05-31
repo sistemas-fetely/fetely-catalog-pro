@@ -68,6 +68,9 @@ export interface Cliente {
   contatoTelefone: string;
   contatoWhatsapp?: string;
 
+  // V15.2 — Telefones no formato internacional
+  telefonesInternacionais?: boolean;
+
   financeiroNome?: string;
   financeiroEmail?: string;
   financeiroTelefone?: string;
