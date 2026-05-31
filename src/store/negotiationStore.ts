@@ -96,7 +96,10 @@ export const useNegotiation = create<NegotiationStore>()(
           justificativa: "",
           observacaoInterna: "",
           usarReservada: false,
+          freteGratis: false,
+          liberarTodasCondicoes: true,
         }),
+
 
       alterarSenha: async (atual, nova) => {
         await get().ensureInitialHash();
