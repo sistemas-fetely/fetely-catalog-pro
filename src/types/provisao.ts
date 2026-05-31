@@ -34,6 +34,12 @@ export interface ProvisaoFutura {
   proximaPrevisao: string;
   observacoes?: string;
   totalReferencia: number;
+  // Reprovação
+  reprovado?: boolean;
+  reprovadoEm?: string | null;
+  reprovadoMotivo?: string | null;
+  reprovadoPorId?: string | null;
+  reprovadoPorNome?: string | null;
 }
 
 export const STATUS_PROVISAO_LABEL: Record<StatusProvisao, string> = {
