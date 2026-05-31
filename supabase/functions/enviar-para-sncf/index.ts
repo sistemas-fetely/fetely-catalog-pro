@@ -147,13 +147,7 @@ Deno.serve(async (req) => {
     let sncfResp = await enviarPayload(payloadBase);
     let sncfBody = await sncfResp.json().catch(() => ({ error: "Resposta sem JSON do SNCF" }));
 
-    if (!sncfResp.ok && isErroOrigem(sncfBody)) {
-      for (const origem of SNCF_ORIGENS_ACEITAS) {
-        sncfResp = await enviarPayload({ ...payloadBase, origem });
-        sncfBody = await sncfResp.json().catch(() => ({ error: "Resposta sem JSON do SNCF" }));
-        if (sncfResp.ok || !isErroOrigem(sncfBody)) break;
-      }
-    }
+    if (!sncfResp.ok && isErroOrigem(sncfBody)) return erroContratoOrigemSncf(sncfBody);
 
     if (sncfResp.ok) {
       await supabase.from("orders").update({
