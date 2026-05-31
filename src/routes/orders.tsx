@@ -121,6 +121,17 @@ function OrdersPage() {
               ))}
             </select>
           )}
+          <button
+            type="button"
+            onClick={() => setShowReprovados((v) => !v)}
+            className={`rounded-md border px-3 py-2 text-[11px] uppercase tracking-wider transition ${
+              showReprovados
+                ? "border-stock-out/50 bg-stock-out/10 text-stock-out"
+                : "border-border text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            {showReprovados ? "Ocultar reprovados" : "Mostrar reprovados"}
+          </button>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
