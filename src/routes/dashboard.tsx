@@ -130,6 +130,27 @@ function DashboardPage() {
     },
   });
 
+  // Itens de pedido no período — para ranking de produtos/coleções
+  // RLS em order_items filtra automaticamente pelo perfil
+  const { data: items = [], isLoading: loadingItems } = useQuery({
+    enabled: !!session && !isCliente,
+    queryKey: ["dashboard-items", range.from.toISOString(), range.to.toISOString()],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_items")
+        .select("sku, quantity, subtotal_bruto, product_snapshot, orders!inner(created_at)")
+        .gte("orders.created_at", range.from.toISOString())
+        .lt("orders.created_at", range.to.toISOString());
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        sku: string;
+        quantity: number;
+        subtotal_bruto: number;
+        product_snapshot: { nomeComercial?: string; colecao?: string; corNome?: string } | null;
+      }>;
+    },
+  });
+
   // Vendedores ativos (somente admin/master)
   const { data: vendedoresAtivos = 0 } = useQuery({
     enabled: !!session && isAdminOrMaster,
