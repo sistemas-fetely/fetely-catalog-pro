@@ -24,13 +24,21 @@ export const Route = createFileRoute("/orders")({
 });
 
 function OrdersPage() {
-  const history = useVisibleOrders();
+  const [showReprovados, setShowReprovados] = useState(false);
+  const history = useVisibleOrders({ includeReprovados: showReprovados });
   const isAdmin = useAuth((s) => s.roles.includes("admin"));
+  const isMaster = useAuth((s) => s.roles.includes("master"));
   const isAdminOrMaster = useAuth((s) => s.roles.includes("admin") || s.roles.includes("master"));
+  const currentUserId = useAuth((s) => s.user?.id);
+  const clientes = useClientes((s) => s.clientes);
   const reassignOrder = useOrder((s) => s.reassignOrder);
+  const deleteOrder = useOrder((s) => s.deleteOrder);
+  const reprovarOrder = useOrder((s) => s.reprovarOrder);
+  const desfazerReprovacao = useOrder((s) => s.desfazerReprovacao);
   const [query, setQuery] = useState("");
   const [vendedorFilter, setVendedorFilter] = useState<string>("all");
   const [reassignTarget, setReassignTarget] = useState<string | null>(null);
+  const [reprovarTarget, setReprovarTarget] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exportOrders, setExportOrders] = useState<typeof history | null>(null);
