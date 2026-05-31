@@ -6,6 +6,7 @@ import { ChevronRight, X } from "lucide-react";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { NumericalCandleGrid } from "@/components/catalog/NumericalCandleGrid";
+import { CutleryGrid } from "@/components/catalog/CutleryGrid";
 import { CollectionBulkFiller } from "@/components/catalog/CollectionBulkFiller";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import {
@@ -86,6 +87,7 @@ function CatalogPage() {
   }, [highlight, colecao]);
 
   const isNum = colecao ? isNumericCollection(colecao) : false;
+  const isCutlery = !!colecao && colecaoProducts.length > 0 && colecaoProducts.every((p) => p.grupo === "Talheres");
   const [activeColor, setActiveColor] = useState<string | undefined>(undefined);
 
   // Reset selected color when collection changes
@@ -173,6 +175,12 @@ function CatalogPage() {
               {/* Products */}
               {isNum && !isPublic ? (
                 <NumericalCandleGrid
+                  products={colecaoProducts}
+                  colecao={colecao}
+                  onColorChange={handleColorChange}
+                />
+              ) : isCutlery && !isPublic ? (
+                <CutleryGrid
                   products={colecaoProducts}
                   colecao={colecao}
                   onColorChange={handleColorChange}
