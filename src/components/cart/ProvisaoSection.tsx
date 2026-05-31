@@ -43,17 +43,17 @@ export function ProvisaoSection({ items }: { items: CartItem[] }) {
                     {item.product.nomeComercial}
                   </div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className="text-[10px] font-mono text-blue-200/70">
+                    <span className="text-[10px] font-mono text-white/70">
                       {item.product.sku} · Caixa {item.product.multiplos}
                     </span>
-                    <span className="inline-flex items-center rounded-full bg-blue-500/20 border border-blue-400/50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-blue-200 font-semibold">
+                    <span className="inline-flex items-center rounded-full bg-yellow-400/20 border border-yellow-300/50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-yellow-200 font-semibold">
                       {previsao}
                     </span>
                   </div>
                 </div>
                 <button
                   onClick={() => removeItem(item.sku)}
-                  className="sm:hidden text-blue-300/70 hover:text-red-400 p-2 -mr-2 -mt-1 shrink-0"
+                  className="sm:hidden text-white/70 hover:text-red-400 p-2 -mr-2 -mt-1 shrink-0"
                   aria-label="Remover"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -67,16 +67,16 @@ export function ProvisaoSection({ items }: { items: CartItem[] }) {
                   compact
                 />
                 <div className="text-right">
-                  <div className="text-blue-200 font-medium">
+                  <div className="text-yellow-300 font-medium">
                     {formatBRL(item.quantity * item.product.precoAtacado)}
                   </div>
-                  <div className="text-[10px] text-blue-200/60">
+                  <div className="text-[10px] text-white/60">
                     {formatBRL(item.product.precoAtacado)} un. ref.
                   </div>
                 </div>
                 <button
                   onClick={() => removeItem(item.sku)}
-                  className="hidden sm:block text-blue-300/70 hover:text-red-400 p-2"
+                  className="hidden sm:block text-white/70 hover:text-red-400 p-2"
                   aria-label="Remover"
                 >
                   <Trash2 className="h-4 w-4" />
