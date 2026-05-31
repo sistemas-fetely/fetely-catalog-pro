@@ -25,6 +25,7 @@ export function ProductCard({ product }: ProductCardProps) {
     getProdutoPhoto(photos, product.colecao, product.corNome);
   const isVelaCategory = product.categoria === "Luz e Momento";
   const showUnitPrice = !isVelaCategory && product.qtdKit > 1;
+  const indisponivel = isPublic
     ? product.precoVarejo <= 0
     : product.precoAtacado <= 0;
   const canAdd = qty > 0 && isValidMultiple(qty, product.multiplos) && !indisponivel;
