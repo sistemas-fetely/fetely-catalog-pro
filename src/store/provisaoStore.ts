@@ -261,6 +261,93 @@ export const useProvisao = create<ProvisaoState>()(
             if (error) console.error("[provisaoStore] cancelar falhou:", error, id);
           });
       },
+      deleteProvisao: async (id) => {
+        const prev = get().provisoes;
+        set((s) => ({ provisoes: s.provisoes.filter((p) => p.id !== id) }));
+        try {
+          await supabase.from("provisao_itens").delete().eq("provisao_id", id);
+          const { error } = await supabase.from("provisoes").delete().eq("id", id);
+          if (error) throw error;
+        } catch (err) {
+          console.error("[provisaoStore] deleteProvisao falhou:", err, id);
+          set({ provisoes: prev });
+          throw err instanceof Error ? err : new Error(String(err));
+        }
+      },
+      reprovarProvisao: async (id, motivo) => {
+        const auth = useAuth.getState();
+        if (!auth.user?.id) throw new Error("Sessão expirada.");
+        const reprovadoEm = new Date().toISOString();
+        const reprovadoPorNome =
+          auth.profile?.nome_completo ?? auth.profile?.email ?? auth.user.email ?? "—";
+        const prev = get().provisoes;
+        set((s) => ({
+          provisoes: s.provisoes.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  reprovado: true,
+                  reprovadoEm,
+                  reprovadoMotivo: motivo,
+                  reprovadoPorId: auth.user!.id,
+                  reprovadoPorNome,
+                  atualizadoEm: reprovadoEm,
+                }
+              : p,
+          ),
+        }));
+        const { error } = await supabase
+          .from("provisoes")
+          .update({
+            reprovado: true,
+            reprovado_em: reprovadoEm,
+            reprovado_motivo: motivo,
+            reprovado_por_id: auth.user.id,
+            reprovado_por_nome: reprovadoPorNome,
+            atualizado_em: reprovadoEm,
+          } as never)
+          .eq("id", id);
+        if (error) {
+          console.error("[provisaoStore] reprovarProvisao falhou:", error, id);
+          set({ provisoes: prev });
+          throw new Error(error.message);
+        }
+      },
+      desfazerReprovacaoProvisao: async (id) => {
+        const prev = get().provisoes;
+        const atualizadoEm = new Date().toISOString();
+        set((s) => ({
+          provisoes: s.provisoes.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  reprovado: false,
+                  reprovadoEm: null,
+                  reprovadoMotivo: null,
+                  reprovadoPorId: null,
+                  reprovadoPorNome: null,
+                  atualizadoEm,
+                }
+              : p,
+          ),
+        }));
+        const { error } = await supabase
+          .from("provisoes")
+          .update({
+            reprovado: false,
+            reprovado_em: null,
+            reprovado_motivo: null,
+            reprovado_por_id: null,
+            reprovado_por_nome: null,
+            atualizado_em: atualizadoEm,
+          } as never)
+          .eq("id", id);
+        if (error) {
+          console.error("[provisaoStore] desfazerReprovacaoProvisao falhou:", error, id);
+          set({ provisoes: prev });
+          throw new Error(error.message);
+        }
+      },
     }),
     {
       name: "fetely_provisoes_v1",
