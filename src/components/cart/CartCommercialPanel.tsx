@@ -353,7 +353,7 @@ export function CartCommercialPanel({
 
       {/* Modo negociação ativo */}
       {ativo && faixa && (
-        <div className="rounded-lg border border-gold/50 bg-gold/5 p-5 space-y-4">
+        <div className="rounded-lg border border-gold/50 bg-gold/5 p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-gold">
               <Lock className="h-4 w-4" />
