@@ -278,6 +278,11 @@ function ClientesPage() {
             <div className="min-w-0">
               <div className={`text-sm truncate flex items-center gap-2 ${c.ativo ? "text-text-primary" : "text-text-muted"}`}>
                 <span className="truncate">{c.nomeFantasia || c.razaoSocial}</span>
+                {c.isInternacional && (
+                  <span className="shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full border bg-gold/10 border-gold/40 text-gold">
+                    🌐 Internacional
+                  </span>
+                )}
                 {(() => {
                   const st = statusPremissas(c);
                   if (st === "sem" || st === "inativa") return null;
