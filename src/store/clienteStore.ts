@@ -67,6 +67,7 @@ function rowToCliente(row: Record<string, unknown>): Cliente {
     contatoEmail: (row.contato_email as string) ?? "",
     contatoTelefone: (row.contato_telefone as string) ?? "",
     contatoWhatsapp: (row.contato_whatsapp as string | null) ?? undefined,
+    telefonesInternacionais: (row.telefones_internacionais as boolean) ?? false,
     financeiroNome: (row.financeiro_nome as string | null) ?? undefined,
     financeiroEmail: (row.financeiro_email as string | null) ?? undefined,
     financeiroTelefone: (row.financeiro_telefone as string | null) ?? undefined,
