@@ -40,6 +40,12 @@ export interface Cliente {
   isentoIE?: boolean;
   situacaoCadastral: SituacaoCadastral;
 
+  // V15.1 — Cliente internacional (isento de CNPJ)
+  isInternacional?: boolean;
+  pais?: string;
+  documentoTipo?: string;
+  documentoNumero?: string;
+
   logradouro: string;
   numero: string;
   complemento?: string;
