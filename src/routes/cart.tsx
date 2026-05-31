@@ -418,7 +418,7 @@ function CartPage() {
           )}
 
           {apenasProvisao && (
-            <div className="rounded-lg border border-stock-pre/40 bg-stock-pre/5 p-5 space-y-2">
+            <div className="rounded-lg border border-stock-pre/40 bg-stock-pre/5 p-4 sm:p-5 space-y-2">
               <h3 className="text-[10px] uppercase tracking-[0.25em] text-stock-pre font-semibold">
                 ⚠ Carrinho 100% previsão
               </h3>
@@ -434,8 +434,9 @@ function CartPage() {
             </div>
           )}
 
-          <div className="rounded-lg gold-border bg-surface p-5 space-y-4">
-            <h2 className="font-display text-2xl">Dados do pedido</h2>
+          <div className="rounded-lg gold-border bg-surface p-4 sm:p-5 space-y-4">
+            <h2 className="font-display text-xl sm:text-2xl">Dados do pedido</h2>
+
 
             <div>
               <div className="text-[10px] uppercase tracking-[0.18em] text-text-muted mb-1.5">
