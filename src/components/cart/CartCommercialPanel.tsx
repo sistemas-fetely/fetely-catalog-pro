@@ -304,7 +304,7 @@ export function CartCommercialPanel({
           </h3>
           <PaymentSelector
             condicoes={condicoesDisponiveis}
-            todas={ativo ? CONDICOES_PAGAMENTO : null}
+            todas={ativo && liberarTodasCondicoes ? CONDICOES_PAGAMENTO : null}
             selectedId={condicao?.id ?? null}
             onSelect={setCondicaoSelecionadaId}
           />
