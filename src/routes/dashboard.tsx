@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  TrendingUp, Package, DollarSign, ShoppingBag, Users, Trophy, Percent, Sparkles,
+  TrendingUp, Package, DollarSign, ShoppingBag, Users, Trophy, Percent, Sparkles, Boxes, Layers,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,6 +88,7 @@ function DashboardPage() {
   }, [loading, session, isCliente, isAdminOrMaster, navigate]);
 
   const [periodo, setPeriodo] = useState<Periodo>("mes_atual");
+  const [rankingMetric, setRankingMetric] = useState<"valor" | "quantidade">("valor");
   const range = useMemo(() => rangeFor(periodo), [periodo]);
   const rangeAnterior = useMemo(() => {
     const span = range.to.getTime() - range.from.getTime();
@@ -115,6 +116,9 @@ function DashboardPage() {
     },
   });
 
+
+
+
   // Período anterior para deltas
   const { data: ordersPrev = [] } = useQuery({
     enabled: !!session && !isCliente,
@@ -127,6 +131,27 @@ function DashboardPage() {
         .lt("created_at", rangeAnterior.to.toISOString());
       if (error) throw error;
       return (data ?? []) as unknown as OrderRow[];
+    },
+  });
+
+  // Itens de pedido no período — para ranking de produtos/coleções
+  // RLS em order_items filtra automaticamente pelo perfil
+  const { data: items = [], isLoading: loadingItems } = useQuery({
+    enabled: !!session && !isCliente,
+    queryKey: ["dashboard-items", range.from.toISOString(), range.to.toISOString()],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_items")
+        .select("sku, quantity, subtotal_bruto, product_snapshot, orders!inner(created_at)")
+        .gte("orders.created_at", range.from.toISOString())
+        .lt("orders.created_at", range.to.toISOString());
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        sku: string;
+        quantity: number;
+        subtotal_bruto: number;
+        product_snapshot: { nomeComercial?: string; colecao?: string; corNome?: string } | null;
+      }>;
     },
   });
 
@@ -182,6 +207,32 @@ function DashboardPage() {
         .sort((a, b) => b.total - a.total)
     : [];
   const melhorVendedor = ranking[0];
+
+  // ─── Ranking de produtos e coleções ───────────────────────────────────
+  type AggRow = { key: string; nome: string; valor: number; quantidade: number };
+  const aggregate = (keyFn: (it: typeof items[number]) => { key: string; nome: string } | null) => {
+    const map = new Map<string, AggRow>();
+    items.forEach((it) => {
+      const k = keyFn(it);
+      if (!k || !k.key) return;
+      const cur = map.get(k.key) ?? { key: k.key, nome: k.nome, valor: 0, quantidade: 0 };
+      cur.valor += Number(it.subtotal_bruto || 0);
+      cur.quantidade += Number(it.quantity || 0);
+      map.set(k.key, cur);
+    });
+    return Array.from(map.values()).sort((a, b) =>
+      rankingMetric === "valor" ? b.valor - a.valor : b.quantidade - a.quantidade,
+    );
+  };
+  const rankingProdutos = aggregate((it) => ({
+    key: it.sku,
+    nome: it.product_snapshot?.nomeComercial ?? it.sku,
+  }));
+  const rankingColecoes = aggregate((it) => {
+    const c = it.product_snapshot?.colecao;
+    return c ? { key: c, nome: c } : null;
+  });
+
 
   // ─── Desconto médio (vendedor) ────────────────────────────────────────
   const descontoMedio =
@@ -360,6 +411,62 @@ function DashboardPage() {
         </section>
       )}
 
+      {/* Ranking de produtos e coleções */}
+      {(rankingProdutos.length > 0 || rankingColecoes.length > 0 || loadingItems) && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-lg sm:text-xl">Top produtos & coleções</h2>
+            <div className="inline-flex rounded-md border border-border bg-surface-2 p-0.5 text-[10px] uppercase tracking-wider">
+              <button
+                type="button"
+                onClick={() => setRankingMetric("valor")}
+                className={
+                  "px-3 py-1.5 rounded " +
+                  (rankingMetric === "valor"
+                    ? "bg-gold text-background"
+                    : "text-text-secondary hover:text-text-primary")
+                }
+              >
+                Por valor
+              </button>
+              <button
+                type="button"
+                onClick={() => setRankingMetric("quantidade")}
+                className={
+                  "px-3 py-1.5 rounded " +
+                  (rankingMetric === "quantidade"
+                    ? "bg-gold text-background"
+                    : "text-text-secondary hover:text-text-primary")
+                }
+              >
+                Por quantidade
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+            <RankingList
+              icon={<Boxes className="h-4 w-4 text-gold" />}
+              title="Produtos"
+              rows={rankingProdutos.slice(0, 8)}
+              metric={rankingMetric}
+              loading={loadingItems}
+              emptyLabel="Nenhum produto neste período."
+            />
+            <RankingList
+              icon={<Layers className="h-4 w-4 text-gold" />}
+              title="Coleções"
+              rows={rankingColecoes.slice(0, 8)}
+              metric={rankingMetric}
+              loading={loadingItems}
+              emptyLabel="Nenhuma coleção neste período."
+            />
+          </div>
+        </section>
+      )}
+
+
+
       {/* Tabela de pedidos */}
       <section className="rounded-lg gold-border bg-surface overflow-hidden">
         <header className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-border bg-surface-2">
@@ -492,6 +599,80 @@ function KpiCard({
       )}
       {hint && !loading && (
         <div className="text-[11px] text-text-muted truncate">{hint}</div>
+      )}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Ranking list (produtos / coleções)
+// ──────────────────────────────────────────────────────────────────────────
+
+function RankingList({
+  icon, title, rows, metric, loading, emptyLabel,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  rows: Array<{ key: string; nome: string; valor: number; quantidade: number }>;
+  metric: "valor" | "quantidade";
+  loading?: boolean;
+  emptyLabel: string;
+}) {
+  const max =
+    rows.length > 0
+      ? Math.max(...rows.map((r) => (metric === "valor" ? r.valor : r.quantidade))) || 1
+      : 1;
+
+  return (
+    <div className="rounded-lg gold-border bg-surface overflow-hidden">
+      <header className="flex items-center gap-2 px-4 sm:px-5 py-3 border-b border-border bg-surface-2">
+        {icon}
+        <h3 className="font-display text-base sm:text-lg">{title}</h3>
+        <span className="ml-auto text-[10px] uppercase tracking-wider text-text-muted">
+          {metric === "valor" ? "Valor" : "Quantidade"}
+        </span>
+      </header>
+      {loading ? (
+        <div className="p-6 text-center text-sm text-text-muted">Carregando...</div>
+      ) : rows.length === 0 ? (
+        <div className="p-6 text-center text-sm text-text-secondary">{emptyLabel}</div>
+      ) : (
+        <ul className="divide-y divide-border/50">
+          {rows.map((r, i) => {
+            const v = metric === "valor" ? r.valor : r.quantidade;
+            const pct = (v / max) * 100;
+            return (
+              <li key={r.key} className="px-4 sm:px-5 py-3 flex items-center gap-3 sm:gap-4">
+                <div className="w-6 text-center font-display text-base text-gold shrink-0">
+                  {i + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                    <span className="text-sm text-text-primary truncate">{r.nome}</span>
+                    <span className="text-xs text-text-secondary shrink-0">
+                      {metric === "valor"
+                        ? `${r.quantidade} un.`
+                        : formatBRL(r.valor)}
+                    </span>
+                  </div>
+                  <div className="relative h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                    <div
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-gold/60 to-gold rounded-full"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="text-right shrink-0 w-24 sm:w-28">
+                  <div className="text-gold font-medium text-sm">
+                    {metric === "valor"
+                      ? formatBRL(r.valor)
+                      : `${r.quantidade.toLocaleString("pt-BR")} un.`}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );
