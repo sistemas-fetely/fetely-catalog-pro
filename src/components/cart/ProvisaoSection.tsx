@@ -11,22 +11,22 @@ export function ProvisaoSection({ items }: { items: CartItem[] }) {
   const subtotal = items.reduce((s, i) => s + i.quantity * i.product.precoAtacado, 0);
 
   return (
-    <section className="rounded-lg border border-stock-pre/30 bg-[#0F0F0F] overflow-hidden">
-      <header className="flex items-center justify-between gap-3 px-3 py-3 sm:px-5 border-b border-stock-pre/20 bg-stock-pre/5">
+    <section className="rounded-lg border border-blue-700/30 bg-blue-950/60 overflow-hidden">
+      <header className="flex items-center justify-between gap-3 px-3 py-3 sm:px-5 border-b border-blue-700/20 bg-blue-900/10">
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-stock-pre font-semibold">
+          <div className="text-[10px] uppercase tracking-[0.25em] text-blue-300 font-semibold">
             📋 Provisão futura — não faturado
           </div>
-          <div className="text-[11px] text-text-muted mt-0.5">
+          <div className="text-[11px] text-blue-200/70 mt-0.5">
             Sem desconto · valores de referência
           </div>
         </div>
         <div className="text-right shrink-0">
-          <div className="text-[10px] uppercase tracking-wider text-text-muted">Referência</div>
-          <div className="text-stock-pre font-medium text-sm">{formatBRL(subtotal)}</div>
+          <div className="text-[10px] uppercase tracking-wider text-blue-200/70">Referência</div>
+          <div className="text-blue-300 font-medium text-sm">{formatBRL(subtotal)}</div>
         </div>
       </header>
-      <div className="px-3 py-2 sm:px-5 sm:py-2.5 text-[11px] text-stock-pre/90 bg-stock-pre/5 border-b border-stock-pre/10">
+      <div className="px-3 py-2 sm:px-5 sm:py-2.5 text-[11px] text-blue-200/90 bg-blue-900/10 border-b border-blue-700/10">
         ⚠ Estes itens serão salvos como rascunho separado. Não entram no pedido atual.
       </div>
       <ul>
