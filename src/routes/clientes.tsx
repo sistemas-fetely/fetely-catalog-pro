@@ -604,8 +604,20 @@ function ClienteDetail({
         <TabsContent value="perfil" className="px-5 pb-6 space-y-3 mt-3">
           <DetailRow label="Razão Social" value={cliente.razaoSocial} />
           <DetailRow label="Nome Fantasia" value={cliente.nomeFantasia} />
-          <DetailRow label="Inscrição Estadual" value={cliente.inscricaoEstadual || (cliente.isentoIE ? "Isento" : "—")} />
-          <DetailRow label="Situação" value={cliente.situacaoCadastral} />
+          {cliente.isInternacional ? (
+            <>
+              <DetailRow label="País" value={cliente.pais || "—"} />
+              <DetailRow
+                label="Documento"
+                value={`${cliente.documentoTipo ?? "—"} ${cliente.documentoNumero ?? ""}`.trim() || "—"}
+              />
+            </>
+          ) : (
+            <>
+              <DetailRow label="Inscrição Estadual" value={cliente.inscricaoEstadual || (cliente.isentoIE ? "Isento" : "—")} />
+              <DetailRow label="Situação" value={cliente.situacaoCadastral} />
+            </>
+          )}
           <DetailRow
             label="Endereço"
             value={`${cliente.logradouro}${cliente.numero ? `, ${cliente.numero}` : ""} — ${cliente.bairro}, ${cliente.cidade}/${cliente.estado} · ${cliente.cep}`}
