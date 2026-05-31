@@ -40,7 +40,8 @@ function statusBadge(status: StatusProvisao) {
 
 function ProvisoesPage() {
   const { highlight } = Route.useSearch();
-  const provisoes = useVisibleProvisoes();
+  const [showReprovados, setShowReprovados] = useState(false);
+  const provisoes = useVisibleProvisoes({ includeReprovados: showReprovados });
   const [tab, setTab] = useState<Tab>("aguardando");
   const [openId, setOpenId] = useState<string | null>(highlight ?? null);
 
