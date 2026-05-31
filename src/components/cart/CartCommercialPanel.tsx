@@ -285,31 +285,34 @@ export function CartCommercialPanel({
             </div>
 
             {prox && (
-              <div>
-                <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-text-muted mb-1">
-                  <span>Próxima: {prox.nome}</span>
-                  <span>
-                    {formatBRL(bruto)} / {formatBRL(prox.valorMin)}
+              <div className="relative overflow-hidden rounded-lg border border-gold/40 bg-gradient-to-br from-gold/15 via-gold/5 to-transparent p-3 shadow-[0_0_20px_-8px_hsl(var(--gold)/0.5)]">
+                <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.15em] text-gold mb-2">
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-gold animate-pulse" />
+                    Próxima: {prox.nome}
+                  </span>
+                  <span className="text-text-primary font-bold tracking-normal normal-case text-sm">
+                    {formatBRL(bruto)} <span className="text-text-muted font-normal">/ {formatBRL(prox.valorMin)}</span>
                   </span>
                 </div>
-                <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                <div className="relative h-2.5 rounded-full bg-surface-2 overflow-hidden ring-1 ring-gold/20">
                   <div
-                    className="h-full bg-gold transition-all"
+                    className="h-full bg-gradient-to-r from-gold/70 via-gold to-gold/90 transition-all shadow-[0_0_12px_hsl(var(--gold)/0.7)]"
                     style={{
                       width: `${Math.min(100, (bruto / prox.valorMin) * 100)}%`,
                     }}
                   />
                 </div>
                 {faltaProx > 0 && faltaProx <= prox.valorMin * 0.1 && (
-                  <p className="mt-2 text-xs text-gold">
-                    Adicione {formatBRL(faltaProx)} e ganhe mais{" "}
-                    {prox.descontoCelebra - faixa.descontoCelebra}% de desconto
+                  <p className="mt-2.5 text-sm font-medium text-gold">
+                    ✦ Adicione <strong>{formatBRL(faltaProx)}</strong> e ganhe mais{" "}
+                    <strong>{prox.descontoCelebra - faixa.descontoCelebra}% de desconto</strong>
                     {prox.frete === "CIF" && faixa.frete === "FOB" ? " + frete grátis" : ""}.
                   </p>
                 )}
                 {faltaProx > prox.valorMin * 0.1 && (
-                  <p className="mt-1.5 text-[11px] text-text-muted">
-                    Faltam {formatBRL(faltaProx)} para a próxima faixa.
+                  <p className="mt-2 text-xs text-text-muted">
+                    Faltam <strong className="text-gold">{formatBRL(faltaProx)}</strong> para a próxima faixa.
                   </p>
                 )}
               </div>
