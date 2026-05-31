@@ -155,11 +155,15 @@ export function ClienteFormModal({
   };
 
   const podeSalvar = useMemo(() => {
-    return (
+    const base =
       cliente.razaoSocial.trim().length > 0 &&
       cliente.contatoNome.trim().length > 0 &&
-      cliente.contatoTelefone.trim().length > 0
-    );
+      cliente.contatoTelefone.trim().length > 0;
+    if (!base) return false;
+    if (cliente.isInternacional) {
+      return Boolean(cliente.pais && cliente.documentoNumero?.trim());
+    }
+    return true;
   }, [cliente]);
 
   const handleSave = async () => {
