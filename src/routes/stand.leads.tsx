@@ -81,7 +81,7 @@ function LeadsPage() {
               ⬇ Exportar CSV
             </button>
             <Link
-              to="/stand"
+              to="/catalog"
               style={{
                 background: "transparent",
                 border: "0.5px solid #2A2A2A",
@@ -94,7 +94,7 @@ function LeadsPage() {
                 textDecoration: "none",
               }}
             >
-              ← Voltar
+              ← Voltar ao Catálogo
             </Link>
           </div>
         </div>
