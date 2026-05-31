@@ -268,6 +268,8 @@ export function calcularPedido(args: {
   condicao?: CondicaoPagamento | null;
   /** V13 — premissas comerciais vigentes do cliente (já validadas como vigentes pelo caller) */
   premissas?: PremissasComerciais | null;
+  /** Negociação master — força frete CIF independente da faixa */
+  freteGratisOverride?: boolean;
 }): CalculoPedido {
   const {
     bruto,
@@ -275,6 +277,7 @@ export function calcularPedido(args: {
     descontoMasterPct = 0,
     condicao = null,
     premissas = null,
+    freteGratisOverride = false,
   } = args;
 
   // 1. FAIXA — premissa pode forçar faixa fixa
@@ -345,8 +348,11 @@ export function calcularPedido(args: {
     : 0;
 
   // 4. FRETE — fixo do cliente substitui a faixa
-  const freteEfetivo: "CIF" | "FOB" =
-    premissas?.freteFixo && premissas.freteTipo ? premissas.freteTipo : faixa!.frete;
+  const freteEfetivo: "CIF" | "FOB" = freteGratisOverride
+    ? "CIF"
+    : premissas?.freteFixo && premissas.freteTipo
+      ? premissas.freteTipo
+      : faixa!.frete;
 
   const total = subtotalAposDescontos - bonusPixValor;
   return {
