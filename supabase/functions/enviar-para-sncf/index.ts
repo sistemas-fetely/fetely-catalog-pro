@@ -7,7 +7,19 @@ const corsHeaders = {
 };
 
 const SNCF_URL = "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/recebe-pedido";
-const SNCF_ORIGEM = "api";
+
+function isErroOrigem(body: any): boolean {
+  return body?.code === "23514" && String(body?.error ?? "").includes("origem_check");
+}
+
+function erroContratoOrigemSncf(body: any) {
+  return jsonResponse(502, {
+    ok: false,
+    error: "Contrato de origem incompatível no SNCF: parceiros_comerciais aceita origem de fornecedor, enquanto pedidos aceita origem comercial. Ajuste o SNCF para separar as origens ou aceitar um valor comum.",
+    sncf_status: 500,
+    sncf_response: body,
+  });
+}
 
 function jsonResponse(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -110,7 +122,7 @@ Deno.serve(async (req) => {
       produto: it.product_snapshot,
     }));
 
-    const payload = {
+    const payloadBase = {
       cnpj,
       id_externo: pedido.id,
       data_pedido: pedido.created_at.split("T")[0],
@@ -120,12 +132,10 @@ Deno.serve(async (req) => {
       condicao_solicitada: condicao,
       forma_solicitada: formaNormalizada,
       vendedor: pedido.vendedor_nome,
-      origem: SNCF_ORIGEM,
       itens_json: itens,
     };
 
-    // POST pro SNCF (FAIL-LOUD)
-    const sncfResp = await fetch(SNCF_URL, {
+    const enviarPayload = (payload: Record<string, unknown>) => fetch(SNCF_URL, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${senha}`,
@@ -134,7 +144,10 @@ Deno.serve(async (req) => {
       body: JSON.stringify(payload),
     });
 
-    const sncfBody = await sncfResp.json().catch(() => ({ error: "Resposta sem JSON do SNCF" }));
+    let sncfResp = await enviarPayload(payloadBase);
+    let sncfBody = await sncfResp.json().catch(() => ({ error: "Resposta sem JSON do SNCF" }));
+
+    if (!sncfResp.ok && isErroOrigem(sncfBody)) return erroContratoOrigemSncf(sncfBody);
 
     if (sncfResp.ok) {
       await supabase.from("orders").update({
