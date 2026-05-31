@@ -70,7 +70,7 @@ export function CartCommercialPanel({
   // Condições disponíveis
   const condicoesDisponiveis = useMemo<CondicaoPagamento[]>(() => {
     if (!faixa) return [];
-    if (ativo) return CONDICOES_PAGAMENTO; // master libera todas
+    if (ativo && liberarTodasCondicoes) return CONDICOES_PAGAMENTO; // master libera todas
     // V13 — premissas com condições preferenciais sobrepõem a faixa
     if (premissas?.temCondicaoPreferencial && premissas.condicoesPermitidas.length > 0) {
       return CONDICOES_PAGAMENTO.filter((c) =>
@@ -80,7 +80,7 @@ export function CartCommercialPanel({
     return CONDICOES_PAGAMENTO.filter(
       (c) => faixa.condicoesDisponiveis.includes(c.id) && bruto >= c.valorMinimo,
     );
-  }, [faixa, ativo, bruto, premissas]);
+  }, [faixa, ativo, liberarTodasCondicoes, bruto, premissas]);
 
   // Condição selecionada
   const condicao = useMemo(
