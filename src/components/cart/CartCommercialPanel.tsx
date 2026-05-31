@@ -216,6 +216,41 @@ export function CartCommercialPanel({
               )}
             </ul>
 
+            {/* Frete (3,5%) */}
+            {calculo.freteBase != null && calculo.freteBase > 0 && (
+              <div className="rounded-md border border-border bg-surface-2/60 px-3 py-2 text-xs space-y-1">
+                {calculo.freteGratisNegociado ? (
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-text-secondary">
+                      Frete ({calculo.fretePercent}%) — <span className="text-gold uppercase tracking-wider text-[10px]">Grátis (negociação)</span>
+                    </span>
+                    <span className="text-gold line-through opacity-70">{formatBRL(calculo.freteBase)}</span>
+                  </div>
+                ) : calculo.freteIsento ? (
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-text-secondary">
+                      Frete ({calculo.fretePercent}%) — <span className="text-gold uppercase tracking-wider text-[10px]">Isento (CIF)</span>
+                    </span>
+                    <span className="text-gold">{formatBRL(calculo.freteBase)}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-text-secondary">
+                      Frete FOB ({calculo.fretePercent}%)
+                    </span>
+                    <span className="text-text-primary">+ {formatBRL(calculo.freteValor ?? 0)}</span>
+                  </div>
+                )}
+                {calculo.freteIsento && (
+                  <p className="text-[10px] text-text-muted">
+                    {calculo.freteGratisNegociado
+                      ? "Frete removido na negociação master."
+                      : "Frete não cobrado — Fetély entrega por conta da casa."}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="border-t border-border pt-3 space-y-1">
               <div className="flex items-baseline justify-between">
                 <span className="text-xs uppercase tracking-wider text-text-secondary">
@@ -232,6 +267,7 @@ export function CartCommercialPanel({
                 </div>
               )}
             </div>
+
 
             <div className="flex items-center gap-2 rounded-md bg-surface-2 px-3 py-2 text-xs">
               <Truck className="h-4 w-4 text-gold" />
