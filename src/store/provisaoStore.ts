@@ -358,18 +358,39 @@ export const useProvisao = create<ProvisaoState>()(
   ),
 );
 
-export function useVisibleProvisoes(): ProvisaoFutura[] {
+export function useVisibleProvisoes(opts?: { includeReprovados?: boolean }): ProvisaoFutura[] {
   const provisoes = useProvisao((s) => s.provisoes);
   const user = useAuth((s) => s.user);
   const profile = useAuth((s) => s.profile);
   const roles = useAuth((s) => s.roles);
+  const clientes = useClientes((s) => s.clientes);
   const admin = roles.includes("admin") || roles.includes("master");
-  if (admin) return provisoes;
+  const filterReprovados = (list: ProvisaoFutura[]) =>
+    opts?.includeReprovados ? list : list.filter((p) => !p.reprovado);
+  if (admin) return filterReprovados(provisoes);
   if (!user) return [];
   if (roles.includes("cliente")) {
     const cid = profile?.cliente_id ?? null;
     if (!cid) return [];
-    return provisoes.filter((p) => p.clienteId === cid);
+    return filterReprovados(provisoes.filter((p) => p.clienteId === cid));
   }
-  return provisoes.filter((p) => p.vendedorId === user.id);
+  const meusClienteIds = new Set(
+    clientes.filter((c) => c.cadastradoPorVendedorId === user.id).map((c) => c.id),
+  );
+  return filterReprovados(
+    provisoes.filter(
+      (p) => p.vendedorId === user.id || meusClienteIds.has(p.clienteId),
+    ),
+  );
+}
+
+export function useCanReprovarProvisao(provisao: ProvisaoFutura | null | undefined): boolean {
+  const user = useAuth((s) => s.user);
+  const roles = useAuth((s) => s.roles);
+  const clientes = useClientes((s) => s.clientes);
+  if (!provisao || !user) return false;
+  if (roles.includes("admin") || roles.includes("master")) return true;
+  if (provisao.vendedorId === user.id) return true;
+  const cliente = clientes.find((c) => c.id === provisao.clienteId);
+  return !!cliente && cliente.cadastradoPorVendedorId === user.id;
 }
