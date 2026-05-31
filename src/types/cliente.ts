@@ -202,3 +202,19 @@ export const UF_LIST = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG",
   "PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
 ] as const;
+
+// V15.1 — Lista de países (ISO 3166-1 — nomes em PT-BR, principais)
+export const PAISES_LIST: string[] = [
+  "Estados Unidos","Portugal","Espanha","França","Itália","Alemanha","Reino Unido",
+  "Holanda","Bélgica","Suíça","Áustria","Irlanda","Suécia","Noruega","Dinamarca",
+  "Finlândia","Polônia","República Tcheca","Grécia","Turquia",
+  "Argentina","Uruguai","Paraguai","Chile","Bolívia","Peru","Equador","Colômbia",
+  "Venezuela","México","Costa Rica","Panamá","Cuba","República Dominicana",
+  "Canadá","Austrália","Nova Zelândia","África do Sul","Marrocos","Egito",
+  "Israel","Emirados Árabes Unidos","Arábia Saudita","Catar","Líbano",
+  "Índia","China","Japão","Coreia do Sul","Tailândia","Vietnã","Singapura",
+  "Malásia","Indonésia","Filipinas","Hong Kong","Taiwan",
+  "Outro",
+];
+
+export const DOCUMENTO_TIPOS = ["Passport", "Tax ID", "VAT", "EIN", "Outro"] as const;
