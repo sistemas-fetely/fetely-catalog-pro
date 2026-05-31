@@ -34,6 +34,9 @@ interface OrderState {
     orderId: string,
     novo: { vendedorId: string; vendedorNome?: string | null; vendedorLogin?: string | null; vendedorTipo?: "interno" | "representante" | null },
   ) => void;
+  deleteOrder: (orderId: string) => Promise<void>;
+  reprovarOrder: (orderId: string, motivo: string) => Promise<void>;
+  desfazerReprovacao: (orderId: string) => Promise<void>;
 }
 
 const defaultMeta: OrderMeta = {
