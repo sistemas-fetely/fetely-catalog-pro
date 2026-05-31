@@ -348,8 +348,11 @@ export function calcularPedido(args: {
     : 0;
 
   // 4. FRETE — fixo do cliente substitui a faixa
-  const freteEfetivo: "CIF" | "FOB" =
-    premissas?.freteFixo && premissas.freteTipo ? premissas.freteTipo : faixa!.frete;
+  const freteEfetivo: "CIF" | "FOB" = freteGratisOverride
+    ? "CIF"
+    : premissas?.freteFixo && premissas.freteTipo
+      ? premissas.freteTipo
+      : faixa!.frete;
 
   const total = subtotalAposDescontos - bonusPixValor;
   return {
