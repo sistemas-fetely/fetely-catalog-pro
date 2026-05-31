@@ -257,7 +257,7 @@ export function CartCommercialPanel({
                 <span className="text-xs uppercase tracking-wider text-text-secondary">
                   {calculo.aplicouPix ? "Valor com PIX" : "Valor final"}
                 </span>
-                <span className="font-display text-3xl text-gold">
+                <span className="font-display text-2xl sm:text-3xl text-gold">
                   {formatBRL(calculo.total)}
                 </span>
               </div>
