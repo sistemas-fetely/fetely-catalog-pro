@@ -92,8 +92,13 @@ function formatOrderText(order: SavedOrder): string {
     if (c.aplicouPix) {
       lines.push(`Bônus PIX (2,5%):              – ${formatBRL(c.bonusPixValor)}`);
     }
-    if (c.frete === "FOB" && (c.freteValor ?? 0) > 0) {
-      lines.push(`Frete FOB (${(c.fretePercent ?? 0).toFixed(1).replace(".", ",")}%):              + ${formatBRL(c.freteValor ?? 0)}`);
+    if (c.frete === "FOB") {
+      const subAposDesc = c.bruto - c.descontoCelebraValor - c.descontoMasterValor;
+      const fretePct = c.fretePercent ?? FRETE_PERCENT;
+      const freteVal = c.freteValor ?? subAposDesc * (fretePct / 100);
+      if (freteVal > 0) {
+        lines.push(`Frete FOB (${fretePct.toFixed(1).replace(".", ",")}%):              + ${formatBRL(freteVal)}`);
+      }
     }
     lines.push(sub);
     lines.push(`TOTAL FINAL:                   ${formatBRL(c.totalFinal)}`);
