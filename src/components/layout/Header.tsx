@@ -168,7 +168,7 @@ export function Header() {
                 <TooltipTrigger asChild>
                   <Link
                     to="/dashboard"
-                    className={`hidden md:flex items-center justify-center p-2 rounded-md transition ${
+                    className={`flex items-center justify-center p-2 rounded-md transition ${
                       pathname.startsWith("/dashboard")
                         ? "text-gold bg-surface-hover"
                         : "text-text-secondary hover:text-gold hover:bg-surface-hover"
@@ -188,7 +188,7 @@ export function Header() {
                 <TooltipTrigger asChild>
                   <Link
                     to="/settings"
-                    className={`hidden md:flex items-center justify-center p-2 rounded-md transition ${
+                    className={`flex items-center justify-center p-2 rounded-md transition ${
                       pathname.startsWith("/settings") ||
                       pathname.startsWith("/photos") ||
                       pathname.startsWith("/commercial") ||
