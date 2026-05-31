@@ -7,20 +7,18 @@ const corsHeaders = {
 };
 
 const SNCF_URL = "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/recebe-pedido";
-const SNCF_ORIGENS_ACEITAS = [
-  "pedido_b2b",
-  "integracao",
-  "integracao_fetely",
-  "portal_b2b",
-  "sistema",
-  "manual",
-  "importacao",
-  "fetely",
-  "lovable",
-];
 
 function isErroOrigem(body: any): boolean {
   return body?.code === "23514" && String(body?.error ?? "").includes("origem_check");
+}
+
+function erroContratoOrigemSncf(body: any) {
+  return jsonResponse(502, {
+    ok: false,
+    error: "Contrato de origem incompatível no SNCF: parceiros_comerciais aceita origem de fornecedor, enquanto pedidos aceita origem comercial. Ajuste o SNCF para separar as origens ou aceitar um valor comum.",
+    sncf_status: 500,
+    sncf_response: body,
+  });
 }
 
 function jsonResponse(status: number, body: unknown) {
