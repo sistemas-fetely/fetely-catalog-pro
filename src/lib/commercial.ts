@@ -247,17 +247,25 @@ export interface CalculoPedido {
   total: number;
   totalSemPix: number;
   aplicouPix: boolean;
-  /** V13 — premissas comerciais foram aplicadas neste cálculo */
   premissasAplicadas?: boolean;
-  /** % efetivo de "desconto Celebra" depois das premissas (mostrado no painel) */
   descontoCelebraPercentEfetivo?: number;
-  /** % efetivo de bônus PIX aplicado (faixa ou personalizado) */
   bonusPixPercentEfetivo?: number;
-  /** frete efetivo (faixa ou fixo do cliente) */
   freteEfetivo?: "CIF" | "FOB";
-  /** pedido mínimo efetivo (pode ser personalizado por cliente) */
   pedidoMinimoEfetivo?: number;
+  /** Valor base de frete (3,5% do subtotal após descontos) */
+  freteBase?: number;
+  /** Valor de frete efetivamente cobrado (somado ao total quando FOB) */
+  freteValor?: number;
+  /** Percentual usado para o cálculo do frete */
+  fretePercent?: number;
+  /** true quando frete não é cobrado (CIF ou negociação grátis) */
+  freteIsento?: boolean;
+  /** true quando a isenção veio da negociação master */
+  freteGratisNegociado?: boolean;
 }
+
+/** Percentual padrão de frete sobre o subtotal após descontos. */
+export const FRETE_PERCENT = 3.5;
 
 import type { PremissasComerciais } from "@/types/cliente";
 
