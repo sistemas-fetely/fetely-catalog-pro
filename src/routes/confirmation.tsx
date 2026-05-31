@@ -553,11 +553,17 @@ function PedidoResumoPrintBlock({ order }: { order: SavedOrder }) {
           {c && c.aplicouPix && c.bonusPixValor > 0 && (
             <div>Bônus PIX: − {fmt(c.bonusPixValor)}</div>
           )}
-          {c && c.frete === "FOB" && (c.freteValor ?? 0) > 0 && (
-            <div style={{ fontWeight: 600 }}>
-              Frete FOB{c.fretePercent ? ` (${c.fretePercent.toFixed(1).replace(".", ",")}%)` : ""}: + {fmt(c.freteValor ?? 0)}
-            </div>
-          )}
+          {c && c.frete === "FOB" && (() => {
+            const subAposDesc = c.bruto - c.descontoCelebraValor - c.descontoMasterValor;
+            const fretePct = c.fretePercent ?? FRETE_PERCENT;
+            const freteVal = c.freteValor ?? subAposDesc * (fretePct / 100);
+            if (freteVal <= 0) return null;
+            return (
+              <div style={{ fontWeight: 600 }}>
+                Frete FOB ({fretePct.toFixed(1).replace(".", ",")}%): + {fmt(freteVal)}
+              </div>
+            );
+          })()}
           {!c && <div>Pagamento: {order.meta.condicaoPagamento}</div>}
         </div>
         <div style={{ textAlign: "right" }}>
