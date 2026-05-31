@@ -130,7 +130,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 <span className="text-sm text-text-secondary leading-none">
                   {formatBRL(product.precoVarejo)}
                 </span>
-                {product.qtdKit > 1 && (
+                {showUnitPrice && (
                   <div className="mt-1 text-[10px] text-text-muted">
                     {formatBRL(product.precoVarejo / product.qtdKit)} / un.
                   </div>
