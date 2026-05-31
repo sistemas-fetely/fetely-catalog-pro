@@ -376,7 +376,7 @@ export async function hashSenha(senha: string): Promise<string> {
     .join("");
 }
 
-export const SENHA_MASTER_DEFAULT = "fetely2025";
+export const SENHA_MASTER_DEFAULT = "Hamsa1818";
 
 export const JUSTIFICATIVAS_NEGOCIACAO = [
   "Feira / evento presencial",
