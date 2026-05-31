@@ -116,10 +116,6 @@ export function Header() {
           {/* Primary nav (left group) — apenas usuários autenticados */}
           {isInternalUser && (
             <nav className="hidden md:flex items-center gap-1 ml-2">
-              <Link to="/dashboard" className={navLinkClass(pathname.startsWith("/dashboard"))}>
-                <LayoutDashboard className="h-4 w-4" />
-                <span className="hidden lg:inline px-1 py-1.5">Dashboard</span>
-              </Link>
               <Link to="/catalog" className={navLinkClass(pathname.startsWith("/catalog"))}>
                 <span className="px-2 py-1.5">Catálogo</span>
               </Link>
