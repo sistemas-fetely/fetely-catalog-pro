@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BookOpen,
+  Building,
   Camera,
   ChevronRight,
   Layers,
