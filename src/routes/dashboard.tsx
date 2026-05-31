@@ -303,7 +303,19 @@ function DashboardPage() {
               : "Sua performance neste período"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {isAdminOrMaster && (
+            <select
+              value={vendedorFiltro}
+              onChange={(e) => setVendedorFiltro(e.target.value)}
+              className="rounded-md border border-border bg-surface-2 px-3 py-2 text-xs uppercase tracking-wider text-text-primary outline-none focus:border-gold max-w-[200px]"
+            >
+              <option value="todos">Todos os vendedores</option>
+              {vendedoresList.map((v) => (
+                <option key={v.id} value={v.id}>{v.nome}</option>
+              ))}
+            </select>
+          )}
           <select
             value={periodo}
             onChange={(e) => setPeriodo(e.target.value as Periodo)}
