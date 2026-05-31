@@ -350,6 +350,7 @@ export function Header() {
         )}
 
       </header>
+      <ChangePasswordDialog open={changePwOpen} onOpenChange={setChangePwOpen} />
     </TooltipProvider>
   );
 }
