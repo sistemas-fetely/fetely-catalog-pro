@@ -65,30 +65,42 @@ export const useAuth = create<AuthState>((set, get) => ({
     if (get().initialized) return;
     set({ initialized: true });
 
-    // Listener FIRST (sync state changes), then check current session
-    supabase.auth.onAuthStateChange((_event, session) => {
+    // Listener único: onAuthStateChange emite INITIAL_SESSION no registro,
+    // então um getSession() separado é redundante (mata o fetch duplicado).
+    supabase.auth.onAuthStateChange((event, session) => {
+      // Logout REAL só no SIGNED_OUT. Blip de rede transiente não emite esse
+      // evento — o autoRefreshToken renova sozinho e segura a sessão.
+      if (event === "SIGNED_OUT") {
+        set({ session: null, user: null, profile: null, roles: [], loading: false });
+        return;
+      }
+
+      // Renovação de token / update de usuário: atualiza a sessão em SILÊNCIO.
+      // Não pisca loading e não refaz perfil (perfil/roles não mudam aqui).
+      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+        if (session?.user) set({ session, user: session.user });
+        return;
+      }
+
+      // INITIAL_SESSION / SIGNED_IN: resolvem o estado de login.
       if (session?.user) {
-        set({ session, user: session.user, loading: true });
-        // Defer Supabase calls to avoid deadlock with listener
+        const jaTemPerfil = get().profile?.id === session.user.id;
+        // loading só quando ainda NÃO temos o perfil (login frio). Re-disparo
+        // do listener com perfil já carregado não pisca a tela.
+        set({ session, user: session.user, loading: !jaTemPerfil });
+        // Defer pra evitar deadlock com o próprio listener.
         setTimeout(async () => {
           const { profile, roles } = await loadProfileAndRoles(session.user.id);
           set({ profile, roles, loading: false });
         }, 0);
       } else {
+        // INITIAL_SESSION sem sessão persistida = visitante.
         set({ session: null, user: null, profile: null, roles: [], loading: false });
       }
     });
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      set({ session, user: session?.user ?? null });
-      if (session?.user) {
-        const { profile, roles } = await loadProfileAndRoles(session.user.id);
-        set({ profile, roles, loading: false });
-      } else {
-        set({ loading: false });
-      }
-    });
   },
+
+
 
   refreshProfile: async () => {
     const u = get().user;
