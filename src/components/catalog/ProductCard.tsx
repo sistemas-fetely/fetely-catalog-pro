@@ -105,7 +105,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <span className="text-xl font-semibold text-gold leading-none">
               {indisponivel ? "—" : formatBRL(product.precoVarejo)}
             </span>
-            {!indisponivel && product.qtdKit > 1 && product.precoVarejo > 0 && (
+            {!indisponivel && showUnitPrice && product.precoVarejo > 0 && (
               <div className="mt-1 text-[10px] text-text-muted">
                 {formatBRL(product.precoVarejo / product.qtdKit)} / un. ({product.qtdKit} un. por kit)
               </div>
