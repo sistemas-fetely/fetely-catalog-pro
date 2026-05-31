@@ -6,11 +6,12 @@ import { toast } from "sonner";
 import { Download, Eye, Package, Trash2, UserCog, XCircle, RotateCcw } from "lucide-react";
 import { BotaoEnviarSncf } from "@/components/BotaoEnviarSncf";
 import { formatBRL } from "@/lib/format";
-import { useOrder, useVisibleOrders } from "@/store/orderStore";
+import { useOrder, useVisibleOrders, useCanReprovarOrder } from "@/store/orderStore";
 import { useAuth } from "@/store/authStore";
 import { useClientes } from "@/store/clienteStore";
 import { listAppUsers } from "@/lib/users.functions";
 import { ExportModal } from "@/components/export/ExportModal";
+import { ReprovarDialog } from "@/components/ReprovarDialog";
 
 
 export const Route = createFileRoute("/orders")({
