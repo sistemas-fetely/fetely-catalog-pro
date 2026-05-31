@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StandRouteImport } from './routes/stand'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProvisoesRouteImport } from './routes/provisoes'
 import { Route as ProdutoRouteImport } from './routes/produto'
@@ -26,6 +27,7 @@ import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
+import { Route as StandLeadsRouteImport } from './routes/stand.leads'
 import { Route as PortalProvisoesRouteImport } from './routes/portal.provisoes'
 import { Route as PortalPedidosRouteImport } from './routes/portal.pedidos'
 import { Route as PortalContaRouteImport } from './routes/portal.conta'
@@ -35,6 +37,11 @@ import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
 
+const StandRoute = StandRouteImport.update({
+  id: '/stand',
+  path: '/stand',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -120,6 +127,11 @@ const PortalIndexRoute = PortalIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PortalRoute,
 } as any)
+const StandLeadsRoute = StandLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => StandRoute,
+} as any)
 const PortalProvisoesRoute = PortalProvisoesRouteImport.update({
   id: '/provisoes',
   path: '/provisoes',
@@ -179,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/settings': typeof SettingsRoute
+  '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
@@ -186,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/portal/conta': typeof PortalContaRoute
   '/portal/pedidos': typeof PortalPedidosRoute
   '/portal/provisoes': typeof PortalProvisoesRoute
+  '/stand/leads': typeof StandLeadsRoute
   '/portal/': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -205,6 +219,7 @@ export interface FileRoutesByTo {
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/settings': typeof SettingsRoute
+  '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
@@ -212,6 +227,7 @@ export interface FileRoutesByTo {
   '/portal/conta': typeof PortalContaRoute
   '/portal/pedidos': typeof PortalPedidosRoute
   '/portal/provisoes': typeof PortalProvisoesRoute
+  '/stand/leads': typeof StandLeadsRoute
   '/portal': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -233,6 +249,7 @@ export interface FileRoutesById {
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/settings': typeof SettingsRoute
+  '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
@@ -240,6 +257,7 @@ export interface FileRoutesById {
   '/portal/conta': typeof PortalContaRoute
   '/portal/pedidos': typeof PortalPedidosRoute
   '/portal/provisoes': typeof PortalProvisoesRoute
+  '/stand/leads': typeof StandLeadsRoute
   '/portal/': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -262,6 +280,7 @@ export interface FileRouteTypes {
     | '/produto'
     | '/provisoes'
     | '/settings'
+    | '/stand'
     | '/admin/cartilhas'
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
@@ -269,6 +288,7 @@ export interface FileRouteTypes {
     | '/portal/conta'
     | '/portal/pedidos'
     | '/portal/provisoes'
+    | '/stand/leads'
     | '/portal/'
     | '/catalog/categoria/$categoria'
   fileRoutesByTo: FileRoutesByTo
@@ -288,6 +308,7 @@ export interface FileRouteTypes {
     | '/produto'
     | '/provisoes'
     | '/settings'
+    | '/stand'
     | '/admin/cartilhas'
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
@@ -295,6 +316,7 @@ export interface FileRouteTypes {
     | '/portal/conta'
     | '/portal/pedidos'
     | '/portal/provisoes'
+    | '/stand/leads'
     | '/portal'
     | '/catalog/categoria/$categoria'
   id:
@@ -315,6 +337,7 @@ export interface FileRouteTypes {
     | '/produto'
     | '/provisoes'
     | '/settings'
+    | '/stand'
     | '/admin/cartilhas'
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
@@ -322,6 +345,7 @@ export interface FileRouteTypes {
     | '/portal/conta'
     | '/portal/pedidos'
     | '/portal/provisoes'
+    | '/stand/leads'
     | '/portal/'
     | '/catalog/categoria/$categoria'
   fileRoutesById: FileRoutesById
@@ -343,6 +367,7 @@ export interface RootRouteChildren {
   ProdutoRoute: typeof ProdutoRoute
   ProvisoesRoute: typeof ProvisoesRoute
   SettingsRoute: typeof SettingsRoute
+  StandRoute: typeof StandRouteWithChildren
   AdminCartilhasRoute: typeof AdminCartilhasRoute
   AdminProductsRoute: typeof AdminProductsRoute
   AdminSincronizacaoSncfRoute: typeof AdminSincronizacaoSncfRoute
@@ -351,6 +376,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/stand': {
+      id: '/stand'
+      path: '/stand'
+      fullPath: '/stand'
+      preLoaderRoute: typeof StandRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -470,6 +502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalIndexRouteImport
       parentRoute: typeof PortalRoute
     }
+    '/stand/leads': {
+      id: '/stand/leads'
+      path: '/leads'
+      fullPath: '/stand/leads'
+      preLoaderRoute: typeof StandLeadsRouteImport
+      parentRoute: typeof StandRoute
+    }
     '/portal/provisoes': {
       id: '/portal/provisoes'
       path: '/provisoes'
@@ -557,6 +596,16 @@ const PortalRouteChildren: PortalRouteChildren = {
 const PortalRouteWithChildren =
   PortalRoute._addFileChildren(PortalRouteChildren)
 
+interface StandRouteChildren {
+  StandLeadsRoute: typeof StandLeadsRoute
+}
+
+const StandRouteChildren: StandRouteChildren = {
+  StandLeadsRoute: StandLeadsRoute,
+}
+
+const StandRouteWithChildren = StandRoute._addFileChildren(StandRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CartRoute: CartRoute,
@@ -574,6 +623,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProdutoRoute: ProdutoRoute,
   ProvisoesRoute: ProvisoesRoute,
   SettingsRoute: SettingsRoute,
+  StandRoute: StandRouteWithChildren,
   AdminCartilhasRoute: AdminCartilhasRoute,
   AdminProductsRoute: AdminProductsRoute,
   AdminSincronizacaoSncfRoute: AdminSincronizacaoSncfRoute,

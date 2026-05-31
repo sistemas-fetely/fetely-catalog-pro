@@ -130,14 +130,20 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const isStand = pathname === "/stand" || pathname.startsWith("/stand/");
   return (
     <QueryClientProvider client={queryClient}>
       <BootEffects />
-      <div className="min-h-screen bg-background text-text-primary pb-16 md:pb-0">
-        <Header />
+      {isStand ? (
         <Outlet />
-        <BottomNav />
-      </div>
+      ) : (
+        <div className="min-h-screen bg-background text-text-primary pb-16 md:pb-0">
+          <Header />
+          <Outlet />
+          <BottomNav />
+        </div>
+      )}
       <Toaster />
     </QueryClientProvider>
   );
@@ -171,7 +177,9 @@ function BootEffects() {
       const isPublic =
         pathname === "/login" ||
         pathname === "/catalog" ||
-        pathname.startsWith("/catalog/");
+        pathname.startsWith("/catalog/") ||
+        pathname === "/stand" ||
+        pathname.startsWith("/stand/");
       if (!isPublic) {
         navigate({ to: "/login", search: { redirect: pathname } as never });
       }
@@ -183,7 +191,9 @@ function BootEffects() {
         pathname === "/portal" ||
         pathname.startsWith("/portal/") ||
         pathname === "/catalog" ||
-        pathname.startsWith("/catalog/");
+        pathname.startsWith("/catalog/") ||
+        pathname === "/stand" ||
+        pathname.startsWith("/stand/");
       if (!allowed) {
         navigate({ to: "/portal" });
       }
