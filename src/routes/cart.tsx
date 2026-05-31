@@ -460,7 +460,7 @@ function CartPage() {
             </Field>
           </div>
 
-          <div className="rounded-lg gold-border bg-surface p-5">
+          <div className="rounded-lg gold-border bg-surface p-4 sm:p-5">
             {apenasProvisao ? (
               <>
                 <p className="mb-3 text-xs text-stock-pre">
