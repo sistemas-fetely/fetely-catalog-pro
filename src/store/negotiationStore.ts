@@ -116,6 +116,8 @@ export const useNegotiation = create<NegotiationStore>()(
       setObservacaoInterna: (v) => set({ observacaoInterna: v }),
       setUsarReservada: (v) => set({ usarReservada: v }),
       setCondicaoSelecionadaId: (id) => set({ condicaoSelecionadaId: id }),
+      setFreteGratis: (v) => set({ freteGratis: v }),
+      setLiberarTodasCondicoes: (v) => set({ liberarTodasCondicoes: v }),
       resetSession: () => set({ ...defaultSession, tentativas: 0 }),
     }),
     {
