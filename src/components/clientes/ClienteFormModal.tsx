@@ -551,20 +551,44 @@ export function ClienteFormModal({
                 onChange={(e) => update({ contatoEmail: e.target.value })}
               />
             </Field>
+            <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer select-none pb-1">
+              <input
+                type="checkbox"
+                checked={cliente.telefonesInternacionais ?? false}
+                onChange={(e) => update({ telefonesInternacionais: e.target.checked })}
+              />
+              🌐 Telefones internacionais (ex: +1 555-123-4567)
+            </label>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Telefone *">
-                <input
-                  className="input"
-                  value={cliente.contatoTelefone}
-                  onChange={(e) => update({ contatoTelefone: e.target.value })}
-                />
+                <div className="flex">
+                  {cliente.telefonesInternacionais && (
+                    <span className="inline-flex items-center px-2 rounded-l-md border border-r-0 border-border bg-surface-2 text-xs text-gold">
+                      +
+                    </span>
+                  )}
+                  <input
+                    className={cn("input", cliente.telefonesInternacionais ? "rounded-l-none" : "")}
+                    placeholder={cliente.telefonesInternacionais ? "1 555-123-4567" : "(11) 99999-9999"}
+                    value={cliente.contatoTelefone}
+                    onChange={(e) => update({ contatoTelefone: e.target.value })}
+                  />
+                </div>
               </Field>
               <Field label="WhatsApp">
-                <input
-                  className="input"
-                  value={cliente.contatoWhatsapp ?? ""}
-                  onChange={(e) => update({ contatoWhatsapp: e.target.value })}
-                />
+                <div className="flex">
+                  {cliente.telefonesInternacionais && (
+                    <span className="inline-flex items-center px-2 rounded-l-md border border-r-0 border-border bg-surface-2 text-xs text-gold">
+                      +
+                    </span>
+                  )}
+                  <input
+                    className={cn("input", cliente.telefonesInternacionais ? "rounded-l-none" : "")}
+                    placeholder={cliente.telefonesInternacionais ? "1 555-123-4567" : "(11) 99999-9999"}
+                    value={cliente.contatoWhatsapp ?? ""}
+                    onChange={(e) => update({ contatoWhatsapp: e.target.value })}
+                  />
+                </div>
               </Field>
             </div>
 
