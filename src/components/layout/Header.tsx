@@ -160,6 +160,26 @@ export function Header() {
               </Link>
             )}
 
+            {/* Dashboard link */}
+            {isInternalUser && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    to="/dashboard"
+                    className={`hidden md:flex items-center justify-center p-2 rounded-md transition ${
+                      pathname.startsWith("/dashboard")
+                        ? "text-gold bg-surface-hover"
+                        : "text-text-secondary hover:text-gold hover:bg-surface-hover"
+                    }`}
+                    aria-label="Dashboard"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Dashboard</TooltipContent>
+              </Tooltip>
+            )}
+
             {/* Settings link */}
             {isInternalUser && (
               <Tooltip>
