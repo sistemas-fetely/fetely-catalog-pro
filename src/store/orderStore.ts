@@ -59,6 +59,11 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
     vendedorNome: (row.vendedor_nome as string | null) ?? undefined,
     vendedorLogin: (row.vendedor_login as string | null) ?? undefined,
     vendedorTipo: (row.vendedor_tipo as "interno" | "representante" | null) ?? null,
+    reprovado: Boolean(row.reprovado ?? false),
+    reprovadoEm: (row.reprovado_em as string | null) ?? null,
+    reprovadoMotivo: (row.reprovado_motivo as string | null) ?? null,
+    reprovadoPorId: (row.reprovado_por_id as string | null) ?? null,
+    reprovadoPorNome: (row.reprovado_por_nome as string | null) ?? null,
   };
 }
 
