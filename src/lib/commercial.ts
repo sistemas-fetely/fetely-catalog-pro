@@ -362,7 +362,14 @@ export function calcularPedido(args: {
       ? premissas.freteTipo
       : faixa!.frete;
 
-  const total = subtotalAposDescontos - bonusPixValor;
+  // 5. FRETE — 3,5% sobre subtotal após descontos
+  const freteBase = subtotalAposDescontos * (FRETE_PERCENT / 100);
+  const isentoPorCif = freteEfetivo === "CIF";
+  const freteIsento = freteGratisOverride || isentoPorCif;
+  const freteValor = freteIsento ? 0 : freteBase;
+
+  const subtotalComBonus = subtotalAposDescontos - bonusPixValor;
+  const total = subtotalComBonus + freteValor;
   return {
     bruto,
     faixa,
@@ -371,13 +378,18 @@ export function calcularPedido(args: {
     subtotalAposDescontos,
     bonusPixValor,
     total,
-    totalSemPix: subtotalAposDescontos,
+    totalSemPix: subtotalAposDescontos + freteValor,
     aplicouPix,
     premissasAplicadas: !!premissas,
     descontoCelebraPercentEfetivo: descontoCelebraPct,
     bonusPixPercentEfetivo: aplicouPix ? bonusPixPct : 0,
     freteEfetivo,
     pedidoMinimoEfetivo,
+    freteBase,
+    freteValor,
+    fretePercent: FRETE_PERCENT,
+    freteIsento,
+    freteGratisNegociado: freteGratisOverride,
   };
 }
 
