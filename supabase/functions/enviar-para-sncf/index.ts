@@ -8,19 +8,6 @@ const corsHeaders = {
 
 const SNCF_URL = "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/recebe-pedido";
 
-function isErroOrigem(body: any): boolean {
-  return body?.code === "23514" && String(body?.error ?? "").includes("origem_check");
-}
-
-function erroContratoOrigemSncf(body: any) {
-  return jsonResponse(502, {
-    ok: false,
-    error: "Contrato de origem incompatível no SNCF: parceiros_comerciais aceita origem de fornecedor, enquanto pedidos aceita origem comercial. Ajuste o SNCF para separar as origens ou aceitar um valor comum.",
-    sncf_status: 500,
-    sncf_response: body,
-  });
-}
-
 function jsonResponse(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
     status,
@@ -132,6 +119,7 @@ Deno.serve(async (req) => {
       condicao_solicitada: condicao,
       forma_solicitada: formaNormalizada,
       vendedor: pedido.vendedor_nome,
+      origem: "manual",
       itens_json: itens,
     };
 
@@ -146,8 +134,6 @@ Deno.serve(async (req) => {
 
     let sncfResp = await enviarPayload(payloadBase);
     let sncfBody = await sncfResp.json().catch(() => ({ error: "Resposta sem JSON do SNCF" }));
-
-    if (!sncfResp.ok && isErroOrigem(sncfBody)) return erroContratoOrigemSncf(sncfBody);
 
     if (sncfResp.ok) {
       await supabase.from("orders").update({
