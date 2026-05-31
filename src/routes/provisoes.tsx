@@ -185,15 +185,21 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
 
 function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClose: () => void }) {
   const isAdmin = useAuth((s) => s.roles.includes("admin") || s.roles.includes("master"));
+  const isMaster = useAuth((s) => s.roles.includes("master"));
+  const canReprovar = useCanReprovarProvisao(provisao);
   const updateStatus = useProvisao((s) => s.updateStatus);
   const setObservacoes = useProvisao((s) => s.setObservacoes);
   const cancelar = useProvisao((s) => s.cancelar);
+  const reprovarProvisao = useProvisao((s) => s.reprovarProvisao);
+  const desfazerReprovacaoProvisao = useProvisao((s) => s.desfazerReprovacaoProvisao);
+  const deleteProvisao = useProvisao((s) => s.deleteProvisao);
   const products = useCatalog((s) => s.products);
   const addBulk = useOrder((s) => s.addBulk);
   const setMeta = useOrder((s) => s.setMeta);
   const clearCart = useOrder((s) => s.clearCart);
   const navigate = useNavigate();
   const [obs, setObs] = useState(provisao.observacoes ?? "");
+  const [reprovarOpen, setReprovarOpen] = useState(false);
 
   const itemsComStatus = useMemo(() => {
     return provisao.itens.map((i) => {
