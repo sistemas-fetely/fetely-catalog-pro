@@ -191,7 +191,9 @@ function BootEffects() {
         pathname === "/portal" ||
         pathname.startsWith("/portal/") ||
         pathname === "/catalog" ||
-        pathname.startsWith("/catalog/");
+        pathname.startsWith("/catalog/") ||
+        pathname === "/stand" ||
+        pathname.startsWith("/stand/");
       if (!allowed) {
         navigate({ to: "/portal" });
       }
