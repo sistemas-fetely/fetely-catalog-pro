@@ -91,6 +91,9 @@ export interface OrderMeta {
   clienteSnapshot?: import("./cliente").ClienteSnapshot;
   // V7: quando o carrinho vem de uma provisão convertida
   provisaoOrigemId?: string;
+  // V15: quando o carrinho/pedido foi gerado a partir de uma cotação
+  cotacaoOrigemId?: string;
+  pedidoOrigem?: "direto" | "cotacao" | "provisao" | "portal_cliente";
 }
 
 export interface OrderCommercial {

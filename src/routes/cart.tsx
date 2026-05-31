@@ -13,7 +13,8 @@ import { ProvisaoSection } from "@/components/cart/ProvisaoSection";
 import { FinalConfirmModal } from "@/components/cart/FinalConfirmModal";
 import { classificarItem, extrairDataPrevisao, compararPrevisao } from "@/lib/classifyItem";
 import { useProvisao } from "@/store/provisaoStore";
-import type { CartItem, OrderCommercial } from "@/types";
+import { useCotacao } from "@/store/cotacaoStore";
+import type { CartItem, OrderCommercial, OrderMeta } from "@/types";
 import type { Cliente, ClienteSnapshot } from "@/types/cliente";
 import type { ItemProvisao } from "@/types/provisao";
 import { getPremissasVigentes } from "@/lib/premissas";
@@ -78,6 +79,8 @@ function CartPage() {
   const resetNegotiation = useNegotiation((s) => s.resetSession);
   const createProvisao = useProvisao((s) => s.createProvisao);
   const updateProvisaoStatus = useProvisao((s) => s.updateStatus);
+  const criarCotacao = useCotacao((s) => s.criarCotacao);
+  const atualizarCotacao = useCotacao((s) => s.atualizarCotacao);
   const navigate = useNavigate();
 
   const [commercial, setCommercial] = useState<CommercialState | null>(null);
@@ -262,12 +265,82 @@ function CartPage() {
 
   const handleConfirm = () => {
     if (!meta.clienteId) return alert("Selecione um cliente cadastrado.");
-    if (itensProvisao.length > 0) {
-      setShowFinalConfirm(true);
-      return;
+    if (!commercial?.podeFinalizar || !commercial.calculo.faixa || !commercial.condicao) {
+      return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
     }
-    executeConfirm();
+    setShowFinalConfirm(true);
   };
+
+  const handleSalvarCotacao = () => {
+    if (salvandoPedido) return;
+    const snapshot = resolveClienteSnapshot();
+    if (!snapshot) return alert("Selecione um cliente cadastrado.");
+    if (!commercial?.calculo.faixa || !commercial.condicao) {
+      return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
+    }
+    const c = commercial.calculo;
+    const faixa = c.faixa!;
+    const orderCommercial: OrderCommercial = {
+      faixaId: faixa.id,
+      faixaNome: faixa.nome,
+      frete: c.freteEfetivo ?? faixa.frete,
+      condicaoId: commercial.condicao.id,
+      condicaoDescricao: commercial.condicao.descricao,
+      bruto: c.bruto,
+      descontoCelebraPct: faixa.descontoCelebra,
+      descontoCelebraValor: c.descontoCelebraValor,
+      descontoMasterPct: negotiationAtivo ? negDescontoPct : 0,
+      descontoMasterValor: c.descontoMasterValor,
+      bonusPixValor: c.bonusPixValor,
+      aplicouPix: c.aplicouPix,
+      totalFinal: c.total,
+      totalSemPix: c.totalSemPix,
+      negociacao: negotiationAtivo,
+      justificativa: negotiationAtivo ? negJustificativa : "",
+      observacaoInterna: negotiationAtivo ? negObservacaoInterna : "",
+      usouReservada: negotiationAtivo && negUsarReservada,
+      premissasAplicadas: !!c.premissasAplicadas,
+    };
+    const metaCompleto = {
+      ...meta,
+      clienteSnapshot: snapshot,
+      condicaoPagamento: commercial.condicao.descricao,
+    };
+    // Se está editando uma cotação existente, atualiza in-place
+    const editandoId = (meta as OrderMeta & { cotacaoOrigemId?: string }).cotacaoOrigemId;
+    if (editandoId) {
+      const upd = atualizarCotacao(editandoId, {
+        items: itensFirmes,
+        meta: metaCompleto,
+        total: orderCommercial.totalFinal,
+        commercial: orderCommercial,
+      });
+      if (upd) {
+        toast.success(`Cotação ${upd.id} atualizada`, {
+          description: `Válida até ${new Date(upd.validoAte).toLocaleDateString("pt-BR")}`,
+        });
+        clearCart();
+        resetNegotiation();
+        setShowFinalConfirm(false);
+        navigate({ to: "/cotacoes" });
+        return;
+      }
+    }
+    const cot = criarCotacao({
+      items: itensFirmes,
+      meta: metaCompleto,
+      total: orderCommercial.totalFinal,
+      commercial: orderCommercial,
+    });
+    toast.success(`Cotação ${cot.id} salva`, {
+      description: `Válida até ${new Date(cot.validoAte).toLocaleDateString("pt-BR")}`,
+    });
+    clearCart();
+    resetNegotiation();
+    setShowFinalConfirm(false);
+    navigate({ to: "/cotacoes" });
+  };
+
 
   // Salvar tudo como provisão (carrinho 100% previsão)
   const handleSaveOnlyProvisao = () => {
@@ -580,8 +653,10 @@ function CartPage() {
               new Set(itensProvisao.map((i) => extrairDataPrevisao(i.product.statusEstoque))),
             ).sort(compararPrevisao)[0],
           }}
-          onConfirm={executeConfirm}
+          onConfirmPedido={executeConfirm}
+          onSalvarCotacao={handleSalvarCotacao}
           onCancel={() => setShowFinalConfirm(false)}
+          loading={salvandoPedido}
         />
       )}
 
