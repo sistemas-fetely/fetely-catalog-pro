@@ -139,7 +139,7 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
         )}
-        {!isPublic && product.qtdKit > 1 && (
+        {!isPublic && showUnitPrice && (
           <div className="text-[10px] text-text-muted -mt-1">
             Kit com {product.qtdKit} un.
           </div>
