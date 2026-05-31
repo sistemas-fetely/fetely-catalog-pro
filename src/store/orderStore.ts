@@ -412,6 +412,7 @@ export function useVisibleOrders(opts?: { includeReprovados?: boolean }): SavedO
   const user = useAuth((s) => s.user);
   const profile = useAuth((s) => s.profile);
   const roles = useAuth((s) => s.roles);
+  const clientes = useClientes((s) => s.clientes);
   const isAdminOrMaster = roles.includes("admin") || roles.includes("master");
   const filterReprovados = (list: SavedOrder[]) =>
     opts?.includeReprovados ? list : list.filter((o) => !o.reprovado);
@@ -422,8 +423,35 @@ export function useVisibleOrders(opts?: { includeReprovados?: boolean }): SavedO
     if (!cid) return [];
     return filterReprovados(history.filter((o) => o.meta.clienteId === cid));
   }
-  // Vendedor: enxerga próprios pedidos + pedidos de clientes pelos quais é responsável
-  return filterReprovados(
-    history.filter((o) => o.vendedorId === user.id || o.meta.clienteSnapshot?.clienteId === user.id),
+  // Vendedor: próprios pedidos + pedidos de clientes que ele cadastrou
+  const meusClienteIds = new Set(
+    clientes.filter((c) => c.cadastradoPorVendedorId === user.id).map((c) => c.id),
   );
+  return filterReprovados(
+    history.filter(
+      (o) =>
+        o.vendedorId === user.id ||
+        (o.meta.clienteId && meusClienteIds.has(o.meta.clienteId)),
+    ),
+  );
+}
+
+/**
+ * Pode reprovar = admin/master OU vendedor do pedido OU vendedor responsável pelo cliente.
+ */
+export function useCanReprovarOrder(order: SavedOrder | null | undefined): boolean {
+  const user = useAuth((s) => s.user);
+  const roles = useAuth((s) => s.roles);
+  const clientes = useClientes((s) => s.clientes);
+  if (!order || !user) return false;
+  if (roles.includes("admin") || roles.includes("master")) return true;
+  if (order.vendedorId === user.id) return true;
+  const cliente = order.meta.clienteId
+    ? clientes.find((c) => c.id === order.meta.clienteId)
+    : null;
+  return !!cliente && cliente.cadastradoPorVendedorId === user.id;
+}
+
+export function useIsMaster(): boolean {
+  return useAuth((s) => s.roles.includes("master"));
 }
