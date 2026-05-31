@@ -185,7 +185,7 @@ function CartPage() {
     const orderCommercial: OrderCommercial = {
       faixaId: faixa.id,
       faixaNome: faixa.nome,
-      frete: faixa.frete,
+      frete: c.freteEfetivo ?? faixa.frete,
       condicaoId: commercial.condicao.id,
       condicaoDescricao: commercial.condicao.descricao,
       bruto: c.bruto,
