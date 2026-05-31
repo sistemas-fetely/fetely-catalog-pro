@@ -363,6 +363,23 @@ function OrdersPage() {
       {exportOrders && (
         <ExportModal orders={exportOrders} onClose={() => setExportOrders(null)} />
       )}
+
+      <ReprovarDialog
+        open={!!reprovarTarget}
+        onOpenChange={(o) => !o && setReprovarTarget(null)}
+        entidade="pedido"
+        identificador={reprovarTarget ?? ""}
+        onConfirm={async (motivo) => {
+          if (!reprovarTarget) return;
+          try {
+            await reprovarOrder(reprovarTarget, motivo);
+            toast.success("Pedido reprovado");
+            setReprovarTarget(null);
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Erro ao reprovar");
+          }
+        }}
+      />
     </main>
   );
 }
