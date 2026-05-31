@@ -110,8 +110,9 @@ export function CartCommercialPanel({
         descontoMasterPct: ativo ? descontoPct : 0,
         condicao,
         premissas,
+        freteGratisOverride: ativo && freteGratis,
       }),
-    [bruto, ativo, usarReservada, descontoPct, condicao, premissas],
+    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis],
   );
 
   const pedidoMinimo = calculo.pedidoMinimoEfetivo ?? 2500;
