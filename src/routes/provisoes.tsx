@@ -252,11 +252,34 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
         </div>
 
         <div className="p-6 space-y-5">
+          {provisao.reprovado && (
+            <div className="rounded-md border border-stock-out/40 bg-stock-out/10 p-3 text-sm">
+              <div className="flex items-start gap-2">
+                <XCircle className="h-4 w-4 text-stock-out shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div className="font-semibold text-stock-out uppercase tracking-wider text-[10px]">
+                    Provisão reprovada
+                  </div>
+                  <p className="text-text-secondary mt-0.5">
+                    {provisao.reprovadoMotivo || "Sem motivo informado."}
+                  </p>
+                  <p className="text-[10px] text-text-muted mt-0.5">
+                    Por {provisao.reprovadoPorNome ?? "—"} em{" "}
+                    {provisao.reprovadoEm
+                      ? new Date(provisao.reprovadoEm).toLocaleString("pt-BR")
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-wider ${statusBadge(provisao.status)}`}>
               {STATUS_PROVISAO_LABEL[provisao.status]}
             </span>
           </div>
+
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <Info label="Cliente" value={provisao.clienteSnapshot.razaoSocial} />
