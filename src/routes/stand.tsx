@@ -88,6 +88,24 @@ function StandPage() {
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap"
         rel="stylesheet"
       />
+      <div className="w-full max-w-[480px] mx-auto self-center">
+        <Link
+          to="/catalog"
+          style={{
+            display: "inline-block",
+            color: "#A09880",
+            fontSize: 12,
+            letterSpacing: "0.1em",
+            textDecoration: "none",
+            padding: "8px 14px",
+            border: "0.5px solid #2A2A2A",
+            borderRadius: 8,
+            background: "transparent",
+          }}
+        >
+          ← Voltar ao Catálogo
+        </Link>
+      </div>
       <div className="flex-1 w-full flex items-center justify-center">
         <div
           className="w-full max-w-[480px] mx-auto animate-in fade-in duration-200"
