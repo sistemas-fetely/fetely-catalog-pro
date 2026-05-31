@@ -88,6 +88,7 @@ function DashboardPage() {
   }, [loading, session, isCliente, isAdminOrMaster, navigate]);
 
   const [periodo, setPeriodo] = useState<Periodo>("mes_atual");
+  const [rankingMetric, setRankingMetric] = useState<"valor" | "quantidade">("valor");
   const range = useMemo(() => rangeFor(periodo), [periodo]);
   const rangeAnterior = useMemo(() => {
     const span = range.to.getTime() - range.from.getTime();
