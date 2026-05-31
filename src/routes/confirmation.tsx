@@ -118,13 +118,20 @@ function formatOrderText(order: SavedOrder): string {
 
 function Confirmation() {
   const { id, provisaoId } = Route.useSearch();
-  const history = useVisibleOrders();
+  const history = useVisibleOrders({ includeReprovados: true });
   const provisoes = useProvisao((s) => s.provisoes);
   const order = useMemo(() => history.find((o) => o.id === id) ?? history[0], [history, id]);
   const provisao = useMemo(
     () => (provisaoId ? provisoes.find((p) => p.id === provisaoId) : undefined),
     [provisoes, provisaoId],
   );
+  const navigate = useNavigate();
+  const isMaster = useAuth((s) => s.roles.includes("master"));
+  const canReprovar = useCanReprovarOrder(order);
+  const reprovarOrder = useOrder((s) => s.reprovarOrder);
+  const desfazerReprovacao = useOrder((s) => s.desfazerReprovacao);
+  const deleteOrder = useOrder((s) => s.deleteOrder);
+  const [reprovarOpen, setReprovarOpen] = useState(false);
 
   const [copied, setCopied] = useState(false);
   const [emailDialogAberto, setEmailDialogAberto] = useState(false);
