@@ -359,6 +359,21 @@ function Confirmation() {
         onOpenChange={setEmailDialogAberto}
       />
 
+      <ReprovarDialog
+        open={reprovarOpen}
+        onOpenChange={setReprovarOpen}
+        entidade="pedido"
+        identificador={order.id}
+        onConfirm={async (motivo) => {
+          try {
+            await reprovarOrder(order.id, motivo);
+            toast.success("Pedido reprovado");
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Erro ao reprovar");
+          }
+        }}
+      />
+
 
       {/* Modal de escolha de modo de impressão */}
       <Dialog open={imprimirDialog} onOpenChange={setImprimirDialog}>
