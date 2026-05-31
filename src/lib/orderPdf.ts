@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { SavedOrder } from "@/types";
+import type { Cotacao } from "@/types/cotacao";
 
 const COLORS = {
   black: "#1a1a1a",
@@ -337,4 +338,30 @@ export function printOrderPDF(order: SavedOrder): void {
     document.getElementById("__print_order_iframe")?.remove();
     URL.revokeObjectURL(url);
   }, 60_000);
+}
+
+/**
+ * Gera PDF de uma cotação. Reaproveita o gerador de pedido, mas troca o
+ * cabeçalho/rodapé para refletir o status de cotação (não compromisso).
+ */
+export function generateCotacaoPDF(cotacao: Cotacao): OrderPDFResult {
+  // Monta um SavedOrder fake apenas para reusar a render
+  const fakeOrder: SavedOrder = {
+    id: cotacao.id,
+    createdAt: cotacao.criadoEm,
+    items: cotacao.items,
+    meta: {
+      ...cotacao.meta,
+      observacoes: `${cotacao.meta.observacoes ?? ""}\n\nVálida até: ${new Date(cotacao.validoAte).toLocaleDateString("pt-BR")}\nEste documento é uma cotação e não representa compromisso de compra.`.trim(),
+    },
+    total: cotacao.total,
+    commercial: cotacao.commercial,
+    vendedorId: cotacao.vendedorId,
+    vendedorNome: cotacao.vendedorNome,
+    vendedorLogin: cotacao.vendedorLogin,
+  };
+  const result = generateOrderPDF(fakeOrder);
+  // Renomeia o arquivo final
+  const filename = `Cotacao-${cotacao.id}-${(cotacao.meta.cliente || "cliente").replace(/[^a-zA-Z0-9\-_]/g, "-").slice(0, 40)}.pdf`;
+  return { ...result, filename };
 }
