@@ -374,9 +374,65 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
                 <Clock className="h-3 w-3" /> Cancelar provisão
               </button>
             )}
+            {canReprovar && !provisao.reprovado && provisao.status !== "convertido_em_pedido" && (
+              <button
+                onClick={() => setReprovarOpen(true)}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-stock-out/40 text-stock-out py-2 text-[11px] uppercase tracking-wider hover:bg-stock-out/10"
+              >
+                <XCircle className="h-3 w-3" /> Reprovar provisão
+              </button>
+            )}
+            {canReprovar && provisao.reprovado && (
+              <button
+                onClick={async () => {
+                  try {
+                    await desfazerReprovacaoProvisao(provisao.id);
+                    toast.success("Reprovação desfeita");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Erro ao desfazer");
+                  }
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-stock-in/40 text-stock-in py-2 text-[11px] uppercase tracking-wider hover:bg-stock-in/10"
+              >
+                <RotateCcw className="h-3 w-3" /> Desfazer reprovação
+              </button>
+            )}
+            {isMaster && (
+              <button
+                onClick={async () => {
+                  if (!confirm(`Deletar definitivamente a provisão ${provisao.id}? Esta ação não pode ser desfeita.`)) return;
+                  try {
+                    await deleteProvisao(provisao.id);
+                    toast.success("Provisão deletada");
+                    onClose();
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Erro ao deletar");
+                  }
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-stock-out/50 text-stock-out py-2 text-[11px] uppercase tracking-wider hover:bg-stock-out/15"
+              >
+                <Trash2 className="h-3 w-3" /> Deletar provisão (master)
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      <ReprovarDialog
+        open={reprovarOpen}
+        onOpenChange={setReprovarOpen}
+        entidade="provisão"
+        identificador={provisao.id}
+        onConfirm={async (motivo) => {
+          try {
+            await reprovarProvisao(provisao.id, motivo);
+            toast.success("Provisão reprovada");
+            onClose();
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Erro ao reprovar");
+          }
+        }}
+      />
     </div>
   );
 }
