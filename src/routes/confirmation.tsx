@@ -91,6 +91,9 @@ function formatOrderText(order: SavedOrder): string {
     if (c.aplicouPix) {
       lines.push(`Bônus PIX (2,5%):              – ${formatBRL(c.bonusPixValor)}`);
     }
+    if (c.frete === "FOB" && (c.freteValor ?? 0) > 0) {
+      lines.push(`Frete FOB (${(c.fretePercent ?? 0).toFixed(1).replace(".", ",")}%):              + ${formatBRL(c.freteValor ?? 0)}`);
+    }
     lines.push(sub);
     lines.push(`TOTAL FINAL:                   ${formatBRL(c.totalFinal)}`);
     lines.push("");
