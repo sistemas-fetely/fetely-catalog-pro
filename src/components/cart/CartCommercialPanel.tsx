@@ -338,7 +338,7 @@ export function CartCommercialPanel({
 
       {/* Seletor de pagamento */}
       {faixa && (
-        <div className="rounded-lg gold-border bg-surface p-5 space-y-3">
+        <div className="rounded-lg gold-border bg-surface p-4 sm:p-5 space-y-3">
           <h3 className="text-xs uppercase tracking-[0.2em] text-gold-muted">
             Forma de pagamento
           </h3>
