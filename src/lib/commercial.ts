@@ -265,7 +265,7 @@ export interface CalculoPedido {
 }
 
 /** Percentual padrão de frete sobre o subtotal após descontos. */
-export const FRETE_PERCENT = 3.5;
+export const FRETE_PERCENT = 5;
 
 import type { PremissasComerciais } from "@/types/cliente";
 
