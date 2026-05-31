@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const SNCF_URL = "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/recebe-pedido";
+const SNCF_ORIGENS_ACEITAS = ["fetely", "lovable", "sistema", "manual", "importacao"];
 
 function jsonResponse(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -109,7 +110,7 @@ Deno.serve(async (req) => {
       produto: it.product_snapshot,
     }));
 
-    const payload = {
+    const payloadBase = {
       cnpj,
       id_externo: pedido.id,
       data_pedido: pedido.created_at.split("T")[0],
@@ -122,8 +123,7 @@ Deno.serve(async (req) => {
       itens_json: itens,
     };
 
-    // POST pro SNCF (FAIL-LOUD)
-    const sncfResp = await fetch(SNCF_URL, {
+    const enviarPayload = (payload: Record<string, unknown>) => fetch(SNCF_URL, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${senha}`,
@@ -132,7 +132,16 @@ Deno.serve(async (req) => {
       body: JSON.stringify(payload),
     });
 
-    const sncfBody = await sncfResp.json().catch(() => ({ error: "Resposta sem JSON do SNCF" }));
+    let sncfResp = await enviarPayload(payloadBase);
+    let sncfBody = await sncfResp.json().catch(() => ({ error: "Resposta sem JSON do SNCF" }));
+
+    if (!sncfResp.ok && sncfBody?.code === "23514" && String(sncfBody?.error ?? "").includes("fornecedores_origem_check")) {
+      for (const origem of SNCF_ORIGENS_ACEITAS) {
+        sncfResp = await enviarPayload({ ...payloadBase, origem });
+        sncfBody = await sncfResp.json().catch(() => ({ error: "Resposta sem JSON do SNCF" }));
+        if (sncfResp.ok || sncfBody?.code !== "23514" || !String(sncfBody?.error ?? "").includes("fornecedores_origem_check")) break;
+      }
+    }
 
     if (sncfResp.ok) {
       await supabase.from("orders").update({
