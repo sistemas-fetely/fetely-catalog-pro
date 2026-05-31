@@ -9,6 +9,10 @@ const corsHeaders = {
 const SNCF_URL = "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/recebe-pedido";
 const SNCF_ORIGENS_ACEITAS = ["fetely", "lovable", "sistema", "manual", "importacao"];
 
+function isErroOrigem(body: any): boolean {
+  return body?.code === "23514" && String(body?.error ?? "").includes("origem_check");
+}
+
 function jsonResponse(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
     status,
@@ -135,11 +139,11 @@ Deno.serve(async (req) => {
     let sncfResp = await enviarPayload(payloadBase);
     let sncfBody = await sncfResp.json().catch(() => ({ error: "Resposta sem JSON do SNCF" }));
 
-    if (!sncfResp.ok && sncfBody?.code === "23514" && String(sncfBody?.error ?? "").includes("fornecedores_origem_check")) {
+    if (!sncfResp.ok && isErroOrigem(sncfBody)) {
       for (const origem of SNCF_ORIGENS_ACEITAS) {
         sncfResp = await enviarPayload({ ...payloadBase, origem });
         sncfBody = await sncfResp.json().catch(() => ({ error: "Resposta sem JSON do SNCF" }));
-        if (sncfResp.ok || sncfBody?.code !== "23514" || !String(sncfBody?.error ?? "").includes("fornecedores_origem_check")) break;
+        if (sncfResp.ok || !isErroOrigem(sncfBody)) break;
       }
     }
 
