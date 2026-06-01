@@ -14,7 +14,7 @@ const BASE =
   "flex items-center justify-center rounded-md border w-8 h-8 transition";
 
 export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
-  const { status, estagio, erro, enviadoEm, enviar } = useEnviarParaSncf(orderId);
+  const { status, estagio, erro, enviadoEm, enviar, isEnviando } = useEnviarParaSncf(orderId);
 
   if (status === "pendente") {
     return (
