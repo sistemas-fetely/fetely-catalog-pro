@@ -106,6 +106,22 @@ function makeAudit(
   };
 }
 
+const SIX_PACK_COLLECTIONS = new Set([
+  "Le Moment",
+  "Amour",
+  "Lumi Star",
+  "Twist",
+  "Pattern",
+  "Spirale",
+]);
+
+function applySixPackOverride(p: Product): Product {
+  if (SIX_PACK_COLLECTIONS.has(p.colecao) && p.multiplos === 12) {
+    return { ...p, multiplos: 6 };
+  }
+  return p;
+}
+
 function rowToProduct(row: Record<string, unknown>): Product {
   return {
     sku: row.sku as string,
@@ -248,7 +264,7 @@ export const useCatalog = create<CatalogState>()(
             .select("*")
             .order("sku", { ascending: true });
           if (error) throw error;
-          const products = (data ?? []).map((r) => rowToProduct(r as Record<string, unknown>));
+          const products = (data ?? []).map((r) => applySixPackOverride(rowToProduct(r as Record<string, unknown>)));
           if (products.length > 0) {
             set({
               products,
@@ -385,7 +401,7 @@ export const useCatalog = create<CatalogState>()(
     {
       name: "fetely-catalog",
       storage: createJSONStorage(safeStorage),
-      version: 9,
+      version: 10,
       partialize: (state) => ({
         products: state.products,
         source: state.source,
