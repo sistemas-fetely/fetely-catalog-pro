@@ -32,7 +32,7 @@ interface ProvisaoState {
   hidratado: boolean;
   hydrate: () => Promise<void>;
   setProvisoesFromRows: (p: ProvisaoFutura[], maxCounter: number) => void;
-  createProvisao: (input: CreateProvisaoInput) => ProvisaoFutura;
+  createProvisao: (input: CreateProvisaoInput) => Promise<ProvisaoFutura>;
   updateStatus: (id: string, status: StatusProvisao, extra?: Partial<ProvisaoFutura>) => void;
   setObservacoes: (id: string, txt: string) => void;
   cancelar: (id: string) => void;
@@ -161,8 +161,14 @@ export const useProvisao = create<ProvisaoState>()(
         }
       },
       setProvisoesFromRows: (p, maxCounter) => set({ provisoes: p, counter: maxCounter }),
-      createProvisao: (input) => {
+      createProvisao: async (input) => {
         const auth = useAuth.getState();
+        if (!auth.session || !auth.user?.id) {
+          throw new Error("Sua sessão expirou ou ainda está carregando. Atualize a página e tente novamente.");
+        }
+        if (input.itens.length === 0) {
+          throw new Error("Não há itens de provisão para salvar.");
+        }
         // ID globalmente único (evita colisão entre contadores locais de vendedores diferentes)
         const ts = Date.now();
         const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
@@ -179,7 +185,7 @@ export const useProvisao = create<ProvisaoState>()(
           id,
           criadoEm: now,
           atualizadoEm: now,
-          vendedorId: auth.user?.id ?? "",
+          vendedorId: auth.user.id,
           vendedorNome:
             auth.profile?.nome_completo ?? auth.profile?.email ?? "—",
           clienteId: input.clienteId,
@@ -192,37 +198,48 @@ export const useProvisao = create<ProvisaoState>()(
           observacoes: input.observacoes,
           totalReferencia,
         };
+
+        try {
+          const { error: errP } = await supabase
+            .from("provisoes")
+            .upsert(provisaoToRow(provisao) as never, { onConflict: "id" });
+          if (errP) throw errP;
+
+          const itemRows = provisaoItensToRows(provisao);
+          if (itemRows.length > 0) {
+            const { error: errDel } = await supabase
+              .from("provisao_itens")
+              .delete()
+              .eq("provisao_id", provisao.id);
+            if (errDel) throw errDel;
+
+            const { error: errI } = await supabase
+              .from("provisao_itens")
+              .insert(itemRows as never);
+            if (errI) throw errI;
+          }
+        } catch (err: unknown) {
+          console.error("[provisaoStore] createProvisao banco falhou:", err, provisao.id);
+          const e = err as { message?: string; details?: string; hint?: string; code?: string };
+          const parts = [e?.message, e?.details, e?.hint, e?.code ? `(${e.code})` : null]
+            .filter(Boolean);
+          const msg =
+            err instanceof Error
+              ? err.message
+              : parts.length > 0
+                ? parts.join(" — ")
+                : (() => { try { return JSON.stringify(err); } catch { return String(err); } })();
+          throw new Error(
+            msg
+              ? `Não foi possível salvar a provisão no banco: ${msg}`
+              : "Não foi possível salvar a provisão. Verifique sua conexão e tente novamente.",
+          );
+        }
+
         set((s) => ({
           provisoes: [provisao, ...s.provisoes],
           counter: next,
         }));
-        void (async () => {
-          try {
-            const { error: errP } = await supabase
-              .from("provisoes")
-              .upsert(provisaoToRow(provisao) as never, { onConflict: "id" });
-            if (errP) throw errP;
-            const itemRows = provisaoItensToRows(provisao);
-            if (itemRows.length > 0) {
-              await supabase.from("provisao_itens").delete().eq("provisao_id", provisao.id);
-              const { error: errI } = await supabase
-                .from("provisao_itens")
-                .insert(itemRows as never);
-              if (errI) throw errI;
-            }
-          } catch (err) {
-            console.error("[provisaoStore] createProvisao banco falhou:", err, provisao.id);
-            try {
-              const { toast } = await import("sonner");
-              toast.error("Falha ao salvar provisão no servidor", {
-                description: "A provisão ficou só no cache local. Tente recarregar a página.",
-                duration: 8000,
-              });
-            } catch {
-              // sonner pode não estar disponível
-            }
-          }
-        })();
         return provisao;
       },
       updateStatus: (id, status, extra) => {
@@ -233,6 +250,7 @@ export const useProvisao = create<ProvisaoState>()(
           ),
         }));
         const update: Record<string, unknown> = { status, atualizado_em: atualizadoEm };
+        if (extra?.pedidoFirmeId !== undefined) update.pedido_firme_id = extra.pedidoFirmeId;
         if (extra?.pedidoConvertidoId !== undefined) update.pedido_convertido_id = extra.pedidoConvertidoId;
         if (extra?.observacoes !== undefined) update.observacoes = extra.observacoes;
         void supabase
