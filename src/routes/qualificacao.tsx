@@ -243,8 +243,11 @@ function QualificacaoPage() {
               <Select value={volume} onValueChange={(v) => setVolume(v as LeadVolumeEstimado)}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(VOLUME_LABEL).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  {(segmento === "consumidor"
+                    ? (["ate_500", "500_1500", "1500_3000", "nao_sei"] as LeadVolumeEstimado[])
+                    : (["ate_2500", "2500_10k", "10k_50k", "acima_50k", "nao_sei"] as LeadVolumeEstimado[])
+                  ).map((k) => (
+                    <SelectItem key={k} value={k}>{VOLUME_LABEL[k]}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
