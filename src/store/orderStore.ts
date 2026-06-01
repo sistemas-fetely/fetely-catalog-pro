@@ -280,7 +280,15 @@ export const useOrder = create<OrderState>()(
           }
         } catch (err: unknown) {
           console.error("[orderStore] saveOrder banco falhou:", err, order.id);
-          const msg = err instanceof Error ? err.message : String(err);
+          const e = err as { message?: string; details?: string; hint?: string; code?: string };
+          const parts = [e?.message, e?.details, e?.hint, e?.code ? `(${e.code})` : null]
+            .filter(Boolean);
+          const msg =
+            err instanceof Error
+              ? err.message
+              : parts.length > 0
+                ? parts.join(" — ")
+                : (() => { try { return JSON.stringify(err); } catch { return String(err); } })();
           throw new Error(
             msg
               ? `Não foi possível salvar o pedido no banco: ${msg}`
