@@ -238,27 +238,16 @@ export const useOrder = create<OrderState>()(
           }
         }
 
-        // ── ID sequencial PED-1000, PED-1001, ... ──
-        let nextId = `PED-1000`;
+        // ── ID sequencial global via RPC (security definer) — contorna RLS por vendedor ──
+        let nextId = `PED-${Date.now()}`;
         try {
-          const { data: lastRows } = await supabase
-            .from("orders")
-            .select("id")
-            .like("id", "PED-%")
-            .order("created_at", { ascending: false })
-            .limit(500);
-          let maxNum = 999;
-          for (const r of lastRows ?? []) {
-            const m = /^PED-(\d+)$/.exec((r as { id: string }).id);
-            if (m) {
-              const n = parseInt(m[1], 10);
-              if (n >= 1000 && n > maxNum) maxNum = n;
-            }
+          const { data: rpcId, error: errRpc } = await supabase.rpc("next_order_id");
+          if (errRpc) throw errRpc;
+          if (typeof rpcId === "string" && /^PED-\d+$/.test(rpcId)) {
+            nextId = rpcId;
           }
-          nextId = `PED-${maxNum + 1}`;
         } catch (err) {
-          console.error("[orderStore] geração de ID sequencial falhou, usando fallback:", err);
-          nextId = `PED-${Date.now()}`;
+          console.error("[orderStore] next_order_id RPC falhou, usando fallback timestamp:", err);
         }
 
         const order: SavedOrder = {
@@ -291,7 +280,15 @@ export const useOrder = create<OrderState>()(
           }
         } catch (err: unknown) {
           console.error("[orderStore] saveOrder banco falhou:", err, order.id);
-          const msg = err instanceof Error ? err.message : String(err);
+          const e = err as { message?: string; details?: string; hint?: string; code?: string };
+          const parts = [e?.message, e?.details, e?.hint, e?.code ? `(${e.code})` : null]
+            .filter(Boolean);
+          const msg =
+            err instanceof Error
+              ? err.message
+              : parts.length > 0
+                ? parts.join(" — ")
+                : (() => { try { return JSON.stringify(err); } catch { return String(err); } })();
           throw new Error(
             msg
               ? `Não foi possível salvar o pedido no banco: ${msg}`
