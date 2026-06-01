@@ -89,6 +89,7 @@ type DbRow = {
   notas_internas: string | null;
   cliente_b2b_id: string | null;
   cotacao_origem_id: string | null;
+  catalogo_liberado: boolean;
 };
 
 function rowToLead(r: DbRow): LeadQualificado {
@@ -118,6 +119,7 @@ function rowToLead(r: DbRow): LeadQualificado {
     notasInternas: r.notas_internas,
     clienteB2bId: r.cliente_b2b_id,
     cotacaoOrigemId: r.cotacao_origem_id,
+    catalogoLiberado: r.catalogo_liberado ?? false,
   };
 }
 
