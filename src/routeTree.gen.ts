@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StandRouteImport } from './routes/stand'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as QualificacaoRouteImport } from './routes/qualificacao'
 import { Route as ProvisoesRouteImport } from './routes/provisoes'
 import { Route as ProdutoRouteImport } from './routes/produto'
 import { Route as PortalRouteImport } from './routes/portal'
@@ -35,6 +36,7 @@ import { Route as PortalContaRouteImport } from './routes/portal.conta'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSincronizacaoSncfRouteImport } from './routes/admin.sincronizacao-sncf'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
+import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
 
@@ -46,6 +48,11 @@ const StandRoute = StandRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QualificacaoRoute = QualificacaoRouteImport.update({
+  id: '/qualificacao',
+  path: '/qualificacao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProvisoesRoute = ProvisoesRouteImport.update({
@@ -168,6 +175,11 @@ const AdminProductsRoute = AdminProductsRouteImport.update({
   path: '/admin/products',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLeadsRoute = AdminLeadsRouteImport.update({
+  id: '/admin/leads',
+  path: '/admin/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCartilhasRoute = AdminCartilhasRouteImport.update({
   id: '/admin/cartilhas',
   path: '/admin/cartilhas',
@@ -197,9 +209,11 @@ export interface FileRoutesByFullPath {
   '/portal': typeof PortalRouteWithChildren
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
+  '/qualificacao': typeof QualificacaoRoute
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
+  '/admin/leads': typeof AdminLeadsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
@@ -226,9 +240,11 @@ export interface FileRoutesByTo {
   '/photos': typeof PhotosRoute
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
+  '/qualificacao': typeof QualificacaoRoute
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
+  '/admin/leads': typeof AdminLeadsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
@@ -257,9 +273,11 @@ export interface FileRoutesById {
   '/portal': typeof PortalRouteWithChildren
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
+  '/qualificacao': typeof QualificacaoRoute
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
+  '/admin/leads': typeof AdminLeadsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
@@ -289,9 +307,11 @@ export interface FileRouteTypes {
     | '/portal'
     | '/produto'
     | '/provisoes'
+    | '/qualificacao'
     | '/settings'
     | '/stand'
     | '/admin/cartilhas'
+    | '/admin/leads'
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
@@ -318,9 +338,11 @@ export interface FileRouteTypes {
     | '/photos'
     | '/produto'
     | '/provisoes'
+    | '/qualificacao'
     | '/settings'
     | '/stand'
     | '/admin/cartilhas'
+    | '/admin/leads'
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
@@ -348,9 +370,11 @@ export interface FileRouteTypes {
     | '/portal'
     | '/produto'
     | '/provisoes'
+    | '/qualificacao'
     | '/settings'
     | '/stand'
     | '/admin/cartilhas'
+    | '/admin/leads'
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
@@ -379,9 +403,11 @@ export interface RootRouteChildren {
   PortalRoute: typeof PortalRouteWithChildren
   ProdutoRoute: typeof ProdutoRoute
   ProvisoesRoute: typeof ProvisoesRoute
+  QualificacaoRoute: typeof QualificacaoRoute
   SettingsRoute: typeof SettingsRoute
   StandRoute: typeof StandRouteWithChildren
   AdminCartilhasRoute: typeof AdminCartilhasRoute
+  AdminLeadsRoute: typeof AdminLeadsRoute
   AdminProductsRoute: typeof AdminProductsRoute
   AdminSincronizacaoSncfRoute: typeof AdminSincronizacaoSncfRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -401,6 +427,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qualificacao': {
+      id: '/qualificacao'
+      path: '/qualificacao'
+      fullPath: '/qualificacao'
+      preLoaderRoute: typeof QualificacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/provisoes': {
@@ -571,6 +604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProductsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/leads': {
+      id: '/admin/leads'
+      path: '/admin/leads'
+      fullPath: '/admin/leads'
+      preLoaderRoute: typeof AdminLeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/cartilhas': {
       id: '/admin/cartilhas'
       path: '/admin/cartilhas'
@@ -643,9 +683,11 @@ const rootRouteChildren: RootRouteChildren = {
   PortalRoute: PortalRouteWithChildren,
   ProdutoRoute: ProdutoRoute,
   ProvisoesRoute: ProvisoesRoute,
+  QualificacaoRoute: QualificacaoRoute,
   SettingsRoute: SettingsRoute,
   StandRoute: StandRouteWithChildren,
   AdminCartilhasRoute: AdminCartilhasRoute,
+  AdminLeadsRoute: AdminLeadsRoute,
   AdminProductsRoute: AdminProductsRoute,
   AdminSincronizacaoSncfRoute: AdminSincronizacaoSncfRoute,
   AdminUsersRoute: AdminUsersRoute,
@@ -653,13 +695,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -10,6 +10,7 @@ import {
   Package,
   Users,
   ExternalLink,
+  Target,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 
@@ -69,6 +70,12 @@ function SettingsPage() {
         description: "Gerenciar faixas, condições de pagamento e regras gerais",
         to: "/admin/cartilhas",
         icon: Layers,
+      },
+      {
+        label: "Leads",
+        description: "Gestão de leads captados via formulário de qualificação",
+        to: "/admin/leads",
+        icon: Target,
       },
       {
         label: "Usuários",
