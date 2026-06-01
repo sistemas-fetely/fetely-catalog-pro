@@ -38,7 +38,7 @@ export const Route = createFileRoute("/catalog")({
 });
 
 function CatalogPage() {
-  const { colecao, grupo, highlight } = Route.useSearch();
+  const { colecao, grupo, categoria, highlight } = Route.useSearch();
   const products = useCatalog((s) => s.products);
   const photos = usePhotos();
   const setGroupExpanded = useUI((s) => s.setGroupExpanded);
@@ -46,8 +46,11 @@ function CatalogPage() {
   const fadeRef = useRef<HTMLDivElement>(null);
 
   const colecaoProducts = useMemo(
-    () => (colecao ? getProductsBy(products, colecao, grupo || undefined) : []),
-    [products, colecao, grupo],
+    () =>
+      colecao
+        ? getProductsBy(products, colecao, grupo || undefined, categoria || undefined)
+        : [],
+    [products, colecao, grupo, categoria],
   );
 
   const meta = useMemo(() => {
@@ -55,6 +58,7 @@ function CatalogPage() {
     const first = colecaoProducts[0];
     return { categoria: first.categoria, grupo: first.grupo };
   }, [colecao, colecaoProducts]);
+
 
   // Expand the group containing the active collection
   useEffect(() => {
@@ -225,10 +229,11 @@ function EmptyState() {
       cats.add(p.categoria);
       if (!grp[p.categoria]) grp[p.categoria] = new Set();
       grp[p.categoria].add(p.grupo);
-      const existing = colMap.get(p.colecao);
+      const mapKey = `${p.categoria}::${p.colecao}`;
+      const existing = colMap.get(mapKey);
       if (existing) existing.count += 1;
       else
-        colMap.set(p.colecao, {
+        colMap.set(mapKey, {
           colecao: p.colecao,
           categoria: p.categoria,
           grupo: p.grupo,
@@ -244,6 +249,7 @@ function EmptyState() {
       ),
     };
   }, [products]);
+
 
   const gruposDisponiveis = useMemo(() => {
     if (!categoria) return [] as string[];
@@ -360,11 +366,12 @@ function EmptyState() {
             const img = getColecaoPhoto(photos, c.colecao);
             return (
               <Link
-                key={c.colecao}
+                key={`${c.categoria}::${c.colecao}`}
                 to="/catalog"
-                search={{ colecao: c.colecao }}
+                search={{ colecao: c.colecao, categoria: c.categoria }}
                 className="group rounded-lg overflow-hidden gold-border gold-border-hover bg-surface transition"
               >
+
                 <div className="relative aspect-square overflow-hidden">
                   {img ? (
                     <img

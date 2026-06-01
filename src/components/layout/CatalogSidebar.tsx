@@ -89,8 +89,11 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
   const activeGrupo = pathname === "/catalog" ? search.grupo : undefined;
   const navigate = useNavigate();
 
-  const handleSelectColecao = (colecao: string, grupo?: string) => {
-    navigate({ to: "/catalog", search: grupo ? { colecao, grupo } : { colecao } });
+  const handleSelectColecao = (colecao: string, grupo?: string, categoria?: string) => {
+    const search: { colecao: string; grupo?: string; categoria?: string } = { colecao };
+    if (grupo) search.grupo = grupo;
+    if (categoria) search.categoria = categoria;
+    navigate({ to: "/catalog", search });
     onNavigate?.();
   };
 
@@ -183,7 +186,7 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
                               return (
                                 <li key={col}>
                                   <button
-                                    onClick={() => handleSelectColecao(col, grupoName)}
+                                    onClick={() => handleSelectColecao(col, grupoName, categoria)}
                                     className={`block w-full text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
                                       active
                                         ? "border-gold bg-gold/10 text-gold"
@@ -206,7 +209,7 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
                   return (
                     <div key={gkey} className="px-2">
                       <button
-                        onClick={() => handleSelectColecao(lvl1)}
+                        onClick={() => handleSelectColecao(lvl1, undefined, categoria)}
                         className={`block w-full text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
                           active
                             ? "border-gold bg-gold/10 text-gold"
@@ -239,7 +242,7 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
                           return (
                             <li key={lvl2}>
                               <button
-                                onClick={() => handleSelectColecao(lvl2)}
+                                onClick={() => handleSelectColecao(lvl2, undefined, categoria)}
                                 className={`block w-full text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
                                   active
                                     ? "border-gold bg-gold/10 text-gold"
