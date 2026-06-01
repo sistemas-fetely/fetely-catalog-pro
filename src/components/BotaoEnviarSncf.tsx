@@ -16,7 +16,8 @@ const BASE =
 export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
   const { status, estagio, erro, enviadoEm, enviar, isEnviando } = useEnviarParaSncf(orderId);
 
-  if (status === "pendente") {
+  // Envio ativo nesta sessão → spinner desabilitado (transitório, esperado).
+  if (status === "pendente" && isEnviando) {
     return (
       <button
         disabled
@@ -24,6 +25,20 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
         className={`${BASE} border-gold/40 text-gold opacity-60`}
       >
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      </button>
+    );
+  }
+
+  // Pendente carregado do banco sem envio ativo = preso. Reabilita o clique
+  // pra reenviar em vez de girar pra sempre.
+  if (status === "pendente" && !isEnviando) {
+    return (
+      <button
+        onClick={() => enviar()}
+        title="Preso em 'pendente' — clique pra reenviar"
+        className={`${BASE} border-amber-500/40 text-amber-500 hover:bg-amber-500/10`}
+      >
+        <Send className="h-3.5 w-3.5" />
       </button>
     );
   }
