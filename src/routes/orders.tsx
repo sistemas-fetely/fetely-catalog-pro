@@ -37,6 +37,7 @@ function OrdersPage() {
   const deleteOrder = useOrder((s) => s.deleteOrder);
   const reprovarOrder = useOrder((s) => s.reprovarOrder);
   const desfazerReprovacao = useOrder((s) => s.desfazerReprovacao);
+  const criarCotacao = useCotacao((s) => s.criarCotacao);
   const [query, setQuery] = useState("");
   const [vendedorFilter, setVendedorFilter] = useState<string>("all");
   const [reassignTarget, setReassignTarget] = useState<string | null>(null);
