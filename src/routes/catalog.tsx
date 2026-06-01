@@ -229,10 +229,11 @@ function EmptyState() {
       cats.add(p.categoria);
       if (!grp[p.categoria]) grp[p.categoria] = new Set();
       grp[p.categoria].add(p.grupo);
-      const existing = colMap.get(p.colecao);
+      const mapKey = `${p.categoria}::${p.colecao}`;
+      const existing = colMap.get(mapKey);
       if (existing) existing.count += 1;
       else
-        colMap.set(p.colecao, {
+        colMap.set(mapKey, {
           colecao: p.colecao,
           categoria: p.categoria,
           grupo: p.grupo,
@@ -248,6 +249,7 @@ function EmptyState() {
       ),
     };
   }, [products]);
+
 
   const gruposDisponiveis = useMemo(() => {
     if (!categoria) return [] as string[];
