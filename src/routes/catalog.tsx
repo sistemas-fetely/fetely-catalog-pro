@@ -38,7 +38,7 @@ export const Route = createFileRoute("/catalog")({
 });
 
 function CatalogPage() {
-  const { colecao, grupo, highlight } = Route.useSearch();
+  const { colecao, grupo, categoria, highlight } = Route.useSearch();
   const products = useCatalog((s) => s.products);
   const photos = usePhotos();
   const setGroupExpanded = useUI((s) => s.setGroupExpanded);
@@ -46,8 +46,11 @@ function CatalogPage() {
   const fadeRef = useRef<HTMLDivElement>(null);
 
   const colecaoProducts = useMemo(
-    () => (colecao ? getProductsBy(products, colecao, grupo || undefined) : []),
-    [products, colecao, grupo],
+    () =>
+      colecao
+        ? getProductsBy(products, colecao, grupo || undefined, categoria || undefined)
+        : [],
+    [products, colecao, grupo, categoria],
   );
 
   const meta = useMemo(() => {
@@ -55,6 +58,7 @@ function CatalogPage() {
     const first = colecaoProducts[0];
     return { categoria: first.categoria, grupo: first.grupo };
   }, [colecao, colecaoProducts]);
+
 
   // Expand the group containing the active collection
   useEffect(() => {
