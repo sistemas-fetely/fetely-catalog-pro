@@ -91,11 +91,35 @@ function AdminLeadsPage() {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background">
       <div className="mx-auto max-w-7xl px-4 py-8">
-        <div className="mb-6">
-          <h1 className="font-display text-2xl text-text-primary">Leads Qualificados</h1>
-          <p className="text-sm text-text-secondary">
-            Gestão de leads captados via formulário público de qualificação.
-          </p>
+        <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="font-display text-2xl text-text-primary">Leads Qualificados</h1>
+            <p className="text-sm text-text-secondary">
+              Gestão de leads captados via formulário público de qualificação.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <a
+              href="/qualificacao"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-xs px-3 py-2 rounded-md border border-border bg-surface hover:bg-muted/40 transition"
+            >
+              <span className="text-text-secondary">Formulário:</span>
+              <span className="text-gold font-medium">/qualificacao ↗</span>
+            </a>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const url = `${window.location.origin}/qualificacao`;
+                navigator.clipboard.writeText(url);
+                toast.success("Link copiado");
+              }}
+            >
+              Copiar link público
+            </Button>
+          </div>
         </div>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
