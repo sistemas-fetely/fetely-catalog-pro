@@ -36,7 +36,7 @@ const frequenciaSchema = z
   .enum(["pontual", "mensal", "trimestral", "semestral", "anual"])
   .nullable();
 const volumeSchema = z
-  .enum(["ate_2500", "2500_10k", "10k_50k", "acima_50k", "nao_sei"])
+  .enum(["ate_500", "500_1500", "1500_3000", "ate_2500", "2500_10k", "10k_50k", "acima_50k", "nao_sei"])
   .nullable();
 const statusSchema = z.enum([
   "novo",
