@@ -195,6 +195,7 @@ Deno.serve(async (req) => {
       condicao_solicitada: condicao,
       forma_solicitada: formaNormalizada,
       vendedor: pedido.vendedor_nome,
+      origem: "fop",
       itens_json: itens,
 
       // CRÍTICO — resolve o problema do nome no SNCF
