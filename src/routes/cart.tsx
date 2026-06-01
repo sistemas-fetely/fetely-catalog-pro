@@ -229,7 +229,7 @@ function CartPage() {
 
       let provisaoId: string | undefined;
       if (itensProvisao.length > 0) {
-        const prov = createProvisao({
+        const prov = await createProvisao({
           clienteId: meta.clienteId!,
           clienteSnapshot: snapshot,
           itens: itensProvisao.map(toItemProvisao),
@@ -350,18 +350,30 @@ function CartPage() {
 
 
   // Salvar tudo como provisão (carrinho 100% previsão)
-  const handleSaveOnlyProvisao = () => {
+  const handleSaveOnlyProvisao = async () => {
+    if (salvandoPedido) return;
     const snapshot = resolveClienteSnapshot();
     if (!snapshot) return alert("Selecione um cliente cadastrado.");
-    const prov = createProvisao({
-      clienteId: meta.clienteId!,
-      clienteSnapshot: snapshot,
-      itens: itensProvisao.map(toItemProvisao),
-      observacoes: meta.observacoes || undefined,
-    });
-    clearCart();
-    resetNegotiation();
-    navigate({ to: "/provisoes", search: { highlight: prov.id } as never });
+    setSalvandoPedido(true);
+    try {
+      const prov = await createProvisao({
+        clienteId: meta.clienteId!,
+        clienteSnapshot: snapshot,
+        itens: itensProvisao.map(toItemProvisao),
+        observacoes: meta.observacoes || undefined,
+      });
+      clearCart();
+      resetNegotiation();
+      navigate({ to: "/provisoes", search: { highlight: prov.id } as never });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Não foi possível salvar a provisão";
+      toast.error(msg, {
+        description: "O carrinho foi mantido para você tentar novamente.",
+        duration: 6000,
+      });
+    } finally {
+      setSalvandoPedido(false);
+    }
   };
 
   if (items.length === 0) {
