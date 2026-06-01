@@ -126,7 +126,7 @@ export function CartCommercialPanel({
     [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis],
   );
 
-  const pedidoMinimo = calculo.pedidoMinimoEfetivo ?? 2500;
+  const pedidoMinimo = calculo.pedidoMinimoEfetivo ?? 1500;
   const abaixoDoMinimoLiberado = ativo && bruto < pedidoMinimo && !!calculo.faixa;
 
   const negociacaoSemJustificativa =
