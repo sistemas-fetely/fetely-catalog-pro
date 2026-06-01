@@ -366,11 +366,12 @@ function EmptyState() {
             const img = getColecaoPhoto(photos, c.colecao);
             return (
               <Link
-                key={c.colecao}
+                key={`${c.categoria}::${c.colecao}`}
                 to="/catalog"
-                search={{ colecao: c.colecao }}
+                search={{ colecao: c.colecao, categoria: c.categoria }}
                 className="group rounded-lg overflow-hidden gold-border gold-border-hover bg-surface transition"
               >
+
                 <div className="relative aspect-square overflow-hidden">
                   {img ? (
                     <img
