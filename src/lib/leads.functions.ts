@@ -193,7 +193,13 @@ export const atualizarLeadCrm = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => updateCrmSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      status_crm?: LeadStatusCrm;
+      responsavel_id?: string | null;
+      responsavel_nome?: string | null;
+      tags?: string[];
+      notas_internas?: string | null;
+    } = {};
     if (data.statusCrm !== undefined) patch.status_crm = data.statusCrm;
     if (data.responsavelId !== undefined) patch.responsavel_id = data.responsavelId;
     if (data.responsavelNome !== undefined) patch.responsavel_nome = data.responsavelNome;
