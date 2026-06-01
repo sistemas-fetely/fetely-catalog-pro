@@ -238,8 +238,31 @@ export const useOrder = create<OrderState>()(
           }
         }
 
+        // ── ID sequencial PED-1000, PED-1001, ... ──
+        let nextId = `PED-1000`;
+        try {
+          const { data: lastRows } = await supabase
+            .from("orders")
+            .select("id")
+            .like("id", "PED-%")
+            .order("created_at", { ascending: false })
+            .limit(500);
+          let maxNum = 999;
+          for (const r of lastRows ?? []) {
+            const m = /^PED-(\d+)$/.exec((r as { id: string }).id);
+            if (m) {
+              const n = parseInt(m[1], 10);
+              if (n >= 1000 && n > maxNum) maxNum = n;
+            }
+          }
+          nextId = `PED-${maxNum + 1}`;
+        } catch (err) {
+          console.error("[orderStore] geração de ID sequencial falhou, usando fallback:", err);
+          nextId = `PED-${Date.now()}`;
+        }
+
         const order: SavedOrder = {
-          id: `PED-${Date.now()}`,
+          id: nextId,
           createdAt: new Date().toISOString(),
           items,
           meta: metaWithSnapshot,
