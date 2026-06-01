@@ -443,16 +443,19 @@ export function getProductsBy(
   products: Product[],
   colecao: string,
   grupo?: string,
+  categoria?: string,
 ): Product[] {
   return products.filter(
     (p) =>
       p.ativo !== false &&
       p.colecao === colecao &&
       (!grupo || p.grupo === grupo) &&
+      (!categoria || p.categoria === categoria) &&
       p.precoAtacado &&
       p.precoAtacado > 0,
   );
 }
+
 export function isNumericCollection(colecao: string): boolean {
   return (NUMERIC_CANDLE_COLLECTIONS as readonly string[]).includes(colecao);
 }
