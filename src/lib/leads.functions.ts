@@ -132,7 +132,7 @@ export const criarLeadPublico = createServerFn({ method: "POST" })
       urgencia: data.urgencia,
     });
 
-    const { data: row, error } = await anonClient
+    const { data: row, error } = await supabaseAdmin
       .from("leads_qualificados")
       .insert({
         nome: data.nome,
@@ -156,7 +156,7 @@ export const criarLeadPublico = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
 
-    await anonClient.from("lead_historico").insert({
+    await supabaseAdmin.from("lead_historico").insert({
       lead_id: row.id,
       usuario_nome: "Formulário público",
       descricao: "Lead criado via formulário de qualificação",
