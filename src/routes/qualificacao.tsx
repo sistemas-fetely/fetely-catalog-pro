@@ -207,7 +207,7 @@ function QualificacaoPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Como você se enquadra? *</Label>
-              <Select value={segmento} onValueChange={(v) => setSegmento(v as LeadSegmento)}>
+              <Select value={segmento} onValueChange={(v) => { setSegmento(v as LeadSegmento); setVolume(""); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(SEGMENTO_LABEL).map(([k, v]) => (
