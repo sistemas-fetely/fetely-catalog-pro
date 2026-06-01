@@ -284,6 +284,7 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
                 <th className="px-4 py-3 text-left">Potencial</th>
                 <th className="px-4 py-3 text-left">Origem</th>
                 <th className="px-4 py-3 text-left">Status</th>
+                <th className="px-4 py-3 text-left">Catálogo</th>
                 <th className="px-4 py-3 text-left">Responsável</th>
                 <th className="px-4 py-3 text-left">Data</th>
               </tr>
