@@ -64,7 +64,7 @@ export const FAIXAS_DEFAULT: Faixa[] = [
   {
     id: 1,
     nome: "Convidado",
-    valorMin: 2500,
+    valorMin: 1500,
     valorMax: 4999.99,
     frete: "FOB",
     descontoCelebra: 5,
@@ -157,23 +157,23 @@ export const FAIXAS_DEFAULT: Faixa[] = [
 ];
 
 export const CONDICOES_DEFAULT: CondicaoPagamento[] = [
-  { id: 1, descricao: "PIX antecipado", valorMinimo: 2500, tipo: "pix", numeroParcelas: 1, diasParcelas: [0], temBonusPix: true, destaque: true, ativa: true, exibirParaVendedor: true, ordem: 1 },
-  { id: 2, descricao: "Boleto à vista", valorMinimo: 2500, tipo: "boleto", numeroParcelas: 1, diasParcelas: [0], ativa: true, exibirParaVendedor: true, ordem: 2 },
-  { id: 3, descricao: "Boleto 0/30 (2x)", valorMinimo: 2500, tipo: "boleto", numeroParcelas: 2, diasParcelas: [0, 30], ativa: true, exibirParaVendedor: true, ordem: 3 },
+  { id: 1, descricao: "PIX antecipado", valorMinimo: 1500, tipo: "pix", numeroParcelas: 1, diasParcelas: [0], temBonusPix: true, destaque: true, ativa: true, exibirParaVendedor: true, ordem: 1 },
+  { id: 2, descricao: "Boleto à vista", valorMinimo: 1500, tipo: "boleto", numeroParcelas: 1, diasParcelas: [0], ativa: true, exibirParaVendedor: true, ordem: 2 },
+  { id: 3, descricao: "Boleto 0/30 (2x)", valorMinimo: 1500, tipo: "boleto", numeroParcelas: 2, diasParcelas: [0, 30], ativa: true, exibirParaVendedor: true, ordem: 3 },
   { id: 4, descricao: "Boleto 0/30/60 (3x)", valorMinimo: 5000, tipo: "boleto", numeroParcelas: 3, diasParcelas: [0, 30, 60], ativa: true, exibirParaVendedor: true, ordem: 4 },
   { id: 5, descricao: "Boleto 15/30/45 (3x)", valorMinimo: 5000, tipo: "boleto", numeroParcelas: 3, diasParcelas: [15, 30, 45], ativa: true, exibirParaVendedor: true, ordem: 5 },
   { id: 6, descricao: "Boleto 0/30/60/90 (4x)", valorMinimo: 8000, tipo: "boleto", numeroParcelas: 4, diasParcelas: [0, 30, 60, 90], ativa: true, exibirParaVendedor: true, ordem: 6 },
   { id: 7, descricao: "Boleto 0/30/60/90/120 (5x)", valorMinimo: 12000, tipo: "boleto", numeroParcelas: 5, diasParcelas: [0, 30, 60, 90, 120], ativa: true, exibirParaVendedor: true, ordem: 7 },
-  { id: 8, descricao: "Cartão à vista", valorMinimo: 2500, tipo: "cartao", numeroParcelas: 1, diasParcelas: [0], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 8 },
-  { id: 9, descricao: "Cartão 2x sem juros", valorMinimo: 2500, tipo: "cartao", numeroParcelas: 2, diasParcelas: [0, 30], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 9 },
-  { id: 10, descricao: "Cartão 3x sem juros (0/30/60)", valorMinimo: 2500, tipo: "cartao", numeroParcelas: 3, diasParcelas: [0, 30, 60], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 10 },
+  { id: 8, descricao: "Cartão à vista", valorMinimo: 1500, tipo: "cartao", numeroParcelas: 1, diasParcelas: [0], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 8 },
+  { id: 9, descricao: "Cartão 2x sem juros", valorMinimo: 1500, tipo: "cartao", numeroParcelas: 2, diasParcelas: [0, 30], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 9 },
+  { id: 10, descricao: "Cartão 3x sem juros (0/30/60)", valorMinimo: 1500, tipo: "cartao", numeroParcelas: 3, diasParcelas: [0, 30, 60], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 10 },
   { id: 11, descricao: "Cartão 4x sem juros (0/30/60/90)", valorMinimo: 8000, tipo: "cartao", numeroParcelas: 4, diasParcelas: [0, 30, 60, 90], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 11 },
   { id: 12, descricao: "Cartão 5x sem juros (0/30/60/90/120)", valorMinimo: 12000, tipo: "cartao", numeroParcelas: 5, diasParcelas: [0, 30, 60, 90, 120], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 12 },
-  { id: 13, descricao: "Boleto 0/15 (à vista + 1)", valorMinimo: 2500, tipo: "boleto", numeroParcelas: 2, diasParcelas: [0, 15], ativa: true, exibirParaVendedor: true, ordem: 13 },
+  { id: 13, descricao: "Boleto 0/15 (à vista + 1)", valorMinimo: 1500, tipo: "boleto", numeroParcelas: 2, diasParcelas: [0, 15], ativa: true, exibirParaVendedor: true, ordem: 13 },
 ];
 
 export const REGRAS_DEFAULT: RegrasGerais = {
-  pedidoMinimo: 2500,
+  pedidoMinimo: 1500,
   descontoMasterMax: 15,
   tentativasSenhaMaster: 3,
   bloqueioSenhaMasterMinutos: 30,

@@ -168,7 +168,7 @@ export function emptyPremissas(usuario: string): PremissasComerciais {
     temFaixaFixa: false,
     faixaFixaId: null,
     temPedidoMinimoPersonalizado: false,
-    pedidoMinimoValor: 2500,
+    pedidoMinimoValor: 1500,
     vigenciaInicio: now.slice(0, 10),
     vigenciaFim: null,
     premissasAtivas: false,
