@@ -507,6 +507,54 @@ function LeadDrawerBody({ lead, onClose }: { lead: LeadQualificado; onClose: () 
             <span className="tabular-nums text-text-secondary">{lead.score}%</span>
           </div>
         </div>
+
+        <div className="pt-3 mt-3 border-t border-border">
+          <div className="text-xs uppercase tracking-wider text-text-secondary mb-2">Acesso ao catálogo</div>
+          <div className="flex items-center gap-2 mb-2">
+            {catalogoLiberado ? (
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                <CheckCircle2 className="h-3 w-3" /> Liberado
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-xs text-text-secondary bg-muted border border-border px-2 py-0.5 rounded-full">
+                <Lock className="h-3 w-3" /> Bloqueado
+              </span>
+            )}
+          </div>
+          {catalogoLiberado && (
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                readOnly
+                value={catalogoUrl}
+                className="flex-1 text-xs bg-muted border border-border rounded-md px-2 py-1.5 text-text-secondary"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs h-8"
+                onClick={() => {
+                  navigator.clipboard.writeText(catalogoUrl);
+                  toast.success("Link copiado");
+                }}
+              >
+                Copiar
+              </Button>
+            </div>
+          )}
+          <Button
+            variant={catalogoLiberado ? "ghost" : "default"}
+            size="sm"
+            className="text-xs"
+            onClick={() => libCatMut.mutate(!catalogoLiberado)}
+            disabled={libCatMut.isPending}
+          >
+            {libCatMut.isPending
+              ? "Processando..."
+              : catalogoLiberado
+                ? "Revogar acesso ao catálogo"
+                : "Liberar acesso ao catálogo"}
+          </Button>
+        </div>
       </TabsContent>
 
       <TabsContent value="crm" className="space-y-4 mt-4">
