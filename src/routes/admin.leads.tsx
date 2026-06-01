@@ -463,7 +463,7 @@ function LeadDrawerBody({ lead, onClose }: { lead: LeadQualificado; onClose: () 
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const whatsappLink = `https://wa.me/${lead.whatsapp.replace(/\D/g, "")}`;
+  const whatsappLink = `https://wa.me/5511999924750/${lead.whatsapp.replace(/\D/g, "")}`;
   const instaLink = lead.instagram
     ? `https://instagram.com/${lead.instagram.replace(/^@/, "")}`
     : null;
