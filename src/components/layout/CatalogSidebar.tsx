@@ -242,7 +242,7 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
                           return (
                             <li key={lvl2}>
                               <button
-                                onClick={() => handleSelectColecao(lvl2)}
+                                onClick={() => handleSelectColecao(lvl2, undefined, categoria)}
                                 className={`block w-full text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
                                   active
                                     ? "border-gold bg-gold/10 text-gold"
