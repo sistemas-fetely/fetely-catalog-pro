@@ -68,21 +68,14 @@ export function ConverterEmPedidoModal({
       });
 
       let pedidoId: string | undefined;
-
-      // 1) Pedido firme — só se houver itens em estoque
-      if (itensFirmes.length > 0) {
-        const pedido = await saveOrder(cotacao.commercial, itensFirmes);
-        pedidoId = pedido.id;
-      }
-
-      // 2) Provisão — itens em previsão viram registro separado
       let provisaoId: string | undefined;
+
+      // 1) Provisão primeiro — evita perder itens em previsão caso o pedido firme falhe depois
       if (itensProvisao.length > 0 && cotacao.meta.clienteId && cotacao.meta.clienteSnapshot) {
         const prov = await createProvisao({
           clienteId: cotacao.meta.clienteId,
           clienteSnapshot: cotacao.meta.clienteSnapshot,
           itens: itensProvisao.map(toItemProvisao),
-          pedidoFirmeId: pedidoId,
           observacoes: cotacao.meta.observacoes || undefined,
         });
         provisaoId = prov.id;
@@ -90,6 +83,18 @@ export function ConverterEmPedidoModal({
 
       if (itensProvisao.length > 0 && !provisaoId) {
         throw new Error("A cotação tem itens de provisão, mas não foi possível salvar a provisão. Verifique o cliente e tente novamente.");
+      }
+
+      // 2) Pedido firme — só se houver itens em estoque
+      if (itensFirmes.length > 0) {
+        const pedido = await saveOrder(cotacao.commercial, itensFirmes);
+        pedidoId = pedido.id;
+      }
+
+      if (pedidoId && provisaoId) {
+        useProvisao.getState().updateStatus(provisaoId, "aguardando_estoque", {
+          pedidoFirmeId: pedidoId,
+        });
       }
 
       // 3) Marca cotação convertida (usa o pedido firme se houver, senão a provisão)
