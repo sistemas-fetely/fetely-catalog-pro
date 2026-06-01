@@ -16,6 +16,8 @@ import {
   User as UserIcon,
   Settings2,
   MessageSquare,
+  CheckCircle2,
+  Lock,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 import {
@@ -23,6 +25,7 @@ import {
   atualizarLeadCrm,
   listarHistoricoLead,
   excluirLead,
+  liberarCatalogoLead,
 } from "@/lib/leads.functions";
 import {
   SEGMENTO_LABEL,
@@ -283,15 +286,16 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
                 <th className="px-4 py-3 text-left">Potencial</th>
                 <th className="px-4 py-3 text-left">Origem</th>
                 <th className="px-4 py-3 text-left">Status</th>
+                <th className="px-4 py-3 text-left">Catálogo</th>
                 <th className="px-4 py-3 text-left">Responsável</th>
                 <th className="px-4 py-3 text-left">Data</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-text-secondary">Carregando...</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-text-secondary">Carregando...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-text-secondary">
                   Nenhum lead encontrado.
                 </td></tr>
               ) : (
@@ -309,6 +313,17 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
                     <td className="px-4 py-3"><PotencialBadge p={l.potencial} /></td>
                     <td className="px-4 py-3 text-text-secondary">{ORIGEM_LABEL[l.origem]}</td>
                     <td className="px-4 py-3"><StatusBadge s={l.statusCrm} /></td>
+                    <td className="px-4 py-3">
+                      {l.catalogoLiberado ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                          <CheckCircle2 className="h-3 w-3" /> Liberado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-text-secondary bg-muted border border-border px-2 py-0.5 rounded-full">
+                          <Lock className="h-3 w-3" /> Bloqueado
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-text-secondary">{l.responsavelNome ?? "—"}</td>
                     <td className="px-4 py-3 text-text-secondary text-xs">
                       {new Date(l.criadoEm).toLocaleDateString("pt-BR")}
@@ -397,10 +412,12 @@ function LeadDrawerBody({ lead, onClose }: { lead: LeadQualificado; onClose: () 
   const update = useServerFn(atualizarLeadCrm);
   const histFn = useServerFn(listarHistoricoLead);
   const delFn = useServerFn(excluirLead);
+  const libCatFn = useServerFn(liberarCatalogoLead);
 
   const [statusCrm, setStatusCrm] = useState<LeadStatusCrm>(lead.statusCrm);
   const [tagsRaw, setTagsRaw] = useState(lead.tags.join(", "));
   const [notas, setNotas] = useState(lead.notasInternas ?? "");
+  const [catalogoLiberado, setCatalogoLiberado] = useState(lead.catalogoLiberado);
 
   const histQ = useQuery({
     queryKey: ["lead-historico", lead.id],
@@ -435,10 +452,22 @@ function LeadDrawerBody({ lead, onClose }: { lead: LeadQualificado; onClose: () 
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const libCatMut = useMutation({
+    mutationFn: (liberar: boolean) => libCatFn({ data: { id: lead.id, liberar } }),
+    onSuccess: (_, liberar) => {
+      toast.success(liberar ? "Catálogo liberado para este lead" : "Acesso ao catálogo revogado");
+      setCatalogoLiberado(liberar);
+      qc.invalidateQueries({ queryKey: ["leads-qualificados"] });
+      qc.invalidateQueries({ queryKey: ["lead-historico", lead.id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const whatsappLink = `https://wa.me/${lead.whatsapp.replace(/\D/g, "")}`;
   const instaLink = lead.instagram
     ? `https://instagram.com/${lead.instagram.replace(/^@/, "")}`
     : null;
+  const catalogoUrl = `${window.location.origin}/catalog`;
 
   return (
     <Tabs defaultValue="perfil" className="mt-4">
@@ -477,6 +506,54 @@ function LeadDrawerBody({ lead, onClose }: { lead: LeadQualificado; onClose: () 
             </div>
             <span className="tabular-nums text-text-secondary">{lead.score}%</span>
           </div>
+        </div>
+
+        <div className="pt-3 mt-3 border-t border-border">
+          <div className="text-xs uppercase tracking-wider text-text-secondary mb-2">Acesso ao catálogo</div>
+          <div className="flex items-center gap-2 mb-2">
+            {catalogoLiberado ? (
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                <CheckCircle2 className="h-3 w-3" /> Liberado
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-xs text-text-secondary bg-muted border border-border px-2 py-0.5 rounded-full">
+                <Lock className="h-3 w-3" /> Bloqueado
+              </span>
+            )}
+          </div>
+          {catalogoLiberado && (
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                readOnly
+                value={catalogoUrl}
+                className="flex-1 text-xs bg-muted border border-border rounded-md px-2 py-1.5 text-text-secondary"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs h-8"
+                onClick={() => {
+                  navigator.clipboard.writeText(catalogoUrl);
+                  toast.success("Link copiado");
+                }}
+              >
+                Copiar
+              </Button>
+            </div>
+          )}
+          <Button
+            variant={catalogoLiberado ? "ghost" : "default"}
+            size="sm"
+            className="text-xs"
+            onClick={() => libCatMut.mutate(!catalogoLiberado)}
+            disabled={libCatMut.isPending}
+          >
+            {libCatMut.isPending
+              ? "Processando..."
+              : catalogoLiberado
+                ? "Revogar acesso ao catálogo"
+                : "Liberar acesso ao catálogo"}
+          </Button>
         </div>
       </TabsContent>
 

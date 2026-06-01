@@ -70,6 +70,7 @@ export interface LeadQualificado {
   notasInternas: string | null;
   clienteB2bId: string | null;
   cotacaoOrigemId: string | null;
+  catalogoLiberado: boolean;
 }
 
 export interface LeadHistoricoItem {
