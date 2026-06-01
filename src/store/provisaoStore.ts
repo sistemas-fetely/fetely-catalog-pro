@@ -163,8 +163,11 @@ export const useProvisao = create<ProvisaoState>()(
       setProvisoesFromRows: (p, maxCounter) => set({ provisoes: p, counter: maxCounter }),
       createProvisao: (input) => {
         const auth = useAuth.getState();
+        // ID globalmente único (evita colisão entre contadores locais de vendedores diferentes)
+        const ts = Date.now();
+        const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+        const id = `PROV-${ts}-${rand}`;
         const next = get().counter + 1;
-        const id = `P${String(next).padStart(4, "0")}`;
         const datasSet = new Set(input.itens.map((i) => i.previsaoData));
         const datasPrevisao = Array.from(datasSet).sort(compararPrevisao);
         const totalReferencia = input.itens.reduce(
@@ -209,6 +212,15 @@ export const useProvisao = create<ProvisaoState>()(
             }
           } catch (err) {
             console.error("[provisaoStore] createProvisao banco falhou:", err, provisao.id);
+            try {
+              const { toast } = await import("sonner");
+              toast.error("Falha ao salvar provisão no servidor", {
+                description: "A provisão ficou só no cache local. Tente recarregar a página.",
+                duration: 8000,
+              });
+            } catch {
+              // sonner pode não estar disponível
+            }
           }
         })();
         return provisao;
