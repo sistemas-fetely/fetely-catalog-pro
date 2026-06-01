@@ -264,7 +264,7 @@ export const useCatalog = create<CatalogState>()(
             .select("*")
             .order("sku", { ascending: true });
           if (error) throw error;
-          const products = (data ?? []).map((r) => rowToProduct(r as Record<string, unknown>));
+          const products = (data ?? []).map((r) => applySixPackOverride(rowToProduct(r as Record<string, unknown>)));
           if (products.length > 0) {
             set({
               products,
