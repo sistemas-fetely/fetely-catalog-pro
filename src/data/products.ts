@@ -1,8 +1,23 @@
 import type { Product } from "@/types";
 import rawProducts from "./products.json";
 
+// Coleções de velas que permitem múltiplos de 6 (pacote menor que a caixa de 12).
+const SIX_PACK_COLLECTIONS = new Set([
+  "Le Moment",
+  "Amour",
+  "Lumi Star",
+  "Twist",
+  "Pattern",
+  "Spirale",
+]);
+
 // Catálogo carregado direto da base oficial (planilha XLSX → JSON).
-export const PRODUCTS: Product[] = rawProducts as Product[];
+export const PRODUCTS: Product[] = (rawProducts as Product[]).map((p) => {
+  if (SIX_PACK_COLLECTIONS.has(p.colecao) && p.multiplos === 12) {
+    return { ...p, multiplos: 6 };
+  }
+  return p;
+});
 
 // Coleções derivadas dinamicamente do dataset
 const _numericCandles = Array.from(
