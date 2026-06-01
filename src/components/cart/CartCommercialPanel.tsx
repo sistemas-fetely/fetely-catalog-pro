@@ -64,7 +64,17 @@ export function CartCommercialPanel({
     if (premissas?.temFaixaFixa && premissas.faixaFixaId != null) {
       return FAIXAS.find((f) => f.id === premissas.faixaFixaId) ?? null;
     }
-    return detectarFaixa(bruto, ativo && usarReservada);
+    const detectada = detectarFaixa(bruto, ativo && usarReservada);
+    if (detectada) return detectada;
+    // Negociação master ativa libera pedido abaixo do mínimo → usa a faixa
+    // não-reservada de menor valor para apresentar condições e cálculos.
+    if (ativo) {
+      const menor = [...FAIXAS]
+        .filter((f) => !f.requerSenhaMaster)
+        .sort((a, b) => a.valorMin - b.valorMin)[0];
+      return menor ?? null;
+    }
+    return null;
   }, [bruto, ativo, usarReservada, premissas]);
 
   // Condições disponíveis
