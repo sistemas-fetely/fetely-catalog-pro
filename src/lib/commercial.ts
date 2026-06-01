@@ -278,6 +278,8 @@ export function calcularPedido(args: {
   premissas?: PremissasComerciais | null;
   /** Negociação master — força frete CIF independente da faixa */
   freteGratisOverride?: boolean;
+  /** Negociação master — libera pedido abaixo do mínimo (usa faixa mais baixa) */
+  ignorarPedidoMinimo?: boolean;
 }): CalculoPedido {
   const {
     bruto,
@@ -286,6 +288,7 @@ export function calcularPedido(args: {
     condicao = null,
     premissas = null,
     freteGratisOverride = false,
+    ignorarPedidoMinimo = false,
   } = args;
 
   // 1. FAIXA — premissa pode forçar faixa fixa
@@ -296,6 +299,14 @@ export function calcularPedido(args: {
       detectarFaixa(bruto, usarReservada);
   } else {
     faixa = detectarFaixa(bruto, usarReservada);
+    if (!faixa && ignorarPedidoMinimo) {
+      // Negociação master liberou pedido abaixo do mínimo → usa a faixa
+      // não-reservada de menor valor para o cálculo (descontos, frete, pix).
+      const menor = [...FAIXAS]
+        .filter((f) => !f.requerSenhaMaster)
+        .sort((a, b) => a.valorMin - b.valorMin)[0];
+      faixa = menor ?? null;
+    }
   }
 
   // pedido mínimo efetivo (pode ser personalizado)
@@ -303,8 +314,11 @@ export function calcularPedido(args: {
     ? premissas.pedidoMinimoValor
     : REGRAS_ATUAIS.pedidoMinimo;
 
-  // se sem faixa fixa e bruto abaixo do mínimo efetivo → bloquear como antes
-  const semFaixa = !faixa || (!premissas?.temFaixaFixa && bruto < pedidoMinimoEfetivo);
+  // se sem faixa fixa e bruto abaixo do mínimo efetivo → bloquear,
+  // a menos que a negociação master tenha liberado explicitamente.
+  const semFaixa =
+    !faixa ||
+    (!premissas?.temFaixaFixa && !ignorarPedidoMinimo && bruto < pedidoMinimoEfetivo);
 
   if (semFaixa) {
     return {
