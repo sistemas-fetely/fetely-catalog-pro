@@ -143,6 +143,30 @@ function DashboardPage() {
     },
   });
 
+  // Provisões no período — RLS filtra
+  const { data: provisoes = [], isLoading: loadingProvisoes } = useQuery({
+    enabled: !!session && !isCliente,
+    queryKey: ["dashboard-provisoes", range.from.toISOString(), range.to.toISOString(), vendedorFiltro],
+    queryFn: async () => {
+      let q = supabase
+        .from("provisoes")
+        .select("id, vendedor_id, vendedor_nome, total_referencia, status, criado_em")
+        .gte("criado_em", range.from.toISOString())
+        .lt("criado_em", range.to.toISOString());
+      if (vendedorFiltro !== "todos") q = q.eq("vendedor_id", vendedorFiltro);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        vendedor_id: string;
+        vendedor_nome: string;
+        total_referencia: number;
+        status: string;
+        criado_em: string;
+      }>;
+    },
+  });
+
   // Itens de pedido no período — para ranking de produtos/coleções
   // RLS em order_items filtra automaticamente pelo perfil
   const { data: items = [], isLoading: loadingItems } = useQuery({
