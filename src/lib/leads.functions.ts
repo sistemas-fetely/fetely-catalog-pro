@@ -334,3 +334,31 @@ export const excluirLead = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ============= ADMIN: liberar catálogo =============
+export const liberarCatalogoLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), liberar: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("leads_qualificados")
+      .update({ catalogo_liberado: data.liberar })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("nome_completo, email")
+      .eq("id", userId)
+      .maybeSingle();
+    const nome = (profile?.nome_completo as string) || (profile?.email as string) || "Admin";
+    await supabase.from("lead_historico").insert({
+      lead_id: data.id,
+      usuario_id: userId,
+      usuario_nome: nome,
+      descricao: data.liberar ? "Acesso ao catálogo liberado" : "Acesso ao catálogo revogado",
+    });
+
+    return { ok: true };
+  });

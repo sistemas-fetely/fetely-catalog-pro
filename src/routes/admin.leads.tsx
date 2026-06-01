@@ -23,6 +23,7 @@ import {
   atualizarLeadCrm,
   listarHistoricoLead,
   excluirLead,
+  liberarCatalogoLead,
 } from "@/lib/leads.functions";
 import {
   SEGMENTO_LABEL,
