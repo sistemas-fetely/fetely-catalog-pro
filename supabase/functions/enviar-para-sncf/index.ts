@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
     const { data: pedido, error: errPedido } = await supabase
       .from("orders")
       .select(`
-        id, created_at, cliente_snapshot, commercial, forma_pagamento,
+        id, created_at, cliente_id, cliente_snapshot, commercial, forma_pagamento,
         valor_bruto, valor_liquido, total,
         vendedor_nome,
         sncf_enviado_em, sncf_tentativas,
@@ -85,6 +85,21 @@ Deno.serve(async (req) => {
         error: `Forma de pagamento inválida ou ausente: '${pedido.forma_pagamento}'. Aceita: pix, cartão, boleto.`,
       });
     }
+
+    // Busca cadastro completo do cliente — o snapshot do pedido tem só dados
+    // resumidos; o SNCF precisa de razão social + endereço completo para não
+    // gravar o placeholder "A enriquecer via BrasilAPI".
+    let clienteFull: any = null;
+    if (pedido.cliente_id) {
+      const { data: cli } = await supabase
+        .from("clientes")
+        .select("*")
+        .eq("id", pedido.cliente_id)
+        .maybeSingle();
+      clienteFull = cli;
+    }
+    const c: any = clienteFull ?? {};
+    const snap: any = clienteSnapshot ?? {};
 
     // Marca pendente antes da chamada
     await supabase
@@ -122,7 +137,55 @@ Deno.serve(async (req) => {
       produto: it.product_snapshot,
     }));
 
-    const payloadBase = {
+    // Endereço de entrega como JSON (cadastro completo > snapshot)
+    const enderecoEntregaJson = clienteFull
+      ? (c.endereco_entrega_igual
+          ? {
+              logradouro: c.logradouro ?? null,
+              numero: c.numero ?? null,
+              complemento: c.complemento ?? null,
+              bairro: c.bairro ?? null,
+              cidade: c.cidade ?? null,
+              uf: c.estado ?? null,
+              cep: c.cep ?? null,
+            }
+          : {
+              logradouro: c.entrega_logradouro ?? null,
+              numero: c.entrega_numero ?? null,
+              complemento: c.entrega_complemento ?? null,
+              bairro: c.entrega_bairro ?? null,
+              cidade: c.entrega_cidade ?? null,
+              uf: c.entrega_estado ?? null,
+              cep: c.entrega_cep ?? null,
+            })
+      : (snap.enderecoEntrega ?? null);
+
+    const contatosJson = clienteFull
+      ? {
+          contato: {
+            nome: c.contato_nome ?? null,
+            email: c.contato_email ?? null,
+            telefone: c.contato_telefone ?? null,
+            whatsapp: c.contato_whatsapp ?? null,
+          },
+          financeiro: {
+            nome: c.financeiro_nome ?? null,
+            email: c.financeiro_email ?? null,
+            telefone: c.financeiro_telefone ?? null,
+          },
+        }
+      : (snap.contatoNome || snap.contatoEmail || snap.contatoTelefone)
+        ? {
+            contato: {
+              nome: snap.contatoNome ?? null,
+              email: snap.contatoEmail ?? null,
+              telefone: snap.contatoTelefone ?? null,
+            },
+          }
+        : null;
+
+    const payloadBase: Record<string, unknown> = {
+      // Obrigatórios (já enviados hoje)
       cnpj,
       id_externo: pedido.id,
       data_pedido: pedido.created_at.split("T")[0],
@@ -133,6 +196,32 @@ Deno.serve(async (req) => {
       forma_solicitada: formaNormalizada,
       vendedor: pedido.vendedor_nome,
       itens_json: itens,
+
+      // CRÍTICO — resolve o problema do nome no SNCF
+      razao_social: c.razao_social ?? snap.razaoSocial ?? null,
+      cidade: c.cidade ?? snap.cidade ?? null,
+      uf: c.estado ?? snap.estado ?? null,
+
+      // Recomendados/opcionais — cadastro completo de uma vez
+      nome_fantasia: c.nome_fantasia ?? snap.nomeFantasia ?? null,
+      inscricao_estadual: c.inscricao_estadual ?? null,
+      isento_ie: typeof c.isento_ie === "boolean" ? c.isento_ie : null,
+      situacao_cadastral: c.situacao_cadastral ?? null,
+      cep: c.cep ?? null,
+      logradouro: c.logradouro ?? null,
+      numero: c.numero ?? null,
+      complemento: c.complemento ?? null,
+      bairro: c.bairro ?? null,
+      telefone: c.contato_telefone ?? snap.contatoTelefone ?? null,
+      email: c.contato_email ?? snap.contatoEmail ?? null,
+      endereco_entrega: enderecoEntregaJson,
+      contatos: contatosJson,
+      segmento: c.segmento ?? null,
+      regiao_atuacao: c.regiao_atuacao ?? null,
+      canal_fop: c.canal ?? null,
+      tags: Array.isArray(c.tags) ? c.tags : null,
+      observacao: c.observacoes ?? null,
+      premissas: c.premissas_comerciais ?? null,
     };
 
     const enviarPayload = (payload: Record<string, unknown>) => fetch(SNCF_URL, {
