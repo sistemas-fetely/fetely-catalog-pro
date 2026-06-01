@@ -1,143 +1,91 @@
-# V15 — Pedido Firme vs Cotação
+# Módulo de Leads Qualificados em Configurações
 
-Adicionar o conceito de **Cotação** ao lado do **Pedido Firme**. Cotações ficam separadas dos pedidos (não entram em faturamento) e podem ser convertidas em pedido firme a qualquer momento dentro da validade.
+Esta é uma feature grande. Vou propor o plano dividido em etapas que podem ser entregues em sequência, mas precisa da sua aprovação antes de começar porque envolve mudanças no schema (Supabase), no menu de Configurações e várias telas novas.
 
-## 1. Modelo de dados
+## Situação atual
 
-`src/types/cotacao.ts` (novo)
-- `TipoRegistro = 'pedido' | 'cotacao'`
-- `StatusCotacao = 'aberta' | 'em_negociacao' | 'aprovada' | 'convertida' | 'expirada' | 'perdida'`
-- `MotivoPerdaCotacao` (enum spec)
-- `interface Cotacao` — espelha `SavedOrder` + `validoAte`, `status`, `pedidoConvertidoId`, `motivoPerda`, `motivoPerdaObs`.
+Hoje só existe o módulo de **Leads de Feira** (`src/lib/leadsFeira.ts`, `/stand` e `/stand/leads`), que é diferente do que você descreveu. Não existe ainda:
+- Formulário público `/qualificacao`
+- Tabela/base `fetely_leads_qualificados`
+- Painel CRM, Campanhas ou Integrações
 
-`src/types/index.ts`
-- Estender `SavedOrder` com `pedidoOrigem?: 'direto' | 'cotacao' | 'provisao' | 'portal_cliente'` e `cotacaoOrigemId?: string`.
+Ou seja, é tudo novo. Confirmo abaixo o que vou construir.
 
-## 2. Store de cotações
+## O que vou entregar
 
-`src/store/cotacaoStore.ts` (novo, padrão Zustand igual a `orderStore`)
-- Estado: `cotacoes: Cotacao[]`, `counter: number` (chave `fetely_cotacao_counter`).
-- `nextId()` → `C0001`, `C0002`…
-- `criarCotacao(payload)` — gera id, `validoAte = criadoEm + 15 dias`, status `aberta`.
-- `atualizarCotacao(id, patch)`, `atualizarStatus(id, status, motivo?)`, `duplicar(id)`, `marcarConvertida(id, pedidoId)`.
-- `expirarVencidas()` — chamado no boot, vira `expirada` quando `validoAte < hoje` e status ∈ `aberta|em_negociacao`.
-- Helper `getCotacoesVisiveis(perfil, userId, clienteId)` aplicando o mesmo isolamento de `orders` (vendedor vê só as suas; admin/master tudo; cliente portal só as próprias).
+### 1. Formulário público `/qualificacao`
+Página standalone, sem autenticação, sem menu do B2B. Captura:
+- Nome, WhatsApp, Instagram, e-mail, cidade/UF
+- Segmento (lojista, decoradora, cerimonialista, atacadista, buffet, influencer, consumidor, outro)
+- Frequência, volume estimado, urgência (1-5), produtos de interesse, origem do contato
+- Calcula score / potencial (alto / médio / em desenvolvimento) automaticamente
 
-Persistência via localStorage `fetely_cotacoes` (alinhado ao padrão existente de stores; SEM nova tabela Supabase neste V15 — explicitar em nota).
+### 2. Persistência (Supabase, não localStorage)
+Vou usar Lovable Cloud (Supabase) em vez de localStorage para que os leads não se percam e respeitem RLS. Tabelas novas:
+- `leads_qualificados` — todos os campos do formulário + status CRM, responsável, tags, notas, cliente_b2b_id, cotacao_origem_id
+- `lead_grupos_campanha` — grupos personalizados (filtros salvos)
+- `lead_mensagens_wpp` — templates WhatsApp por segmento (1 linha por segmento)
+- `lead_webhooks` — configs de webhook
+- `lead_historico` — eventos (criado, status alterado, responsável, tag, conversão)
 
-## 3. Checkout — escolha Pedido vs Cotação
+RLS: insert público (formulário anônimo), select/update/delete apenas admin/master.
 
-`src/components/cart/FinalConfirmModal.tsx`
-- Substituir o único botão "Confirmar ambos →" por dois CTAs lado a lado:
-  - `📋 Salvar como Cotação` — borda dourada, fundo transparente, texto ouro. Subtítulo "Sem compromisso · válida 15 dias".
-  - `✦ Confirmar Pedido` — fundo dourado sólido, texto preto. Subtítulo "Pedido firme faturável".
-- Props novas: `onConfirmPedido`, `onSalvarCotacao` (substituem `onConfirm`).
+### 3. Configurações → Leads (rota `/admin/leads`)
+Visível apenas para admin/master no menu de Configurações. Três abas:
 
-`src/routes/cart.tsx` (e/ou handler que abre o modal)
-- `handleSalvarCotacao()` — monta payload idêntico ao do pedido, chama `cotacaoStore.criarCotacao()`, toast "Cotação #C012 salva (válida até …)", navega para `/cotacoes/C012` (ou volta ao catálogo).
-- `handleConfirmarPedido()` — fluxo atual mantido (gera pedido firme + envia SNCF).
-- Provisão futura continua sendo gerada independentemente do tipo escolhido.
+**a) Base de Leads**
+- 4 KPIs no topo + breakdown por segmento
+- Filtros (busca, segmento, potencial, status, origem, período, responsável)
+- Tabela com badges de status CRM
+- Painel lateral com 4 sub-abas (Perfil, CRM, Histórico, Ações)
+- Exportar CSV, cadastro manual
 
-## 4. Tela de Cotações
+**b) Campanhas**
+- Grupos automáticos (calculados sobre a base atual)
+- Grupos personalizados (filtros salvos, recalculados dinamicamente)
+- Modal criar grupo + preview de contagem
+- Exportar CSV com seleção de campos
 
-`src/routes/cotacoes.tsx` (novo)
-- Filtros por status (Abertas / Em negociação / Aprovadas / Todas), busca por cliente/número, filtro de período.
-- Tabela: `#`, Cliente, Valor, Válida até, Status (badge colorido), ações.
-- Badge `⚠ Expira em N dias` quando `validoAte - hoje ≤ 3`.
-- Botão `+ Nova Cotação` → `/new-order?modo=cotacao` (apenas marca intent; o tipo final é decidido no checkout — para V15 basta abrir `/new-order`).
+**c) Integrações**
+- Configurar mensagens WhatsApp por segmento (templates com variáveis)
+- Ações disponíveis na ficha do lead (WhatsApp, converter em cliente, gerar cotação, copiar link catálogo com UTM)
+- Webhooks (cadastro de URL + evento — disparo real via server function quando lead é criado/convertido)
 
-`src/components/cotacoes/CotacaoDetailDrawer.tsx` (novo)
-- Resumo idêntico ao de pedido (reaproveitar componentes existentes do `orders.tsx` se já houver; senão inline simples).
-- Bloco de Ações:
-  - `✦ Converter em Pedido` (dourado)
-  - `✏ Editar cotação` — carrega itens no `useCartStore`, marca `editandoCotacaoId` em `uiStore`, navega `/cart`. Ao salvar, `atualizarCotacao(id, payload)` em vez de criar nova; renova `validoAte`.
-  - `⬇ Exportar PDF`
-  - `📋 Duplicar`
-  - Botões de status: `Em negociação`, `Aprovada`, `Perdida` (abre modal de motivo).
+### 4. Conversão Lead → Cliente B2B
+Botão na ficha do lead pré-preenche o formulário de Cliente (V6) com mapeamento de segmento/canal. Lead fica com status `convertido` + `cliente_b2b_id` apontando para o cadastro criado. Link "Ver cliente B2B" na ficha.
 
-`src/components/cotacoes/MarcarPerdidaModal.tsx` (novo)
-- Radio com os 7 motivos da spec + textarea de observação. Salva via `atualizarStatus(id, 'perdida', { motivo, obs })`.
+### 5. Gerar Cotação a partir do lead
+Verifica se existe `cliente_b2b_id`; se não, força conversão antes. Depois abre nova cotação (V15) com cliente já selecionado.
 
-`src/components/cotacoes/ConverterEmPedidoModal.tsx` (novo)
-- Mostra resumo financeiro, permite escolher/ajustar condição de pagamento, confirma:
-  - `orderStore.criarPedido({ ...cotacao, pedidoOrigem: 'cotacao', cotacaoOrigemId: cotacao.id })`
-  - `cotacaoStore.marcarConvertida(id, pedidoId)`
-  - Toast `Cotação #C012 convertida no Pedido #0044`.
+### 6. Card "Leads" no Dashboard (V5)
+Resumo: novos hoje, alto potencial, aguardando contato + link para o módulo.
 
-## 5. Navegação
+## Detalhes técnicos
 
-`src/components/layout/Header.tsx` (e `BottomNav.tsx` se aplicável)
-- Adicionar item **Cotações** (ícone `FileText`) entre Pedidos e Provisões. Visível para admin/master/vendedor (e cliente no portal — ver §7).
+- **Stack:** TanStack Start + Supabase. Sem localStorage para dados de produção.
+- **Webhooks:** disparados via server function (`createServerFn`) após insert/update do lead.
+- **Score:** calculado client-side a partir de segmento + frequência + volume + urgência. Função pura em `src/lib/leadScore.ts`.
+- **UTM no catálogo:** helper `buildCatalogoUtmLink(lead)` que monta `/catalog?utm_*`.
+- **Acesso:** rota `/admin/leads` protegida via verificação de role no componente (padrão dos outros `/admin/*`).
+- **Menu Configurações:** adiciono item "Leads" em `src/routes/settings.tsx` na seção admin/master.
+- **Tipos:** novo arquivo `src/types/lead.ts`. Store `src/store/leadStore.ts` com React Query + server functions para CRUD.
 
-## 6. PDF de cotação
+## O que NÃO vou tocar
 
-`src/lib/exporter.ts` (ou `orderPdf.ts`)
-- Nova função `exportCotacaoPdf(cotacao)` reaproveitando o layout de pedido com:
-  - Cabeçalho `COTAÇÃO #C012`
-  - Linha `Válida até: dd/mm/yyyy`
-  - Condição de pagamento exibida como "a confirmar na conversão"
-  - Rodapé `Este documento é uma cotação e não representa compromisso de compra.`
+- O módulo existente `/stand` e `leadsFeira.ts` (leads de feira) fica intacto e separado.
+- Nenhuma mudança nos módulos de pedidos, cotações, provisões, clientes (apenas leio o tipo Cliente para conversão).
 
-## 7. Portal do cliente
+## Forma de entrega sugerida
 
-`src/components/layout/PortalSidebar.tsx`
-- Adicionar item **Cotações** entre Pedidos e Provisões.
+Posso entregar em 1 turno só (vai gerar muitos arquivos novos: ~12-15 arquivos) ou dividido:
+- **Fase 1:** Migration + formulário `/qualificacao` + tabela base + página `/admin/leads` com aba Base (KPIs, filtros, tabela, ficha completa)
+- **Fase 2:** Campanhas (grupos auto + personalizados + exportação)
+- **Fase 3:** Integrações (templates WhatsApp, webhooks, ações de conversão/cotação) + card no Dashboard
 
-`src/routes/portal.cotacoes.tsx` (novo)
-- Lista das cotações do `clienteId` logado.
-- Permite `Converter em Pedido` (reaproveita `ConverterEmPedidoModal`).
+**Recomendo fazer em fases** porque é uma quantidade grande de UI e fica mais fácil de validar/ajustar cada parte antes da próxima.
 
-## 8. Dashboard
+## Perguntas antes de começar
 
-`src/routes/dashboard.tsx`
-- Card **📋 Pipeline de Cotações**: contadores e valor por status (Abertas / Em negociação / Aprovadas), total potencial, taxa de conversão 30d, tempo médio até conversão.
-- Card **Cotações prestes a expirar**.
-- Admin/master: agregado da equipe. Vendedor: só as próprias.
-
-## 9. Relatórios
-
-`src/routes/commercial.tsx` (ou onde estão os relatórios V5)
-- Nova aba **Cotações**: métricas do período (geradas, convertidas, perdidas, expiradas, em aberto, valores) e top motivos de perda.
-
-## 10. Marcação de origem em pedidos
-
-`src/routes/orders.tsx`
-- Quando `pedido.pedidoOrigem === 'cotacao'`, badge `📋 Cotação` com tooltip do `cotacaoOrigemId`.
-
-## 11. Boot / expiração automática
-
-`src/lib/fopBootstrap.ts` (ou `src/start.ts` lado cliente)
-- Chamar `useCotacaoStore.getState().expirarVencidas()` no boot do app.
-
-## Arquivos tocados
-
-**Novos**
-- src/types/cotacao.ts
-- src/store/cotacaoStore.ts
-- src/routes/cotacoes.tsx
-- src/routes/portal.cotacoes.tsx
-- src/components/cotacoes/CotacaoDetailDrawer.tsx
-- src/components/cotacoes/MarcarPerdidaModal.tsx
-- src/components/cotacoes/ConverterEmPedidoModal.tsx
-
-**Editados**
-- src/types/index.ts (campos `pedidoOrigem`, `cotacaoOrigemId` em `SavedOrder`)
-- src/components/cart/FinalConfirmModal.tsx (dois botões)
-- src/routes/cart.tsx (handlers)
-- src/components/layout/Header.tsx + PortalSidebar.tsx + BottomNav.tsx (item Cotações)
-- src/lib/exporter.ts ou src/lib/orderPdf.ts (`exportCotacaoPdf`)
-- src/routes/dashboard.tsx (pipeline)
-- src/routes/commercial.tsx (aba Cotações)
-- src/routes/orders.tsx (badge origem cotação)
-- src/lib/fopBootstrap.ts (expirar vencidas no boot)
-
-## Notas
-
-- **Persistência**: cotações ficam em `localStorage` (`fetely_cotacoes`, `fetely_cotacao_counter`), seguindo o padrão de stores existentes. Quando quisermos sync server-side, criamos tabela Supabase em V16 — não é escopo agora.
-- **Validade**: hardcoded 15 dias (constante `COTACAO_VALIDADE_DIAS` em `cotacaoStore.ts`); migrar para `regras_gerais` no futuro.
-- **Cotação NÃO entra em faturamento** — dashboards de vendas continuam usando apenas `orderStore`.
-- **Edição de cotação** atualiza in-place e renova `validoAte` a partir da edição.
-- **Duplicar** gera novo ID, copia itens/condições, status `aberta`, nova validade.
-- Isolamento por perfil reusa o mesmo padrão de `getPedidos` para evitar divergência.
-
-Aprovar para implementar?
+1. Tudo bem usar **Supabase** (Lovable Cloud) em vez de localStorage para os leads? (recomendo fortemente — o prompt original mencionava localStorage como MVP, mas você já tem Cloud ativo)
+2. Quer que eu entregue **em fases** (começando pela Fase 1) ou tudo de uma vez?
+3. O **formulário público `/qualificacao`** deve ter algum branding/visual específico ou sigo a identidade Fetély (dourado/escuro) do resto do app?
