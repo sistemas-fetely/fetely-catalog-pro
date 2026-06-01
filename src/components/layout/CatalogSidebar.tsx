@@ -89,8 +89,11 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
   const activeGrupo = pathname === "/catalog" ? search.grupo : undefined;
   const navigate = useNavigate();
 
-  const handleSelectColecao = (colecao: string, grupo?: string) => {
-    navigate({ to: "/catalog", search: grupo ? { colecao, grupo } : { colecao } });
+  const handleSelectColecao = (colecao: string, grupo?: string, categoria?: string) => {
+    const search: { colecao: string; grupo?: string; categoria?: string } = { colecao };
+    if (grupo) search.grupo = grupo;
+    if (categoria) search.categoria = categoria;
+    navigate({ to: "/catalog", search });
     onNavigate?.();
   };
 
