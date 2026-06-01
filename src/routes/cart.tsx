@@ -560,10 +560,10 @@ function CartPage() {
                 </p>
                 <button
                   onClick={handleSaveOnlyProvisao}
-                  disabled={!meta.clienteId}
+                  disabled={!meta.clienteId || salvandoPedido}
                   className="w-full rounded-md border border-stock-pre/60 bg-stock-pre/15 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-stock-pre hover:bg-stock-pre/25 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Salvar como Provisão →
+                  {salvandoPedido ? "Salvando..." : "Salvar como Provisão →"}
                 </button>
                 <button
                   onClick={() => {
@@ -640,10 +640,10 @@ function CartPage() {
           {apenasProvisao ? (
             <button
               onClick={handleSaveOnlyProvisao}
-              disabled={!meta.clienteId}
+              disabled={!meta.clienteId || salvandoPedido}
               className="shrink-0 rounded-md border border-stock-pre/60 bg-stock-pre/15 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-stock-pre disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Salvar Provisão
+              {salvandoPedido ? "Salvando..." : "Salvar Provisão"}
             </button>
           ) : (
             <button
