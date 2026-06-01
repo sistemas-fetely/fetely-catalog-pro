@@ -35,6 +35,9 @@ export type LeadFrequencia =
   | "anual";
 
 export type LeadVolumeEstimado =
+  | "ate_500"
+  | "500_1500"
+  | "1500_3000"
   | "ate_2500"
   | "2500_10k"
   | "10k_50k"
