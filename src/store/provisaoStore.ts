@@ -250,6 +250,7 @@ export const useProvisao = create<ProvisaoState>()(
           ),
         }));
         const update: Record<string, unknown> = { status, atualizado_em: atualizadoEm };
+        if (extra?.pedidoFirmeId !== undefined) update.pedido_firme_id = extra.pedidoFirmeId;
         if (extra?.pedidoConvertidoId !== undefined) update.pedido_convertido_id = extra.pedidoConvertidoId;
         if (extra?.observacoes !== undefined) update.observacoes = extra.observacoes;
         void supabase
