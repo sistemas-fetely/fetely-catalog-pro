@@ -237,7 +237,15 @@ Deno.serve(async (req) => {
     let sncfResp = await enviarPayload(payloadBase);
     let sncfBody = await sncfResp.json().catch(() => ({ error: "Resposta sem JSON do SNCF" }));
 
-    if (!sncfResp.ok && isErroOrigem(sncfBody)) return erroContratoOrigemSncf(sncfBody);
+    if (!sncfResp.ok && isErroOrigem(sncfBody)) {
+      await supabase.from("orders").update({
+        sncf_status_sync: "rejeitado",
+        sncf_ultimo_erro: "Contrato de origem incompatível no SNCF (origem_check).",
+        sncf_ultimo_sync_em: nowIso,
+        sncf_tentativas: novasTentativas,
+      }).eq("id", orderId);
+      return erroContratoOrigemSncf(sncfBody);
+    }
 
     if (sncfResp.ok) {
       await supabase.from("orders").update({
