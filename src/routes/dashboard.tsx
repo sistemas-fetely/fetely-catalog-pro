@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  TrendingUp, Package, DollarSign, ShoppingBag, Users, Trophy, Percent, Sparkles, Boxes, Layers, LineChart as LineChartIcon,
+  TrendingUp, Package, DollarSign, ShoppingBag, Users, Trophy, Percent, Sparkles, Boxes, Layers, LineChart as LineChartIcon, Clock, Sigma,
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -143,6 +143,30 @@ function DashboardPage() {
     },
   });
 
+  // Provisões no período — RLS filtra
+  const { data: provisoes = [], isLoading: loadingProvisoes } = useQuery({
+    enabled: !!session && !isCliente,
+    queryKey: ["dashboard-provisoes", range.from.toISOString(), range.to.toISOString(), vendedorFiltro],
+    queryFn: async () => {
+      let q = supabase
+        .from("provisoes")
+        .select("id, vendedor_id, vendedor_nome, total_referencia, status, criado_em")
+        .gte("criado_em", range.from.toISOString())
+        .lt("criado_em", range.to.toISOString());
+      if (vendedorFiltro !== "todos") q = q.eq("vendedor_id", vendedorFiltro);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        vendedor_id: string;
+        vendedor_nome: string;
+        total_referencia: number;
+        status: string;
+        criado_em: string;
+      }>;
+    },
+  });
+
   // Itens de pedido no período — para ranking de produtos/coleções
   // RLS em order_items filtra automaticamente pelo perfil
   const { data: items = [], isLoading: loadingItems } = useQuery({
@@ -220,6 +244,16 @@ function DashboardPage() {
     : null;
   const ticketPrev = ordersPrev.length > 0 ? fatPrev / ordersPrev.length : 0;
   const deltaTicket = ticketPrev > 0 ? ((ticketMedio - ticketPrev) / ticketPrev) * 100 : null;
+
+  // Provisões
+  const totalProvisoes = provisoes.length;
+  const valorProvisoes = provisoes.reduce((s, p) => s + Number(p.total_referencia || 0), 0);
+  const provisoesAbertas = provisoes.filter(
+    (p) => p.status === "aguardando_estoque" || p.status === "estoque_liberado",
+  ).length;
+  const provisoesConvertidas = provisoes.filter((p) => p.status === "convertido_em_pedido").length;
+  const combinadoQtd = totalPedidos + totalProvisoes;
+  const combinadoValor = faturamento + valorProvisoes;
 
   // ─── Ranking de vendedores (admin/master) ─────────────────────────────
   const ranking = isAdminOrMaster
@@ -395,6 +429,73 @@ function DashboardPage() {
           loading={loadingOrders}
         />
       </section>
+
+      {/* Pedidos + Provisões — consolidado e detalhado */}
+      <section className="rounded-lg gold-border bg-surface overflow-hidden">
+        <header className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-border bg-surface-2">
+          <div className="flex items-center gap-2">
+            <Sigma className="h-4 w-4 text-gold" />
+            <h2 className="font-display text-lg sm:text-xl">Pedidos + Provisões</h2>
+          </div>
+          <span className="text-[10px] uppercase tracking-wider text-text-muted">
+            {range.label}
+          </span>
+        </header>
+        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border/60">
+          {/* Consolidado */}
+          <div className="p-4 sm:p-5">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
+              Consolidado
+            </div>
+            <div className="font-display text-3xl text-text-primary">
+              {combinadoQtd}
+            </div>
+            <div className="text-xs text-text-secondary mt-0.5">
+              {formatBRL(combinadoValor)} total
+            </div>
+            <div className="text-[11px] text-text-muted mt-2">
+              {totalPedidos} pedido{totalPedidos !== 1 ? "s" : ""} + {totalProvisoes} provisã{totalProvisoes !== 1 ? "es" : "o"}
+            </div>
+          </div>
+          {/* Pedidos firmes */}
+          <Link
+            to="/orders"
+            className="p-4 sm:p-5 hover:bg-surface-hover transition group"
+          >
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
+              <ShoppingBag className="h-3 w-3" /> Pedidos firmes
+            </div>
+            <div className="font-display text-3xl text-text-primary group-hover:text-gold transition">
+              {loadingOrders ? "…" : totalPedidos}
+            </div>
+            <div className="text-xs text-text-secondary mt-0.5">
+              {formatBRL(faturamento)}
+            </div>
+            <div className="text-[11px] text-text-muted mt-2">
+              {unidades.toLocaleString("pt-BR")} unidades · ticket {formatBRL(ticketMedio)}
+            </div>
+          </Link>
+          {/* Provisões */}
+          <Link
+            to="/provisoes"
+            className="p-4 sm:p-5 hover:bg-surface-hover transition group"
+          >
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
+              <Clock className="h-3 w-3" /> Provisões
+            </div>
+            <div className="font-display text-3xl text-text-primary group-hover:text-gold transition">
+              {loadingProvisoes ? "…" : totalProvisoes}
+            </div>
+            <div className="text-xs text-text-secondary mt-0.5">
+              {formatBRL(valorProvisoes)} ref.
+            </div>
+            <div className="text-[11px] text-text-muted mt-2">
+              {provisoesAbertas} abertas · {provisoesConvertidas} convertidas
+            </div>
+          </Link>
+        </div>
+      </section>
+
 
       {/* Linha secundária — varia por perfil */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
