@@ -1,0 +1,3 @@
+ALTER TYPE lead_volume_estimado ADD VALUE IF NOT EXISTS 'ate_500';
+ALTER TYPE lead_volume_estimado ADD VALUE IF NOT EXISTS '500_1500';
+ALTER TYPE lead_volume_estimado ADD VALUE IF NOT EXISTS '1500_3000';
