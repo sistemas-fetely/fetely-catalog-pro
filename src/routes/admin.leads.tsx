@@ -291,9 +291,9 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-text-secondary">Carregando...</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-text-secondary">Carregando...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-text-secondary">
                   Nenhum lead encontrado.
                 </td></tr>
               ) : (
@@ -311,6 +311,17 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
                     <td className="px-4 py-3"><PotencialBadge p={l.potencial} /></td>
                     <td className="px-4 py-3 text-text-secondary">{ORIGEM_LABEL[l.origem]}</td>
                     <td className="px-4 py-3"><StatusBadge s={l.statusCrm} /></td>
+                    <td className="px-4 py-3">
+                      {l.catalogoLiberado ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                          <CheckCircle2 className="h-3 w-3" /> Liberado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-text-secondary bg-muted border border-border px-2 py-0.5 rounded-full">
+                          <Lock className="h-3 w-3" /> Bloqueado
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-text-secondary">{l.responsavelNome ?? "—"}</td>
                     <td className="px-4 py-3 text-text-secondary text-xs">
                       {new Date(l.criadoEm).toLocaleDateString("pt-BR")}
