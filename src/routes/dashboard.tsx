@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  TrendingUp, Package, DollarSign, ShoppingBag, Users, Trophy, Percent, Sparkles, Boxes, Layers, LineChart as LineChartIcon,
+  TrendingUp, Package, DollarSign, ShoppingBag, Users, Trophy, Percent, Sparkles, Boxes, Layers, LineChart as LineChartIcon, Clock, Sigma,
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
