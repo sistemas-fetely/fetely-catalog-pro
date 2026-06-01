@@ -3,10 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Download, Eye, Package, Trash2, UserCog, XCircle, RotateCcw } from "lucide-react";
+import { Download, Eye, Package, Trash2, UserCog, XCircle, RotateCcw, FileEdit } from "lucide-react";
 import { BotaoEnviarSncf } from "@/components/BotaoEnviarSncf";
 import { formatBRL } from "@/lib/format";
 import { useOrder, useVisibleOrders } from "@/store/orderStore";
+import { useCotacao } from "@/store/cotacaoStore";
 import { useAuth } from "@/store/authStore";
 import { useClientes } from "@/store/clienteStore";
 import { listAppUsers } from "@/lib/users.functions";
@@ -36,6 +37,7 @@ function OrdersPage() {
   const deleteOrder = useOrder((s) => s.deleteOrder);
   const reprovarOrder = useOrder((s) => s.reprovarOrder);
   const desfazerReprovacao = useOrder((s) => s.desfazerReprovacao);
+  const criarCotacao = useCotacao((s) => s.criarCotacao);
   const [query, setQuery] = useState("");
   const [vendedorFilter, setVendedorFilter] = useState<string>("all");
   const [reassignTarget, setReassignTarget] = useState<string | null>(null);
@@ -294,6 +296,36 @@ function OrdersPage() {
                             className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 px-2 py-1.5 text-[10px] uppercase tracking-wider text-amber-300 hover:bg-amber-500/10"
                           >
                             <UserCog className="h-3 w-3" />
+                          </button>
+                        )}
+                        {canReprovar && !o.reprovado && (
+                          <button
+                            onClick={async () => {
+                              if (
+                                !confirm(
+                                  `Enviar o pedido ${o.id} para cotação? Ele será removido dos pedidos firmes e uma nova cotação editável será criada.`,
+                                )
+                              )
+                                return;
+                              try {
+                                const cot = criarCotacao({
+                                  items: o.items,
+                                  meta: o.meta,
+                                  total: o.total,
+                                  commercial: o.commercial,
+                                });
+                                await deleteOrder(o.id);
+                                toast.success(`Pedido ${o.id} enviado para cotação ${cot.id}`);
+                              } catch (err) {
+                                toast.error(
+                                  err instanceof Error ? err.message : "Erro ao enviar para cotação",
+                                );
+                              }
+                            }}
+                            title="Enviar para cotação (editar novamente)"
+                            className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 px-2 py-1.5 text-[10px] uppercase tracking-wider text-amber-300 hover:bg-amber-500/10"
+                          >
+                            <FileEdit className="h-3 w-3" />
                           </button>
                         )}
                         {canReprovar && !o.reprovado && (
