@@ -213,6 +213,17 @@ function CartPage() {
     setSalvandoPedido(true);
     try {
       setMeta({ condicaoPagamento: commercial.condicao.descricao });
+      let provisaoId: string | undefined;
+      if (itensProvisao.length > 0) {
+        const prov = await createProvisao({
+          clienteId: meta.clienteId!,
+          clienteSnapshot: snapshot,
+          itens: itensProvisao.map(toItemProvisao),
+          observacoes: meta.observacoes || undefined,
+        });
+        provisaoId = prov.id;
+      }
+
       const order = await saveOrder(orderCommercial, itensFirmes);
 
       if (orderCommercial.negociacao && orderCommercial.descontoMasterPct > 0) {
@@ -227,16 +238,10 @@ function CartPage() {
         });
       }
 
-      let provisaoId: string | undefined;
-      if (itensProvisao.length > 0) {
-        const prov = await createProvisao({
-          clienteId: meta.clienteId!,
-          clienteSnapshot: snapshot,
-          itens: itensProvisao.map(toItemProvisao),
+      if (provisaoId) {
+        updateProvisaoStatus(provisaoId, "aguardando_estoque", {
           pedidoFirmeId: order.id,
-          observacoes: meta.observacoes || undefined,
         });
-        provisaoId = prov.id;
       }
 
       if (meta.provisaoOrigemId) {
