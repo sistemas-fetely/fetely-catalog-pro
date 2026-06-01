@@ -132,11 +132,16 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isStand = pathname === "/stand" || pathname.startsWith("/stand/");
+  const isQualificacao = pathname === "/qualificacao" || pathname.startsWith("/qualificacao/");
   return (
     <QueryClientProvider client={queryClient}>
       <BootEffects />
       {isStand ? (
         <Outlet />
+      ) : isQualificacao ? (
+        <div className="min-h-screen bg-background text-text-primary">
+          <Outlet />
+        </div>
       ) : (
         <div className="min-h-screen bg-background text-text-primary pb-16 md:pb-0">
           <Header />
