@@ -21,6 +21,9 @@ const SCORE_VOLUME: Record<LeadVolumeEstimado, number> = {
   "10k_50k": 24,
   "2500_10k": 16,
   ate_2500: 8,
+  "1500_3000": 6,
+  "500_1500": 4,
+  ate_500: 2,
   nao_sei: 4,
 };
 

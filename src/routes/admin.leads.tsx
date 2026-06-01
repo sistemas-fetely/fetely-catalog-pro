@@ -105,7 +105,7 @@ function AdminLeadsPage() {
               rel="noreferrer"
               className="inline-flex items-center gap-2 text-xs px-3 py-2 rounded-md border border-border bg-surface hover:bg-muted/40 transition"
             >
-              <span className="text-text-secondary">Formulário:</span>
+              <span className="text-text-secondary">Link público:</span>
               <span className="text-gold font-medium">/qualificacao ↗</span>
             </a>
             <Button

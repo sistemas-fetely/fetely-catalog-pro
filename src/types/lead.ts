@@ -35,6 +35,9 @@ export type LeadFrequencia =
   | "anual";
 
 export type LeadVolumeEstimado =
+  | "ate_500"
+  | "500_1500"
+  | "1500_3000"
   | "ate_2500"
   | "2500_10k"
   | "10k_50k"
@@ -130,6 +133,9 @@ export const FREQUENCIA_LABEL: Record<LeadFrequencia, string> = {
 };
 
 export const VOLUME_LABEL: Record<LeadVolumeEstimado, string> = {
+  ate_500: "Até R$ 500",
+  "500_1500": "R$ 500 a R$ 1.500",
+  "1500_3000": "R$ 1.500 a R$ 3.000",
   ate_2500: "Até R$ 2.500",
   "2500_10k": "R$ 2.500 a R$ 10k",
   "10k_50k": "R$ 10k a R$ 50k",

@@ -207,7 +207,7 @@ function QualificacaoPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Como você se enquadra? *</Label>
-              <Select value={segmento} onValueChange={(v) => setSegmento(v as LeadSegmento)}>
+              <Select value={segmento} onValueChange={(v) => { setSegmento(v as LeadSegmento); setVolume(""); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(SEGMENTO_LABEL).map(([k, v]) => (
@@ -243,8 +243,11 @@ function QualificacaoPage() {
               <Select value={volume} onValueChange={(v) => setVolume(v as LeadVolumeEstimado)}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(VOLUME_LABEL).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  {(segmento === "consumidor"
+                    ? (["ate_500", "500_1500", "1500_3000", "nao_sei"] as LeadVolumeEstimado[])
+                    : (["ate_2500", "2500_10k", "10k_50k", "acima_50k", "nao_sei"] as LeadVolumeEstimado[])
+                  ).map((k) => (
+                    <SelectItem key={k} value={k}>{VOLUME_LABEL[k]}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

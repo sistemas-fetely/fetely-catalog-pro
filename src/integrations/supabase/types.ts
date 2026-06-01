@@ -1456,6 +1456,9 @@ export type Database = {
         | "10k_50k"
         | "acima_50k"
         | "nao_sei"
+        | "ate_500"
+        | "500_1500"
+        | "1500_3000"
       tipo_condicao_pagamento: "pix" | "boleto" | "cartao"
       tipo_frete: "CIF" | "FOB"
       tipo_vendedor: "interno" | "representante"
@@ -1644,6 +1647,9 @@ export const Constants = {
         "10k_50k",
         "acima_50k",
         "nao_sei",
+        "ate_500",
+        "500_1500",
+        "1500_3000",
       ],
       tipo_condicao_pagamento: ["pix", "boleto", "cartao"],
       tipo_frete: ["CIF", "FOB"],
