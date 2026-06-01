@@ -476,6 +476,209 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_grupos_campanha: {
+        Row: {
+          criado_em: string
+          criado_por_id: string | null
+          criado_por_nome: string | null
+          filtros: Json
+          id: string
+          nome: string
+        }
+        Insert: {
+          criado_em?: string
+          criado_por_id?: string | null
+          criado_por_nome?: string | null
+          filtros?: Json
+          id?: string
+          nome: string
+        }
+        Update: {
+          criado_em?: string
+          criado_por_id?: string | null
+          criado_por_nome?: string | null
+          filtros?: Json
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      lead_historico: {
+        Row: {
+          criado_em: string
+          descricao: string
+          id: string
+          lead_id: string
+          usuario_id: string | null
+          usuario_nome: string
+        }
+        Insert: {
+          criado_em?: string
+          descricao: string
+          id?: string
+          lead_id: string
+          usuario_id?: string | null
+          usuario_nome: string
+        }
+        Update: {
+          criado_em?: string
+          descricao?: string
+          id?: string
+          lead_id?: string
+          usuario_id?: string | null
+          usuario_nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_historico_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_qualificados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_mensagens_wpp: {
+        Row: {
+          atualizado_em: string
+          segmento: Database["public"]["Enums"]["lead_segmento"]
+          template: string
+        }
+        Insert: {
+          atualizado_em?: string
+          segmento: Database["public"]["Enums"]["lead_segmento"]
+          template?: string
+        }
+        Update: {
+          atualizado_em?: string
+          segmento?: Database["public"]["Enums"]["lead_segmento"]
+          template?: string
+        }
+        Relationships: []
+      }
+      lead_webhooks: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          evento: string
+          id: string
+          nome: string
+          url: string
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          evento: string
+          id?: string
+          nome: string
+          url: string
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          evento?: string
+          id?: string
+          nome?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      leads_qualificados: {
+        Row: {
+          atualizado_em: string
+          cidade: string | null
+          cliente_b2b_id: string | null
+          cotacao_origem_id: string | null
+          criado_em: string
+          email: string | null
+          frequencia: Database["public"]["Enums"]["lead_frequencia"] | null
+          id: string
+          instagram: string | null
+          ip_origem: string | null
+          nome: string
+          notas_internas: string | null
+          observacoes: string | null
+          origem: Database["public"]["Enums"]["lead_origem"]
+          potencial: Database["public"]["Enums"]["lead_potencial"]
+          produtos_interesse: string[]
+          responsavel_id: string | null
+          responsavel_nome: string | null
+          score: number
+          segmento: Database["public"]["Enums"]["lead_segmento"]
+          status_crm: Database["public"]["Enums"]["lead_status_crm"]
+          tags: string[]
+          uf: string | null
+          urgencia: number | null
+          user_agent: string | null
+          volume_estimado:
+            | Database["public"]["Enums"]["lead_volume_estimado"]
+            | null
+          whatsapp: string
+        }
+        Insert: {
+          atualizado_em?: string
+          cidade?: string | null
+          cliente_b2b_id?: string | null
+          cotacao_origem_id?: string | null
+          criado_em?: string
+          email?: string | null
+          frequencia?: Database["public"]["Enums"]["lead_frequencia"] | null
+          id?: string
+          instagram?: string | null
+          ip_origem?: string | null
+          nome: string
+          notas_internas?: string | null
+          observacoes?: string | null
+          origem?: Database["public"]["Enums"]["lead_origem"]
+          potencial?: Database["public"]["Enums"]["lead_potencial"]
+          produtos_interesse?: string[]
+          responsavel_id?: string | null
+          responsavel_nome?: string | null
+          score?: number
+          segmento?: Database["public"]["Enums"]["lead_segmento"]
+          status_crm?: Database["public"]["Enums"]["lead_status_crm"]
+          tags?: string[]
+          uf?: string | null
+          urgencia?: number | null
+          user_agent?: string | null
+          volume_estimado?:
+            | Database["public"]["Enums"]["lead_volume_estimado"]
+            | null
+          whatsapp: string
+        }
+        Update: {
+          atualizado_em?: string
+          cidade?: string | null
+          cliente_b2b_id?: string | null
+          cotacao_origem_id?: string | null
+          criado_em?: string
+          email?: string | null
+          frequencia?: Database["public"]["Enums"]["lead_frequencia"] | null
+          id?: string
+          instagram?: string | null
+          ip_origem?: string | null
+          nome?: string
+          notas_internas?: string | null
+          observacoes?: string | null
+          origem?: Database["public"]["Enums"]["lead_origem"]
+          potencial?: Database["public"]["Enums"]["lead_potencial"]
+          produtos_interesse?: string[]
+          responsavel_id?: string | null
+          responsavel_nome?: string | null
+          score?: number
+          segmento?: Database["public"]["Enums"]["lead_segmento"]
+          status_crm?: Database["public"]["Enums"]["lead_status_crm"]
+          tags?: string[]
+          uf?: string | null
+          urgencia?: number | null
+          user_agent?: string | null
+          volume_estimado?:
+            | Database["public"]["Enums"]["lead_volume_estimado"]
+            | null
+          whatsapp?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           id: string
@@ -1216,6 +1419,43 @@ export type Database = {
         | "reativado"
         | "duplicado"
         | "importado"
+      lead_frequencia:
+        | "pontual"
+        | "mensal"
+        | "trimestral"
+        | "semestral"
+        | "anual"
+      lead_origem:
+        | "instagram"
+        | "whatsapp"
+        | "feira"
+        | "indicacao"
+        | "site"
+        | "google"
+        | "outro"
+      lead_potencial: "alto" | "medio" | "em_desenvolvimento"
+      lead_segmento:
+        | "lojista"
+        | "decoradora"
+        | "cerimonialista"
+        | "atacadista"
+        | "buffet"
+        | "influencer"
+        | "consumidor"
+        | "outro"
+      lead_status_crm:
+        | "novo"
+        | "em_contato"
+        | "qualificado"
+        | "proposta_enviada"
+        | "convertido"
+        | "descartado"
+      lead_volume_estimado:
+        | "ate_2500"
+        | "2500_10k"
+        | "10k_50k"
+        | "acima_50k"
+        | "nao_sei"
       tipo_condicao_pagamento: "pix" | "boleto" | "cartao"
       tipo_frete: "CIF" | "FOB"
       tipo_vendedor: "interno" | "representante"
@@ -1362,6 +1602,48 @@ export const Constants = {
         "reativado",
         "duplicado",
         "importado",
+      ],
+      lead_frequencia: [
+        "pontual",
+        "mensal",
+        "trimestral",
+        "semestral",
+        "anual",
+      ],
+      lead_origem: [
+        "instagram",
+        "whatsapp",
+        "feira",
+        "indicacao",
+        "site",
+        "google",
+        "outro",
+      ],
+      lead_potencial: ["alto", "medio", "em_desenvolvimento"],
+      lead_segmento: [
+        "lojista",
+        "decoradora",
+        "cerimonialista",
+        "atacadista",
+        "buffet",
+        "influencer",
+        "consumidor",
+        "outro",
+      ],
+      lead_status_crm: [
+        "novo",
+        "em_contato",
+        "qualificado",
+        "proposta_enviada",
+        "convertido",
+        "descartado",
+      ],
+      lead_volume_estimado: [
+        "ate_2500",
+        "2500_10k",
+        "10k_50k",
+        "acima_50k",
+        "nao_sei",
       ],
       tipo_condicao_pagamento: ["pix", "boleto", "cartao"],
       tipo_frete: ["CIF", "FOB"],
