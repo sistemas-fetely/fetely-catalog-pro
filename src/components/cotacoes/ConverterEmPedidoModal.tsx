@@ -1,10 +1,28 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/format";
 import type { Cotacao } from "@/types/cotacao";
+import type { CartItem } from "@/types";
+import type { ItemProvisao } from "@/types/provisao";
 import { useOrder } from "@/store/orderStore";
 import { useCotacao } from "@/store/cotacaoStore";
+import { useProvisao } from "@/store/provisaoStore";
+import { classificarItem, extrairDataPrevisao } from "@/lib/classifyItem";
+
+function toItemProvisao(i: CartItem): ItemProvisao {
+  return {
+    sku: i.sku,
+    nomeComercial: i.product.nomeComercial,
+    colecao: i.product.colecao,
+    corNome: i.product.corNome,
+    tamanhoNumero: i.product.tamanhoNumero,
+    quantidade: i.quantity,
+    precoAtacadoReferencia: i.product.precoAtacado,
+    statusEstoque: i.product.statusEstoque,
+    previsaoData: extrairDataPrevisao(i.product.statusEstoque),
+  };
+}
 
 export function ConverterEmPedidoModal({
   cotacao,
@@ -20,13 +38,27 @@ export function ConverterEmPedidoModal({
   const clearCart = useOrder((s) => s.clearCart);
   const addBulk = useOrder((s) => s.addBulk);
   const marcarConvertida = useCotacao((s) => s.marcarConvertida);
+  const createProvisao = useProvisao((s) => s.createProvisao);
   const [saving, setSaving] = useState(false);
+
+  const { itensFirmes, itensProvisao } = useMemo(() => {
+    const firmes: CartItem[] = [];
+    const provisao: CartItem[] = [];
+    cotacao.items.forEach((i) => {
+      if (classificarItem(i.product.statusEstoque) === "firme") firmes.push(i);
+      else provisao.push(i);
+    });
+    return { itensFirmes: firmes, itensProvisao: provisao };
+  }, [cotacao.items]);
+
+  const isMisto = itensFirmes.length > 0 && itensProvisao.length > 0;
+  const apenasProvisao = itensFirmes.length === 0 && itensProvisao.length > 0;
 
   const handleConvert = async () => {
     if (saving) return;
     setSaving(true);
     try {
-      // Carrega o cart com os itens da cotação para reusar saveOrder
+      // Carrega o cart com TODOS os itens (firmes + provisão) p/ preservar UI/estado se algo der errado
       clearCart();
       addBulk(cotacao.items.map((i) => ({ product: i.product, quantity: i.quantity })));
       setMeta({
@@ -34,11 +66,47 @@ export function ConverterEmPedidoModal({
         cotacaoOrigemId: cotacao.id,
         pedidoOrigem: "cotacao",
       });
-      const pedido = await saveOrder(cotacao.commercial, cotacao.items);
-      marcarConvertida(cotacao.id, pedido.id);
+
+      let pedidoId: string | undefined;
+
+      // 1) Pedido firme — só se houver itens em estoque
+      if (itensFirmes.length > 0) {
+        const pedido = await saveOrder(cotacao.commercial, itensFirmes);
+        pedidoId = pedido.id;
+      }
+
+      // 2) Provisão — itens em previsão viram registro separado
+      let provisaoId: string | undefined;
+      if (itensProvisao.length > 0 && cotacao.meta.clienteId && cotacao.meta.clienteSnapshot) {
+        const prov = createProvisao({
+          clienteId: cotacao.meta.clienteId,
+          clienteSnapshot: cotacao.meta.clienteSnapshot,
+          itens: itensProvisao.map(toItemProvisao),
+          pedidoFirmeId: pedidoId,
+          observacoes: cotacao.meta.observacoes || undefined,
+        });
+        provisaoId = prov.id;
+      }
+
+      // 3) Marca cotação convertida (usa o pedido firme se houver, senão a provisão)
+      const refId = pedidoId ?? provisaoId;
+      if (refId) {
+        marcarConvertida(cotacao.id, refId);
+      }
+
       clearCart();
-      toast.success(`Cotação ${cotacao.id} convertida no Pedido ${pedido.id}`);
-      onConverted(pedido.id);
+
+      if (pedidoId && provisaoId) {
+        toast.success(`Cotação ${cotacao.id} convertida`, {
+          description: `Pedido ${pedidoId} + Provisão ${provisaoId}`,
+        });
+      } else if (pedidoId) {
+        toast.success(`Cotação ${cotacao.id} convertida no Pedido ${pedidoId}`);
+      } else if (provisaoId) {
+        toast.success(`Cotação ${cotacao.id} convertida na Provisão ${provisaoId}`);
+      }
+
+      onConverted(pedidoId ?? provisaoId ?? cotacao.id);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Não foi possível converter";
       toast.error(msg);
@@ -71,10 +139,38 @@ export function ConverterEmPedidoModal({
           </div>
         </div>
 
-        <p className="text-xs text-text-secondary">
-          Um pedido firme será criado com os mesmos itens e condições. A cotação ficará marcada como
-          convertida.
-        </p>
+        {isMisto && (
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 space-y-1.5">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-amber-500 font-semibold">
+              Pedido misto
+            </div>
+            <div className="text-xs text-text-secondary">
+              Serão criados <span className="text-text-primary font-medium">2 registros</span>:
+            </div>
+            <ul className="text-xs text-text-secondary space-y-0.5 pl-3">
+              <li>• <span className="text-text-primary">Pedido firme</span> — {itensFirmes.length} item(ns) em estoque</li>
+              <li>• <span className="text-text-primary">Provisão</span> — {itensProvisao.length} item(ns) em previsão</li>
+            </ul>
+          </div>
+        )}
+
+        {apenasProvisao && (
+          <div className="rounded-md border border-blue-500/40 bg-blue-500/5 p-3 space-y-1">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-blue-400 font-semibold">
+              Somente provisão
+            </div>
+            <div className="text-xs text-text-secondary">
+              Nenhum item em estoque. Será criada uma <span className="text-text-primary font-medium">Provisão</span> com {itensProvisao.length} item(ns).
+            </div>
+          </div>
+        )}
+
+        {!isMisto && !apenasProvisao && (
+          <p className="text-xs text-text-secondary">
+            Um pedido firme será criado com os mesmos itens e condições. A cotação ficará marcada como
+            convertida.
+          </p>
+        )}
 
         <div className="flex gap-2 pt-2">
           <button
