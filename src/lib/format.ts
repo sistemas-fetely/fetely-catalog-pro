@@ -1,5 +1,6 @@
-export function formatBRL(value: number): string {
-  return value.toLocaleString("pt-BR", {
+export function formatBRL(value: number | null | undefined): string {
+  const n = typeof value === "number" && Number.isFinite(value) ? value : 0;
+  return n.toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
     minimumFractionDigits: 2,
