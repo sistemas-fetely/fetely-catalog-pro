@@ -111,24 +111,26 @@ export function CartCommercialPanel({
         condicao,
         premissas,
         freteGratisOverride: ativo && freteGratis,
+        ignorarPedidoMinimo: ativo,
       }),
     [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis],
   );
 
   const pedidoMinimo = calculo.pedidoMinimoEfetivo ?? 2500;
+  const abaixoDoMinimoLiberado = ativo && bruto < pedidoMinimo && !!calculo.faixa;
 
   const negociacaoSemJustificativa =
-    ativo && descontoPct > 0 && !justificativa;
+    ativo && (descontoPct > 0 || abaixoDoMinimoLiberado) && !justificativa;
 
   const podeFinalizar =
-    !!faixa && !!condicao && !negociacaoSemJustificativa;
+    !!calculo.faixa && !!condicao && !negociacaoSemJustificativa;
 
-  const motivoBloqueio = !faixa
-    ? `Pedido mínimo: ${formatBRL(pedidoMinimo)}. Adicione mais produtos.`
+  const motivoBloqueio = !calculo.faixa
+    ? `Pedido mínimo: ${formatBRL(pedidoMinimo)}. Adicione mais produtos ou ative a negociação master.`
     : !condicao
       ? "Selecione uma condição de pagamento."
       : negociacaoSemJustificativa
-        ? "Selecione uma justificativa para o desconto adicional."
+        ? "Selecione uma justificativa para a negociação master."
         : null;
 
   useEffect(() => {
