@@ -16,6 +16,8 @@ import {
   User as UserIcon,
   Settings2,
   MessageSquare,
+  CheckCircle2,
+  Lock,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 import {
