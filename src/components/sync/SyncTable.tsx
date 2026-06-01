@@ -11,7 +11,7 @@ import {
 import type { SyncOrderRow, SncfStatus } from "@/hooks/useSyncManagement";
 import { formatBRL } from "@/lib/format";
 
-const RETRY_STATUSES: SncfStatus[] = ["nao_enviado", "erro_persistente"];
+const RETRY_STATUSES: SncfStatus[] = ["nao_enviado", "erro_persistente", "pendente"];
 
 function truncate(s: string, n: number) {
   return s.length > n ? s.slice(0, n) + "…" : s;
