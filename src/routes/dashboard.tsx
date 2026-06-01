@@ -245,6 +245,16 @@ function DashboardPage() {
   const ticketPrev = ordersPrev.length > 0 ? fatPrev / ordersPrev.length : 0;
   const deltaTicket = ticketPrev > 0 ? ((ticketMedio - ticketPrev) / ticketPrev) * 100 : null;
 
+  // Provisões
+  const totalProvisoes = provisoes.length;
+  const valorProvisoes = provisoes.reduce((s, p) => s + Number(p.total_referencia || 0), 0);
+  const provisoesAbertas = provisoes.filter(
+    (p) => p.status === "aguardando_estoque" || p.status === "estoque_liberado",
+  ).length;
+  const provisoesConvertidas = provisoes.filter((p) => p.status === "convertido_em_pedido").length;
+  const combinadoQtd = totalPedidos + totalProvisoes;
+  const combinadoValor = faturamento + valorProvisoes;
+
   // ─── Ranking de vendedores (admin/master) ─────────────────────────────
   const ranking = isAdminOrMaster
     ? Array.from(
