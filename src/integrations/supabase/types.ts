@@ -586,6 +586,7 @@ export type Database = {
       leads_qualificados: {
         Row: {
           atualizado_em: string
+          catalogo_liberado: boolean
           cidade: string | null
           cliente_b2b_id: string | null
           cotacao_origem_id: string | null
@@ -617,6 +618,7 @@ export type Database = {
         }
         Insert: {
           atualizado_em?: string
+          catalogo_liberado?: boolean
           cidade?: string | null
           cliente_b2b_id?: string | null
           cotacao_origem_id?: string | null
@@ -648,6 +650,7 @@ export type Database = {
         }
         Update: {
           atualizado_em?: string
+          catalogo_liberado?: boolean
           cidade?: string | null
           cliente_b2b_id?: string | null
           cotacao_origem_id?: string | null
