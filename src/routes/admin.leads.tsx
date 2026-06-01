@@ -412,10 +412,12 @@ function LeadDrawerBody({ lead, onClose }: { lead: LeadQualificado; onClose: () 
   const update = useServerFn(atualizarLeadCrm);
   const histFn = useServerFn(listarHistoricoLead);
   const delFn = useServerFn(excluirLead);
+  const libCatFn = useServerFn(liberarCatalogoLead);
 
   const [statusCrm, setStatusCrm] = useState<LeadStatusCrm>(lead.statusCrm);
   const [tagsRaw, setTagsRaw] = useState(lead.tags.join(", "));
   const [notas, setNotas] = useState(lead.notasInternas ?? "");
+  const [catalogoLiberado, setCatalogoLiberado] = useState(lead.catalogoLiberado);
 
   const histQ = useQuery({
     queryKey: ["lead-historico", lead.id],
@@ -450,10 +452,22 @@ function LeadDrawerBody({ lead, onClose }: { lead: LeadQualificado; onClose: () 
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const libCatMut = useMutation({
+    mutationFn: (liberar: boolean) => libCatFn({ data: { id: lead.id, liberar } }),
+    onSuccess: (_, liberar) => {
+      toast.success(liberar ? "Catálogo liberado para este lead" : "Acesso ao catálogo revogado");
+      setCatalogoLiberado(liberar);
+      qc.invalidateQueries({ queryKey: ["leads-qualificados"] });
+      qc.invalidateQueries({ queryKey: ["lead-historico", lead.id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const whatsappLink = `https://wa.me/${lead.whatsapp.replace(/\D/g, "")}`;
   const instaLink = lead.instagram
     ? `https://instagram.com/${lead.instagram.replace(/^@/, "")}`
     : null;
+  const catalogoUrl = `${window.location.origin}/catalog`;
 
   return (
     <Tabs defaultValue="perfil" className="mt-4">
