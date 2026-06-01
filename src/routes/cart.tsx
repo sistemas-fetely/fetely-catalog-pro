@@ -316,7 +316,7 @@ function CartPage() {
     const editandoId = (meta as OrderMeta & { cotacaoOrigemId?: string }).cotacaoOrigemId;
     if (editandoId) {
       const upd = atualizarCotacao(editandoId, {
-        items: itensFirmes,
+        items,
         meta: metaCompleto,
         total: orderCommercial.totalFinal,
         commercial: orderCommercial,
@@ -333,11 +333,12 @@ function CartPage() {
       }
     }
     const cot = criarCotacao({
-      items: itensFirmes,
+      items,
       meta: metaCompleto,
       total: orderCommercial.totalFinal,
       commercial: orderCommercial,
     });
+
     toast.success(`Cotação ${cot.id} salva`, {
       description: `Válida até ${new Date(cot.validoAte).toLocaleDateString("pt-BR")}`,
     });
