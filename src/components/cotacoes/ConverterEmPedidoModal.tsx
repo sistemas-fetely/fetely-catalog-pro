@@ -78,7 +78,7 @@ export function ConverterEmPedidoModal({
       // 2) Provisão — itens em previsão viram registro separado
       let provisaoId: string | undefined;
       if (itensProvisao.length > 0 && cotacao.meta.clienteId && cotacao.meta.clienteSnapshot) {
-        const prov = createProvisao({
+        const prov = await createProvisao({
           clienteId: cotacao.meta.clienteId,
           clienteSnapshot: cotacao.meta.clienteSnapshot,
           itens: itensProvisao.map(toItemProvisao),
@@ -86,6 +86,10 @@ export function ConverterEmPedidoModal({
           observacoes: cotacao.meta.observacoes || undefined,
         });
         provisaoId = prov.id;
+      }
+
+      if (itensProvisao.length > 0 && !provisaoId) {
+        throw new Error("A cotação tem itens de provisão, mas não foi possível salvar a provisão. Verifique o cliente e tente novamente.");
       }
 
       // 3) Marca cotação convertida (usa o pedido firme se houver, senão a provisão)
