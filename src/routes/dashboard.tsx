@@ -914,12 +914,6 @@ function RankingList({
   loading?: boolean;
   emptyLabel: string;
   onSelect?: (r: { key: string; nome: string }) => void;
-  icon: React.ReactNode;
-  title: string;
-  rows: Array<{ key: string; nome: string; valor: number; quantidade: number }>;
-  metric: "valor" | "quantidade";
-  loading?: boolean;
-  emptyLabel: string;
 }) {
   const max =
     rows.length > 0
