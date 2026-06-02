@@ -308,7 +308,7 @@ function OrdersPage() {
                               )
                                 return;
                               try {
-                                const cot = criarCotacao({
+                                const cot = await criarCotacao({
                                   items: o.items,
                                   meta: o.meta,
                                   total: o.total,
@@ -316,6 +316,7 @@ function OrdersPage() {
                                 });
                                 await deleteOrder(o.id);
                                 toast.success(`Pedido ${o.id} enviado para cotação ${cot.id}`);
+
                               } catch (err) {
                                 toast.error(
                                   err instanceof Error ? err.message : "Erro ao enviar para cotação",
