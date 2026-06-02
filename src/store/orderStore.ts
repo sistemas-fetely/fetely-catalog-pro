@@ -47,6 +47,11 @@ interface OrderState {
   deleteOrder: (orderId: string) => Promise<void>;
   reprovarOrder: (orderId: string, motivo: string) => Promise<void>;
   desfazerReprovacao: (orderId: string) => Promise<void>;
+  saveOrderAsCliente: (commercial: OrderCommercial | undefined, items: CartItem[]) => Promise<SavedOrder>;
+  aprovarPedidoCliente: (orderId: string, obs?: string) => Promise<{ provisaoId?: string }>;
+  recusarPedidoCliente: (orderId: string, motivo: string, obs?: string) => Promise<void>;
+  solicitarAjustePedido: (orderId: string, mensagem: string) => Promise<void>;
+  cancelarPedidoPendente: (orderId: string) => Promise<void>;
 }
 
 const defaultMeta: OrderMeta = {
@@ -56,6 +61,7 @@ const defaultMeta: OrderMeta = {
   observacoes: "",
   vendedor: "Representante Fetély",
 };
+
 
 function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder {
   return {
