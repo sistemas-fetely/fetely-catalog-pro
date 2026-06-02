@@ -604,11 +604,28 @@ function CartPage() {
               <div className="text-[10px] uppercase tracking-[0.18em] text-text-muted mb-1.5">
                 Cliente *
               </div>
-              <ClienteSelector
-                selectedId={meta.clienteId}
-                onSelect={handleSelectCliente}
-                onClear={handleClearCliente}
-              />
+              {isClientePortal ? (
+                <div className="rounded-md border border-border bg-background/60 p-3 space-y-1">
+                  <div className="text-sm text-text-primary font-medium">
+                    {meta.cliente || "—"}
+                  </div>
+                  {meta.nomeFantasia && (
+                    <div className="text-xs text-text-secondary">{meta.nomeFantasia}</div>
+                  )}
+                  <div className="text-[11px] text-text-muted">
+                    {meta.cnpj}{meta.municipio ? ` · ${meta.municipio}/${meta.uf}` : ""}
+                  </div>
+                  <div className="text-[10px] uppercase tracking-[0.15em] text-gold-muted pt-1">
+                    Vinculado ao seu acesso
+                  </div>
+                </div>
+              ) : (
+                <ClienteSelector
+                  selectedId={meta.clienteId}
+                  onSelect={handleSelectCliente}
+                  onClear={handleClearCliente}
+                />
+              )}
             </div>
 
             <Field label="Observações">
