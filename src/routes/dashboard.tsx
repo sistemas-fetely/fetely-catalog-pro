@@ -854,6 +854,15 @@ function DashboardPage() {
           </>
         )}
       </section>
+
+      <AnalyticsDetailDrawer
+        open={!!detail}
+        onClose={() => setDetail(null)}
+        scope={detail}
+        items={items}
+        periodoLabel={range.label}
+        showVendedores={isAdminOrMaster}
+      />
     </main>
   );
 }
