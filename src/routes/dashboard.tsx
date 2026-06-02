@@ -746,6 +746,7 @@ function DashboardPage() {
               metric={rankingMetric}
               loading={loadingItems}
               emptyLabel="Nenhum produto neste período."
+              onSelect={(r) => setDetail({ kind: "produto", key: r.key, nome: r.nome })}
             />
             <RankingList
               icon={<Layers className="h-4 w-4 text-gold" />}
@@ -754,6 +755,7 @@ function DashboardPage() {
               metric={rankingMetric}
               loading={loadingItems}
               emptyLabel="Nenhuma coleção neste período."
+              onSelect={(r) => setDetail({ kind: "colecao", key: r.key, nome: r.nome })}
             />
           </div>
         </section>
