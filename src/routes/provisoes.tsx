@@ -342,6 +342,26 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
           </div>
 
           <div className="flex flex-col gap-2 pt-2 border-t border-border">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const { blob, filename } = generateProvisaoPDF(provisao);
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = filename;
+                  a.click();
+                  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+                } catch (err) {
+                  console.error(err);
+                  toast.error("Falha ao gerar PDF");
+                }
+              }}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border text-text-secondary py-2.5 text-xs uppercase tracking-wider hover:text-gold hover:border-gold/40"
+            >
+              <FileDown className="h-4 w-4" /> Baixar PDF
+            </button>
             {provisao.status === "aguardando_estoque" && isAdmin && (
               <button
                 onClick={() => updateStatus(provisao.id, "estoque_liberado")}
