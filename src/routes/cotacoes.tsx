@@ -43,14 +43,21 @@ type Filtro = "abertas" | "em_negociacao" | "aprovadas" | "todas";
 
 function CotacoesPage() {
   const cotacoes = useVisibleCotacoes();
+  const fetchAll = useCotacao((s) => s.fetchAll);
   const expirarVencidas = useCotacao((s) => s.expirarVencidas);
+  const loading = useCotacao((s) => s.loading);
+  const loaded = useCotacao((s) => s.loaded);
   const [filtro, setFiltro] = useState<Filtro>("abertas");
   const [busca, setBusca] = useState("");
   const [selecionada, setSelecionada] = useState<string | null>(null);
 
   useEffect(() => {
-    expirarVencidas();
-  }, [expirarVencidas]);
+    void (async () => {
+      await fetchAll();
+      await expirarVencidas();
+    })();
+  }, [fetchAll, expirarVencidas]);
+
 
   const counts = useMemo(() => {
     return {
@@ -130,7 +137,11 @@ function CotacoesPage() {
         />
       </div>
 
-      {filtradas.length === 0 ? (
+      {loading && !loaded ? (
+        <div className="rounded-lg border border-border bg-surface p-12 text-center text-text-secondary">
+          <p className="text-sm">Carregando cotações...</p>
+        </div>
+      ) : filtradas.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface p-12 text-center text-text-secondary">
           <FileText className="h-10 w-10 text-text-muted mx-auto mb-3" />
           <p className="text-sm">Nenhuma cotação encontrada.</p>
@@ -138,6 +149,7 @@ function CotacoesPage() {
             Inicie um novo pedido e, ao finalizar, escolha "Salvar como Cotação".
           </p>
         </div>
+
       ) : (
         <div className="overflow-x-auto rounded-lg gold-border bg-surface">
           <table className="w-full text-sm">

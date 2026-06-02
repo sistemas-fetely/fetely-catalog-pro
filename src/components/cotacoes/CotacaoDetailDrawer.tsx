@@ -51,10 +51,11 @@ export function CotacaoDetailDrawer({
     navigate({ to: "/cart" });
   };
 
-  const handleDuplicar = () => {
-    const nova = duplicar(cotacao.id);
+  const handleDuplicar = async () => {
+    const nova = await duplicar(cotacao.id);
     if (nova) toast.success(`Cotação duplicada: ${nova.id}`);
   };
+
 
   const handlePdf = () => {
     try {
