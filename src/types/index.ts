@@ -125,6 +125,31 @@ export interface OrderCommercial {
   freteIsento?: boolean;
 }
 
+export type StatusPedido =
+  | "pendente_aprovacao"
+  | "aprovado"
+  | "recusado"
+  | "confirmado"
+  | "convertido"
+  | "cancelado";
+
+export type OrigemPerfilPedido = "vendedor" | "admin" | "master" | "cliente";
+
+export interface PedidoHistoricoEvento {
+  em: string;
+  acao:
+    | "criado"
+    | "enviado_para_analise"
+    | "aprovado"
+    | "recusado"
+    | "ajuste_solicitado"
+    | "reenviado"
+    | "cancelado";
+  porId?: string | null;
+  porNome?: string | null;
+  obs?: string | null;
+}
+
 export interface SavedOrder {
   id: string;
   createdAt: string;
@@ -143,5 +168,21 @@ export interface SavedOrder {
   reprovadoMotivo?: string | null;
   reprovadoPorId?: string | null;
   reprovadoPorNome?: string | null;
+  // V16 — Aprovação de pedidos do portal do cliente
+  origemPerfil?: OrigemPerfilPedido;
+  statusPedido?: StatusPedido;
+  aprovadoPorId?: string | null;
+  aprovadoPorNome?: string | null;
+  aprovadoEm?: string | null;
+  aprovacaoObs?: string | null;
+  recusadoPorId?: string | null;
+  recusadoPorNome?: string | null;
+  recusadoMotivoTexto?: string | null;
+  recusadoObs?: string | null;
+  recusadoEmAprovacao?: string | null;
+  temSolicitacaoAjuste?: boolean;
+  ajusteMensagem?: string | null;
+  historico?: PedidoHistoricoEvento[];
 }
+
 
