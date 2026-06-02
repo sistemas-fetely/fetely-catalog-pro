@@ -817,3 +817,16 @@ export function useCanReprovarOrder(order: SavedOrder | null | undefined): boole
 export function useIsMaster(): boolean {
   return useAuth((s) => s.roles.includes("master"));
 }
+
+/**
+ * V16 — pedidos pendentes de aprovação (apenas admin/master enxergam aqui).
+ */
+export function usePendingApprovals(): SavedOrder[] {
+  const history = useOrder((s) => s.history);
+  const roles = useAuth((s) => s.roles);
+  if (!(roles.includes("admin") || roles.includes("master"))) return [];
+  return history.filter(
+    (o) => o.statusPedido === "pendente_aprovacao" && o.origemPerfil === "cliente",
+  );
+}
+
