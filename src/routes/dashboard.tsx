@@ -175,18 +175,13 @@ function DashboardPage() {
     queryFn: async () => {
       let q = supabase
         .from("order_items")
-        .select("sku, quantity, subtotal_bruto, product_snapshot, orders!inner(created_at, vendedor_id)")
+        .select("sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_nome, cliente_snapshot, total)")
         .gte("orders.created_at", range.from.toISOString())
         .lt("orders.created_at", range.to.toISOString());
       if (vendedorFiltro !== "todos") q = q.eq("orders.vendedor_id", vendedorFiltro);
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []) as Array<{
-        sku: string;
-        quantity: number;
-        subtotal_bruto: number;
-        product_snapshot: { nomeComercial?: string; colecao?: string; corNome?: string } | null;
-      }>;
+      return (data ?? []) as Array<DashItem>;
     },
   });
 
