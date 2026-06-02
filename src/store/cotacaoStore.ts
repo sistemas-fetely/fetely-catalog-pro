@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 import type { CartItem, OrderCommercial, OrderMeta } from "@/types";
 import type {
   Cotacao,
@@ -9,22 +8,51 @@ import type {
 import { COTACAO_VALIDADE_DIAS } from "@/types/cotacao";
 import { useAuth } from "@/store/authStore";
 import { useClientes } from "@/store/clienteStore";
-
-const noopStorage: Storage = {
-  length: 0,
-  clear: () => {},
-  getItem: () => null,
-  key: () => null,
-  removeItem: () => {},
-  setItem: () => {},
-};
-const safeStorage = (): Storage =>
-  typeof window !== "undefined" ? window.localStorage : noopStorage;
+import { supabase } from "@/integrations/supabase/client";
 
 function addDays(iso: string, days: number): string {
   const d = new Date(iso);
   d.setDate(d.getDate() + days);
   return d.toISOString();
+}
+
+interface CotacaoRow {
+  id: string;
+  vendedor_id: string;
+  vendedor_nome: string;
+  vendedor_login: string | null;
+  cliente_id: string | null;
+  criado_em: string;
+  atualizado_em: string;
+  valido_ate: string;
+  status: StatusCotacao;
+  total: number | string;
+  items: unknown;
+  meta: unknown;
+  commercial: unknown;
+  pedido_convertido_id: string | null;
+  motivo_perda: string | null;
+  motivo_perda_obs: string | null;
+}
+
+function fromRow(r: CotacaoRow): Cotacao {
+  return {
+    id: r.id,
+    criadoEm: r.criado_em,
+    atualizadoEm: r.atualizado_em,
+    validoAte: r.valido_ate,
+    vendedorId: r.vendedor_id,
+    vendedorNome: r.vendedor_nome,
+    vendedorLogin: r.vendedor_login ?? undefined,
+    items: (r.items as CartItem[]) ?? [],
+    meta: (r.meta as OrderMeta) ?? ({} as OrderMeta),
+    total: Number(r.total ?? 0),
+    commercial: (r.commercial as OrderCommercial | null) ?? undefined,
+    status: r.status,
+    pedidoConvertidoId: r.pedido_convertido_id ?? undefined,
+    motivoPerda: (r.motivo_perda as MotivoPerdaCotacao | null) ?? undefined,
+    motivoPerdaObs: r.motivo_perda_obs ?? undefined,
+  };
 }
 
 interface CreateCotacaoInput {
@@ -36,144 +64,217 @@ interface CreateCotacaoInput {
 
 interface CotacaoState {
   cotacoes: Cotacao[];
-  counter: number;
-  criarCotacao: (input: CreateCotacaoInput) => Cotacao;
-  atualizarCotacao: (id: string, input: CreateCotacaoInput) => Cotacao | null;
+  loading: boolean;
+  loaded: boolean;
+  fetchAll: () => Promise<void>;
+  criarCotacao: (input: CreateCotacaoInput) => Promise<Cotacao>;
+  atualizarCotacao: (id: string, input: CreateCotacaoInput) => Promise<Cotacao | null>;
   atualizarStatus: (
     id: string,
     status: StatusCotacao,
     extra?: { motivo?: MotivoPerdaCotacao; motivoObs?: string; pedidoConvertidoId?: string },
-  ) => void;
-  duplicar: (id: string) => Cotacao | null;
-  marcarConvertida: (id: string, pedidoId: string) => void;
-  deletar: (id: string) => void;
-  expirarVencidas: () => void;
+  ) => Promise<void>;
+  duplicar: (id: string) => Promise<Cotacao | null>;
+  marcarConvertida: (id: string, pedidoId: string) => Promise<void>;
+  deletar: (id: string) => Promise<void>;
+  expirarVencidas: () => Promise<void>;
 }
 
-export const useCotacao = create<CotacaoState>()(
-  persist(
-    (set, get) => ({
-      cotacoes: [],
-      counter: 0,
-      criarCotacao: (input) => {
-        const auth = useAuth.getState();
-        const next = get().counter + 1;
-        const id = `C${String(next).padStart(4, "0")}`;
-        const now = new Date().toISOString();
-        const cotacao: Cotacao = {
-          id,
-          criadoEm: now,
-          atualizadoEm: now,
-          validoAte: addDays(now, COTACAO_VALIDADE_DIAS),
-          vendedorId: auth.user?.id ?? "",
-          vendedorNome:
-            auth.profile?.nome_completo ?? auth.profile?.email ?? "—",
-          vendedorLogin: auth.profile?.login_amigavel ?? auth.profile?.email ?? undefined,
-          items: input.items,
-          meta: input.meta,
-          total: input.total,
-          commercial: input.commercial,
-          status: "aberta",
-        };
-        set((s) => ({ cotacoes: [cotacao, ...s.cotacoes], counter: next }));
-        return cotacao;
-      },
-      atualizarCotacao: (id, input) => {
-        const now = new Date().toISOString();
-        let updated: Cotacao | null = null;
-        set((s) => ({
-          cotacoes: s.cotacoes.map((c) => {
-            if (c.id !== id) return c;
-            updated = {
-              ...c,
-              items: input.items,
-              meta: input.meta,
-              total: input.total,
-              commercial: input.commercial,
-              atualizadoEm: now,
-              validoAte: addDays(now, COTACAO_VALIDADE_DIAS),
-              status: c.status === "expirada" ? "aberta" : c.status,
-            };
-            return updated;
-          }),
-        }));
-        return updated;
-      },
-      atualizarStatus: (id, status, extra) => {
-        const now = new Date().toISOString();
-        set((s) => ({
-          cotacoes: s.cotacoes.map((c) =>
-            c.id === id
-              ? {
-                  ...c,
-                  status,
-                  atualizadoEm: now,
-                  motivoPerda: status === "perdida" ? extra?.motivo ?? c.motivoPerda : c.motivoPerda,
-                  motivoPerdaObs:
-                    status === "perdida" ? extra?.motivoObs ?? c.motivoPerdaObs : c.motivoPerdaObs,
-                  pedidoConvertidoId:
-                    status === "convertida" ? extra?.pedidoConvertidoId ?? c.pedidoConvertidoId : c.pedidoConvertidoId,
-                }
-              : c,
-          ),
-        }));
-      },
-      duplicar: (id) => {
-        const orig = get().cotacoes.find((c) => c.id === id);
-        if (!orig) return null;
-        return get().criarCotacao({
-          items: orig.items,
-          meta: orig.meta,
-          total: orig.total,
-          commercial: orig.commercial,
-        });
-      },
-      marcarConvertida: (id, pedidoId) =>
-        get().atualizarStatus(id, "convertida", { pedidoConvertidoId: pedidoId }),
-      deletar: (id) =>
-        set((s) => ({ cotacoes: s.cotacoes.filter((c) => c.id !== id) })),
-      expirarVencidas: () => {
-        const hoje = Date.now();
-        set((s) => ({
-          cotacoes: s.cotacoes.map((c) =>
-            (c.status === "aberta" || c.status === "em_negociacao") &&
-            new Date(c.validoAte).getTime() < hoje
-              ? { ...c, status: "expirada", atualizadoEm: new Date().toISOString() }
-              : c,
-          ),
-        }));
-      },
-    }),
-    {
-      name: "fetely_cotacoes",
-      storage: createJSONStorage(safeStorage),
-      partialize: (state) => ({ cotacoes: state.cotacoes, counter: state.counter }),
-    },
-  ),
-);
+export const useCotacao = create<CotacaoState>()((set, get) => ({
+  cotacoes: [],
+  loading: false,
+  loaded: false,
+
+  fetchAll: async () => {
+    set({ loading: true });
+    const { data, error } = await supabase
+      .from("cotacoes")
+      .select("*")
+      .order("criado_em", { ascending: false });
+    if (error) {
+      console.error("[cotacoes] fetchAll", error);
+      set({ loading: false });
+      return;
+    }
+    set({
+      cotacoes: (data as CotacaoRow[]).map(fromRow),
+      loading: false,
+      loaded: true,
+    });
+  },
+
+  criarCotacao: async (input) => {
+    const auth = useAuth.getState();
+    if (!auth.user) throw new Error("Usuário não autenticado");
+
+    const { data: idData, error: idErr } = await supabase.rpc("next_cotacao_id");
+    if (idErr || !idData) throw new Error(idErr?.message ?? "Erro ao gerar ID da cotação");
+    const id = idData as string;
+
+    const now = new Date().toISOString();
+    const validoAte = addDays(now, COTACAO_VALIDADE_DIAS);
+    const clienteId = (input.meta as OrderMeta & { clienteId?: string }).clienteId ?? null;
+
+    const row = {
+      id,
+      vendedor_id: auth.user.id,
+      vendedor_nome:
+        auth.profile?.nome_completo ?? auth.profile?.email ?? "—",
+      vendedor_login: auth.profile?.login_amigavel ?? auth.profile?.email ?? null,
+      cliente_id: clienteId,
+      criado_em: now,
+      atualizado_em: now,
+      valido_ate: validoAte,
+      status: "aberta" as StatusCotacao,
+      total: input.total,
+      items: input.items as unknown,
+      meta: input.meta as unknown,
+      commercial: (input.commercial ?? null) as unknown,
+    };
+
+    const { data, error } = await supabase
+      .from("cotacoes")
+      .insert(row)
+      .select("*")
+      .single();
+    if (error || !data) throw new Error(error?.message ?? "Erro ao salvar cotação");
+
+    const cot = fromRow(data as CotacaoRow);
+    set((s) => ({ cotacoes: [cot, ...s.cotacoes.filter((c) => c.id !== cot.id)] }));
+    return cot;
+  },
+
+  atualizarCotacao: async (id, input) => {
+    const now = new Date().toISOString();
+    const validoAte = addDays(now, COTACAO_VALIDADE_DIAS);
+    const current = get().cotacoes.find((c) => c.id === id);
+    const novoStatus: StatusCotacao =
+      current?.status === "expirada" ? "aberta" : current?.status ?? "aberta";
+
+    const { data, error } = await supabase
+      .from("cotacoes")
+      .update({
+        items: input.items as unknown,
+        meta: input.meta as unknown,
+        total: input.total,
+        commercial: (input.commercial ?? null) as unknown,
+        atualizado_em: now,
+        valido_ate: validoAte,
+        status: novoStatus,
+      })
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+    if (error) {
+      console.error("[cotacoes] atualizar", error);
+      return null;
+    }
+    if (!data) return null;
+    const updated = fromRow(data as CotacaoRow);
+    set((s) => ({
+      cotacoes: s.cotacoes.map((c) => (c.id === id ? updated : c)),
+    }));
+    return updated;
+  },
+
+  atualizarStatus: async (id, status, extra) => {
+    const now = new Date().toISOString();
+    const patch: Record<string, unknown> = {
+      status,
+      atualizado_em: now,
+    };
+    if (status === "perdida") {
+      if (extra?.motivo !== undefined) patch.motivo_perda = extra.motivo;
+      if (extra?.motivoObs !== undefined) patch.motivo_perda_obs = extra.motivoObs;
+    }
+    if (status === "convertida" && extra?.pedidoConvertidoId !== undefined) {
+      patch.pedido_convertido_id = extra.pedidoConvertidoId;
+    }
+    const { data, error } = await supabase
+      .from("cotacoes")
+      .update(patch)
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+    if (error) {
+      console.error("[cotacoes] atualizarStatus", error);
+      return;
+    }
+    if (!data) return;
+    const updated = fromRow(data as CotacaoRow);
+    set((s) => ({ cotacoes: s.cotacoes.map((c) => (c.id === id ? updated : c)) }));
+  },
+
+  duplicar: async (id) => {
+    const orig = get().cotacoes.find((c) => c.id === id);
+    if (!orig) return null;
+    return get().criarCotacao({
+      items: orig.items,
+      meta: orig.meta,
+      total: orig.total,
+      commercial: orig.commercial,
+    });
+  },
+
+  marcarConvertida: async (id, pedidoId) => {
+    await get().atualizarStatus(id, "convertida", { pedidoConvertidoId: pedidoId });
+  },
+
+  deletar: async (id) => {
+    const { error } = await supabase.from("cotacoes").delete().eq("id", id);
+    if (error) {
+      console.error("[cotacoes] deletar", error);
+      return;
+    }
+    set((s) => ({ cotacoes: s.cotacoes.filter((c) => c.id !== id) }));
+  },
+
+  expirarVencidas: async () => {
+    const hoje = new Date().toISOString();
+    const vencidas = get().cotacoes.filter(
+      (c) =>
+        (c.status === "aberta" || c.status === "em_negociacao") &&
+        new Date(c.validoAte).getTime() < Date.now(),
+    );
+    if (vencidas.length === 0) return;
+    const ids = vencidas.map((c) => c.id);
+    const { error } = await supabase
+      .from("cotacoes")
+      .update({ status: "expirada", atualizado_em: hoje })
+      .in("id", ids);
+    if (error) {
+      console.error("[cotacoes] expirarVencidas", error);
+      return;
+    }
+    set((s) => ({
+      cotacoes: s.cotacoes.map((c) =>
+        ids.includes(c.id)
+          ? { ...c, status: "expirada", atualizadoEm: hoje }
+          : c,
+      ),
+    }));
+  },
+}));
 
 export function useVisibleCotacoes(): Cotacao[] {
+  // RLS já filtra no servidor (vendedora vê as suas, master vê tudo,
+  // cliente vê as dele). Aqui só aplicamos um defense-in-depth para
+  // o papel "cliente" caso algum dia o RLS afrouxe.
   const cotacoes = useCotacao((s) => s.cotacoes);
-  const user = useAuth((s) => s.user);
   const profile = useAuth((s) => s.profile);
   const roles = useAuth((s) => s.roles);
   const clientes = useClientes((s) => s.clientes);
-  const admin = roles.includes("admin") || roles.includes("master");
-  if (admin) return cotacoes;
-  if (!user) return [];
-  if (roles.includes("cliente")) {
+
+  if (roles.includes("cliente") && !roles.includes("admin") && !roles.includes("master")) {
     const cid = profile?.cliente_id ?? null;
     if (!cid) return [];
     return cotacoes.filter((c) => c.meta.clienteId === cid);
   }
-  const meusClienteIds = new Set(
-    clientes.filter((c) => c.cadastradoPorVendedorId === user.id).map((c) => c.id),
-  );
-  return cotacoes.filter(
-    (c) =>
-      c.vendedorId === user.id ||
-      (c.meta.clienteId && meusClienteIds.has(c.meta.clienteId)),
-  );
+
+  // master/admin/vendedora: confia no RLS + filtra por clientes acessíveis
+  // (vendedoras só receberam as suas via RLS de qualquer forma)
+  void clientes; // mantido para compat de hook deps
+  return cotacoes;
 }
 
 export function diasAteExpirar(cotacao: Cotacao): number {
