@@ -109,6 +109,7 @@ function DashboardPage() {
       navigate({ to: "/portal" });
     }
   }, [loading, session, isCliente, isAdminOrMaster, navigate]);
+  const [detail, setDetail] = useState<DetailScope>(null);
 
   const [periodo, setPeriodo] = useState<Periodo>("mes_atual");
   const [rankingMetric, setRankingMetric] = useState<"valor" | "quantidade">("valor");
