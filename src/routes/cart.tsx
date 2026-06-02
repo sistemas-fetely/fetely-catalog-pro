@@ -279,7 +279,7 @@ function CartPage() {
     setShowFinalConfirm(true);
   };
 
-  const handleSalvarCotacao = () => {
+  const handleSalvarCotacao = async () => {
     if (salvandoPedido) return;
     const snapshot = resolveClienteSnapshot();
     if (!snapshot) return alert("Selecione um cliente cadastrado.");
@@ -320,41 +320,50 @@ function CartPage() {
     const cotacaoItems = [...itensFirmes, ...itensProvisao];
     const totalCotacao = orderCommercial.totalFinal + totalProvisaoRef;
 
-    // Se está editando uma cotação existente, atualiza in-place
-    const editandoId = (meta as OrderMeta & { cotacaoOrigemId?: string }).cotacaoOrigemId;
-    if (editandoId) {
-      const upd = atualizarCotacao(editandoId, {
+    setSalvandoPedido(true);
+    try {
+      // Se está editando uma cotação existente, atualiza in-place
+      const editandoId = (meta as OrderMeta & { cotacaoOrigemId?: string }).cotacaoOrigemId;
+      if (editandoId) {
+        const upd = await atualizarCotacao(editandoId, {
+          items: cotacaoItems,
+          meta: metaCompleto,
+          total: totalCotacao,
+          commercial: orderCommercial,
+        });
+        if (upd) {
+          toast.success(`Cotação ${upd.id} atualizada`, {
+            description: `Válida até ${new Date(upd.validoAte).toLocaleDateString("pt-BR")}`,
+          });
+          clearCart();
+          resetNegotiation();
+          setShowFinalConfirm(false);
+          navigate({ to: "/cotacoes" });
+          return;
+        }
+      }
+      const cot = await criarCotacao({
         items: cotacaoItems,
         meta: metaCompleto,
         total: totalCotacao,
         commercial: orderCommercial,
       });
-      if (upd) {
-        toast.success(`Cotação ${upd.id} atualizada`, {
-          description: `Válida até ${new Date(upd.validoAte).toLocaleDateString("pt-BR")}`,
-        });
-        clearCart();
-        resetNegotiation();
-        setShowFinalConfirm(false);
-        navigate({ to: "/cotacoes" });
-        return;
-      }
-    }
-    const cot = criarCotacao({
-      items: cotacaoItems,
-      meta: metaCompleto,
-      total: totalCotacao,
-      commercial: orderCommercial,
-    });
 
-    toast.success(`Cotação ${cot.id} salva`, {
-      description: `Válida até ${new Date(cot.validoAte).toLocaleDateString("pt-BR")}`,
-    });
-    clearCart();
-    resetNegotiation();
-    setShowFinalConfirm(false);
-    navigate({ to: "/cotacoes" });
+      toast.success(`Cotação ${cot.id} salva`, {
+        description: `Válida até ${new Date(cot.validoAte).toLocaleDateString("pt-BR")}`,
+      });
+      clearCart();
+      resetNegotiation();
+      setShowFinalConfirm(false);
+      navigate({ to: "/cotacoes" });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Não foi possível salvar a cotação";
+      toast.error(msg, { duration: 6000 });
+    } finally {
+      setSalvandoPedido(false);
+    }
   };
+
 
 
   // Salvar tudo como provisão (carrinho 100% previsão)
