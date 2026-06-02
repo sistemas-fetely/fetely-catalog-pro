@@ -1,15 +1,18 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useAuth } from "@/store/authStore";
 import { useCotacao } from "@/store/cotacaoStore";
+import { useOrder } from "@/store/orderStore";
 import { formatBRL } from "@/lib/format";
 import { STATUS_COTACAO_LABEL } from "@/types/cotacao";
 import type { Cotacao } from "@/types/cotacao";
-import { X } from "lucide-react";
+import { Edit, X } from "lucide-react";
 
 export const Route = createFileRoute("/portal/cotacoes")({
   component: PortalCotacoes,
 });
+
 
 function PortalCotacoes() {
   const clienteId = useAuth((s) => s.profile?.cliente_id ?? null);
@@ -89,6 +92,28 @@ function PortalCotacoes() {
 }
 
 function CotacaoDrawer({ cotacao, onClose }: { cotacao: Cotacao; onClose: () => void }) {
+  const navigate = useNavigate();
+  const clearCart = useOrder((s) => s.clearCart);
+  const addBulk = useOrder((s) => s.addBulk);
+  const setCartMeta = useOrder((s) => s.setMeta);
+
+  const editavel =
+    cotacao.status === "aberta" || cotacao.status === "em_negociacao";
+
+  const handleEditar = () => {
+    clearCart();
+    addBulk(
+      cotacao.items.map((i) => ({ product: i.product, quantity: i.quantity })),
+    );
+    setCartMeta({
+      ...cotacao.meta,
+      cotacaoOrigemId: cotacao.id,
+    });
+    toast.message(`Editando cotação ${cotacao.id}`);
+    onClose();
+    navigate({ to: "/cart" });
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex justify-end" onClick={onClose}>
       <div
@@ -105,6 +130,9 @@ function CotacaoDrawer({ cotacao, onClose }: { cotacao: Cotacao; onClose: () => 
               {new Date(cotacao.criadoEm).toLocaleString("pt-BR")} · Válida até{" "}
               {new Date(cotacao.validoAte).toLocaleDateString("pt-BR")}
             </p>
+            <p className="text-[10px] uppercase tracking-wider text-gold-muted mt-1">
+              Status: {STATUS_COTACAO_LABEL[cotacao.status]}
+            </p>
           </div>
           <button onClick={onClose} className="text-text-secondary hover:text-gold p-1">
             <X className="h-5 w-5" />
@@ -112,6 +140,15 @@ function CotacaoDrawer({ cotacao, onClose }: { cotacao: Cotacao; onClose: () => 
         </div>
 
         <div className="p-5 space-y-4">
+          {editavel && (
+            <button
+              onClick={handleEditar}
+              className="w-full rounded-md bg-gold py-3 text-xs font-semibold uppercase tracking-[0.15em] text-background hover:bg-gold-light flex items-center justify-center gap-2"
+            >
+              <Edit className="h-4 w-4" /> Editar Cotação
+            </button>
+          )}
+
           <section className="rounded-md border border-border overflow-hidden">
             <div className="grid grid-cols-[1fr_60px_90px_90px] gap-2 px-3 py-2 text-[10px] uppercase tracking-wider text-text-muted bg-surface border-b border-border">
               <div>Produto</div>
