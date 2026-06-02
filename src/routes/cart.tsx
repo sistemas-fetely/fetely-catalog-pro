@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Trash2 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/store/authStore";
+import { useClientes } from "@/store/clienteStore";
+
 import { toast } from "sonner";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { formatBRL } from "@/lib/format";
@@ -69,8 +72,14 @@ function CartPage() {
   const updateQty = useOrder((s) => s.updateQty);
   const removeItem = useOrder((s) => s.removeItem);
   const saveOrder = useOrder((s) => s.saveOrder);
+  const saveOrderAsCliente = useOrder((s) => s.saveOrderAsCliente);
   const removeItems = useOrder((s) => s.removeItems);
   const clearCart = useOrder((s) => s.clearCart);
+  const roles = useAuth((s) => s.roles);
+  const profile = useAuth((s) => s.profile);
+  const clientesAll = useClientes((s) => s.clientes);
+  const isClientePortal = roles.includes("cliente");
+
   const negotiationAtivo = useNegotiation((s) => s.ativo);
   const negDescontoPct = useNegotiation((s) => s.descontoPct);
   const negJustificativa = useNegotiation((s) => s.justificativa);
@@ -175,7 +184,35 @@ function CartPage() {
     }
   }, [meta.clienteId, meta.clienteSnapshot]);
 
+  // V16 — Auto-popula meta com o cliente do portal logado
+  useEffect(() => {
+    if (!isClientePortal) return;
+    const cid = profile?.cliente_id;
+    if (!cid) return;
+    if (meta.clienteId === cid) return;
+    const c = clientesAll.find((x) => x.id === cid);
+    if (!c) return;
+    setMeta({
+      clienteId: c.id,
+      cliente: c.razaoSocial,
+      nomeFantasia: c.nomeFantasia,
+      cnpj: c.cnpjFormatado,
+      email: c.contatoEmail,
+      telefone: c.contatoTelefone,
+      logradouro: c.logradouro,
+      numero: c.numero,
+      complemento: c.complemento,
+      bairro: c.bairro,
+      municipio: c.cidade,
+      uf: c.estado,
+      cep: c.cep,
+      situacao: c.situacaoCadastral,
+      clienteSnapshot: buildClienteSnapshot(c),
+    });
+  }, [isClientePortal, profile?.cliente_id, clientesAll, meta.clienteId, setMeta]);
+
   const executeConfirm = async () => {
+
     if (salvandoPedido) return;
     const snapshot = resolveClienteSnapshot();
     if (!snapshot) return alert("Selecione um cliente cadastrado.");
@@ -213,7 +250,23 @@ function CartPage() {
     setSalvandoPedido(true);
     try {
       setMeta({ condicaoPagamento: commercial.condicao.descricao });
+
+      // V16 — Pedido do portal do cliente sempre entra como pendente_aprovacao
+      if (isClientePortal) {
+        const todosItens = [...itensFirmes, ...itensProvisao];
+        const order = await saveOrderAsCliente(orderCommercial, todosItens);
+        clearCart();
+        resetNegotiation();
+        setShowFinalConfirm(false);
+        toast.success("Pedido enviado para análise", {
+          description: `Acompanhe o status em Meus Pedidos.`,
+        });
+        navigate({ to: "/portal/pedidos" });
+        return;
+      }
+
       let provisaoId: string | undefined;
+
       if (itensProvisao.length > 0) {
         const prov = await createProvisao({
           clienteId: meta.clienteId!,

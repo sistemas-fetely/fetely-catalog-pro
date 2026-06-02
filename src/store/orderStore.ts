@@ -1,9 +1,18 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { CartItem, OrderCommercial, OrderMeta, Product, SavedOrder } from "@/types";
+import type {
+  CartItem,
+  OrderCommercial,
+  OrderMeta,
+  PedidoHistoricoEvento,
+  Product,
+  SavedOrder,
+  StatusPedido,
+} from "@/types";
 import { useAuth } from "@/store/authStore";
 import { useClientes } from "@/store/clienteStore";
 import { supabase } from "@/integrations/supabase/client";
+
 
 const noopStorage: Storage = {
   length: 0,
@@ -38,6 +47,11 @@ interface OrderState {
   deleteOrder: (orderId: string) => Promise<void>;
   reprovarOrder: (orderId: string, motivo: string) => Promise<void>;
   desfazerReprovacao: (orderId: string) => Promise<void>;
+  saveOrderAsCliente: (commercial: OrderCommercial | undefined, items: CartItem[]) => Promise<SavedOrder>;
+  aprovarPedidoCliente: (orderId: string, obs?: string) => Promise<{ provisaoId?: string }>;
+  recusarPedidoCliente: (orderId: string, motivo: string, obs?: string) => Promise<void>;
+  solicitarAjustePedido: (orderId: string, mensagem: string) => Promise<void>;
+  cancelarPedidoPendente: (orderId: string) => Promise<void>;
 }
 
 const defaultMeta: OrderMeta = {
@@ -47,6 +61,7 @@ const defaultMeta: OrderMeta = {
   observacoes: "",
   vendedor: "Representante Fetély",
 };
+
 
 function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder {
   return {
@@ -65,6 +80,20 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
     reprovadoMotivo: (row.reprovado_motivo as string | null) ?? null,
     reprovadoPorId: (row.reprovado_por_id as string | null) ?? null,
     reprovadoPorNome: (row.reprovado_por_nome as string | null) ?? null,
+    origemPerfil: (row.origem_perfil as SavedOrder["origemPerfil"]) ?? "vendedor",
+    statusPedido: (row.status_pedido as StatusPedido) ?? "confirmado",
+    aprovadoPorId: (row.aprovado_por_id as string | null) ?? null,
+    aprovadoPorNome: (row.aprovado_por_nome as string | null) ?? null,
+    aprovadoEm: (row.aprovado_em as string | null) ?? null,
+    aprovacaoObs: (row.aprovacao_obs as string | null) ?? null,
+    recusadoPorId: (row.recusado_por_id as string | null) ?? null,
+    recusadoPorNome: (row.recusado_por_nome as string | null) ?? null,
+    recusadoMotivoTexto: (row.recusado_motivo as string | null) ?? null,
+    recusadoObs: (row.recusado_obs as string | null) ?? null,
+    recusadoEmAprovacao: (row.recusado_em as string | null) ?? null,
+    temSolicitacaoAjuste: Boolean(row.tem_solicitacao_ajuste ?? false),
+    ajusteMensagem: (row.ajuste_mensagem as string | null) ?? null,
+    historico: (row.historico as PedidoHistoricoEvento[] | null) ?? [],
   };
 }
 
@@ -95,8 +124,12 @@ export function orderToRow(o: SavedOrder): Record<string, unknown> {
     total_unidades: totalUnidades,
     total_skus: totalSkus,
     provisao_origem_id: metaAny.provisaoOrigemId ?? null,
+    origem_perfil: o.origemPerfil ?? "vendedor",
+    status_pedido: o.statusPedido ?? "confirmado",
+    historico: o.historico ?? [],
   };
 }
+
 
 export function orderItemsToRows(o: SavedOrder): Record<string, unknown>[] {
   return o.items.map((it, idx) => ({
@@ -409,7 +442,316 @@ export const useOrder = create<OrderState>()(
           throw new Error(error.message);
         }
       },
+      // ====================================================================
+      // V16 — Aprovação de pedidos do portal do cliente
+      // ====================================================================
+      saveOrderAsCliente: async (commercial, items) => {
+        const auth = useAuth.getState();
+        if (!auth.user?.id) throw new Error("Sessão expirada. Faça login novamente.");
+        const profile = auth.profile;
+        if (!profile?.cliente_id) {
+          throw new Error("Seu usuário não está vinculado a um cliente cadastrado.");
+        }
+        const meta = get().meta;
+        const total =
+          commercial?.totalFinal ??
+          items.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0);
+
+        let nextId = `PED-${Date.now()}`;
+        try {
+          const { data: rpcId } = await supabase.rpc("next_order_id");
+          if (typeof rpcId === "string" && /^PED-\d+$/.test(rpcId)) nextId = rpcId;
+        } catch (e) {
+          console.error("[orderStore] next_order_id falhou:", e);
+        }
+
+        const nowIso = new Date().toISOString();
+        const evento: PedidoHistoricoEvento = {
+          em: nowIso,
+          acao: "enviado_para_analise",
+          porId: auth.user.id,
+          porNome: profile.nome_completo ?? profile.email ?? auth.user.email ?? "Cliente",
+          obs: "Pedido enviado pelo portal do cliente.",
+        };
+
+        const order: SavedOrder = {
+          id: nextId,
+          createdAt: nowIso,
+          items,
+          meta: { ...meta, clienteId: profile.cliente_id, pedidoOrigem: "portal_cliente" },
+          total,
+          commercial,
+          vendedorId: auth.user.id,
+          vendedorNome: profile.nome_completo ?? profile.email ?? "Cliente",
+          vendedorLogin: profile.login_amigavel ?? profile.email ?? undefined,
+          vendedorTipo: null,
+          origemPerfil: "cliente",
+          statusPedido: "pendente_aprovacao",
+          historico: [evento],
+        };
+
+        try {
+          const { error: errO } = await supabase
+            .from("orders")
+            .insert(orderToRow(order) as never);
+          if (errO) throw errO;
+          const itemRows = orderItemsToRows(order);
+          if (itemRows.length > 0) {
+            const { error: errI } = await supabase
+              .from("order_items")
+              .insert(itemRows as never);
+            if (errI) throw errI;
+          }
+        } catch (err) {
+          console.error("[orderStore] saveOrderAsCliente falhou:", err, order.id);
+          const msg = err instanceof Error ? err.message : String(err);
+          throw new Error(`Não foi possível enviar o pedido: ${msg}`);
+        }
+
+        set((s) => ({ history: [order, ...s.history].slice(0, 200) }));
+        return order;
+      },
+
+      aprovarPedidoCliente: async (orderId, obs) => {
+        const auth = useAuth.getState();
+        if (!auth.user?.id) throw new Error("Sessão expirada.");
+        const order = get().history.find((o) => o.id === orderId);
+        if (!order) throw new Error("Pedido não encontrado.");
+        if (order.statusPedido !== "pendente_aprovacao") {
+          throw new Error("Pedido não está mais aguardando aprovação.");
+        }
+
+        // Lazy imports para não criar dependência circular
+        const { classificarItem } = await import("@/lib/classifyItem");
+        const { useProvisao } = await import("@/store/provisaoStore");
+        const itensFirmes = order.items.filter(
+          (i) => classificarItem(i.product.statusEstoque) === "firme",
+        );
+        const itensProvisao = order.items.filter(
+          (i) => classificarItem(i.product.statusEstoque) !== "firme",
+        );
+
+        const aprovadoEm = new Date().toISOString();
+        const aprovadoPorNome =
+          auth.profile?.nome_completo ?? auth.profile?.email ?? auth.user.email ?? "—";
+        const evento: PedidoHistoricoEvento = {
+          em: aprovadoEm,
+          acao: "aprovado",
+          porId: auth.user.id,
+          porNome: aprovadoPorNome,
+          obs: obs ?? null,
+        };
+        const historicoNovo = [...(order.historico ?? []), evento];
+
+        // Cria provisão se houver itens de previsão
+        let provisaoId: string | undefined;
+        if (itensProvisao.length > 0 && order.meta.clienteSnapshot && order.meta.clienteId) {
+          const { extrairDataPrevisao } = await import("@/lib/classifyItem");
+          const prov = await useProvisao.getState().createProvisao({
+            clienteId: order.meta.clienteId,
+            clienteSnapshot: order.meta.clienteSnapshot,
+            pedidoFirmeId: itensFirmes.length > 0 ? order.id : undefined,
+            itens: itensProvisao.map((i) => ({
+              sku: i.sku,
+              nomeComercial: i.product.nomeComercial,
+              colecao: i.product.colecao,
+              corNome: i.product.corNome,
+              tamanhoNumero: i.product.tamanhoNumero,
+              quantidade: i.quantity,
+              precoAtacadoReferencia: i.product.precoAtacado,
+              statusEstoque: i.product.statusEstoque,
+              previsaoData: extrairDataPrevisao(i.product.statusEstoque),
+            })),
+            observacoes: `Gerada via aprovação do pedido ${order.id}`,
+          });
+          provisaoId = prov.id;
+        }
+
+        // Atualiza pedido (ou marca como convertido se 100% provisão)
+        const statusFinal: StatusPedido = itensFirmes.length > 0 ? "aprovado" : "convertido";
+        const novosItens = itensFirmes.length > 0 ? itensFirmes : order.items;
+        const novoTotal = itensFirmes.reduce(
+          (s, i) => s + i.product.precoAtacado * i.quantity,
+          0,
+        );
+
+        // Remove itens de provisão da tabela order_items (mantém só firmes)
+        if (itensProvisao.length > 0 && itensFirmes.length > 0) {
+          const skusRemover = itensProvisao.map((i) => i.sku);
+          await supabase
+            .from("order_items")
+            .delete()
+            .eq("order_id", order.id)
+            .in("sku", skusRemover);
+        }
+
+        const { error } = await supabase
+          .from("orders")
+          .update({
+            status_pedido: statusFinal,
+            aprovado_por_id: auth.user.id,
+            aprovado_por_nome: aprovadoPorNome,
+            aprovado_em: aprovadoEm,
+            aprovacao_obs: obs ?? null,
+            historico: historicoNovo,
+            tem_solicitacao_ajuste: false,
+            ajuste_mensagem: null,
+            ...(itensFirmes.length > 0
+              ? { total: novoTotal, total_unidades: novosItens.reduce((s, i) => s + i.quantity, 0), total_skus: novosItens.length }
+              : {}),
+          } as never)
+          .eq("id", order.id);
+        if (error) throw new Error(error.message);
+
+        set((s) => ({
+          history: s.history.map((o) =>
+            o.id === orderId
+              ? {
+                  ...o,
+                  statusPedido: statusFinal,
+                  aprovadoPorId: auth.user!.id,
+                  aprovadoPorNome,
+                  aprovadoEm,
+                  aprovacaoObs: obs ?? null,
+                  temSolicitacaoAjuste: false,
+                  ajusteMensagem: null,
+                  historico: historicoNovo,
+                  items: novosItens,
+                  total: itensFirmes.length > 0 ? novoTotal : o.total,
+                }
+              : o,
+          ),
+        }));
+
+        return { provisaoId };
+      },
+
+      recusarPedidoCliente: async (orderId, motivo, obs) => {
+        const auth = useAuth.getState();
+        if (!auth.user?.id) throw new Error("Sessão expirada.");
+        const order = get().history.find((o) => o.id === orderId);
+        if (!order) throw new Error("Pedido não encontrado.");
+        const recusadoEm = new Date().toISOString();
+        const porNome =
+          auth.profile?.nome_completo ?? auth.profile?.email ?? auth.user.email ?? "—";
+        const evento: PedidoHistoricoEvento = {
+          em: recusadoEm,
+          acao: "recusado",
+          porId: auth.user.id,
+          porNome,
+          obs: `${motivo}${obs ? ` — ${obs}` : ""}`,
+        };
+        const historicoNovo = [...(order.historico ?? []), evento];
+
+        const { error } = await supabase
+          .from("orders")
+          .update({
+            status_pedido: "recusado",
+            recusado_por_id: auth.user.id,
+            recusado_por_nome: porNome,
+            recusado_motivo: motivo,
+            recusado_obs: obs ?? null,
+            recusado_em: recusadoEm,
+            historico: historicoNovo,
+          } as never)
+          .eq("id", orderId);
+        if (error) throw new Error(error.message);
+
+        set((s) => ({
+          history: s.history.map((o) =>
+            o.id === orderId
+              ? {
+                  ...o,
+                  statusPedido: "recusado",
+                  recusadoPorId: auth.user!.id,
+                  recusadoPorNome: porNome,
+                  recusadoMotivoTexto: motivo,
+                  recusadoObs: obs ?? null,
+                  recusadoEmAprovacao: recusadoEm,
+                  historico: historicoNovo,
+                }
+              : o,
+          ),
+        }));
+      },
+
+      solicitarAjustePedido: async (orderId, mensagem) => {
+        const auth = useAuth.getState();
+        if (!auth.user?.id) throw new Error("Sessão expirada.");
+        const order = get().history.find((o) => o.id === orderId);
+        if (!order) throw new Error("Pedido não encontrado.");
+        const em = new Date().toISOString();
+        const porNome =
+          auth.profile?.nome_completo ?? auth.profile?.email ?? auth.user.email ?? "—";
+        const evento: PedidoHistoricoEvento = {
+          em,
+          acao: "ajuste_solicitado",
+          porId: auth.user.id,
+          porNome,
+          obs: mensagem,
+        };
+        const historicoNovo = [...(order.historico ?? []), evento];
+
+        const { error } = await supabase
+          .from("orders")
+          .update({
+            tem_solicitacao_ajuste: true,
+            ajuste_mensagem: mensagem,
+            historico: historicoNovo,
+          } as never)
+          .eq("id", orderId);
+        if (error) throw new Error(error.message);
+
+        set((s) => ({
+          history: s.history.map((o) =>
+            o.id === orderId
+              ? {
+                  ...o,
+                  temSolicitacaoAjuste: true,
+                  ajusteMensagem: mensagem,
+                  historico: historicoNovo,
+                }
+              : o,
+          ),
+        }));
+      },
+
+      cancelarPedidoPendente: async (orderId) => {
+        const auth = useAuth.getState();
+        if (!auth.user?.id) throw new Error("Sessão expirada.");
+        const order = get().history.find((o) => o.id === orderId);
+        if (!order) throw new Error("Pedido não encontrado.");
+        const em = new Date().toISOString();
+        const porNome =
+          auth.profile?.nome_completo ?? auth.profile?.email ?? auth.user.email ?? "Cliente";
+        const evento: PedidoHistoricoEvento = {
+          em,
+          acao: "cancelado",
+          porId: auth.user.id,
+          porNome,
+          obs: "Cancelado pelo cliente.",
+        };
+        const historicoNovo = [...(order.historico ?? []), evento];
+
+        const { error } = await supabase
+          .from("orders")
+          .update({
+            status_pedido: "cancelado",
+            historico: historicoNovo,
+          } as never)
+          .eq("id", orderId);
+        if (error) throw new Error(error.message);
+
+        set((s) => ({
+          history: s.history.map((o) =>
+            o.id === orderId
+              ? { ...o, statusPedido: "cancelado", historico: historicoNovo }
+              : o,
+          ),
+        }));
+      },
     }),
+
     {
       name: "fetely-order",
       storage: createJSONStorage(safeStorage),
@@ -475,3 +817,16 @@ export function useCanReprovarOrder(order: SavedOrder | null | undefined): boole
 export function useIsMaster(): boolean {
   return useAuth((s) => s.roles.includes("master"));
 }
+
+/**
+ * V16 — pedidos pendentes de aprovação (apenas admin/master enxergam aqui).
+ */
+export function usePendingApprovals(): SavedOrder[] {
+  const history = useOrder((s) => s.history);
+  const roles = useAuth((s) => s.roles);
+  if (!(roles.includes("admin") || roles.includes("master"))) return [];
+  return history.filter(
+    (o) => o.statusPedido === "pendente_aprovacao" && o.origemPerfil === "cliente",
+  );
+}
+

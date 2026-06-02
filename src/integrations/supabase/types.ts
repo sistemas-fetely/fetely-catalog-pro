@@ -782,15 +782,27 @@ export type Database = {
       }
       orders: {
         Row: {
+          ajuste_mensagem: string | null
+          aprovacao_obs: string | null
+          aprovado_em: string | null
+          aprovado_por_id: string | null
+          aprovado_por_nome: string | null
           cliente_id: string | null
           cliente_snapshot: Json | null
           commercial: Json | null
           created_at: string
           forma_pagamento: string | null
           frete: string | null
+          historico: Json
           id: string
           meta: Json
+          origem_perfil: string
           provisao_origem_id: string | null
+          recusado_em: string | null
+          recusado_motivo: string | null
+          recusado_obs: string | null
+          recusado_por_id: string | null
+          recusado_por_nome: string | null
           reprovado: boolean
           reprovado_em: string | null
           reprovado_motivo: string | null
@@ -803,8 +815,10 @@ export type Database = {
           sncf_tentativas: number
           sncf_ultimo_erro: string | null
           sncf_ultimo_sync_em: string | null
+          status_pedido: string
           tem_negociacao: boolean
           tem_premissa_aplicada: boolean
+          tem_solicitacao_ajuste: boolean
           total: number
           total_skus: number
           total_unidades: number
@@ -816,15 +830,27 @@ export type Database = {
           vendedor_tipo: string | null
         }
         Insert: {
+          ajuste_mensagem?: string | null
+          aprovacao_obs?: string | null
+          aprovado_em?: string | null
+          aprovado_por_id?: string | null
+          aprovado_por_nome?: string | null
           cliente_id?: string | null
           cliente_snapshot?: Json | null
           commercial?: Json | null
           created_at?: string
           forma_pagamento?: string | null
           frete?: string | null
+          historico?: Json
           id: string
           meta: Json
+          origem_perfil?: string
           provisao_origem_id?: string | null
+          recusado_em?: string | null
+          recusado_motivo?: string | null
+          recusado_obs?: string | null
+          recusado_por_id?: string | null
+          recusado_por_nome?: string | null
           reprovado?: boolean
           reprovado_em?: string | null
           reprovado_motivo?: string | null
@@ -837,8 +863,10 @@ export type Database = {
           sncf_tentativas?: number
           sncf_ultimo_erro?: string | null
           sncf_ultimo_sync_em?: string | null
+          status_pedido?: string
           tem_negociacao?: boolean
           tem_premissa_aplicada?: boolean
+          tem_solicitacao_ajuste?: boolean
           total: number
           total_skus?: number
           total_unidades?: number
@@ -850,15 +878,27 @@ export type Database = {
           vendedor_tipo?: string | null
         }
         Update: {
+          ajuste_mensagem?: string | null
+          aprovacao_obs?: string | null
+          aprovado_em?: string | null
+          aprovado_por_id?: string | null
+          aprovado_por_nome?: string | null
           cliente_id?: string | null
           cliente_snapshot?: Json | null
           commercial?: Json | null
           created_at?: string
           forma_pagamento?: string | null
           frete?: string | null
+          historico?: Json
           id?: string
           meta?: Json
+          origem_perfil?: string
           provisao_origem_id?: string | null
+          recusado_em?: string | null
+          recusado_motivo?: string | null
+          recusado_obs?: string | null
+          recusado_por_id?: string | null
+          recusado_por_nome?: string | null
           reprovado?: boolean
           reprovado_em?: string | null
           reprovado_motivo?: string | null
@@ -871,8 +911,10 @@ export type Database = {
           sncf_tentativas?: number
           sncf_ultimo_erro?: string | null
           sncf_ultimo_sync_em?: string | null
+          status_pedido?: string
           tem_negociacao?: boolean
           tem_premissa_aplicada?: boolean
+          tem_solicitacao_ajuste?: boolean
           total?: number
           total_skus?: number
           total_unidades?: number

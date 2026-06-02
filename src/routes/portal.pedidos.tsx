@@ -59,37 +59,54 @@ function PortalPedidos() {
             <div className="text-right">Valor final</div>
             <div className="text-right">Ações</div>
           </div>
-          {filtered.map((p) => (
-            <div
-              key={p.id}
-              className="grid grid-cols-[90px_120px_1fr_160px_140px] gap-3 px-4 py-3 text-xs items-center border-b border-border/40 last:border-b-0 hover:bg-surface-hover transition cursor-pointer"
-              onClick={() => setSelected(p)}
-            >
-              <span className="font-mono text-text-muted">
-                {p.id.replace("PED-", "#")}
-              </span>
-              <span className="text-text-secondary">
-                {new Date(p.createdAt).toLocaleDateString("pt-BR")}
-              </span>
-              <span className="text-text-primary truncate">
-                {p.commercial?.condicaoDescricao ?? p.meta.condicaoPagamento}
-              </span>
-              <span className="text-right text-gold font-medium">
-                {formatBRL(p.total)}
-              </span>
+          {filtered.map((p) => {
+            const st = p.statusPedido ?? "confirmado";
+            const badge =
+              st === "pendente_aprovacao"
+                ? p.temSolicitacaoAjuste
+                  ? { txt: "⚠ Ajuste solicitado", cls: "text-amber-400 border-amber-500/40 bg-amber-500/10" }
+                  : { txt: "⏳ Em análise", cls: "text-amber-300 border-amber-500/30 bg-amber-500/5" }
+                : st === "recusado"
+                  ? { txt: "❌ Não aprovado", cls: "text-stock-out border-stock-out/40 bg-stock-out/10" }
+                  : st === "cancelado"
+                    ? { txt: "Cancelado", cls: "text-text-muted border-border bg-surface" }
+                    : { txt: "✅ Confirmado", cls: "text-stock-in border-stock-in/40 bg-stock-in/10" };
+            return (
               <div
-                className="flex justify-end gap-2"
-                onClick={(e) => e.stopPropagation()}
+                key={p.id}
+                className="grid grid-cols-[90px_120px_1fr_160px_140px] gap-3 px-4 py-3 text-xs items-center border-b border-border/40 last:border-b-0 hover:bg-surface-hover transition cursor-pointer"
+                onClick={() => setSelected(p)}
               >
-                <button
-                  onClick={() => setExporting(p)}
-                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] uppercase tracking-wider text-text-secondary hover:text-gold hover:border-gold"
+                <span className="font-mono text-text-muted">
+                  {p.id.replace("PED-", "#")}
+                </span>
+                <span className="text-text-secondary">
+                  {new Date(p.createdAt).toLocaleDateString("pt-BR")}
+                </span>
+                <span className="text-text-primary truncate">
+                  <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider mr-2 ${badge.cls}`}>
+                    {badge.txt}
+                  </span>
+                  {p.commercial?.condicaoDescricao ?? p.meta.condicaoPagamento}
+                </span>
+                <span className="text-right text-gold font-medium">
+                  {formatBRL(p.total)}
+                </span>
+                <div
+                  className="flex justify-end gap-2"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <Download className="h-3 w-3" /> PDF
-                </button>
+                  <button
+                    onClick={() => setExporting(p)}
+                    className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] uppercase tracking-wider text-text-secondary hover:text-gold hover:border-gold"
+                  >
+                    <Download className="h-3 w-3" /> PDF
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
+
         </div>
       )}
 
