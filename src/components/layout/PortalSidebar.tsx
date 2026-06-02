@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, ClipboardList, Package, BookOpen, User as UserIcon } from "lucide-react";
+import { Home, ClipboardList, Package, BookOpen, User as UserIcon, ShoppingCart } from "lucide-react";
+import { useOrder } from "@/store/orderStore";
 
 type Item = {
   to: string;
@@ -7,13 +8,15 @@ type Item = {
   Icon: typeof Home;
   exact?: boolean;
   divider?: boolean;
+  badgeKey?: "cart";
 };
 
 const items: Item[] = [
   { to: "/portal", label: "Início", Icon: Home, exact: true },
+  { to: "/catalog", label: "Catálogo", Icon: BookOpen },
+  { to: "/cart", label: "Meu Carrinho", Icon: ShoppingCart, badgeKey: "cart" },
   { to: "/portal/pedidos", label: "Meus Pedidos", Icon: ClipboardList },
   { to: "/portal/provisoes", label: "Provisões", Icon: Package },
-  { to: "/catalog", label: "Catálogo", Icon: BookOpen },
   { to: "/portal/conta", label: "Minha Conta", Icon: UserIcon, divider: true },
 ];
 
