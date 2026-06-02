@@ -79,6 +79,7 @@ function CartPage() {
   const roles = useAuth((s) => s.roles);
   const profile = useAuth((s) => s.profile);
   const clientesAll = useClientes((s) => s.clientes);
+  const setClientesFromRows = useClientes((s) => s.setClientesFromRows);
   const isClientePortal = roles.includes("cliente");
 
   const negotiationAtivo = useNegotiation((s) => s.ativo);
