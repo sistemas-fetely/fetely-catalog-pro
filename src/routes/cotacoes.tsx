@@ -137,7 +137,11 @@ function CotacoesPage() {
         />
       </div>
 
-      {filtradas.length === 0 ? (
+      {loading && !loaded ? (
+        <div className="rounded-lg border border-border bg-surface p-12 text-center text-text-secondary">
+          <p className="text-sm">Carregando cotações...</p>
+        </div>
+      ) : filtradas.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface p-12 text-center text-text-secondary">
           <FileText className="h-10 w-10 text-text-muted mx-auto mb-3" />
           <p className="text-sm">Nenhuma cotação encontrada.</p>
@@ -145,6 +149,7 @@ function CotacoesPage() {
             Inicie um novo pedido e, ao finalizar, escolha "Salvar como Cotação".
           </p>
         </div>
+
       ) : (
         <div className="overflow-x-auto rounded-lg gold-border bg-surface">
           <table className="w-full text-sm">
