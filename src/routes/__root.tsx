@@ -198,6 +198,8 @@ function BootEffects() {
         pathname.startsWith("/portal/") ||
         pathname === "/catalog" ||
         pathname.startsWith("/catalog/") ||
+        pathname === "/cart" ||
+        pathname === "/confirmation" ||
         pathname === "/stand" ||
         pathname.startsWith("/stand/");
       if (!allowed) {
