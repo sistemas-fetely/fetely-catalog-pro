@@ -32,6 +32,7 @@ import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as StandLeadsRouteImport } from './routes/stand.leads'
 import { Route as PortalProvisoesRouteImport } from './routes/portal.provisoes'
 import { Route as PortalPedidosRouteImport } from './routes/portal.pedidos'
+import { Route as PortalCotacoesRouteImport } from './routes/portal.cotacoes'
 import { Route as PortalContaRouteImport } from './routes/portal.conta'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSincronizacaoSncfRouteImport } from './routes/admin.sincronizacao-sncf'
@@ -155,6 +156,11 @@ const PortalPedidosRoute = PortalPedidosRouteImport.update({
   path: '/pedidos',
   getParentRoute: () => PortalRoute,
 } as any)
+const PortalCotacoesRoute = PortalCotacoesRouteImport.update({
+  id: '/cotacoes',
+  path: '/cotacoes',
+  getParentRoute: () => PortalRoute,
+} as any)
 const PortalContaRoute = PortalContaRouteImport.update({
   id: '/conta',
   path: '/conta',
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
   '/portal/conta': typeof PortalContaRoute
+  '/portal/cotacoes': typeof PortalCotacoesRoute
   '/portal/pedidos': typeof PortalPedidosRoute
   '/portal/provisoes': typeof PortalProvisoesRoute
   '/stand/leads': typeof StandLeadsRoute
@@ -249,6 +256,7 @@ export interface FileRoutesByTo {
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
   '/portal/conta': typeof PortalContaRoute
+  '/portal/cotacoes': typeof PortalCotacoesRoute
   '/portal/pedidos': typeof PortalPedidosRoute
   '/portal/provisoes': typeof PortalProvisoesRoute
   '/stand/leads': typeof StandLeadsRoute
@@ -282,6 +290,7 @@ export interface FileRoutesById {
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
   '/portal/conta': typeof PortalContaRoute
+  '/portal/cotacoes': typeof PortalCotacoesRoute
   '/portal/pedidos': typeof PortalPedidosRoute
   '/portal/provisoes': typeof PortalProvisoesRoute
   '/stand/leads': typeof StandLeadsRoute
@@ -316,6 +325,7 @@ export interface FileRouteTypes {
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
     | '/portal/conta'
+    | '/portal/cotacoes'
     | '/portal/pedidos'
     | '/portal/provisoes'
     | '/stand/leads'
@@ -347,6 +357,7 @@ export interface FileRouteTypes {
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
     | '/portal/conta'
+    | '/portal/cotacoes'
     | '/portal/pedidos'
     | '/portal/provisoes'
     | '/stand/leads'
@@ -379,6 +390,7 @@ export interface FileRouteTypes {
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
     | '/portal/conta'
+    | '/portal/cotacoes'
     | '/portal/pedidos'
     | '/portal/provisoes'
     | '/stand/leads'
@@ -576,6 +588,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalPedidosRouteImport
       parentRoute: typeof PortalRoute
     }
+    '/portal/cotacoes': {
+      id: '/portal/cotacoes'
+      path: '/cotacoes'
+      fullPath: '/portal/cotacoes'
+      preLoaderRoute: typeof PortalCotacoesRouteImport
+      parentRoute: typeof PortalRoute
+    }
     '/portal/conta': {
       id: '/portal/conta'
       path: '/conta'
@@ -641,6 +660,7 @@ const CatalogRouteWithChildren =
 
 interface PortalRouteChildren {
   PortalContaRoute: typeof PortalContaRoute
+  PortalCotacoesRoute: typeof PortalCotacoesRoute
   PortalPedidosRoute: typeof PortalPedidosRoute
   PortalProvisoesRoute: typeof PortalProvisoesRoute
   PortalIndexRoute: typeof PortalIndexRoute
@@ -648,6 +668,7 @@ interface PortalRouteChildren {
 
 const PortalRouteChildren: PortalRouteChildren = {
   PortalContaRoute: PortalContaRoute,
+  PortalCotacoesRoute: PortalCotacoesRoute,
   PortalPedidosRoute: PortalPedidosRoute,
   PortalProvisoesRoute: PortalProvisoesRoute,
   PortalIndexRoute: PortalIndexRoute,
@@ -695,3 +716,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
