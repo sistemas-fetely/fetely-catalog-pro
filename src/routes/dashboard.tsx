@@ -939,7 +939,14 @@ function RankingList({
             const v = metric === "valor" ? r.valor : r.quantidade;
             const pct = (v / max) * 100;
             return (
-              <li key={r.key} className="px-4 sm:px-5 py-3 flex items-center gap-3 sm:gap-4">
+              <li
+                key={r.key}
+                onClick={() => onSelect?.({ key: r.key, nome: r.nome })}
+                className={
+                  "px-4 sm:px-5 py-3 flex items-center gap-3 sm:gap-4 " +
+                  (onSelect ? "cursor-pointer hover:bg-surface-2/60 transition" : "")
+                }
+              >
                 <div className="w-6 text-center font-display text-base text-gold shrink-0">
                   {i + 1}
                 </div>
