@@ -2,13 +2,14 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight, XCircle, Trash2, RotateCcw } from "lucide-react";
+import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight, XCircle, Trash2, RotateCcw, FileDown } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 import { useProvisao, useVisibleProvisoes, useCanReprovarProvisao } from "@/store/provisaoStore";
 import { useAuth } from "@/store/authStore";
 import { useCatalog } from "@/store/catalogStore";
 import { useOrder } from "@/store/orderStore";
 import { ReprovarDialog } from "@/components/ReprovarDialog";
+import { generateProvisaoPDF } from "@/lib/orderPdf";
 import { STATUS_PROVISAO_LABEL, type ProvisaoFutura, type StatusProvisao } from "@/types/provisao";
 
 const search = z.object({
@@ -341,6 +342,26 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
           </div>
 
           <div className="flex flex-col gap-2 pt-2 border-t border-border">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const { blob, filename } = generateProvisaoPDF(provisao);
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = filename;
+                  a.click();
+                  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+                } catch (err) {
+                  console.error(err);
+                  toast.error("Falha ao gerar PDF");
+                }
+              }}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border text-text-secondary py-2.5 text-xs uppercase tracking-wider hover:text-gold hover:border-gold/40"
+            >
+              <FileDown className="h-4 w-4" /> Baixar PDF
+            </button>
             {provisao.status === "aguardando_estoque" && isAdmin && (
               <button
                 onClick={() => updateStatus(provisao.id, "estoque_liberado")}
