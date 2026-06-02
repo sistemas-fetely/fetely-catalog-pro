@@ -366,3 +366,53 @@ export function generateCotacaoPDF(cotacao: Cotacao): OrderPDFResult {
   const filename = `Cotacao-${cotacao.id}-${(cotacao.meta.cliente || "cliente").replace(/[^a-zA-Z0-9\-_]/g, "-").slice(0, 40)}.pdf`;
   return { ...result, filename };
 }
+
+/**
+ * Gera PDF de uma provisão futura. Reaproveita o gerador de pedido para manter
+ * o mesmo visual, mas marca claramente como rascunho de provisão (valores de
+ * referência, sem compromisso fiscal).
+ */
+export function generateProvisaoPDF(provisao: ProvisaoFutura): OrderPDFResult {
+  const items: CartItem[] = provisao.itens.map((i) => {
+    const product = {
+      sku: i.sku,
+      nomeComercial: i.nomeComercial,
+      nomeCompleto: i.nomeComercial,
+      precoAtacado: i.precoAtacadoReferencia,
+      multiplos: 1,
+      statusEstoque: i.statusEstoque,
+      colecao: i.colecao,
+      corNome: i.corNome,
+      tamanhoNumero: i.tamanhoNumero,
+    } as unknown as Product;
+    return { sku: i.sku, product, quantity: i.quantidade };
+  });
+
+  const snap = provisao.clienteSnapshot;
+  const obsHeader = `PROVISÃO FUTURA — valores de referência, sem compromisso fiscal.\nPróxima previsão: ${provisao.proximaPrevisao}${provisao.datasPrevisao?.length ? ` · Datas: ${provisao.datasPrevisao.join(", ")}` : ""}`;
+
+  const fakeOrder: SavedOrder = {
+    id: provisao.id,
+    createdAt: provisao.criadoEm,
+    items,
+    meta: {
+      cliente: snap.razaoSocial || snap.nomeFantasia || "—",
+      nomeFantasia: snap.nomeFantasia,
+      cnpj: snap.cnpj,
+      email: snap.contatoEmail,
+      telefone: snap.contatoTelefone,
+      municipio: snap.cidade,
+      uf: snap.estado,
+      condicaoPagamento: "—",
+      vendedor: provisao.vendedorNome,
+      observacoes: `${obsHeader}${provisao.observacoes ? `\n\n${provisao.observacoes}` : ""}`.trim(),
+    },
+    total: provisao.totalReferencia,
+    vendedorId: provisao.vendedorId,
+    vendedorNome: provisao.vendedorNome,
+  };
+
+  const result = generateOrderPDF(fakeOrder);
+  const filename = `Provisao-${provisao.id}-${(snap.razaoSocial || snap.nomeFantasia || "cliente").replace(/[^a-zA-Z0-9\-_]/g, "-").slice(0, 40)}.pdf`;
+  return { ...result, filename };
+}
