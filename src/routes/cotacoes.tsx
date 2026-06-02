@@ -43,14 +43,21 @@ type Filtro = "abertas" | "em_negociacao" | "aprovadas" | "todas";
 
 function CotacoesPage() {
   const cotacoes = useVisibleCotacoes();
+  const fetchAll = useCotacao((s) => s.fetchAll);
   const expirarVencidas = useCotacao((s) => s.expirarVencidas);
+  const loading = useCotacao((s) => s.loading);
+  const loaded = useCotacao((s) => s.loaded);
   const [filtro, setFiltro] = useState<Filtro>("abertas");
   const [busca, setBusca] = useState("");
   const [selecionada, setSelecionada] = useState<string | null>(null);
 
   useEffect(() => {
-    expirarVencidas();
-  }, [expirarVencidas]);
+    void (async () => {
+      await fetchAll();
+      await expirarVencidas();
+    })();
+  }, [fetchAll, expirarVencidas]);
+
 
   const counts = useMemo(() => {
     return {
