@@ -162,6 +162,28 @@ export function CotacaoDetailDrawer({
           </div>
         </section>
 
+        {cotacao.meta?.observacoes && (
+          <section className="rounded-md border border-border bg-surface/40 p-4 mb-4">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-semibold mb-2">
+              Observações
+            </div>
+            <p className="text-xs text-text-secondary whitespace-pre-wrap">
+              {cotacao.meta.observacoes}
+            </p>
+          </section>
+        )}
+
+        <section className="rounded-md border border-border bg-surface/40 p-4 mb-4 text-[11px] text-text-muted space-y-1">
+          <div className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-semibold mb-2">
+            Histórico
+          </div>
+          <div>Criada em {new Date(cotacao.criadoEm).toLocaleString("pt-BR")} por {cotacao.vendedorNome}</div>
+          {cotacao.atualizadoEm && cotacao.atualizadoEm !== cotacao.criadoEm && (
+            <div>Atualizada em {new Date(cotacao.atualizadoEm).toLocaleString("pt-BR")}</div>
+          )}
+          <div>Válida até {new Date(cotacao.validoAte).toLocaleDateString("pt-BR")}</div>
+        </section>
+
         {/* Ações principais */}
         {cotacao.status !== "convertida" && (
           <div className="space-y-2 mb-4">
