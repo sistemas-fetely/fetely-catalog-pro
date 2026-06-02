@@ -184,31 +184,60 @@ function CartPage() {
     }
   }, [meta.clienteId, meta.clienteSnapshot]);
 
-  // V16 — Auto-popula meta com o cliente do portal logado
+  // V16 — Auto-popula meta com o cliente do portal logado.
+  // Se o cliente ainda não está no store local (cliente portal não hidrata
+  // a lista global), busca direto via Supabase usando a RLS do próprio acesso.
   useEffect(() => {
     if (!isClientePortal) return;
     const cid = profile?.cliente_id;
     if (!cid) return;
     if (meta.clienteId === cid) return;
-    const c = clientesAll.find((x) => x.id === cid);
-    if (!c) return;
-    setMeta({
-      clienteId: c.id,
-      cliente: c.razaoSocial,
-      nomeFantasia: c.nomeFantasia,
-      cnpj: c.cnpjFormatado,
-      email: c.contatoEmail,
-      telefone: c.contatoTelefone,
-      logradouro: c.logradouro,
-      numero: c.numero,
-      complemento: c.complemento,
-      bairro: c.bairro,
-      municipio: c.cidade,
-      uf: c.estado,
-      cep: c.cep,
-      situacao: c.situacaoCadastral,
-      clienteSnapshot: buildClienteSnapshot(c),
-    });
+
+    const aplicar = (c: Cliente) => {
+      setMeta({
+        clienteId: c.id,
+        cliente: c.razaoSocial,
+        nomeFantasia: c.nomeFantasia,
+        cnpj: c.cnpjFormatado,
+        email: c.contatoEmail,
+        telefone: c.contatoTelefone,
+        logradouro: c.logradouro,
+        numero: c.numero,
+        complemento: c.complemento,
+        bairro: c.bairro,
+        municipio: c.cidade,
+        uf: c.estado,
+        cep: c.cep,
+        situacao: c.situacaoCadastral,
+        clienteSnapshot: buildClienteSnapshot(c),
+      });
+    };
+
+    const inStore = clientesAll.find((x) => x.id === cid);
+    if (inStore) {
+      aplicar(inStore);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("clientes")
+          .select("*")
+          .eq("id", cid)
+          .maybeSingle();
+        if (cancelled || error || !data) return;
+        const c = rowToCliente(data as Record<string, unknown>);
+        setClientesFromRows([c, ...clientesAll.filter((x) => x.id !== c.id)]);
+        aplicar(c);
+      } catch (err) {
+        console.error("[cart] fallback fetch cliente do portal falhou:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [isClientePortal, profile?.cliente_id, clientesAll, meta.clienteId, setMeta]);
 
   const executeConfirm = async () => {
