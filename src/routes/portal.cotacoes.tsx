@@ -92,8 +92,116 @@ function PortalCotacoes() {
 }
 
 function CotacaoDrawer({ cotacao, onClose }: { cotacao: Cotacao; onClose: () => void }) {
+  const navigate = useNavigate();
+  const clearCart = useOrder((s) => s.clearCart);
+  const addBulk = useOrder((s) => s.addBulk);
+  const setCartMeta = useOrder((s) => s.setMeta);
+
+  const editavel =
+    cotacao.status === "aberta" || cotacao.status === "em_negociacao";
+
+  const handleEditar = () => {
+    clearCart();
+    addBulk(
+      cotacao.items.map((i) => ({ product: i.product, quantity: i.quantity })),
+    );
+    setCartMeta({
+      ...cotacao.meta,
+      cotacaoOrigemId: cotacao.id,
+    });
+    toast.message(`Editando cotação ${cotacao.id}`);
+    onClose();
+    navigate({ to: "/cart" });
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex justify-end" onClick={onClose}>
+      <div
+        className="w-full max-w-2xl bg-background border-l border-border h-full overflow-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-5 border-b border-border flex items-start justify-between">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.25em] text-gold-muted">
+              Cotação
+            </div>
+            <h2 className="font-display text-2xl text-text-primary mt-1">{cotacao.id}</h2>
+            <p className="text-xs text-text-secondary mt-1">
+              {new Date(cotacao.criadoEm).toLocaleString("pt-BR")} · Válida até{" "}
+              {new Date(cotacao.validoAte).toLocaleDateString("pt-BR")}
+            </p>
+            <p className="text-[10px] uppercase tracking-wider text-gold-muted mt-1">
+              Status: {STATUS_COTACAO_LABEL[cotacao.status]}
+            </p>
+          </div>
+          <button onClick={onClose} className="text-text-secondary hover:text-gold p-1">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {editavel && (
+            <button
+              onClick={handleEditar}
+              className="w-full rounded-md bg-gold py-3 text-xs font-semibold uppercase tracking-[0.15em] text-background hover:bg-gold-light flex items-center justify-center gap-2"
+            >
+              <Edit className="h-4 w-4" /> Editar Cotação
+            </button>
+          )}
+
+          <section className="rounded-md border border-border overflow-hidden">
+            <div className="grid grid-cols-[1fr_60px_90px_90px] gap-2 px-3 py-2 text-[10px] uppercase tracking-wider text-text-muted bg-surface border-b border-border">
+              <div>Produto</div>
+              <div className="text-right">Qtd</div>
+              <div className="text-right">Unit.</div>
+              <div className="text-right">Subtotal</div>
+            </div>
+            {cotacao.items.map((it) => (
+              <div
+                key={it.sku}
+                className="grid grid-cols-[1fr_60px_90px_90px] gap-2 px-3 py-2 text-xs border-b border-border/40 last:border-b-0"
+              >
+                <div className="text-text-primary truncate">
+                  {it.product.nomeComercial}
+                  <span className="text-text-muted">
+                    {it.product.corNome ? ` · ${it.product.corNome}` : ""}
+                    {it.product.tamanhoNumero ? ` · ${it.product.tamanhoNumero}` : ""}
+                  </span>
+                </div>
+                <div className="text-right text-text-secondary">{it.quantity}</div>
+                <div className="text-right text-text-secondary">
+                  {formatBRL(it.product.precoAtacado)}
+                </div>
+                <div className="text-right text-text-primary">
+                  {formatBRL(it.product.precoAtacado * it.quantity)}
+                </div>
+              </div>
+            ))}
+          </section>
+
+          <section className="rounded-md border border-border bg-surface/40 p-4">
+            <div className="flex justify-between items-baseline">
+              <span className="text-xs uppercase tracking-wider text-gold-muted">
+                Total da cotação
+              </span>
+              <span className="font-display text-2xl text-gold">
+                {formatBRL(cotacao.total)}
+              </span>
+            </div>
+          </section>
+
+          {cotacao.vendedorNome && (
+            <p className="text-xs text-text-muted">
+              Vendedor responsável:{" "}
+              <span className="text-text-secondary">{cotacao.vendedorNome}</span>
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
       <div
         className="w-full max-w-2xl bg-background border-l border-border h-full overflow-auto"
         onClick={(e) => e.stopPropagation()}
