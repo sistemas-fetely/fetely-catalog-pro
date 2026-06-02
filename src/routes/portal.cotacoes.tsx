@@ -190,12 +190,41 @@ function CotacaoDrawer({ cotacao, onClose }: { cotacao: Cotacao; onClose: () => 
             </div>
           </section>
 
-          {cotacao.vendedorNome && (
-            <p className="text-xs text-text-muted">
-              Vendedor responsável:{" "}
-              <span className="text-text-secondary">{cotacao.vendedorNome}</span>
-            </p>
+          {cotacao.meta?.observacoes && (
+            <section className="rounded-md border border-border bg-surface/40 p-4">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
+                Observações
+              </div>
+              <p className="text-xs text-text-secondary whitespace-pre-wrap">
+                {cotacao.meta.observacoes}
+              </p>
+            </section>
           )}
+
+          <section className="rounded-md border border-border bg-surface/40 p-4 text-[11px] space-y-1 text-text-muted">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
+              Histórico
+            </div>
+            <div>Criada em {new Date(cotacao.criadoEm).toLocaleString("pt-BR")}</div>
+            {cotacao.atualizadoEm && cotacao.atualizadoEm !== cotacao.criadoEm && (
+              <div>
+                Última atualização em{" "}
+                {new Date(cotacao.atualizadoEm).toLocaleString("pt-BR")}
+              </div>
+            )}
+            {cotacao.vendedorNome && (
+              <div>
+                Vendedor responsável:{" "}
+                <span className="text-text-secondary">{cotacao.vendedorNome}</span>
+              </div>
+            )}
+            {cotacao.pedidoConvertidoId && (
+              <div>
+                Convertida no pedido{" "}
+                <span className="text-text-secondary">{cotacao.pedidoConvertidoId}</span>
+              </div>
+            )}
+          </section>
         </div>
       </div>
     </div>
