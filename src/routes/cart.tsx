@@ -317,13 +317,16 @@ function CartPage() {
       clienteSnapshot: snapshot,
       condicaoPagamento: commercial.condicao.descricao,
     };
+    const cotacaoItems = [...itensFirmes, ...itensProvisao];
+    const totalCotacao = orderCommercial.totalFinal + totalProvisaoRef;
+
     // Se está editando uma cotação existente, atualiza in-place
     const editandoId = (meta as OrderMeta & { cotacaoOrigemId?: string }).cotacaoOrigemId;
     if (editandoId) {
       const upd = atualizarCotacao(editandoId, {
-        items,
+        items: cotacaoItems,
         meta: metaCompleto,
-        total: orderCommercial.totalFinal,
+        total: totalCotacao,
         commercial: orderCommercial,
       });
       if (upd) {
@@ -338,9 +341,9 @@ function CartPage() {
       }
     }
     const cot = criarCotacao({
-      items,
+      items: cotacaoItems,
       meta: metaCompleto,
-      total: orderCommercial.totalFinal,
+      total: totalCotacao,
       commercial: orderCommercial,
     });
 
