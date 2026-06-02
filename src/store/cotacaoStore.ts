@@ -194,10 +194,11 @@ export const useCotacao = create<CotacaoState>()((set, get) => ({
     }
     const { data, error } = await supabase
       .from("cotacoes")
-      .update(patch)
+      .update(patch as never)
       .eq("id", id)
       .select("*")
       .maybeSingle();
+
     if (error) {
       console.error("[cotacoes] atualizarStatus", error);
       return;
