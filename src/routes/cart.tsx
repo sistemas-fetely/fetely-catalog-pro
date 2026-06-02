@@ -184,7 +184,35 @@ function CartPage() {
     }
   }, [meta.clienteId, meta.clienteSnapshot]);
 
+  // V16 — Auto-popula meta com o cliente do portal logado
+  useEffect(() => {
+    if (!isClientePortal) return;
+    const cid = profile?.cliente_id;
+    if (!cid) return;
+    if (meta.clienteId === cid) return;
+    const c = clientesAll.find((x) => x.id === cid);
+    if (!c) return;
+    setMeta({
+      clienteId: c.id,
+      cliente: c.razaoSocial,
+      nomeFantasia: c.nomeFantasia,
+      cnpj: c.cnpjFormatado,
+      email: c.contatoEmail,
+      telefone: c.contatoTelefone,
+      logradouro: c.logradouro,
+      numero: c.numero,
+      complemento: c.complemento,
+      bairro: c.bairro,
+      municipio: c.cidade,
+      uf: c.estado,
+      cep: c.cep,
+      situacao: c.situacaoCadastral,
+      clienteSnapshot: buildClienteSnapshot(c),
+    });
+  }, [isClientePortal, profile?.cliente_id, clientesAll, meta.clienteId, setMeta]);
+
   const executeConfirm = async () => {
+
     if (salvandoPedido) return;
     const snapshot = resolveClienteSnapshot();
     if (!snapshot) return alert("Selecione um cliente cadastrado.");
