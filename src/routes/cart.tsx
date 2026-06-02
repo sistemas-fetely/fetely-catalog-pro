@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/store/authStore";
-import { useClientes } from "@/store/clienteStore";
+import { useClientes, rowToCliente } from "@/store/clienteStore";
+import { supabase } from "@/integrations/supabase/client";
 
 import { toast } from "sonner";
 import { QuantityInput } from "@/components/ui/QuantityInput";
