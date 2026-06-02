@@ -30,7 +30,7 @@ interface ClienteState {
 
 // --- Mappers TS <-> Banco ----------------------------------------------------
 
-function rowToCliente(row: Record<string, unknown>): Cliente {
+export function rowToCliente(row: Record<string, unknown>): Cliente {
   return {
     id: row.id as string,
     criadoEm: row.criado_em as string,

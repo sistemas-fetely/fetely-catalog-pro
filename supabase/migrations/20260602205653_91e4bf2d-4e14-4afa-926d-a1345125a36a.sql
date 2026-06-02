@@ -1,0 +1,1 @@
+CREATE POLICY "cliente vê seu próprio cadastro" ON public.clientes FOR SELECT TO authenticated USING (id = (SELECT cliente_id FROM public.profiles WHERE id = auth.uid()));
