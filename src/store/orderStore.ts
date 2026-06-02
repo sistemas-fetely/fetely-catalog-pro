@@ -1,9 +1,18 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { CartItem, OrderCommercial, OrderMeta, Product, SavedOrder } from "@/types";
+import type {
+  CartItem,
+  OrderCommercial,
+  OrderMeta,
+  PedidoHistoricoEvento,
+  Product,
+  SavedOrder,
+  StatusPedido,
+} from "@/types";
 import { useAuth } from "@/store/authStore";
 import { useClientes } from "@/store/clienteStore";
 import { supabase } from "@/integrations/supabase/client";
+
 
 const noopStorage: Storage = {
   length: 0,
