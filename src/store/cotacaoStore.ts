@@ -155,10 +155,10 @@ export const useCotacao = create<CotacaoState>()((set, get) => ({
     const { data, error } = await supabase
       .from("cotacoes")
       .update({
-        items: input.items as unknown,
-        meta: input.meta as unknown,
+        items: input.items as never,
+        meta: input.meta as never,
         total: input.total,
-        commercial: (input.commercial ?? null) as unknown,
+        commercial: (input.commercial ?? null) as never,
         atualizado_em: now,
         valido_ate: validoAte,
         status: novoStatus,
@@ -166,6 +166,7 @@ export const useCotacao = create<CotacaoState>()((set, get) => ({
       .eq("id", id)
       .select("*")
       .maybeSingle();
+
     if (error) {
       console.error("[cotacoes] atualizar", error);
       return null;
