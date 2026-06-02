@@ -127,9 +127,9 @@ export const useCotacao = create<CotacaoState>()((set, get) => ({
       valido_ate: validoAte,
       status: "aberta" as StatusCotacao,
       total: input.total,
-      items: input.items as unknown,
-      meta: input.meta as unknown,
-      commercial: (input.commercial ?? null) as unknown,
+      items: input.items as never,
+      meta: input.meta as never,
+      commercial: (input.commercial ?? null) as never,
     };
 
     const { data, error } = await supabase
@@ -137,6 +137,7 @@ export const useCotacao = create<CotacaoState>()((set, get) => ({
       .insert(row)
       .select("*")
       .single();
+
     if (error || !data) throw new Error(error?.message ?? "Erro ao salvar cotação");
 
     const cot = fromRow(data as CotacaoRow);
