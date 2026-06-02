@@ -80,6 +80,20 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
     reprovadoMotivo: (row.reprovado_motivo as string | null) ?? null,
     reprovadoPorId: (row.reprovado_por_id as string | null) ?? null,
     reprovadoPorNome: (row.reprovado_por_nome as string | null) ?? null,
+    origemPerfil: (row.origem_perfil as SavedOrder["origemPerfil"]) ?? "vendedor",
+    statusPedido: (row.status_pedido as StatusPedido) ?? "confirmado",
+    aprovadoPorId: (row.aprovado_por_id as string | null) ?? null,
+    aprovadoPorNome: (row.aprovado_por_nome as string | null) ?? null,
+    aprovadoEm: (row.aprovado_em as string | null) ?? null,
+    aprovacaoObs: (row.aprovacao_obs as string | null) ?? null,
+    recusadoPorId: (row.recusado_por_id as string | null) ?? null,
+    recusadoPorNome: (row.recusado_por_nome as string | null) ?? null,
+    recusadoMotivoTexto: (row.recusado_motivo as string | null) ?? null,
+    recusadoObs: (row.recusado_obs as string | null) ?? null,
+    recusadoEmAprovacao: (row.recusado_em as string | null) ?? null,
+    temSolicitacaoAjuste: Boolean(row.tem_solicitacao_ajuste ?? false),
+    ajusteMensagem: (row.ajuste_mensagem as string | null) ?? null,
+    historico: (row.historico as PedidoHistoricoEvento[] | null) ?? [],
   };
 }
 
@@ -110,8 +124,12 @@ export function orderToRow(o: SavedOrder): Record<string, unknown> {
     total_unidades: totalUnidades,
     total_skus: totalSkus,
     provisao_origem_id: metaAny.provisaoOrigemId ?? null,
+    origem_perfil: o.origemPerfil ?? "vendedor",
+    status_pedido: o.statusPedido ?? "confirmado",
+    historico: o.historico ?? [],
   };
 }
+
 
 export function orderItemsToRows(o: SavedOrder): Record<string, unknown>[] {
   return o.items.map((it, idx) => ({
