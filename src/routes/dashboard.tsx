@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/store/authStore";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
+import { AnalyticsDetailDrawer } from "@/components/dashboard/AnalyticsDetailDrawer";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -39,6 +40,26 @@ interface OrderRow {
   forma_pagamento: string | null;
   commercial: { faixaNome?: string; descontoMasterPct?: number } | null;
 }
+
+interface DashItem {
+  sku: string;
+  quantity: number;
+  subtotal_bruto: number;
+  product_snapshot: { nomeComercial?: string; colecao?: string; corNome?: string } | null;
+  orders: {
+    id: string;
+    created_at: string;
+    vendedor_id: string;
+    vendedor_nome: string;
+    cliente_snapshot: { razaoSocial?: string; nomeFantasia?: string } | null;
+    total: number;
+  };
+}
+
+type DetailScope =
+  | { kind: "produto"; key: string; nome: string }
+  | { kind: "colecao"; key: string; nome: string }
+  | null;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Period helpers
@@ -89,6 +110,7 @@ function DashboardPage() {
       navigate({ to: "/portal" });
     }
   }, [loading, session, isCliente, isAdminOrMaster, navigate]);
+  const [detail, setDetail] = useState<DetailScope>(null);
 
   const [periodo, setPeriodo] = useState<Periodo>("mes_atual");
   const [rankingMetric, setRankingMetric] = useState<"valor" | "quantidade">("valor");
@@ -175,18 +197,13 @@ function DashboardPage() {
     queryFn: async () => {
       let q = supabase
         .from("order_items")
-        .select("sku, quantity, subtotal_bruto, product_snapshot, orders!inner(created_at, vendedor_id)")
+        .select("sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_nome, cliente_snapshot, total)")
         .gte("orders.created_at", range.from.toISOString())
         .lt("orders.created_at", range.to.toISOString());
       if (vendedorFiltro !== "todos") q = q.eq("orders.vendedor_id", vendedorFiltro);
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []) as Array<{
-        sku: string;
-        quantity: number;
-        subtotal_bruto: number;
-        product_snapshot: { nomeComercial?: string; colecao?: string; corNome?: string } | null;
-      }>;
+      return (data ?? []) as Array<DashItem>;
     },
   });
 
@@ -730,6 +747,7 @@ function DashboardPage() {
               metric={rankingMetric}
               loading={loadingItems}
               emptyLabel="Nenhum produto neste período."
+              onSelect={(r) => setDetail({ kind: "produto", key: r.key, nome: r.nome })}
             />
             <RankingList
               icon={<Layers className="h-4 w-4 text-gold" />}
@@ -738,6 +756,7 @@ function DashboardPage() {
               metric={rankingMetric}
               loading={loadingItems}
               emptyLabel="Nenhuma coleção neste período."
+              onSelect={(r) => setDetail({ kind: "colecao", key: r.key, nome: r.nome })}
             />
           </div>
         </section>
@@ -835,6 +854,15 @@ function DashboardPage() {
           </>
         )}
       </section>
+
+      <AnalyticsDetailDrawer
+        open={!!detail}
+        onClose={() => setDetail(null)}
+        scope={detail}
+        items={items}
+        periodoLabel={range.label}
+        showVendedores={isAdminOrMaster}
+      />
     </main>
   );
 }
@@ -887,7 +915,7 @@ function KpiCard({
 // ──────────────────────────────────────────────────────────────────────────
 
 function RankingList({
-  icon, title, rows, metric, loading, emptyLabel,
+  icon, title, rows, metric, loading, emptyLabel, onSelect,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -895,6 +923,7 @@ function RankingList({
   metric: "valor" | "quantidade";
   loading?: boolean;
   emptyLabel: string;
+  onSelect?: (r: { key: string; nome: string }) => void;
 }) {
   const max =
     rows.length > 0
@@ -920,7 +949,14 @@ function RankingList({
             const v = metric === "valor" ? r.valor : r.quantidade;
             const pct = (v / max) * 100;
             return (
-              <li key={r.key} className="px-4 sm:px-5 py-3 flex items-center gap-3 sm:gap-4">
+              <li
+                key={r.key}
+                onClick={() => onSelect?.({ key: r.key, nome: r.nome })}
+                className={
+                  "px-4 sm:px-5 py-3 flex items-center gap-3 sm:gap-4 " +
+                  (onSelect ? "cursor-pointer hover:bg-surface-2/60 transition" : "")
+                }
+              >
                 <div className="w-6 text-center font-display text-base text-gold shrink-0">
                   {i + 1}
                 </div>
