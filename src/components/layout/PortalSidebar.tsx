@@ -22,6 +22,7 @@ const items: Item[] = [
 
 export function PortalSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const cartCount = useOrder((s) => s.items.reduce((acc, i) => acc + i.quantity, 0));
   return (
     <aside className="hidden md:flex flex-col w-64 shrink-0 border-r border-border bg-surface/40 min-h-[calc(100vh-4rem)] py-6 px-3">
       <div className="px-3 mb-6">
@@ -35,6 +36,7 @@ export function PortalSidebar({ onNavigate }: { onNavigate?: () => void }) {
           const active = it.exact
             ? pathname === it.to
             : pathname === it.to || pathname.startsWith(it.to + "/");
+          const badge = it.badgeKey === "cart" && cartCount > 0 ? cartCount : null;
           return (
             <span key={it.to}>
               {it.divider && (
@@ -50,7 +52,12 @@ export function PortalSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 }`}
               >
                 <it.Icon className="h-4 w-4" />
-                <span>{it.label}</span>
+                <span className="flex-1">{it.label}</span>
+                {badge !== null && (
+                  <span className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-gold text-background text-[10px] font-semibold">
+                    {badge}
+                  </span>
+                )}
               </Link>
             </span>
           );
