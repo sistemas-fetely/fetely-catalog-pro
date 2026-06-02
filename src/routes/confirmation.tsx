@@ -128,7 +128,9 @@ function formatOrderText(order: SavedOrder): string {
 function Confirmation() {
   const { id, provisaoId } = Route.useSearch();
   const history = useVisibleOrders({ includeReprovados: true });
+  const ordersHidratado = useOrder((s) => s.hidratado);
   const provisoes = useProvisao((s) => s.provisoes);
+  const provisoesHidratado = useProvisao((s) => s.hidratado);
   const order = useMemo(() => history.find((o) => o.id === id) ?? history[0], [history, id]);
   const provisao = useMemo(
     () => (provisaoId ? provisoes.find((p) => p.id === provisaoId) : undefined),
@@ -163,7 +165,21 @@ function Confirmation() {
     return () => window.removeEventListener("afterprint", cleanup);
   }, []);
 
+  // Aguarda a hidratação dos stores antes de declarar "não encontrado".
+  // Sem isto o usuário via o erro no primeiro clique e precisava retentar.
+  const aguardandoHidratacao = !ordersHidratado || (!!provisaoId && !provisoesHidratado);
+
   if (!order) {
+    if (aguardandoHidratacao) {
+      return (
+        <main className="mx-auto max-w-2xl px-6 py-24 text-center">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-gold/30 border-t-gold animate-spin" />
+          <p className="mt-4 text-sm uppercase tracking-wider text-text-muted">
+            Carregando pedido…
+          </p>
+        </main>
+      );
+    }
     return (
       <main className="mx-auto max-w-2xl px-6 py-24 text-center">
         <h1 className="font-display text-4xl">Nenhum pedido encontrado</h1>
