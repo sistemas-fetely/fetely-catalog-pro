@@ -1,7 +1,8 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import type { SavedOrder } from "@/types";
+import type { CartItem, Product, SavedOrder } from "@/types";
 import type { Cotacao } from "@/types/cotacao";
+import type { ProvisaoFutura } from "@/types/provisao";
 
 const COLORS = {
   black: "#1a1a1a",
