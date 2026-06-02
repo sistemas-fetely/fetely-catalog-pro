@@ -1,15 +1,18 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useAuth } from "@/store/authStore";
 import { useCotacao } from "@/store/cotacaoStore";
+import { useOrder } from "@/store/orderStore";
 import { formatBRL } from "@/lib/format";
 import { STATUS_COTACAO_LABEL } from "@/types/cotacao";
 import type { Cotacao } from "@/types/cotacao";
-import { X } from "lucide-react";
+import { Edit, X } from "lucide-react";
 
 export const Route = createFileRoute("/portal/cotacoes")({
   component: PortalCotacoes,
 });
+
 
 function PortalCotacoes() {
   const clienteId = useAuth((s) => s.profile?.cliente_id ?? null);
