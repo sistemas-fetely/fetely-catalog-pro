@@ -40,6 +40,26 @@ interface OrderRow {
   commercial: { faixaNome?: string; descontoMasterPct?: number } | null;
 }
 
+interface DashItem {
+  sku: string;
+  quantity: number;
+  subtotal_bruto: number;
+  product_snapshot: { nomeComercial?: string; colecao?: string; corNome?: string } | null;
+  orders: {
+    id: string;
+    created_at: string;
+    vendedor_id: string;
+    vendedor_nome: string;
+    cliente_snapshot: { razaoSocial?: string; nomeFantasia?: string } | null;
+    total: number;
+  };
+}
+
+type DetailScope =
+  | { kind: "produto"; key: string; nome: string }
+  | { kind: "colecao"; key: string; nome: string }
+  | null;
+
 // ──────────────────────────────────────────────────────────────────────────
 // Period helpers
 // ──────────────────────────────────────────────────────────────────────────
