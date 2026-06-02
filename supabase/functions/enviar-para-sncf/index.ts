@@ -223,6 +223,8 @@ Deno.serve(async (req) => {
       tags: Array.isArray(c.tags) ? c.tags : null,
       observacao: c.observacoes ?? null,
       premissas: c.premissas_comerciais ?? null,
+      valor_frete: commercial?.freteValor ?? 0,
+      frete_tipo: commercial?.frete ?? null,
     };
 
     const enviarPayload = (payload: Record<string, unknown>) => fetch(SNCF_URL, {
