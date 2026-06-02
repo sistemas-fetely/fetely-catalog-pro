@@ -235,12 +235,56 @@ function OrderDetailDrawer({ order, onClose }: { order: SavedOrder; onClose: () 
             </section>
           )}
 
-          {order.vendedorNome && (
-            <p className="text-xs text-text-muted">
-              Vendedor responsável:{" "}
-              <span className="text-text-secondary">{order.vendedorNome}</span>
-            </p>
+          {order.meta.observacoes && (
+            <section className="rounded-md border border-border bg-surface/40 p-4 text-xs">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
+                Observações
+              </div>
+              <p className="text-text-secondary whitespace-pre-wrap">
+                {order.meta.observacoes}
+              </p>
+            </section>
           )}
+
+          <section className="rounded-md border border-border bg-surface/40 p-4 text-[11px] space-y-1 text-text-muted">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
+              Histórico
+            </div>
+            <div>Criado em {new Date(order.createdAt).toLocaleString("pt-BR")}</div>
+            {order.vendedorNome && (
+              <div>
+                Vendedor responsável:{" "}
+                <span className="text-text-secondary">{order.vendedorNome}</span>
+              </div>
+            )}
+            {order.aprovadoEm && (
+              <div>
+                Aprovado em {new Date(order.aprovadoEm).toLocaleString("pt-BR")}
+                {order.aprovadoPorNome ? ` por ${order.aprovadoPorNome}` : ""}
+              </div>
+            )}
+            {order.recusadoEmAprovacao && (
+              <div className="text-stock-out">
+                Recusado em{" "}
+                {new Date(order.recusadoEmAprovacao).toLocaleString("pt-BR")}
+                {order.recusadoPorNome ? ` por ${order.recusadoPorNome}` : ""}
+                {order.recusadoMotivoTexto ? ` — ${order.recusadoMotivoTexto}` : ""}
+              </div>
+            )}
+            {order.ajusteMensagem && (
+              <div className="text-amber-400">
+                Ajuste solicitado: {order.ajusteMensagem}
+              </div>
+            )}
+            {(order.historico ?? []).map((h, i) => (
+              <div key={i}>
+                {new Date(h.em).toLocaleString("pt-BR")} ·{" "}
+                <span className="text-text-secondary">{h.acao}</span>
+                {h.porNome ? ` — ${h.porNome}` : ""}
+                {h.obs ? ` · ${h.obs}` : ""}
+              </div>
+            ))}
+          </section>
         </div>
       </div>
     </div>
