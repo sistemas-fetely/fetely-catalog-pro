@@ -395,6 +395,63 @@ export type Database = {
         }
         Relationships: []
       }
+      cotacoes: {
+        Row: {
+          atualizado_em: string
+          cliente_id: string | null
+          commercial: Json | null
+          criado_em: string
+          id: string
+          items: Json
+          meta: Json
+          motivo_perda: string | null
+          motivo_perda_obs: string | null
+          pedido_convertido_id: string | null
+          status: string
+          total: number
+          valido_ate: string
+          vendedor_id: string
+          vendedor_login: string | null
+          vendedor_nome: string
+        }
+        Insert: {
+          atualizado_em?: string
+          cliente_id?: string | null
+          commercial?: Json | null
+          criado_em?: string
+          id: string
+          items?: Json
+          meta?: Json
+          motivo_perda?: string | null
+          motivo_perda_obs?: string | null
+          pedido_convertido_id?: string | null
+          status?: string
+          total?: number
+          valido_ate: string
+          vendedor_id: string
+          vendedor_login?: string | null
+          vendedor_nome: string
+        }
+        Update: {
+          atualizado_em?: string
+          cliente_id?: string | null
+          commercial?: Json | null
+          criado_em?: string
+          id?: string
+          items?: Json
+          meta?: Json
+          motivo_perda?: string | null
+          motivo_perda_obs?: string | null
+          pedido_convertido_id?: string | null
+          status?: string
+          total?: number
+          valido_ate?: string
+          vendedor_id?: string
+          vendedor_login?: string | null
+          vendedor_nome?: string
+        }
+        Relationships: []
+      }
       faixas: {
         Row: {
           ativa: boolean
@@ -1405,6 +1462,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_master: { Args: { _user_id: string }; Returns: boolean }
+      next_cotacao_id: { Args: never; Returns: string }
       next_order_id: { Args: never; Returns: string }
     }
     Enums: {
