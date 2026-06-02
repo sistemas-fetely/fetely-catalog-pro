@@ -250,7 +250,23 @@ function CartPage() {
     setSalvandoPedido(true);
     try {
       setMeta({ condicaoPagamento: commercial.condicao.descricao });
+
+      // V16 — Pedido do portal do cliente sempre entra como pendente_aprovacao
+      if (isClientePortal) {
+        const todosItens = [...itensFirmes, ...itensProvisao];
+        const order = await saveOrderAsCliente(orderCommercial, todosItens);
+        clearCart();
+        resetNegotiation();
+        setShowFinalConfirm(false);
+        toast.success("Pedido enviado para análise", {
+          description: `Acompanhe o status em Meus Pedidos.`,
+        });
+        navigate({ to: "/portal/pedidos" });
+        return;
+      }
+
       let provisaoId: string | undefined;
+
       if (itensProvisao.length > 0) {
         const prov = await createProvisao({
           clienteId: meta.clienteId!,
