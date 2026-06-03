@@ -27,6 +27,7 @@ import { Route as CommercialRouteImport } from './routes/commercial'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CartRouteImport } from './routes/cart'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as StandLeadsRouteImport } from './routes/stand.leads'
@@ -131,6 +132,11 @@ const CartRoute = CartRouteImport.update({
   path: '/cart',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -200,6 +206,7 @@ const CatalogCategoriaCategoriaRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
   '/catalog': typeof CatalogRouteWithChildren
   '/clientes': typeof ClientesRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
   '/catalog': typeof CatalogRouteWithChildren
   '/clientes': typeof ClientesRoute
@@ -266,6 +274,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
   '/catalog': typeof CatalogRouteWithChildren
   '/clientes': typeof ClientesRoute
@@ -301,6 +310,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/analytics'
     | '/cart'
     | '/catalog'
     | '/clientes'
@@ -334,6 +344,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/analytics'
     | '/cart'
     | '/catalog'
     | '/clientes'
@@ -366,6 +377,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/analytics'
     | '/cart'
     | '/catalog'
     | '/clientes'
@@ -400,6 +412,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnalyticsRoute: typeof AnalyticsRoute
   CartRoute: typeof CartRoute
   CatalogRoute: typeof CatalogRouteWithChildren
   ClientesRoute: typeof ClientesRoute
@@ -553,6 +566,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -689,6 +709,7 @@ const StandRouteWithChildren = StandRoute._addFileChildren(StandRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnalyticsRoute: AnalyticsRoute,
   CartRoute: CartRoute,
   CatalogRoute: CatalogRouteWithChildren,
   ClientesRoute: ClientesRoute,
