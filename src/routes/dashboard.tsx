@@ -709,35 +709,44 @@ function DashboardPage() {
       {/* Ranking de produtos e coleções */}
       {(rankingProdutos.length > 0 || rankingColecoes.length > 0 || loadingItems) && (
         <section className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <h2 className="font-display text-lg sm:text-xl">Top produtos & coleções</h2>
-            <div className="inline-flex rounded-md border border-border bg-surface-2 p-0.5 text-[10px] uppercase tracking-wider">
-              <button
-                type="button"
-                onClick={() => setRankingMetric("valor")}
-                className={
-                  "px-3 py-1.5 rounded " +
-                  (rankingMetric === "valor"
-                    ? "bg-gold text-background"
-                    : "text-text-secondary hover:text-text-primary")
-                }
+            <div className="flex items-center gap-2">
+              <Link
+                to="/analytics"
+                className="text-[10px] sm:text-xs uppercase tracking-wider text-gold hover:text-gold-light"
               >
-                Por valor
-              </button>
-              <button
-                type="button"
-                onClick={() => setRankingMetric("quantidade")}
-                className={
-                  "px-3 py-1.5 rounded " +
-                  (rankingMetric === "quantidade"
-                    ? "bg-gold text-background"
-                    : "text-text-secondary hover:text-text-primary")
-                }
-              >
-                Por quantidade
-              </button>
+                Ver análise completa →
+              </Link>
+              <div className="inline-flex rounded-md border border-border bg-surface-2 p-0.5 text-[10px] uppercase tracking-wider">
+                <button
+                  type="button"
+                  onClick={() => setRankingMetric("valor")}
+                  className={
+                    "px-3 py-1.5 rounded " +
+                    (rankingMetric === "valor"
+                      ? "bg-gold text-background"
+                      : "text-text-secondary hover:text-text-primary")
+                  }
+                >
+                  Por valor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRankingMetric("quantidade")}
+                  className={
+                    "px-3 py-1.5 rounded " +
+                    (rankingMetric === "quantidade"
+                      ? "bg-gold text-background"
+                      : "text-text-secondary hover:text-text-primary")
+                  }
+                >
+                  Por quantidade
+                </button>
+              </div>
             </div>
           </div>
+
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
             <RankingList
