@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
     const { data: pedido, error: errPedido } = await supabase
       .from("orders")
       .select(`
-        id, created_at, cliente_id, cliente_snapshot, commercial, forma_pagamento,
+        id, created_at, cliente_id, cliente_snapshot, commercial, meta, forma_pagamento,
         valor_bruto, valor_liquido, total,
         vendedor_nome,
         sncf_enviado_em, sncf_tentativas,
@@ -222,6 +222,7 @@ Deno.serve(async (req) => {
       canal_fop: c.canal ?? null,
       tags: Array.isArray(c.tags) ? c.tags : null,
       observacao: c.observacoes ?? null,
+      observacao_pedido: (pedido.meta as any)?.observacoes ?? null,
       premissas: c.premissas_comerciais ?? null,
       valor_frete: commercial?.freteValor ?? 0,
       frete_tipo: commercial?.frete ?? null,
