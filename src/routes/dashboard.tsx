@@ -780,9 +780,10 @@ function DashboardPage() {
             {isAdminOrMaster ? `Todos os pedidos` : `Meus pedidos`}
             <span className="text-text-muted text-sm ml-2">({orders.length})</span>
           </h2>
-          <Link to="/orders" className="text-[10px] sm:text-xs uppercase tracking-wider text-gold hover:text-gold-light">
-            Ver todos →
+          <Link to="/analytics" className="text-[10px] sm:text-xs uppercase tracking-wider text-gold hover:text-gold-light">
+            Ver análise completa →
           </Link>
+
         </header>
 
         {loadingOrders ? (
