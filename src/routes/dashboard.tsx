@@ -773,97 +773,39 @@ function DashboardPage() {
 
 
 
-      {/* Tabela de pedidos */}
-      <section className="rounded-lg gold-border bg-surface overflow-hidden">
-        <header className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-border bg-surface-2">
-          <h2 className="font-display text-lg sm:text-xl">
-            {isAdminOrMaster ? `Todos os pedidos` : `Meus pedidos`}
-            <span className="text-text-muted text-sm ml-2">({orders.length})</span>
-          </h2>
-          <Link to="/analytics" className="text-[10px] sm:text-xs uppercase tracking-wider text-gold hover:text-gold-light">
-            Ver análise completa →
-          </Link>
-
-        </header>
-
-        {loadingOrders ? (
-          <div className="p-8 text-center text-sm text-text-muted">Carregando pedidos...</div>
-        ) : orders.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-sm text-text-secondary">Nenhum pedido neste período.</p>
+      {/* Relatórios completos — substitui a tabela de pedidos */}
+      <section className="rounded-lg gold-border bg-gradient-to-br from-gold/10 via-surface to-surface overflow-hidden">
+        <div className="p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center gap-5">
+          <div className="flex-1">
+            <div className="text-[10px] uppercase tracking-[0.3em] text-gold mb-1">Relatórios</div>
+            <h2 className="font-display text-2xl sm:text-3xl">Análise completa de vendas</h2>
+            <p className="text-xs sm:text-sm text-text-secondary mt-1">
+              Relatórios detalhados por produto, coleção, categoria e financeiro · filtros por período, vendedor e tipo · exportação CSV.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="text-center px-3">
+              <div className="text-[10px] uppercase tracking-wider text-text-muted">Faturamento</div>
+              <div className="font-display text-xl text-gold mt-0.5">{formatBRL(faturamento)}</div>
+            </div>
+            <div className="text-center px-3 border-l border-border/60">
+              <div className="text-[10px] uppercase tracking-wider text-text-muted">Pedidos</div>
+              <div className="font-display text-xl text-text-primary mt-0.5">{totalPedidos}</div>
+            </div>
+            <div className="text-center px-3 border-l border-border/60">
+              <div className="text-[10px] uppercase tracking-wider text-text-muted">Ticket médio</div>
+              <div className="font-display text-xl text-text-primary mt-0.5">{formatBRL(ticketMedio)}</div>
+            </div>
             <Link
-              to="/new-order"
-              className="inline-flex mt-4 items-center gap-2 rounded-md bg-gold px-4 py-2 text-[11px] uppercase tracking-[0.15em] text-background hover:bg-gold-light"
+              to="/relatorios"
+              className="inline-flex items-center gap-2 rounded-md bg-gold px-5 py-3 text-[11px] uppercase tracking-[0.15em] text-background hover:bg-gold-light"
             >
-              Novo pedido
+              <LineChartIcon className="h-4 w-4" /> Ver relatórios completos →
             </Link>
           </div>
-        ) : (
-          <>
-            {/* Mobile — cards */}
-            <ul className="sm:hidden divide-y divide-border/50">
-              {orders.slice(0, 12).map((o) => (
-                <li key={o.id} className="px-4 py-3">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-xs text-text-muted">
-                      {new Date(o.created_at).toLocaleDateString("pt-BR")}
-                    </span>
-                    <span className="text-gold font-medium text-sm">{formatBRL(Number(o.total))}</span>
-                  </div>
-                  <div className="text-sm text-text-primary mt-1 truncate">
-                    {o.cliente_snapshot?.nomeFantasia || o.cliente_snapshot?.razaoSocial || "—"}
-                  </div>
-                  <div className="text-[10px] text-text-muted mt-0.5 flex items-center gap-2">
-                    {isAdminOrMaster && <span>{o.vendedor_nome}</span>}
-                    {isAdminOrMaster && <span>·</span>}
-                    <span>{o.commercial?.faixaNome ?? "—"}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-            {/* Desktop/tablet — table */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
-                    <th className="px-5 py-2.5 text-left font-medium">Data</th>
-                    {isAdminOrMaster && (
-                      <th className="px-5 py-2.5 text-left font-medium">Vendedor</th>
-                    )}
-                    <th className="px-5 py-2.5 text-left font-medium">Cliente</th>
-                    <th className="px-5 py-2.5 text-left font-medium">Faixa</th>
-                    <th className="px-5 py-2.5 text-right font-medium">Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.slice(0, 15).map((o) => (
-                    <tr key={o.id} className="border-b border-border/40 hover:bg-surface-2/40">
-                      <td className="px-5 py-3 text-text-secondary whitespace-nowrap">
-                        {new Date(o.created_at).toLocaleDateString("pt-BR")}
-                      </td>
-                      {isAdminOrMaster && (
-                        <td className="px-5 py-3 text-text-primary whitespace-nowrap">
-                          {o.vendedor_nome}
-                        </td>
-                      )}
-                      <td className="px-5 py-3 text-text-primary truncate max-w-[260px]">
-                        {o.cliente_snapshot?.nomeFantasia || o.cliente_snapshot?.razaoSocial || "—"}
-                      </td>
-                      <td className="px-5 py-3 text-text-secondary whitespace-nowrap">
-                        {o.commercial?.faixaNome ?? "—"}
-                      </td>
-                      <td className="px-5 py-3 text-right text-gold font-medium whitespace-nowrap">
-                        {formatBRL(Number(o.total))}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+        </div>
       </section>
+
 
       <AnalyticsDetailDrawer
         open={!!detail}

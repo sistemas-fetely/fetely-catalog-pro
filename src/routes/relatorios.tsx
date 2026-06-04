@@ -1,0 +1,1095 @@
+import { Fragment } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  ArrowLeft, Download, Printer, FileBarChart, Boxes, Layers, Wallet, Filter,
+} from "lucide-react";
+import {
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
+  CartesianGrid, PieChart, Pie, Cell, Legend,
+} from "recharts";
+import { useAuth } from "@/store/authStore";
+import { supabase } from "@/integrations/supabase/client";
+import { formatBRL } from "@/lib/format";
+
+export const Route = createFileRoute("/relatorios")({
+  head: () => ({
+    meta: [
+      { title: "Relatórios — Fetély" },
+      { name: "description", content: "Relatórios analíticos detalhados de vendas." },
+    ],
+  }),
+  component: RelatoriosPage,
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Types
+// ────────────────────────────────────────────────────────────────────────────
+
+type PeriodoQuick = "hoje" | "semana" | "mes" | "trimestre" | "semestre" | "ano" | "personalizado";
+type TipoVendFiltro = "todos" | "interno" | "rep";
+type TabKey = "geral" | "produto" | "colecao" | "financeiro";
+
+interface OrderRow {
+  id: string;
+  created_at: string;
+  vendedor_id: string;
+  vendedor_nome: string;
+  vendedor_tipo: string | null;
+  cliente_snapshot: { razaoSocial?: string; nomeFantasia?: string; cnpj?: string } | null;
+  total: number;
+  total_unidades: number;
+  total_skus: number;
+  forma_pagamento: string | null;
+  frete: string | null;
+  commercial: Commercial | null;
+}
+
+interface Commercial {
+  bruto?: number;
+  totalFinal?: number;
+  faixaNome?: string;
+  descontoMasterPct?: number;
+  descontoMasterValor?: number;
+  descontoCelebraValor?: number;
+  bonusPixValor?: number;
+  negociacao?: boolean;
+  condicaoDescricao?: string;
+  frete?: string;
+}
+
+interface ItemRow {
+  sku: string;
+  quantity: number;
+  subtotal_bruto: number;
+  product_snapshot: {
+    nomeComercial?: string;
+    colecao?: string;
+    grupo?: string;
+    categoria?: string;
+    corNome?: string;
+    tamanhoNumero?: string;
+    precoAtacado?: number;
+  } | null;
+  orders: { id: string; created_at: string; vendedor_id: string; total: number };
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Period helpers
+// ────────────────────────────────────────────────────────────────────────────
+
+function rangeFor(p: PeriodoQuick, customFrom?: string, customTo?: string): { from: Date; to: Date; label: string } {
+  const now = new Date();
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+
+  if (p === "hoje") return { from: startOfDay(now), to: endOfDay(now), label: "Hoje" };
+  if (p === "semana") {
+    const day = now.getDay();
+    const from = new Date(now); from.setDate(now.getDate() - day);
+    return { from: startOfDay(from), to: endOfDay(now), label: "Semana" };
+  }
+  if (p === "mes") {
+    return {
+      from: new Date(now.getFullYear(), now.getMonth(), 1),
+      to: new Date(now.getFullYear(), now.getMonth() + 1, 1),
+      label: "Mês atual",
+    };
+  }
+  if (p === "trimestre") {
+    const q = Math.floor(now.getMonth() / 3);
+    return {
+      from: new Date(now.getFullYear(), q * 3, 1),
+      to: new Date(now.getFullYear(), q * 3 + 3, 1),
+      label: "Trimestre",
+    };
+  }
+  if (p === "semestre") {
+    const s = now.getMonth() < 6 ? 0 : 6;
+    return {
+      from: new Date(now.getFullYear(), s, 1),
+      to: new Date(now.getFullYear(), s + 6, 1),
+      label: "Semestre",
+    };
+  }
+  if (p === "ano") {
+    return {
+      from: new Date(now.getFullYear(), 0, 1),
+      to: new Date(now.getFullYear() + 1, 0, 1),
+      label: "Ano",
+    };
+  }
+  // personalizado
+  const f = customFrom ? new Date(customFrom + "T00:00:00") : startOfDay(now);
+  const t = customTo ? new Date(customTo + "T23:59:59") : endOfDay(now);
+  return { from: f, to: t, label: "Personalizado" };
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// CSV helper
+// ────────────────────────────────────────────────────────────────────────────
+
+function downloadCSV(filename: string, rows: Array<Record<string, string | number>>) {
+  if (!rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const escape = (v: string | number) => {
+    const s = String(v ?? "");
+    return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = [
+    headers.join(";"),
+    ...rows.map((r) => headers.map((h) => escape(r[h])).join(";")),
+  ].join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function periodSuffix(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Page
+// ────────────────────────────────────────────────────────────────────────────
+
+const GOLD = "#C9A84C";
+const PIE_COLORS = ["#C9A84C", "#8B7B3D", "#5C5028", "#3F371C", "#E8DBA8", "#A89048"];
+
+function RelatoriosPage() {
+  const session = useAuth((s) => s.session);
+  const loading = useAuth((s) => s.loading);
+  const roles = useAuth((s) => s.roles);
+  const isAdminOrMaster = roles.includes("admin") || roles.includes("master");
+  const isCliente = roles.includes("cliente");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!session) { navigate({ to: "/login" }); return; }
+    if (isCliente && !isAdminOrMaster) navigate({ to: "/portal" });
+  }, [loading, session, isCliente, isAdminOrMaster, navigate]);
+
+  const [periodo, setPeriodo] = useState<PeriodoQuick>("mes");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [vendedorFiltro, setVendedorFiltro] = useState("todos");
+  const [tipoFiltro, setTipoFiltro] = useState<TipoVendFiltro>("todos");
+  const [tab, setTab] = useState<TabKey>("geral");
+
+  const range = useMemo(() => rangeFor(periodo, customFrom, customTo), [periodo, customFrom, customTo]);
+  const rangeAnt = useMemo(() => {
+    const span = range.to.getTime() - range.from.getTime();
+    return { from: new Date(range.from.getTime() - span), to: range.from };
+  }, [range]);
+
+  const { data: vendedoresList = [] } = useQuery({
+    enabled: !!session && isAdminOrMaster,
+    queryKey: ["rel-vendedores-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, nome_completo, tipo_vendedor")
+        .not("tipo_vendedor", "is", null)
+        .eq("ativo", true)
+        .order("nome_completo", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; nome_completo: string; tipo_vendedor: string | null }>;
+    },
+  });
+
+  const buildOrdersQuery = (from: Date, to: Date) => {
+    let q = supabase
+      .from("orders")
+      .select(
+        "id, created_at, vendedor_id, vendedor_nome, vendedor_tipo, cliente_snapshot, total, total_unidades, total_skus, forma_pagamento, frete, commercial",
+      )
+      .gte("created_at", from.toISOString())
+      .lt("created_at", to.toISOString())
+      .order("created_at", { ascending: false });
+    if (vendedorFiltro !== "todos") q = q.eq("vendedor_id", vendedorFiltro);
+    if (tipoFiltro !== "todos") q = q.eq("vendedor_tipo", tipoFiltro);
+    return q;
+  };
+
+  const filtroKey = `${range.from.toISOString()}|${range.to.toISOString()}|${vendedorFiltro}|${tipoFiltro}`;
+
+  const { data: orders = [], isLoading: loadingOrders } = useQuery({
+    enabled: !!session && !isCliente,
+    queryKey: ["rel-orders", filtroKey],
+    queryFn: async () => {
+      const { data, error } = await buildOrdersQuery(range.from, range.to);
+      if (error) throw error;
+      return (data ?? []) as unknown as OrderRow[];
+    },
+  });
+
+  const { data: ordersPrev = [] } = useQuery({
+    enabled: !!session && !isCliente,
+    queryKey: ["rel-orders-prev", filtroKey],
+    queryFn: async () => {
+      const { data, error } = await buildOrdersQuery(rangeAnt.from, rangeAnt.to);
+      if (error) throw error;
+      return (data ?? []) as unknown as OrderRow[];
+    },
+  });
+
+  const { data: items = [], isLoading: loadingItems } = useQuery({
+    enabled: !!session && !isCliente && (tab === "produto" || tab === "colecao"),
+    queryKey: ["rel-items", filtroKey, tab],
+    queryFn: async () => {
+      let q = supabase
+        .from("order_items")
+        .select(
+          "sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_tipo, total)",
+        )
+        .gte("orders.created_at", range.from.toISOString())
+        .lt("orders.created_at", range.to.toISOString());
+      if (vendedorFiltro !== "todos") q = q.eq("orders.vendedor_id", vendedorFiltro);
+      if (tipoFiltro !== "todos") q = q.eq("orders.vendedor_tipo", tipoFiltro);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as unknown as ItemRow[];
+    },
+  });
+
+  if (loading || !session || isCliente) {
+    return <main className="min-h-[60vh] flex items-center justify-center text-text-secondary text-sm">Carregando...</main>;
+  }
+
+  const tabs: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
+    { key: "geral", label: "Vendas Geral", icon: <FileBarChart className="h-3.5 w-3.5" /> },
+    { key: "produto", label: "Por Produto", icon: <Boxes className="h-3.5 w-3.5" /> },
+    { key: "colecao", label: "Por Coleção", icon: <Layers className="h-3.5 w-3.5" /> },
+    { key: "financeiro", label: "Financeiro", icon: <Wallet className="h-3.5 w-3.5" /> },
+  ];
+
+  return (
+    <main className="mx-auto max-w-[1400px] px-3 sm:px-6 py-6 sm:py-8 lg:py-10 space-y-5 print:py-0 print:px-0">
+      {/* Header */}
+      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 print:hidden">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-gold">Relatórios</div>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl mt-1">Análise completa</h1>
+          <p className="text-xs sm:text-sm text-text-secondary mt-1">
+            {range.label} · {range.from.toLocaleDateString("pt-BR")} → {new Date(range.to.getTime() - 1).toLocaleDateString("pt-BR")}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-[11px] uppercase tracking-wider text-text-secondary hover:text-text-primary"
+          >
+            <Printer className="h-3.5 w-3.5" /> Imprimir
+          </button>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-[11px] uppercase tracking-wider text-text-secondary hover:text-text-primary"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+          </Link>
+        </div>
+      </header>
+
+      {/* Filtros globais */}
+      <section className="rounded-lg gold-border bg-surface p-4 sm:p-5 print:hidden">
+        <div className="flex items-center gap-2 mb-3">
+          <Filter className="h-4 w-4 text-gold" />
+          <span className="text-[10px] uppercase tracking-[0.2em] text-gold-muted">Filtros</span>
+        </div>
+        <div className="flex flex-wrap gap-2 items-end">
+          <FieldSelect label="Período" value={periodo} onChange={(v) => setPeriodo(v as PeriodoQuick)} options={[
+            ["hoje", "Hoje"], ["semana", "Semana"], ["mes", "Mês"], ["trimestre", "Trimestre"],
+            ["semestre", "Semestre"], ["ano", "Ano"], ["personalizado", "Personalizado"],
+          ]} />
+          {periodo === "personalizado" && (
+            <>
+              <FieldDate label="De" value={customFrom} onChange={setCustomFrom} />
+              <FieldDate label="Até" value={customTo} onChange={setCustomTo} />
+            </>
+          )}
+          {isAdminOrMaster && (
+            <>
+              <FieldSelect label="Vendedor" value={vendedorFiltro} onChange={setVendedorFiltro} options={[
+                ["todos", "Todos"],
+                ...vendedoresList.map((v) => [v.id, v.nome_completo] as [string, string]),
+              ]} />
+              <FieldSelect label="Tipo" value={tipoFiltro} onChange={(v) => setTipoFiltro(v as TipoVendFiltro)} options={[
+                ["todos", "Todos"], ["interno", "Interno"], ["rep", "Representante"],
+              ]} />
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* Tabs */}
+      <div className="flex flex-wrap gap-1 border-b border-border print:hidden">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={
+              "inline-flex items-center gap-1.5 px-4 py-2.5 text-[11px] uppercase tracking-wider border-b-2 transition " +
+              (tab === t.key
+                ? "border-gold text-gold"
+                : "border-transparent text-text-secondary hover:text-text-primary")
+            }
+          >
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Loading */}
+      {loadingOrders && (
+        <div className="rounded-lg gold-border bg-surface p-8 text-center text-sm text-text-muted">
+          Carregando dados...
+        </div>
+      )}
+
+      {!loadingOrders && tab === "geral" && (
+        <TabGeral orders={orders} ordersPrev={ordersPrev} range={range} />
+      )}
+      {!loadingOrders && tab === "produto" && (
+        <TabProduto orders={orders} items={items} loadingItems={loadingItems} range={range} />
+      )}
+      {!loadingOrders && tab === "colecao" && (
+        <TabColecao items={items} loadingItems={loadingItems} range={range} />
+      )}
+      {!loadingOrders && tab === "financeiro" && (
+        <TabFinanceiro orders={orders} range={range} />
+      )}
+    </main>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Field components
+// ────────────────────────────────────────────────────────────────────────────
+
+function FieldSelect({ label, value, onChange, options }: {
+  label: string; value: string; onChange: (v: string) => void; options: Array<[string, string]>;
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[9px] uppercase tracking-wider text-text-muted">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-text-primary outline-none focus:border-gold min-w-[140px]"
+      >
+        {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+    </label>
+  );
+}
+
+function FieldDate({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[9px] uppercase tracking-wider text-text-muted">{label}</span>
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-text-primary outline-none focus:border-gold"
+      />
+    </label>
+  );
+}
+
+function ExportBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center gap-2 rounded-md border border-gold/40 bg-surface-2 px-3 py-2 text-[11px] uppercase tracking-wider text-gold hover:bg-gold/10 print:hidden"
+    >
+      <Download className="h-3.5 w-3.5" /> Exportar CSV
+    </button>
+  );
+}
+
+function Card({ children, title, action }: { children: React.ReactNode; title?: string; action?: React.ReactNode }) {
+  return (
+    <section className="rounded-lg gold-border bg-surface overflow-hidden">
+      {title && (
+        <header className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-border bg-surface-2">
+          <h2 className="font-display text-base sm:text-lg">{title}</h2>
+          {action}
+        </header>
+      )}
+      <div className="p-4 sm:p-5">{children}</div>
+    </section>
+  );
+}
+
+function MiniKpi({ label, value, delta, hint }: { label: string; value: string; delta?: number | null; hint?: string }) {
+  return (
+    <div className="rounded-lg gold-border bg-surface p-3 sm:p-4">
+      <div className="text-[10px] uppercase tracking-[0.18em] text-text-muted">{label}</div>
+      <div className="font-display text-xl sm:text-2xl text-text-primary mt-1 truncate">{value}</div>
+      {delta != null && (
+        <div className={"text-[11px] mt-1 " + (delta >= 0 ? "text-stock-in" : "text-stock-out")}>
+          {delta >= 0 ? "↑" : "↓"} {Math.abs(delta).toFixed(1)}% vs ant.
+        </div>
+      )}
+      {hint && <div className="text-[11px] text-text-muted mt-0.5">{hint}</div>}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// TAB: GERAL
+// ────────────────────────────────────────────────────────────────────────────
+
+function TabGeral({ orders, ordersPrev, range }: {
+  orders: OrderRow[]; ordersPrev: OrderRow[]; range: { from: Date; to: Date; label: string };
+}) {
+  const agg = useMemo(() => aggGeral(orders), [orders]);
+  const aggPrev = useMemo(() => aggGeral(ordersPrev), [ordersPrev]);
+
+  const delta = (a: number, b: number) => (b > 0 ? ((a - b) / b) * 100 : null);
+
+  const serie = useMemo(() => {
+    const dayMs = 86400000;
+    const totalDays = Math.min(Math.ceil((range.to.getTime() - range.from.getTime()) / dayMs), 366);
+    const buckets = new Map<string, { valor: number; pedidos: number }>();
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(range.from.getTime() + i * dayMs);
+      buckets.set(d.toISOString().slice(0, 10), { valor: 0, pedidos: 0 });
+    }
+    orders.forEach((o) => {
+      const k = new Date(o.created_at).toISOString().slice(0, 10);
+      const cur = buckets.get(k) ?? { valor: 0, pedidos: 0 };
+      cur.valor += Number(o.total || 0); cur.pedidos += 1;
+      buckets.set(k, cur);
+    });
+    return Array.from(buckets.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([date, v]) => ({
+      label: new Date(date + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+      valor: Math.round(v.valor), pedidos: v.pedidos,
+    }));
+  }, [orders, range]);
+
+  const faixas = useMemo(() => {
+    const m = new Map<string, { pedidos: number; valor: number }>();
+    orders.forEach((o) => {
+      const k = o.commercial?.faixaNome ?? "—";
+      const c = m.get(k) ?? { pedidos: 0, valor: 0 };
+      c.pedidos += 1; c.valor += Number(o.total || 0);
+      m.set(k, c);
+    });
+    return Array.from(m.entries()).map(([nome, v]) => ({ nome, ...v })).sort((a, b) => b.valor - a.valor);
+  }, [orders]);
+
+  const pagamentos = useMemo(() => {
+    const m = new Map<string, { pedidos: number; valor: number }>();
+    orders.forEach((o) => {
+      const k = (o.forma_pagamento ?? "—").split("(")[0].trim();
+      const c = m.get(k) ?? { pedidos: 0, valor: 0 };
+      c.pedidos += 1; c.valor += Number(o.total || 0);
+      m.set(k, c);
+    });
+    return Array.from(m.entries()).map(([nome, v]) => ({ nome, ...v })).sort((a, b) => b.valor - a.valor);
+  }, [orders]);
+
+  const exportar = () => {
+    const rows = [
+      { Métrica: "Faturamento bruto", Valor: agg.bruto, "vs Anterior %": delta(agg.bruto, aggPrev.bruto)?.toFixed(1) ?? "" },
+      { Métrica: "Descontos aplicados", Valor: agg.descTotal, "vs Anterior %": delta(agg.descTotal, aggPrev.descTotal)?.toFixed(1) ?? "" },
+      { Métrica: "Faturamento líquido", Valor: agg.liquido, "vs Anterior %": delta(agg.liquido, aggPrev.liquido)?.toFixed(1) ?? "" },
+      { Métrica: "Pedidos", Valor: agg.pedidos, "vs Anterior %": delta(agg.pedidos, aggPrev.pedidos)?.toFixed(1) ?? "" },
+      { Métrica: "Ticket médio", Valor: agg.ticket.toFixed(2), "vs Anterior %": delta(agg.ticket, aggPrev.ticket)?.toFixed(1) ?? "" },
+      { Métrica: "Unidades", Valor: agg.unidades, "vs Anterior %": delta(agg.unidades, aggPrev.unidades)?.toFixed(1) ?? "" },
+      { Métrica: "Desconto médio %", Valor: agg.descMedio.toFixed(2), "vs Anterior %": "" },
+    ];
+    downloadCSV(`fetely_relatorio_geral_${periodSuffix(range.from)}.csv`, rows);
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <MiniKpi label="Faturamento líquido" value={formatBRL(agg.liquido)} delta={delta(agg.liquido, aggPrev.liquido)} />
+        <MiniKpi label="Pedidos" value={String(agg.pedidos)} delta={delta(agg.pedidos, aggPrev.pedidos)} />
+        <MiniKpi label="Ticket médio" value={formatBRL(agg.ticket)} delta={delta(agg.ticket, aggPrev.ticket)} />
+        <MiniKpi label="Unidades vendidas" value={agg.unidades.toLocaleString("pt-BR")} delta={delta(agg.unidades, aggPrev.unidades)} />
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        <MiniKpi label="Desconto médio aplicado" value={`${agg.descMedio.toFixed(1)}%`} />
+        <MiniKpi label="SKUs distintos" value={String(agg.skus)} />
+        <MiniKpi label="Clientes ativos" value={String(agg.clientes)} />
+      </div>
+
+      <Card title="Evolução do faturamento" action={<ExportBtn onClick={exportar} />}>
+        <div className="h-[280px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={serie} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="gFat" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={GOLD} stopOpacity={0.45} />
+                  <stop offset="100%" stopColor={GOLD} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+              <XAxis dataKey="label" tick={{ fill: "var(--text-muted)", fontSize: 10 }} minTickGap={24} />
+              <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10 }} width={64}
+                tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))} />
+              <Tooltip
+                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                formatter={(v: number) => [formatBRL(v), "Faturamento"]}
+              />
+              <Area type="monotone" dataKey="valor" stroke={GOLD} strokeWidth={2} fill="url(#gFat)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card title="Distribuição por faixa comercial">
+          <div className="h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={faixas} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="nome" tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
+                <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
+                <Tooltip
+                  contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                  formatter={(v: number, n: string) => n === "valor" ? [formatBRL(v), "Valor"] : [v, "Pedidos"]}
+                />
+                <Bar dataKey="valor" fill={GOLD} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card title="Formas de pagamento">
+          <div className="h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={pagamentos} dataKey="valor" nameKey="nome" cx="50%" cy="50%" outerRadius={90} innerRadius={50}>
+                  {pagamentos.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                  formatter={(v: number) => formatBRL(v)}
+                />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="Resumo do período">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+                <th className="px-3 py-2 text-left font-medium">Métrica</th>
+                <th className="px-3 py-2 text-right font-medium">Valor</th>
+                <th className="px-3 py-2 text-right font-medium">vs Período anterior</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {[
+                ["Faturamento bruto", formatBRL(agg.bruto), delta(agg.bruto, aggPrev.bruto)],
+                ["Descontos aplicados", formatBRL(agg.descTotal), delta(agg.descTotal, aggPrev.descTotal)],
+                ["Faturamento líquido", formatBRL(agg.liquido), delta(agg.liquido, aggPrev.liquido)],
+                ["Desconto médio", `${agg.descMedio.toFixed(1)}%`, null],
+                ["Pedidos confirmados", String(agg.pedidos), delta(agg.pedidos, aggPrev.pedidos)],
+                ["Ticket médio", formatBRL(agg.ticket), delta(agg.ticket, aggPrev.ticket)],
+                ["Unidades vendidas", agg.unidades.toLocaleString("pt-BR"), delta(agg.unidades, aggPrev.unidades)],
+                ["SKUs distintos", String(agg.skus), null],
+                ["Clientes ativos", String(agg.clientes), null],
+              ].map(([m, v, d], i) => (
+                <tr key={i} className="hover:bg-surface-2/40">
+                  <td className="px-3 py-2.5 text-text-primary">{m as string}</td>
+                  <td className="px-3 py-2.5 text-right text-text-primary">{v as string}</td>
+                  <td className={"px-3 py-2.5 text-right " + (typeof d === "number" ? (d >= 0 ? "text-stock-in" : "text-stock-out") : "text-text-muted")}>
+                    {typeof d === "number" ? `${d >= 0 ? "↑" : "↓"} ${Math.abs(d).toFixed(1)}%` : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function aggGeral(orders: OrderRow[]) {
+  const bruto = orders.reduce((s, o) => s + (Number(o.commercial?.bruto) || Number(o.total) || 0), 0);
+  const liquido = orders.reduce((s, o) => s + Number(o.total || 0), 0);
+  const descTotal = Math.max(0, bruto - liquido);
+  const descMedio = bruto > 0 ? (descTotal / bruto) * 100 : 0;
+  const pedidos = orders.length;
+  const ticket = pedidos > 0 ? liquido / pedidos : 0;
+  const unidades = orders.reduce((s, o) => s + (o.total_unidades || 0), 0);
+  const skus = new Set<string>();
+  orders.forEach((o) => { if (o.total_skus) skus.add(o.id); });
+  const skusCount = orders.reduce((s, o) => s + (o.total_skus || 0), 0);
+  const clientes = new Set(orders.map((o) => o.cliente_snapshot?.cnpj ?? "—").filter((x) => x !== "—")).size;
+  return { bruto, liquido, descTotal, descMedio, pedidos, ticket, unidades, skus: skusCount, clientes };
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// TAB: PRODUTO
+// ────────────────────────────────────────────────────────────────────────────
+
+function TabProduto({ orders, items, loadingItems, range }: {
+  orders: OrderRow[]; items: ItemRow[]; loadingItems: boolean; range: { from: Date; to: Date };
+}) {
+  const [top, setTop] = useState<10 | 25 | 50 | 0>(25);
+  const [sortBy, setSortBy] = useState<"valor" | "qtd">("valor");
+
+  const totalFat = items.reduce((s, i) => s + Number(i.subtotal_bruto || 0), 0);
+
+  const produtos = useMemo(() => {
+    const m = new Map<string, {
+      sku: string; nome: string; colecao: string; grupo: string; cor: string; tamanho: string;
+      qtd: number; pedidos: Set<string>; precoUnit: number; bruto: number;
+    }>();
+    items.forEach((it) => {
+      const ps = it.product_snapshot ?? {};
+      const cur = m.get(it.sku) ?? {
+        sku: it.sku,
+        nome: ps.nomeComercial ?? it.sku,
+        colecao: ps.colecao ?? "—",
+        grupo: ps.grupo ?? "—",
+        cor: ps.corNome ?? "—",
+        tamanho: ps.tamanhoNumero ?? "—",
+        qtd: 0, pedidos: new Set<string>(), precoUnit: Number(ps.precoAtacado) || 0, bruto: 0,
+      };
+      cur.qtd += Number(it.quantity || 0);
+      cur.bruto += Number(it.subtotal_bruto || 0);
+      cur.pedidos.add(it.orders.id);
+      m.set(it.sku, cur);
+    });
+    const arr = Array.from(m.values()).map((r) => ({
+      ...r,
+      nPedidos: r.pedidos.size,
+      pctTotal: totalFat > 0 ? (r.bruto / totalFat) * 100 : 0,
+    }));
+    arr.sort((a, b) => sortBy === "valor" ? b.bruto - a.bruto : b.qtd - a.qtd);
+    return arr;
+  }, [items, sortBy, totalFat]);
+
+  const visiveis = top === 0 ? produtos : produtos.slice(0, top);
+
+  const top20 = produtos.slice(0, 20).map((p) => ({ nome: p.nome.slice(0, 24), valor: Math.round(p.bruto) }));
+
+  const grupos = useMemo(() => {
+    const m = new Map<string, number>();
+    items.forEach((it) => {
+      const g = it.product_snapshot?.grupo ?? "—";
+      m.set(g, (m.get(g) ?? 0) + Number(it.subtotal_bruto || 0));
+    });
+    return Array.from(m.entries()).map(([nome, valor]) => ({ nome, valor })).sort((a, b) => b.valor - a.valor);
+  }, [items]);
+
+  const exportar = () => {
+    downloadCSV(`fetely_relatorio_produtos_${periodSuffix(range.from)}.csv`, produtos.map((p, i) => ({
+      "#": i + 1,
+      Produto: p.nome, SKU: p.sku, Coleção: p.colecao, Grupo: p.grupo, Cor: p.cor, Tamanho: p.tamanho,
+      "Qtd Vendida": p.qtd, "Nº Pedidos": p.nPedidos, "Preço Atacado": p.precoUnit.toFixed(2),
+      "Fat. Bruto": p.bruto.toFixed(2), "% Total": p.pctTotal.toFixed(2),
+    })));
+  };
+
+  if (loadingItems) {
+    return <div className="rounded-lg gold-border bg-surface p-8 text-center text-sm text-text-muted">Carregando itens...</div>;
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-3 items-end">
+        <FieldSelect label="Mostrar" value={String(top)} onChange={(v) => setTop(Number(v) as 10 | 25 | 50 | 0)} options={[
+          ["10", "Top 10"], ["25", "Top 25"], ["50", "Top 50"], ["0", "Todos"],
+        ]} />
+        <FieldSelect label="Ordenar por" value={sortBy} onChange={(v) => setSortBy(v as "valor" | "qtd")} options={[
+          ["valor", "Faturamento"], ["qtd", "Quantidade"],
+        ]} />
+        <div className="ml-auto"><ExportBtn onClick={exportar} /></div>
+      </div>
+
+      <Card title={`Top 20 produtos por faturamento (${orders.length} pedidos)`}>
+        <div className="h-[420px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={top20} layout="vertical" margin={{ top: 8, right: 32, left: 8, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+              <XAxis type="number" tick={{ fill: "var(--text-muted)", fontSize: 10 }}
+                tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+              <YAxis type="category" dataKey="nome" tick={{ fill: "var(--text-muted)", fontSize: 10 }} width={180} />
+              <Tooltip
+                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                formatter={(v: number) => formatBRL(v)}
+              />
+              <Bar dataKey="valor" fill={GOLD} radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      <Card title={`Detalhe de produtos (${produtos.length} SKUs)`}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+                <th className="px-2 py-2 text-left">#</th>
+                <th className="px-2 py-2 text-left">Produto</th>
+                <th className="px-2 py-2 text-left">SKU</th>
+                <th className="px-2 py-2 text-left">Coleção</th>
+                <th className="px-2 py-2 text-right">Qtd</th>
+                <th className="px-2 py-2 text-right">Pedidos</th>
+                <th className="px-2 py-2 text-right">Preço un.</th>
+                <th className="px-2 py-2 text-right">Fat. bruto</th>
+                <th className="px-2 py-2 text-right">% Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {visiveis.map((p, i) => (
+                <tr key={p.sku} className="hover:bg-surface-2/40">
+                  <td className="px-2 py-2 text-text-muted">{i + 1}</td>
+                  <td className="px-2 py-2 text-text-primary">{p.nome}</td>
+                  <td className="px-2 py-2 text-text-secondary font-mono">{p.sku}</td>
+                  <td className="px-2 py-2 text-text-secondary">{p.colecao}</td>
+                  <td className="px-2 py-2 text-right">{p.qtd}</td>
+                  <td className="px-2 py-2 text-right text-text-secondary">{p.nPedidos}</td>
+                  <td className="px-2 py-2 text-right text-text-secondary">{formatBRL(p.precoUnit)}</td>
+                  <td className="px-2 py-2 text-right text-gold font-medium">{formatBRL(p.bruto)}</td>
+                  <td className="px-2 py-2 text-right text-text-secondary">{p.pctTotal.toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {produtos.length === 0 && <div className="text-center text-sm text-text-muted py-6">Nenhum item no período.</div>}
+        </div>
+      </Card>
+
+      <Card title="Distribuição por grupo de produto">
+        <div className="h-[280px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={grupos} dataKey="valor" nameKey="nome" cx="50%" cy="50%" outerRadius={100} innerRadius={55}>
+                {grupos.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+              </Pie>
+              <Tooltip
+                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                formatter={(v: number) => formatBRL(v)}
+              />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// TAB: COLEÇÃO
+// ────────────────────────────────────────────────────────────────────────────
+
+function TabColecao({ items, loadingItems, range }: {
+  items: ItemRow[]; loadingItems: boolean; range: { from: Date; to: Date };
+}) {
+  const totalFat = items.reduce((s, i) => s + Number(i.subtotal_bruto || 0), 0);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const colecoes = useMemo(() => {
+    const m = new Map<string, { nome: string; categoria: string; pedidos: Set<string>; qtd: number; bruto: number; produtos: Map<string, { nome: string; qtd: number; bruto: number }> }>();
+    items.forEach((it) => {
+      const c = it.product_snapshot?.colecao ?? "—";
+      const cat = it.product_snapshot?.categoria ?? "—";
+      const cur = m.get(c) ?? { nome: c, categoria: cat, pedidos: new Set(), qtd: 0, bruto: 0, produtos: new Map() };
+      cur.qtd += Number(it.quantity || 0);
+      cur.bruto += Number(it.subtotal_bruto || 0);
+      cur.pedidos.add(it.orders.id);
+      const pNome = it.product_snapshot?.nomeComercial ?? it.sku;
+      const p = cur.produtos.get(it.sku) ?? { nome: pNome, qtd: 0, bruto: 0 };
+      p.qtd += Number(it.quantity || 0); p.bruto += Number(it.subtotal_bruto || 0);
+      cur.produtos.set(it.sku, p);
+      m.set(c, cur);
+    });
+    return Array.from(m.values()).map((r) => ({
+      ...r,
+      nPedidos: r.pedidos.size,
+      pctTotal: totalFat > 0 ? (r.bruto / totalFat) * 100 : 0,
+      produtosArr: Array.from(r.produtos.entries()).map(([sku, p]) => ({ sku, ...p })).sort((a, b) => b.bruto - a.bruto),
+    })).sort((a, b) => b.bruto - a.bruto);
+  }, [items, totalFat]);
+
+  const top15 = colecoes.slice(0, 15).map((c) => ({ nome: c.nome, valor: Math.round(c.bruto) }));
+
+  const exportar = () => {
+    downloadCSV(`fetely_relatorio_colecoes_${periodSuffix(range.from)}.csv`, colecoes.map((c) => ({
+      Coleção: c.nome, Categoria: c.categoria, Pedidos: c.nPedidos, Unidades: c.qtd,
+      "Fat. Bruto": c.bruto.toFixed(2), "% Total": c.pctTotal.toFixed(2),
+    })));
+  };
+
+  if (loadingItems) {
+    return <div className="rounded-lg gold-border bg-surface p-8 text-center text-sm text-text-muted">Carregando itens...</div>;
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-end"><ExportBtn onClick={exportar} /></div>
+
+      <Card title="Ranking de coleções por faturamento">
+        <div className="h-[420px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={top15} layout="vertical" margin={{ top: 8, right: 32, left: 8, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+              <XAxis type="number" tick={{ fill: "var(--text-muted)", fontSize: 10 }}
+                tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+              <YAxis type="category" dataKey="nome" tick={{ fill: "var(--text-muted)", fontSize: 10 }} width={160} />
+              <Tooltip
+                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                formatter={(v: number) => formatBRL(v)}
+              />
+              <Bar dataKey="valor" fill={GOLD} radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      <Card title={`Detalhe por coleção (${colecoes.length})`}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+                <th className="px-2 py-2 text-left">Coleção</th>
+                <th className="px-2 py-2 text-left">Categoria</th>
+                <th className="px-2 py-2 text-right">Pedidos</th>
+                <th className="px-2 py-2 text-right">Unidades</th>
+                <th className="px-2 py-2 text-right">Fat. bruto</th>
+                <th className="px-2 py-2 text-right">% Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {colecoes.map((c) => (
+                <Fragment key={c.nome}>
+                  <tr onClick={() => setExpanded(expanded === c.nome ? null : c.nome)}
+                    className="hover:bg-surface-2/40 cursor-pointer">
+                    <td className="px-2 py-2.5 text-text-primary">
+                      <span className="inline-block w-3 text-gold">{expanded === c.nome ? "▾" : "▸"}</span>{c.nome}
+                    </td>
+                    <td className="px-2 py-2.5 text-text-secondary">{c.categoria}</td>
+                    <td className="px-2 py-2.5 text-right">{c.nPedidos}</td>
+                    <td className="px-2 py-2.5 text-right">{c.qtd}</td>
+                    <td className="px-2 py-2.5 text-right text-gold font-medium">{formatBRL(c.bruto)}</td>
+                    <td className="px-2 py-2.5 text-right text-text-secondary">{c.pctTotal.toFixed(1)}%</td>
+                  </tr>
+                  {expanded === c.nome && c.produtosArr.map((p) => (
+                    <tr key={p.sku} className="bg-surface-2/30">
+                      <td className="px-6 py-1.5 text-text-secondary" colSpan={2}>↳ {p.nome} <span className="text-text-muted">({p.sku})</span></td>
+                      <td className="px-2 py-1.5"></td>
+                      <td className="px-2 py-1.5 text-right text-text-secondary">{p.qtd}</td>
+                      <td className="px-2 py-1.5 text-right text-text-secondary">{formatBRL(p.bruto)}</td>
+                      <td className="px-2 py-1.5"></td>
+                    </tr>
+                  ))}
+                </Fragment>
+              ))}
+
+            </tbody>
+          </table>
+          {colecoes.length === 0 && <div className="text-center text-sm text-text-muted py-6">Nenhuma coleção no período.</div>}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// TAB: FINANCEIRO
+// ────────────────────────────────────────────────────────────────────────────
+
+function TabFinanceiro({ orders, range }: { orders: OrderRow[]; range: { from: Date; to: Date; label: string } }) {
+  const fin = useMemo(() => {
+    let bruto = 0, liquido = 0, descCelebra = 0, descMaster = 0, bonusPix = 0;
+    orders.forEach((o) => {
+      const c = o.commercial ?? {};
+      bruto += Number(c.bruto) || Number(o.total) || 0;
+      liquido += Number(o.total) || 0;
+      descCelebra += Number(c.descontoCelebraValor) || 0;
+      descMaster += Number(c.descontoMasterValor) || 0;
+      bonusPix += Number(c.bonusPixValor) || 0;
+    });
+    const descTotal = descCelebra + descMaster + bonusPix;
+    return { bruto, liquido, descCelebra, descMaster, bonusPix, descTotal, descPct: bruto > 0 ? (descTotal / bruto) * 100 : 0 };
+  }, [orders]);
+
+  const condicoes = useMemo(() => {
+    const m = new Map<string, { pedidos: number; valor: number }>();
+    orders.forEach((o) => {
+      const k = o.commercial?.condicaoDescricao ?? o.forma_pagamento ?? "—";
+      const c = m.get(k) ?? { pedidos: 0, valor: 0 };
+      c.pedidos += 1; c.valor += Number(o.total || 0);
+      m.set(k, c);
+    });
+    return Array.from(m.entries()).map(([nome, v]) => ({ nome, ...v })).sort((a, b) => b.valor - a.valor);
+  }, [orders]);
+
+  const fretes = useMemo(() => {
+    let cif = { n: 0, valor: 0 }, fob = { n: 0, valor: 0 };
+    orders.forEach((o) => {
+      const f = (o.frete ?? o.commercial?.frete ?? "").toUpperCase();
+      const v = Number(o.total || 0);
+      if (f === "CIF") { cif.n += 1; cif.valor += v; }
+      else if (f === "FOB") { fob.n += 1; fob.valor += v; }
+    });
+    return { cif, fob };
+  }, [orders]);
+
+  const totalFrete = fretes.cif.valor + fretes.fob.valor;
+
+  const serieDesconto = useMemo(() => {
+    const m = new Map<string, { bruto: number; liquido: number }>();
+    orders.forEach((o) => {
+      const k = new Date(o.created_at).toISOString().slice(0, 10);
+      const c = m.get(k) ?? { bruto: 0, liquido: 0 };
+      c.bruto += Number(o.commercial?.bruto) || Number(o.total) || 0;
+      c.liquido += Number(o.total) || 0;
+      m.set(k, c);
+    });
+    return Array.from(m.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([d, v]) => ({
+      label: new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+      descPct: v.bruto > 0 ? Number((((v.bruto - v.liquido) / v.bruto) * 100).toFixed(2)) : 0,
+    }));
+  }, [orders]);
+
+  const exportar = () => {
+    downloadCSV(`fetely_relatorio_financeiro_${periodSuffix(range.from)}.csv`, [
+      { Item: "Receita bruta", Valor: fin.bruto.toFixed(2) },
+      { Item: "Desconto Celebra", Valor: (-fin.descCelebra).toFixed(2) },
+      { Item: "Desconto Master / negociação", Valor: (-fin.descMaster).toFixed(2) },
+      { Item: "Bônus PIX", Valor: (-fin.bonusPix).toFixed(2) },
+      { Item: "Receita líquida", Valor: fin.liquido.toFixed(2) },
+      { Item: "Desconto %", Valor: fin.descPct.toFixed(2) },
+    ]);
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-end"><ExportBtn onClick={exportar} /></div>
+
+      <Card title={`Demonstrativo do período — ${range.label}`}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <tbody className="divide-y divide-border/40">
+              <tr><td className="px-3 py-2.5 text-text-primary">Receita bruta (preço atacado)</td>
+                <td className="px-3 py-2.5 text-right text-text-primary">{formatBRL(fin.bruto)}</td></tr>
+              <tr><td className="px-3 py-2.5 text-text-secondary pl-6">(−) Desconto Celebra</td>
+                <td className="px-3 py-2.5 text-right text-stock-out">− {formatBRL(fin.descCelebra)}</td></tr>
+              <tr><td className="px-3 py-2.5 text-text-secondary pl-6">(−) Desconto Master / negociação</td>
+                <td className="px-3 py-2.5 text-right text-stock-out">− {formatBRL(fin.descMaster)}</td></tr>
+              <tr><td className="px-3 py-2.5 text-text-secondary pl-6">(−) Bônus PIX</td>
+                <td className="px-3 py-2.5 text-right text-stock-out">− {formatBRL(fin.bonusPix)}</td></tr>
+              <tr className="bg-surface-2/40"><td className="px-3 py-3 text-gold font-medium">Receita líquida</td>
+                <td className="px-3 py-3 text-right text-gold font-medium">{formatBRL(fin.liquido)}</td></tr>
+              <tr><td className="px-3 py-2 text-text-muted text-xs">Desconto total sobre bruto</td>
+                <td className="px-3 py-2 text-right text-text-muted text-xs">{fin.descPct.toFixed(2)}%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card title="Breakdown de descontos">
+          <div className="space-y-2.5">
+            {[
+              ["Celebra (faixa)", fin.descCelebra],
+              ["Negociação / master", fin.descMaster],
+              ["Bônus PIX", fin.bonusPix],
+            ].map(([nome, valor], i) => {
+              const pct = fin.descTotal > 0 ? ((valor as number) / fin.descTotal) * 100 : 0;
+              return (
+                <div key={i}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-text-secondary">{nome as string}</span>
+                    <span className="text-text-primary">{formatBRL(valor as number)} <span className="text-text-muted">({pct.toFixed(1)}%)</span></span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-gold/60 to-gold" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        <Card title="Frete">
+          <div className="space-y-3">
+            <div>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-text-secondary">CIF (Fetély paga)</span>
+                <span className="text-text-primary">{fretes.cif.n} pedidos · {formatBRL(fretes.cif.valor)}</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-gold/60 to-gold"
+                  style={{ width: `${totalFrete > 0 ? (fretes.cif.valor / totalFrete) * 100 : 0}%` }} />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-text-secondary">FOB (lojista paga)</span>
+                <span className="text-text-primary">{fretes.fob.n} pedidos · {formatBRL(fretes.fob.valor)}</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-gold/60 to-gold"
+                  style={{ width: `${totalFrete > 0 ? (fretes.fob.valor / totalFrete) * 100 : 0}%` }} />
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="Pedidos por condição de pagamento">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+                <th className="px-2 py-2 text-left">Condição</th>
+                <th className="px-2 py-2 text-right">Pedidos</th>
+                <th className="px-2 py-2 text-right">Valor</th>
+                <th className="px-2 py-2 text-right">% Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {condicoes.map((c) => (
+                <tr key={c.nome} className="hover:bg-surface-2/40">
+                  <td className="px-2 py-2 text-text-primary">{c.nome}</td>
+                  <td className="px-2 py-2 text-right">{c.pedidos}</td>
+                  <td className="px-2 py-2 text-right text-gold">{formatBRL(c.valor)}</td>
+                  <td className="px-2 py-2 text-right text-text-secondary">{fin.liquido > 0 ? ((c.valor / fin.liquido) * 100).toFixed(1) : "0.0"}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <Card title="Evolução do desconto médio (%)">
+        <div className="h-[240px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={serieDesconto} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+              <XAxis dataKey="label" tick={{ fill: "var(--text-muted)", fontSize: 10 }} minTickGap={24} />
+              <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10 }} tickFormatter={(v) => `${v}%`} />
+              <Tooltip
+                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                formatter={(v: number) => [`${v}%`, "Desconto"]}
+              />
+              <Area type="monotone" dataKey="descPct" stroke={GOLD} strokeWidth={2} fill={GOLD} fillOpacity={0.2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+    </div>
+  );
+}
