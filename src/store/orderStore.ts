@@ -144,6 +144,48 @@ export function orderItemsToRows(o: SavedOrder): Record<string, unknown>[] {
   }));
 }
 
+const ORDER_ITEMS_PAGE_SIZE = 1000;
+
+async function fetchOrderItemRowsByOrderIds(ids: string[]): Promise<Record<string, CartItem[]>> {
+  const itemsByOrder: Record<string, CartItem[]> = {};
+  if (ids.length === 0) return itemsByOrder;
+  for (let from = 0; ; from += ORDER_ITEMS_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("order_items")
+      .select("*")
+      .in("order_id", ids)
+      .order("order_id", { ascending: true })
+      .order("posicao", { ascending: true })
+      .range(from, from + ORDER_ITEMS_PAGE_SIZE - 1);
+    if (error) throw error;
+    const rows = data ?? [];
+    rows.forEach((r) => {
+      const oid = (r as Record<string, unknown>).order_id as string;
+      if (!itemsByOrder[oid]) itemsByOrder[oid] = [];
+      itemsByOrder[oid].push(rowToItem(r as Record<string, unknown>));
+    });
+    if (rows.length < ORDER_ITEMS_PAGE_SIZE) break;
+  }
+  return itemsByOrder;
+}
+
+async function fetchOrderItemsByOrderId(orderId: string): Promise<CartItem[]> {
+  const items: CartItem[] = [];
+  for (let from = 0; ; from += ORDER_ITEMS_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("order_items")
+      .select("*")
+      .eq("order_id", orderId)
+      .order("posicao", { ascending: true })
+      .range(from, from + ORDER_ITEMS_PAGE_SIZE - 1);
+    if (error) throw error;
+    const rows = data ?? [];
+    items.push(...rows.map((r) => rowToItem(r as Record<string, unknown>)));
+    if (rows.length < ORDER_ITEMS_PAGE_SIZE) break;
+  }
+  return items;
+}
+
 export const useOrder = create<OrderState>()(
   persist(
     (set, get) => ({
