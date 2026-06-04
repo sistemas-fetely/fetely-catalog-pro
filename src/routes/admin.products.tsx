@@ -367,7 +367,9 @@ function AdminProductsPage() {
               {pageItems.map((p) => (
                 <tr
                   key={p.sku}
-                  className={`border-t border-border hover:bg-surface-hover ${p.ativo === false ? "opacity-50" : ""}`}
+                  onClick={() => openEdit(p)}
+                  className={`cursor-pointer border-t border-border hover:bg-surface-hover ${p.ativo === false ? "opacity-50" : ""}`}
+                  title="Clique para visualizar / editar"
                 >
                   <td className="px-3 py-2 font-mono text-xs">{p.sku}</td>
                   <td className="px-3 py-2">{p.nomeComercial}</td>
@@ -375,7 +377,7 @@ function AdminProductsPage() {
                   <td className="px-3 py-2 text-text-secondary">{p.grupo}</td>
                   <td className="px-3 py-2 text-right">{formatBRL(p.precoAtacado || 0)}</td>
                   <td className="px-3 py-2">{statusBadge(p)}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
                       <button
                         onClick={() => openEdit(p)}
