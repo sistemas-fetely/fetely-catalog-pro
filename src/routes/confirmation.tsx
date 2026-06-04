@@ -151,6 +151,7 @@ function Confirmation() {
   const [printMode, setPrintMode] = useState<"completo" | "resumo">("completo");
   const [showExport, setShowExport] = useState(false);
   const [loadingPedidoCompleto, setLoadingPedidoCompleto] = useState(false);
+  const [pedidoBancoTentadoId, setPedidoBancoTentadoId] = useState<string | null>(null);
 
   function executarImprimir(modo: "completo" | "resumo") {
     setPrintMode(modo);
@@ -175,19 +176,21 @@ function Confirmation() {
     const totalAtualBase = atual?.commercial?.bruto ?? atual?.total ?? 0;
     const precisaBanco = !atual || atual.items.length === 0 || Math.abs(totalAtualItens - totalAtualBase) > 0.05;
     if (!precisaBanco) return;
+    if (pedidoBancoTentadoId === id) return;
     let cancelled = false;
     setLoadingPedidoCompleto(true);
     hydrateOrderById(id).finally(() => {
+      setPedidoBancoTentadoId(id);
       if (!cancelled) setLoadingPedidoCompleto(false);
     });
     return () => {
       cancelled = true;
     };
-  }, [history, hydrateOrderById, id, ordersHidratado]);
+  }, [history, hydrateOrderById, id, ordersHidratado, pedidoBancoTentadoId]);
 
   // Aguarda a hidratação dos stores antes de declarar "não encontrado".
   // Sem isto o usuário via o erro no primeiro clique e precisava retentar.
-  const aguardandoHidratacao = !ordersHidratado || loadingPedidoCompleto || (!!provisaoId && !provisoesHidratado);
+  const aguardandoHidratacao = !ordersHidratado || loadingPedidoCompleto || (!!id && !order && pedidoBancoTentadoId !== id) || (!!provisaoId && !provisoesHidratado);
 
   if (!order) {
     if (aguardandoHidratacao) {
