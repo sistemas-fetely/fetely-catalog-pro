@@ -352,7 +352,7 @@ function AdminProductsPage() {
         {/* List */}
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-900/60 text-xs uppercase tracking-wider text-text-secondary">
+            <thead className="bg-zinc-900/60 text-xs uppercase tracking-wider text-zinc-100">
               <tr>
                 <th className="px-3 py-2 text-left">SKU</th>
                 <th className="px-3 py-2 text-left">Nome Comercial</th>
