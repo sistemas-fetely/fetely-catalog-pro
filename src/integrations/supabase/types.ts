@@ -1000,6 +1000,7 @@ export type Database = {
           estampa: string | null
           familia: string | null
           grupo: string
+          grupo_id: string
           id: string
           is_vela_numerica: boolean
           largura_cm: number
@@ -1047,6 +1048,7 @@ export type Database = {
           estampa?: string | null
           familia?: string | null
           grupo: string
+          grupo_id: string
           id?: string
           is_vela_numerica?: boolean
           largura_cm?: number
@@ -1094,6 +1096,7 @@ export type Database = {
           estampa?: string | null
           familia?: string | null
           grupo?: string
+          grupo_id?: string
           id?: string
           is_vela_numerica?: boolean
           largura_cm?: number
@@ -1124,7 +1127,109 @@ export type Database = {
           tipo_embalagem?: string | null
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "products_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "produto_grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produto_categorias: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          departamento_id: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          departamento_id: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          departamento_id?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produto_categorias_departamento_id_fkey"
+            columns: ["departamento_id"]
+            isOneToOne: false
+            referencedRelation: "produto_departamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produto_departamentos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
         Relationships: []
+      }
+      produto_grupos: {
+        Row: {
+          ativo: boolean
+          categoria_id: string
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria_id: string
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produto_grupos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "produto_categorias"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

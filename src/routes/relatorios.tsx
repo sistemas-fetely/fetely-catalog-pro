@@ -4,11 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft, Download, Printer, FileBarChart, Boxes, Layers, Wallet, Filter,
+  Package, Tag, Building2,
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
-  CartesianGrid, PieChart, Pie, Cell, Legend,
+  CartesianGrid, PieChart, Pie, Cell, Legend, LineChart, Line,
 } from "recharts";
+
 import { useAuth } from "@/store/authStore";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
@@ -29,7 +31,7 @@ export const Route = createFileRoute("/relatorios")({
 
 type PeriodoQuick = "hoje" | "semana" | "mes" | "trimestre" | "semestre" | "ano" | "personalizado";
 type TipoVendFiltro = "todos" | "interno" | "rep";
-type TabKey = "geral" | "produto" | "colecao" | "financeiro";
+type TabKey = "geral" | "produto" | "colecao" | "grupo" | "tipo" | "departamento" | "financeiro";
 
 interface OrderRow {
   id: string;
@@ -67,11 +69,14 @@ interface ItemRow {
     nomeComercial?: string;
     colecao?: string;
     grupo?: string;
+    tipo?: string;
     categoria?: string;
+    departamento?: string;
     corNome?: string;
     tamanhoNumero?: string;
     precoAtacado?: number;
   } | null;
+
   orders: { id: string; created_at: string; vendedor_id: string; total: number };
 }
 
@@ -238,7 +243,7 @@ function RelatoriosPage() {
   });
 
   const { data: items = [], isLoading: loadingItems } = useQuery({
-    enabled: !!session && !isCliente && (tab === "produto" || tab === "colecao"),
+    enabled: !!session && !isCliente && (tab === "produto" || tab === "colecao" || tab === "grupo" || tab === "tipo" || tab === "departamento"),
     queryKey: ["rel-items", filtroKey, tab],
     queryFn: async () => {
       let q = supabase
@@ -264,8 +269,12 @@ function RelatoriosPage() {
     { key: "geral", label: "Vendas Geral", icon: <FileBarChart className="h-3.5 w-3.5" /> },
     { key: "produto", label: "Por Produto", icon: <Boxes className="h-3.5 w-3.5" /> },
     { key: "colecao", label: "Por Coleção", icon: <Layers className="h-3.5 w-3.5" /> },
+    { key: "grupo", label: "Por Grupo", icon: <Package className="h-3.5 w-3.5" /> },
+    { key: "tipo", label: "Por Tipo", icon: <Tag className="h-3.5 w-3.5" /> },
+    { key: "departamento", label: "Por Departamento", icon: <Building2 className="h-3.5 w-3.5" /> },
     { key: "financeiro", label: "Financeiro", icon: <Wallet className="h-3.5 w-3.5" /> },
   ];
+
 
   return (
     <main className="mx-auto max-w-[1400px] px-3 sm:px-6 py-6 sm:py-8 lg:py-10 space-y-5 print:py-0 print:px-0">
@@ -359,12 +368,22 @@ function RelatoriosPage() {
       {!loadingOrders && tab === "colecao" && (
         <TabColecao items={items} loadingItems={loadingItems} range={range} />
       )}
+      {!loadingOrders && tab === "grupo" && (
+        <TabGrupo items={items} loadingItems={loadingItems} range={range} />
+      )}
+      {!loadingOrders && tab === "tipo" && (
+        <TabTipo items={items} loadingItems={loadingItems} range={range} />
+      )}
+      {!loadingOrders && tab === "departamento" && (
+        <TabDepartamento items={items} ordersPrev={ordersPrev} loadingItems={loadingItems} range={range} />
+      )}
       {!loadingOrders && tab === "financeiro" && (
         <TabFinanceiro orders={orders} range={range} />
       )}
     </main>
   );
 }
+
 
 // ────────────────────────────────────────────────────────────────────────────
 // Field components
@@ -1088,6 +1107,725 @@ function TabFinanceiro({ orders, range }: { orders: OrderRow[]; range: { from: D
               <Area type="monotone" dataKey="descPct" stroke={GOLD} strokeWidth={2} fill={GOLD} fillOpacity={0.2} />
             </AreaChart>
           </ResponsiveContainer>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Helpers compartilhados (Grupo / Tipo / Departamento)
+// ────────────────────────────────────────────────────────────────────────────
+
+function aggregateBy(
+  items: ItemRow[],
+  keyFn: (it: ItemRow) => string,
+) {
+  const m = new Map<string, { nome: string; pedidos: Set<string>; qtd: number; bruto: number }>();
+  items.forEach((it) => {
+    const k = keyFn(it) || "—";
+    const cur = m.get(k) ?? { nome: k, pedidos: new Set<string>(), qtd: 0, bruto: 0 };
+    cur.qtd += Number(it.quantity || 0);
+    cur.bruto += Number(it.subtotal_bruto || 0);
+    cur.pedidos.add(it.orders.id);
+    m.set(k, cur);
+  });
+  return Array.from(m.values()).map((r) => ({
+    nome: r.nome,
+    pedidos: r.pedidos.size,
+    qtd: r.qtd,
+    bruto: r.bruto,
+  }));
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// TAB: GRUPO
+// ────────────────────────────────────────────────────────────────────────────
+
+function TabGrupo({ items, loadingItems, range }: {
+  items: ItemRow[]; loadingItems: boolean; range: { from: Date; to: Date };
+}) {
+  const [filtroCategoria, setFiltroCategoria] = useState("todas");
+  const [filtroColecao, setFiltroColecao] = useState("todas");
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const categorias = useMemo(() => Array.from(new Set(items.map((it) => it.product_snapshot?.categoria ?? "—"))).sort(), [items]);
+  const colecoes = useMemo(() => Array.from(new Set(items.map((it) => it.product_snapshot?.colecao ?? "—"))).sort(), [items]);
+
+  const itemsFiltrados = useMemo(() => items.filter((it) => {
+    if (filtroCategoria !== "todas" && (it.product_snapshot?.categoria ?? "—") !== filtroCategoria) return false;
+    if (filtroColecao !== "todas" && (it.product_snapshot?.colecao ?? "—") !== filtroColecao) return false;
+    return true;
+  }), [items, filtroCategoria, filtroColecao]);
+
+  const totalFat = itemsFiltrados.reduce((s, i) => s + Number(i.subtotal_bruto || 0), 0);
+
+  const grupos = useMemo(() => {
+    const base = aggregateBy(itemsFiltrados, (it) => it.product_snapshot?.grupo ?? "—");
+    return base.map((g) => {
+      const colByGrupo = aggregateBy(
+        itemsFiltrados.filter((it) => (it.product_snapshot?.grupo ?? "—") === g.nome),
+        (it) => it.product_snapshot?.colecao ?? "—",
+      ).sort((a, b) => b.bruto - a.bruto);
+      return {
+        ...g,
+        pctTotal: totalFat > 0 ? (g.bruto / totalFat) * 100 : 0,
+        ticket: g.pedidos > 0 ? g.bruto / g.pedidos : 0,
+        colecoes: colByGrupo,
+      };
+    }).sort((a, b) => b.bruto - a.bruto);
+  }, [itemsFiltrados, totalFat]);
+
+  const evolucao = useMemo(() => {
+    const byDay = new Map<string, Record<string, number>>();
+    const topGrupos = grupos.slice(0, 6).map((g) => g.nome);
+    itemsFiltrados.forEach((it) => {
+      const g = it.product_snapshot?.grupo ?? "—";
+      if (!topGrupos.includes(g)) return;
+      const k = new Date(it.orders.created_at).toISOString().slice(0, 10);
+      const cur = byDay.get(k) ?? {};
+      cur[g] = (cur[g] ?? 0) + Number(it.subtotal_bruto || 0);
+      byDay.set(k, cur);
+    });
+    return Array.from(byDay.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([d, v]) => ({
+      label: new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+      ...topGrupos.reduce((acc, g) => ({ ...acc, [g]: Math.round(v[g] ?? 0) }), {}),
+    }));
+  }, [itemsFiltrados, grupos]);
+
+  const topGrupos6 = grupos.slice(0, 6).map((g) => g.nome);
+
+  // Matriz Grupo × Coleção
+  const matriz = useMemo(() => {
+    const topG = grupos.slice(0, 8).map((g) => g.nome);
+    const colTotals = aggregateBy(itemsFiltrados, (it) => it.product_snapshot?.colecao ?? "—")
+      .sort((a, b) => b.bruto - a.bruto).slice(0, 10);
+    const topC = colTotals.map((c) => c.nome);
+    const data: Array<{ grupo: string; cells: Array<{ colecao: string; valor: number }> }> = [];
+    let max = 0;
+    topG.forEach((g) => {
+      const row = topC.map((c) => {
+        const v = itemsFiltrados
+          .filter((it) => (it.product_snapshot?.grupo ?? "—") === g && (it.product_snapshot?.colecao ?? "—") === c)
+          .reduce((s, it) => s + Number(it.subtotal_bruto || 0), 0);
+        if (v > max) max = v;
+        return { colecao: c, valor: v };
+      });
+      data.push({ grupo: g, cells: row });
+    });
+    return { grupos: topG, colecoes: topC, data, max };
+  }, [itemsFiltrados, grupos]);
+
+  // Insight automático
+  const insight = useMemo(() => {
+    if (!grupos.length) return null;
+    const top = grupos[0];
+    if (top.pctTotal > 70) return `💡 ${top.nome} domina ${top.pctTotal.toFixed(0)}% do faturamento — considere diversificar o mix.`;
+    const totalQtd = grupos.reduce((s, g) => s + g.qtd, 0);
+    const qtdPct = totalQtd > 0 ? (top.qtd / totalQtd) * 100 : 0;
+    if (Math.abs(qtdPct - top.pctTotal) > 10) {
+      return `💡 ${top.nome} representa ${top.pctTotal.toFixed(0)}% do faturamento mas ${qtdPct.toFixed(0)}% das unidades — ticket médio ${qtdPct > top.pctTotal ? "abaixo" : "acima"} da média geral.`;
+    }
+    return null;
+  }, [grupos]);
+
+  const exportar = () => {
+    downloadCSV(`fetely_relatorio_grupos_${periodSuffix(range.from)}.csv`, grupos.map((g) => ({
+      grupo: g.nome, pedidos: g.pedidos, unidades: g.qtd,
+      fat_bruto: g.bruto.toFixed(2), pct_total: g.pctTotal.toFixed(2),
+      ticket_medio: g.ticket.toFixed(2),
+    })));
+  };
+
+  if (loadingItems) {
+    return <div className="rounded-lg gold-border bg-surface p-8 text-center text-sm text-text-muted">Carregando itens...</div>;
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-3 items-end">
+        <FieldSelect label="Categoria" value={filtroCategoria} onChange={setFiltroCategoria} options={[
+          ["todas", "Todas"], ...categorias.map((c) => [c, c] as [string, string]),
+        ]} />
+        <FieldSelect label="Coleção" value={filtroColecao} onChange={setFiltroColecao} options={[
+          ["todas", "Todas"], ...colecoes.map((c) => [c, c] as [string, string]),
+        ]} />
+        <div className="ml-auto"><ExportBtn onClick={exportar} /></div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card title="Participação por grupo">
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={grupos} dataKey="bruto" nameKey="nome" cx="50%" cy="50%" outerRadius={100} innerRadius={55}>
+                  {grupos.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                  formatter={(v: number) => formatBRL(v)}
+                />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card title="Evolução por grupo (top 6)">
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={evolucao} margin={{ top: 8, right: 12, left: 0, bottom: 0 }} stackOffset="none">
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: "var(--text-muted)", fontSize: 10 }} minTickGap={24} />
+                <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10 }} width={56}
+                  tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                <Tooltip
+                  contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                  formatter={(v: number) => formatBRL(v)}
+                />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+                {topGrupos6.map((g, i) => (
+                  <Area key={g} type="monotone" dataKey={g} stackId="1"
+                    stroke={PIE_COLORS[i % PIE_COLORS.length]} fill={PIE_COLORS[i % PIE_COLORS.length]} fillOpacity={0.6} />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      <Card title={`Detalhe por grupo (${grupos.length})`}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border text-[10px] uppercase tracking-wider text-zinc-100">
+                <th className="px-2 py-2 text-left">Grupo</th>
+                <th className="px-2 py-2 text-right">Pedidos</th>
+                <th className="px-2 py-2 text-right">Unidades</th>
+                <th className="px-2 py-2 text-right">Fat. bruto</th>
+                <th className="px-2 py-2 text-right">% Total</th>
+                <th className="px-2 py-2 text-right">Ticket médio</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {grupos.map((g) => (
+                <Fragment key={g.nome}>
+                  <tr onClick={() => setExpanded(expanded === g.nome ? null : g.nome)}
+                    className="hover:bg-surface-2/40 cursor-pointer">
+                    <td className="px-2 py-2.5 text-text-primary">
+                      <span className="inline-block w-3 text-gold">{expanded === g.nome ? "▾" : "▸"}</span>{g.nome}
+                    </td>
+                    <td className="px-2 py-2.5 text-right">{g.pedidos}</td>
+                    <td className="px-2 py-2.5 text-right">{g.qtd}</td>
+                    <td className="px-2 py-2.5 text-right text-gold font-medium">{formatBRL(g.bruto)}</td>
+                    <td className="px-2 py-2.5 text-right text-text-secondary">{g.pctTotal.toFixed(1)}%</td>
+                    <td className="px-2 py-2.5 text-right text-text-secondary">{formatBRL(g.ticket)}</td>
+                  </tr>
+                  {expanded === g.nome && g.colecoes.map((c) => (
+                    <tr key={c.nome} className="bg-surface-2/30">
+                      <td className="px-6 py-1.5 text-text-secondary">↳ {c.nome}</td>
+                      <td className="px-2 py-1.5 text-right text-text-secondary">{c.pedidos}</td>
+                      <td className="px-2 py-1.5 text-right text-text-secondary">{c.qtd}</td>
+                      <td className="px-2 py-1.5 text-right text-text-secondary">{formatBRL(c.bruto)}</td>
+                      <td className="px-2 py-1.5"></td>
+                      <td className="px-2 py-1.5"></td>
+                    </tr>
+                  ))}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+          {grupos.length === 0 && <div className="text-center text-sm text-text-muted py-6">Nenhum item no período.</div>}
+        </div>
+      </Card>
+
+      {insight && (
+        <div className="rounded-lg border border-gold/30 bg-gold/5 px-4 py-3 text-sm text-text-primary">
+          {insight}
+        </div>
+      )}
+
+      <Card title="Cruzamento Grupo × Coleção">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="text-[10px] uppercase tracking-wider text-zinc-100">
+                <th className="px-2 py-2 text-left sticky left-0 bg-surface">Grupo \ Coleção</th>
+                {matriz.colecoes.map((c) => (
+                  <th key={c} className="px-2 py-2 text-right font-medium whitespace-nowrap">{c}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {matriz.data.map((row) => (
+                <tr key={row.grupo} className="border-t border-border/40">
+                  <td className="px-2 py-2 text-text-primary sticky left-0 bg-surface font-medium">{row.grupo}</td>
+                  {row.cells.map((cell) => {
+                    const opacity = matriz.max > 0 ? cell.valor / matriz.max : 0;
+                    return (
+                      <td
+                        key={cell.colecao}
+                        className="px-2 py-2 text-right"
+                        style={{
+                          backgroundColor: cell.valor > 0 ? `rgba(201,168,76,${opacity * 0.55})` : "rgba(40,40,40,0.3)",
+                          color: opacity > 0.4 ? "#fff" : "var(--text-secondary)",
+                        }}
+                      >
+                        {cell.valor > 0 ? formatBRL(cell.valor) : "—"}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// TAB: TIPO
+// ────────────────────────────────────────────────────────────────────────────
+
+function TabTipo({ items, loadingItems, range }: {
+  items: ItemRow[]; loadingItems: boolean; range: { from: Date; to: Date };
+}) {
+  // Pré-selecionar grupo com maior faturamento
+  const gruposDisponiveis = useMemo(() => {
+    return aggregateBy(items, (it) => it.product_snapshot?.grupo ?? "—")
+      .sort((a, b) => b.bruto - a.bruto)
+      .map((g) => g.nome);
+  }, [items]);
+
+  const [filtroGrupo, setFiltroGrupo] = useState<string>("todos");
+  const [filtroCategoria, setFiltroCategoria] = useState("todas");
+  const [filtroColecao, setFiltroColecao] = useState("todas");
+
+  useEffect(() => {
+    if (filtroGrupo === "todos" && gruposDisponiveis.length > 0) {
+      setFiltroGrupo(gruposDisponiveis[0]);
+    }
+  }, [gruposDisponiveis, filtroGrupo]);
+
+  const categorias = useMemo(() => Array.from(new Set(items.map((it) => it.product_snapshot?.categoria ?? "—"))).sort(), [items]);
+  const colecoes = useMemo(() => Array.from(new Set(items.map((it) => it.product_snapshot?.colecao ?? "—"))).sort(), [items]);
+
+  const itemsFiltrados = useMemo(() => items.filter((it) => {
+    if (filtroGrupo !== "todos" && (it.product_snapshot?.grupo ?? "—") !== filtroGrupo) return false;
+    if (filtroCategoria !== "todas" && (it.product_snapshot?.categoria ?? "—") !== filtroCategoria) return false;
+    if (filtroColecao !== "todas" && (it.product_snapshot?.colecao ?? "—") !== filtroColecao) return false;
+    return true;
+  }), [items, filtroGrupo, filtroCategoria, filtroColecao]);
+
+  const totalGrupoFat = itemsFiltrados.reduce((s, i) => s + Number(i.subtotal_bruto || 0), 0);
+
+  const tipos = useMemo(() => {
+    const m = new Map<string, {
+      tipo: string; grupo: string; pedidos: Set<string>; qtd: number; bruto: number;
+      precoMin: number; precoMax: number;
+    }>();
+    itemsFiltrados.forEach((it) => {
+      const t = it.product_snapshot?.tipo ?? "—";
+      const g = it.product_snapshot?.grupo ?? "—";
+      const key = `${g}||${t}`;
+      const preco = Number(it.product_snapshot?.precoAtacado) || 0;
+      const cur = m.get(key) ?? {
+        tipo: t, grupo: g, pedidos: new Set<string>(), qtd: 0, bruto: 0,
+        precoMin: preco || Infinity, precoMax: preco,
+      };
+      cur.qtd += Number(it.quantity || 0);
+      cur.bruto += Number(it.subtotal_bruto || 0);
+      cur.pedidos.add(it.orders.id);
+      if (preco > 0) {
+        cur.precoMin = Math.min(cur.precoMin, preco);
+        cur.precoMax = Math.max(cur.precoMax, preco);
+      }
+      m.set(key, cur);
+    });
+    return Array.from(m.values()).map((r) => ({
+      ...r,
+      nPedidos: r.pedidos.size,
+      precoMin: r.precoMin === Infinity ? 0 : r.precoMin,
+      pctGrupo: totalGrupoFat > 0 ? (r.bruto / totalGrupoFat) * 100 : 0,
+    })).sort((a, b) => b.bruto - a.bruto);
+  }, [itemsFiltrados, totalGrupoFat]);
+
+  // Mix de tipos por grupo (todos os grupos)
+  const mixData = useMemo(() => {
+    const byGrupo = new Map<string, Map<string, number>>();
+    items.forEach((it) => {
+      const g = it.product_snapshot?.grupo ?? "—";
+      const t = it.product_snapshot?.tipo ?? "—";
+      if (!byGrupo.has(g)) byGrupo.set(g, new Map());
+      const tm = byGrupo.get(g)!;
+      tm.set(t, (tm.get(t) ?? 0) + Number(it.subtotal_bruto || 0));
+    });
+    return Array.from(byGrupo.entries()).map(([grupo, tm]) => {
+      const total = Array.from(tm.values()).reduce((s, v) => s + v, 0);
+      const obj: Record<string, string | number> = { grupo };
+      tm.forEach((v, t) => { obj[t] = total > 0 ? Number(((v / total) * 100).toFixed(1)) : 0; });
+      return obj;
+    });
+  }, [items]);
+
+  const allTipos = useMemo(() => Array.from(new Set(items.map((it) => it.product_snapshot?.tipo ?? "—"))), [items]);
+
+  // Insight
+  const insight = useMemo(() => {
+    if (!tipos.length || filtroGrupo === "todos") return null;
+    const top = tipos[0];
+    if (top.pctGrupo > 90) return `💡 ${top.tipo} concentra quase todo o volume de ${filtroGrupo} (${top.pctGrupo.toFixed(0)}%).`;
+    return null;
+  }, [tipos, filtroGrupo]);
+
+  const exportar = () => {
+    downloadCSV(`fetely_relatorio_tipos_${periodSuffix(range.from)}.csv`, tipos.map((t) => ({
+      tipo: t.tipo, grupo: t.grupo, pedidos: t.nPedidos, unidades: t.qtd,
+      fat_liquido: t.bruto.toFixed(2), pct_do_grupo: t.pctGrupo.toFixed(2),
+      preco_medio_unit: `${t.precoMin.toFixed(2)} – ${t.precoMax.toFixed(2)}`,
+    })));
+  };
+
+  if (loadingItems) {
+    return <div className="rounded-lg gold-border bg-surface p-8 text-center text-sm text-text-muted">Carregando itens...</div>;
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-3 items-end">
+        <FieldSelect label="Grupo" value={filtroGrupo} onChange={setFiltroGrupo} options={[
+          ["todos", "Todos"], ...gruposDisponiveis.map((g) => [g, g] as [string, string]),
+        ]} />
+        <FieldSelect label="Categoria" value={filtroCategoria} onChange={setFiltroCategoria} options={[
+          ["todas", "Todas"], ...categorias.map((c) => [c, c] as [string, string]),
+        ]} />
+        <FieldSelect label="Coleção" value={filtroColecao} onChange={setFiltroColecao} options={[
+          ["todas", "Todas"], ...colecoes.map((c) => [c, c] as [string, string]),
+        ]} />
+        <div className="ml-auto"><ExportBtn onClick={exportar} /></div>
+      </div>
+
+      <Card title={`Ranking de tipos${filtroGrupo !== "todos" ? ` em ${filtroGrupo}` : ""}`}>
+        <div className="h-[360px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={tipos.slice(0, 15).map((t) => ({ nome: t.tipo, valor: Math.round(t.bruto) }))}
+              layout="vertical" margin={{ top: 8, right: 32, left: 8, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+              <XAxis type="number" tick={{ fill: "var(--text-muted)", fontSize: 10 }}
+                tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+              <YAxis type="category" dataKey="nome" tick={{ fill: "var(--text-muted)", fontSize: 10 }} width={140} />
+              <Tooltip
+                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                formatter={(v: number) => formatBRL(v)}
+              />
+              <Bar dataKey="valor" fill={GOLD} radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      {insight && (
+        <div className="rounded-lg border border-gold/30 bg-gold/5 px-4 py-3 text-sm text-text-primary">
+          {insight}
+        </div>
+      )}
+
+      <Card title={`Detalhe por tipo (${tipos.length})`}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border text-[10px] uppercase tracking-wider text-zinc-100">
+                <th className="px-2 py-2 text-left">Tipo</th>
+                <th className="px-2 py-2 text-left">Grupo</th>
+                <th className="px-2 py-2 text-right">Pedidos</th>
+                <th className="px-2 py-2 text-right">Unidades</th>
+                <th className="px-2 py-2 text-right">Fat. líquido</th>
+                <th className="px-2 py-2 text-right">% Grupo</th>
+                <th className="px-2 py-2 text-right">Preço un.</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {tipos.map((t) => (
+                <tr key={`${t.grupo}-${t.tipo}`} className="hover:bg-surface-2/40">
+                  <td className="px-2 py-2 text-text-primary">{t.tipo}</td>
+                  <td className="px-2 py-2 text-text-secondary">{t.grupo}</td>
+                  <td className="px-2 py-2 text-right">{t.nPedidos}</td>
+                  <td className="px-2 py-2 text-right">{t.qtd}</td>
+                  <td className="px-2 py-2 text-right text-gold font-medium">{formatBRL(t.bruto)}</td>
+                  <td className="px-2 py-2 text-right text-text-secondary">{t.pctGrupo.toFixed(1)}%</td>
+                  <td className="px-2 py-2 text-right text-text-secondary">
+                    {t.precoMin === t.precoMax ? formatBRL(t.precoMin) : `${formatBRL(t.precoMin)} – ${formatBRL(t.precoMax)}`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {tipos.length === 0 && <div className="text-center text-sm text-text-muted py-6">Nenhum item no período.</div>}
+        </div>
+      </Card>
+
+      <Card title="Mix de tipos por grupo (% do faturamento)">
+        <div className="h-[360px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={mixData} layout="vertical" margin={{ top: 8, right: 12, left: 8, bottom: 8 }} stackOffset="expand">
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+              <XAxis type="number" tick={{ fill: "var(--text-muted)", fontSize: 10 }} tickFormatter={(v) => `${v}%`} />
+              <YAxis type="category" dataKey="grupo" tick={{ fill: "var(--text-muted)", fontSize: 10 }} width={130} />
+              <Tooltip
+                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                formatter={(v: number) => `${v}%`}
+              />
+              <Legend wrapperStyle={{ fontSize: 10 }} />
+              {allTipos.map((t, i) => (
+                <Bar key={t} dataKey={t} stackId="a" fill={PIE_COLORS[i % PIE_COLORS.length]} />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// TAB: DEPARTAMENTO
+// ────────────────────────────────────────────────────────────────────────────
+
+function TabDepartamento({ items, ordersPrev, loadingItems, range }: {
+  items: ItemRow[]; ordersPrev: OrderRow[]; loadingItems: boolean; range: { from: Date; to: Date };
+}) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggle = (k: string) => setExpanded((prev) => {
+    const next = new Set(prev);
+    if (next.has(k)) next.delete(k); else next.add(k);
+    return next;
+  });
+
+  const totalFat = items.reduce((s, i) => s + Number(i.subtotal_bruto || 0), 0);
+
+  // Drill-down completo: Departamento → Categoria → Grupo → Tipo
+  const arvore = useMemo(() => {
+    type No = { nome: string; pedidos: Set<string>; qtd: number; bruto: number; filhos: Map<string, No> };
+    const root = new Map<string, No>();
+    items.forEach((it) => {
+      const dep = it.product_snapshot?.departamento ?? "—";
+      const cat = it.product_snapshot?.categoria ?? "—";
+      const grp = it.product_snapshot?.grupo ?? "—";
+      const tip = it.product_snapshot?.tipo ?? "—";
+      const path = [dep, cat, grp, tip];
+      let curMap = root;
+      path.forEach((n) => {
+        const node = curMap.get(n) ?? { nome: n, pedidos: new Set<string>(), qtd: 0, bruto: 0, filhos: new Map() };
+        node.qtd += Number(it.quantity || 0);
+        node.bruto += Number(it.subtotal_bruto || 0);
+        node.pedidos.add(it.orders.id);
+        curMap.set(n, node);
+        curMap = node.filhos;
+      });
+    });
+    type NoArr = { nome: string; pedidos: number; qtd: number; bruto: number; filhos: NoArr[] };
+    const toArr = (m: Map<string, No>): NoArr[] =>
+      Array.from(m.values()).map((n) => ({
+        nome: n.nome,
+        pedidos: n.pedidos.size,
+        qtd: n.qtd,
+        bruto: n.bruto,
+        filhos: toArr(n.filhos),
+      })).sort((a, b) => b.bruto - a.bruto);
+    return toArr(root);
+
+  }, [items]);
+
+  // Variação vs período anterior por departamento
+  // Como ordersPrev não traz items, usamos uma aproximação: % do dept atual
+  const departamentos = useMemo(() => arvore.map((d) => ({
+    nome: d.nome,
+    bruto: d.bruto,
+    pctTotal: totalFat > 0 ? (d.bruto / totalFat) * 100 : 0,
+  })), [arvore, totalFat]);
+
+  const evolucao = useMemo(() => {
+    const byDay = new Map<string, Record<string, number>>();
+    const allDeps = departamentos.map((d) => d.nome);
+    items.forEach((it) => {
+      const dep = it.product_snapshot?.departamento ?? "—";
+      const k = new Date(it.orders.created_at).toISOString().slice(0, 10);
+      const cur = byDay.get(k) ?? {};
+      cur[dep] = (cur[dep] ?? 0) + Number(it.subtotal_bruto || 0);
+      byDay.set(k, cur);
+    });
+    return Array.from(byDay.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([d, v]) => ({
+      label: new Date(d + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+      ...allDeps.reduce((acc, dep) => ({ ...acc, [dep]: Math.round(v[dep] ?? 0) }), {}),
+    }));
+  }, [items, departamentos]);
+
+  // Variação aproximada usando ordersPrev total
+  const totalPrev = ordersPrev.reduce((s, o) => s + Number(o.total || 0), 0);
+  const totalCur = items.reduce((s, it) => s + Number(it.subtotal_bruto || 0), 0);
+  const variacaoGeral = totalPrev > 0 ? ((totalCur - totalPrev) / totalPrev) * 100 : null;
+
+  const allDeps = departamentos.map((d) => d.nome);
+
+  const exportar = () => {
+    const rows: Array<Record<string, string | number>> = [];
+    arvore.forEach((d) => {
+      d.filhos.forEach((c) => {
+        c.filhos.forEach((g) => {
+          g.filhos.forEach((t) => {
+            rows.push({
+              departamento: d.nome, categoria: c.nome, grupo: g.nome, tipo: t.nome,
+              pedidos: t.pedidos, unidades: t.qtd, fat_liquido: t.bruto.toFixed(2),
+              pct_total: totalFat > 0 ? ((t.bruto / totalFat) * 100).toFixed(2) : "0.00",
+            });
+          });
+        });
+      });
+    });
+    downloadCSV(`fetely_relatorio_departamentos_${periodSuffix(range.from)}.csv`, rows);
+  };
+
+  if (loadingItems) {
+    return <div className="rounded-lg gold-border bg-surface p-8 text-center text-sm text-text-muted">Carregando itens...</div>;
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-end"><ExportBtn onClick={exportar} /></div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card title="Participação por departamento">
+          <div className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={departamentos} dataKey="bruto" nameKey="nome" cx="50%" cy="50%" outerRadius={110} innerRadius={70}
+                  label={(e) => `${e.nome}: ${e.pctTotal.toFixed(0)}%`}>
+                  {departamentos.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                  formatter={(v: number) => formatBRL(v)}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          {variacaoGeral != null && (
+            <div className="text-center text-xs text-text-muted mt-2">
+              Total <span className={variacaoGeral >= 0 ? "text-stock-in" : "text-stock-out"}>
+                {variacaoGeral >= 0 ? "↑" : "↓"} {Math.abs(variacaoGeral).toFixed(1)}%
+              </span> vs período anterior
+            </div>
+          )}
+        </Card>
+
+        <Card title="Evolução por departamento">
+          <div className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={evolucao} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: "var(--text-muted)", fontSize: 10 }} minTickGap={24} />
+                <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10 }} width={56}
+                  tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                <Tooltip
+                  contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                  formatter={(v: number) => formatBRL(v)}
+                />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+                {allDeps.map((d, i) => (
+                  <Line key={d} type="monotone" dataKey={d} stroke={PIE_COLORS[i % PIE_COLORS.length]} strokeWidth={2} dot={false} />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="Drill-down completo (Departamento → Categoria → Grupo → Tipo)">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border text-[10px] uppercase tracking-wider text-zinc-100">
+                <th className="px-2 py-2 text-left">Hierarquia</th>
+                <th className="px-2 py-2 text-right">Pedidos</th>
+                <th className="px-2 py-2 text-right">Unidades</th>
+                <th className="px-2 py-2 text-right">Fat. líquido</th>
+                <th className="px-2 py-2 text-right">% Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {arvore.map((dep) => {
+                const depKey = `D:${dep.nome}`;
+                const depOpen = expanded.has(depKey);
+                return (
+                  <Fragment key={depKey}>
+                    <tr onClick={() => toggle(depKey)} className="hover:bg-surface-2/40 cursor-pointer bg-surface-2/20">
+                      <td className="px-2 py-2.5 text-text-primary font-medium uppercase tracking-wider text-[11px]">
+                        <span className="inline-block w-3 text-gold">{depOpen ? "▾" : "▸"}</span>{dep.nome}
+                      </td>
+                      <td className="px-2 py-2.5 text-right">{dep.pedidos}</td>
+                      <td className="px-2 py-2.5 text-right">{dep.qtd}</td>
+                      <td className="px-2 py-2.5 text-right text-gold font-medium">{formatBRL(dep.bruto)}</td>
+                      <td className="px-2 py-2.5 text-right text-text-secondary">
+                        {totalFat > 0 ? ((dep.bruto / totalFat) * 100).toFixed(1) : "0.0"}%
+                      </td>
+                    </tr>
+                    {depOpen && dep.filhos.map((cat) => {
+                      const catKey = `${depKey}>C:${cat.nome}`;
+                      const catOpen = expanded.has(catKey);
+                      return (
+                        <Fragment key={catKey}>
+                          <tr onClick={() => toggle(catKey)} className="hover:bg-surface-2/30 cursor-pointer">
+                            <td className="pl-6 pr-2 py-1.5 text-text-secondary">
+                              <span className="inline-block w-3 text-gold">{catOpen ? "▾" : "▸"}</span>{cat.nome}
+                            </td>
+                            <td className="px-2 py-1.5 text-right text-text-secondary">{cat.pedidos}</td>
+                            <td className="px-2 py-1.5 text-right text-text-secondary">{cat.qtd}</td>
+                            <td className="px-2 py-1.5 text-right text-text-secondary">{formatBRL(cat.bruto)}</td>
+                            <td className="px-2 py-1.5 text-right text-text-muted">
+                              {dep.bruto > 0 ? ((cat.bruto / dep.bruto) * 100).toFixed(1) : "0.0"}%
+                            </td>
+                          </tr>
+                          {catOpen && cat.filhos.map((grp) => {
+                            const grpKey = `${catKey}>G:${grp.nome}`;
+                            const grpOpen = expanded.has(grpKey);
+                            return (
+                              <Fragment key={grpKey}>
+                                <tr onClick={() => toggle(grpKey)} className="hover:bg-surface-2/20 cursor-pointer">
+                                  <td className="pl-10 pr-2 py-1.5 text-text-secondary">
+                                    <span className="inline-block w-3 text-gold">{grpOpen ? "▾" : "▸"}</span>{grp.nome}
+                                  </td>
+                                  <td className="px-2 py-1.5 text-right text-text-muted">{grp.pedidos}</td>
+                                  <td className="px-2 py-1.5 text-right text-text-muted">{grp.qtd}</td>
+                                  <td className="px-2 py-1.5 text-right text-text-muted">{formatBRL(grp.bruto)}</td>
+                                  <td className="px-2 py-1.5 text-right text-text-muted">
+                                    {cat.bruto > 0 ? ((grp.bruto / cat.bruto) * 100).toFixed(1) : "0.0"}%
+                                  </td>
+                                </tr>
+                                {grpOpen && grp.filhos.map((tip) => (
+                                  <tr key={`${grpKey}>T:${tip.nome}`} className="bg-surface-2/10">
+                                    <td className="pl-14 pr-2 py-1 text-text-muted text-[11px]">└ {tip.nome}</td>
+                                    <td className="px-2 py-1 text-right text-text-muted">{tip.pedidos}</td>
+                                    <td className="px-2 py-1 text-right text-text-muted">{tip.qtd}</td>
+                                    <td className="px-2 py-1 text-right text-text-muted">{formatBRL(tip.bruto)}</td>
+                                    <td className="px-2 py-1 text-right text-text-muted">
+                                      {grp.bruto > 0 ? ((tip.bruto / grp.bruto) * 100).toFixed(1) : "0.0"}%
+                                    </td>
+                                  </tr>
+                                ))}
+                              </Fragment>
+                            );
+                          })}
+                        </Fragment>
+                      );
+                    })}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+          {arvore.length === 0 && <div className="text-center text-sm text-text-muted py-6">Nenhum item no período.</div>}
         </div>
       </Card>
     </div>
