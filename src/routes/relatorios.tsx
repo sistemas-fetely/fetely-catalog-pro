@@ -1601,20 +1601,31 @@ function TabTipo({ items, loadingItems, range }: {
                                 <th className="px-2 py-1 text-right">Pedidos</th>
                                 <th className="px-2 py-1 text-right">Unidades</th>
                                 <th className="px-2 py-1 text-right">Fat. líquido</th>
+                                <th className="px-2 py-1 text-right">% do tipo</th>
+                                <th className="px-2 py-1 text-left w-[140px]">Participação</th>
                                 <th className="px-2 py-1 text-right">Preço un.</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-border/30">
-                              {produtos.map((p) => (
-                                <tr key={p.sku}>
-                                  <td className="px-2 py-1 text-text-muted font-mono">{p.sku}</td>
-                                  <td className="px-2 py-1 text-text-primary">{p.nome}</td>
-                                  <td className="px-2 py-1 text-right">{p.pedidos.size}</td>
-                                  <td className="px-2 py-1 text-right">{p.qtd}</td>
-                                  <td className="px-2 py-1 text-right text-gold">{formatBRL(p.bruto)}</td>
-                                  <td className="px-2 py-1 text-right text-text-secondary">{p.preco > 0 ? formatBRL(p.preco) : "—"}</td>
-                                </tr>
-                              ))}
+                              {produtos.map((p) => {
+                                const pct = t.bruto > 0 ? (p.bruto / t.bruto) * 100 : 0;
+                                return (
+                                  <tr key={p.sku}>
+                                    <td className="px-2 py-1 text-text-muted font-mono">{p.sku}</td>
+                                    <td className="px-2 py-1 text-text-primary">{p.nome}</td>
+                                    <td className="px-2 py-1 text-right">{p.pedidos.size}</td>
+                                    <td className="px-2 py-1 text-right">{p.qtd}</td>
+                                    <td className="px-2 py-1 text-right text-gold">{formatBRL(p.bruto)}</td>
+                                    <td className="px-2 py-1 text-right text-text-secondary font-medium">{pct.toFixed(1)}%</td>
+                                    <td className="px-2 py-1">
+                                      <div className="h-2 w-full rounded-full bg-surface-2 overflow-hidden">
+                                        <div className="h-full bg-gold rounded-full" style={{ width: `${Math.min(100, pct)}%` }} />
+                                      </div>
+                                    </td>
+                                    <td className="px-2 py-1 text-right text-text-secondary">{p.preco > 0 ? formatBRL(p.preco) : "—"}</td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </td>
