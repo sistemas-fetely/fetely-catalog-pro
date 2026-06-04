@@ -175,7 +175,10 @@ function Confirmation() {
     const totalAtualItens = atual?.items.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0) ?? 0;
     const totalAtualBase = atual?.commercial?.bruto ?? atual?.total ?? 0;
     const precisaBanco = !atual || atual.items.length === 0 || Math.abs(totalAtualItens - totalAtualBase) > 0.05;
-    if (!precisaBanco) return;
+    if (!precisaBanco) {
+      setLoadingPedidoCompleto(false);
+      return;
+    }
     if (pedidoBancoTentadoId === id) return;
     let cancelled = false;
     setLoadingPedidoCompleto(true);
