@@ -1542,7 +1542,7 @@ function TabTipo({ items, loadingItems, range }: {
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border text-[10px] uppercase tracking-wider text-zinc-100">
+              <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-secondary">
                 <th className="px-2 py-2 text-left w-6"></th>
                 <th className="px-2 py-2 text-left">Tipo</th>
                 <th className="px-2 py-2 text-left">Grupo</th>
