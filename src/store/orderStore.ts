@@ -31,6 +31,7 @@ interface OrderState {
   history: SavedOrder[];
   hidratado: boolean;
   hydrate: () => Promise<void>;
+  hydrateOrderById: (orderId: string) => Promise<SavedOrder | null>;
   setHistoryFromRows: (orders: SavedOrder[]) => void;
   addItem: (product: Product, quantity: number) => void;
   addBulk: (entries: { product: Product; quantity: number }[]) => void;
@@ -181,6 +182,37 @@ export const useOrder = create<OrderState>()(
         } catch (err) {
           console.error("[orderStore] hydrate falhou:", err);
           set({ hidratado: true });
+        }
+      },
+      hydrateOrderById: async (orderId) => {
+        try {
+          const { data: orderRow, error: errO } = await supabase
+            .from("orders")
+            .select("*")
+            .eq("id", orderId)
+            .maybeSingle();
+          if (errO) throw errO;
+          if (!orderRow) return null;
+
+          const { data: itemRows, error: errI } = await supabase
+            .from("order_items")
+            .select("*")
+            .eq("order_id", orderId)
+            .order("posicao", { ascending: true });
+          if (errI) throw errI;
+
+          const order = rowToOrder(
+            orderRow as Record<string, unknown>,
+            (itemRows ?? []).map((r) => rowToItem(r as Record<string, unknown>)),
+          );
+          set((s) => ({
+            history: [order, ...s.history.filter((o) => o.id !== order.id)].slice(0, 200),
+            hidratado: true,
+          }));
+          return order;
+        } catch (err) {
+          console.error("[orderStore] hydrateOrderById falhou:", err, orderId);
+          return null;
         }
       },
       setHistoryFromRows: (orders) => set({ history: orders }),
