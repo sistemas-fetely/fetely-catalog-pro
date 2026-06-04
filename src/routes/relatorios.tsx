@@ -1564,21 +1564,6 @@ function TabTipo({ items, loadingItems, range }: {
               {tipos.map((t) => {
                 const key = `${t.grupo}||${t.tipo}`;
                 const isOpen = expandedTipos.has(key);
-                const produtos = isOpen ? (() => {
-                  const m = new Map<string, { nome: string; sku: string; pedidos: Set<string>; qtd: number; bruto: number; preco: number }>();
-                  itemsFiltrados.forEach((it) => {
-                    if ((it.product_snapshot?.grupo ?? "—") !== t.grupo) return;
-                    if ((it.product_snapshot?.tipo ?? "—") !== t.tipo) return;
-                    const sku = it.sku;
-                    const nome = it.product_snapshot?.nomeComercial ?? sku;
-                    const cur = m.get(sku) ?? { nome, sku, pedidos: new Set<string>(), qtd: 0, bruto: 0, preco: Number(it.product_snapshot?.precoAtacado) || 0 };
-                    cur.qtd += Number(it.quantity || 0);
-                    cur.bruto += Number(it.subtotal_bruto || 0);
-                    cur.pedidos.add(it.orders.id);
-                    m.set(sku, cur);
-                  });
-                  return Array.from(m.values()).sort((a, b) => b.bruto - a.bruto);
-                })() : [];
                 return (
                   <Fragment key={key}>
                     <tr className="hover:bg-surface-2/40 cursor-pointer" onClick={() => toggleTipo(key)}>
