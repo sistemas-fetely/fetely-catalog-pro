@@ -872,8 +872,8 @@ function TabColecao({ items, loadingItems, range }: {
             </thead>
             <tbody className="divide-y divide-border/40">
               {colecoes.map((c) => (
-                <>
-                  <tr key={c.nome} onClick={() => setExpanded(expanded === c.nome ? null : c.nome)}
+                <Fragment key={c.nome}>
+                  <tr onClick={() => setExpanded(expanded === c.nome ? null : c.nome)}
                     className="hover:bg-surface-2/40 cursor-pointer">
                     <td className="px-2 py-2.5 text-text-primary">
                       <span className="inline-block w-3 text-gold">{expanded === c.nome ? "▾" : "▸"}</span>{c.nome}
@@ -885,7 +885,7 @@ function TabColecao({ items, loadingItems, range }: {
                     <td className="px-2 py-2.5 text-right text-text-secondary">{c.pctTotal.toFixed(1)}%</td>
                   </tr>
                   {expanded === c.nome && c.produtosArr.map((p) => (
-                    <tr key={c.nome + p.sku} className="bg-surface-2/30">
+                    <tr key={p.sku} className="bg-surface-2/30">
                       <td className="px-6 py-1.5 text-text-secondary" colSpan={2}>↳ {p.nome} <span className="text-text-muted">({p.sku})</span></td>
                       <td className="px-2 py-1.5"></td>
                       <td className="px-2 py-1.5 text-right text-text-secondary">{p.qtd}</td>
@@ -893,8 +893,9 @@ function TabColecao({ items, loadingItems, range }: {
                       <td className="px-2 py-1.5"></td>
                     </tr>
                   ))}
-                </>
+                </Fragment>
               ))}
+
             </tbody>
           </table>
           {colecoes.length === 0 && <div className="text-center text-sm text-text-muted py-6">Nenhuma coleção no período.</div>}
