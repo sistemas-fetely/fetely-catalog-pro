@@ -131,7 +131,7 @@ function Confirmation() {
   const ordersHidratado = useOrder((s) => s.hidratado);
   const provisoes = useProvisao((s) => s.provisoes);
   const provisoesHidratado = useProvisao((s) => s.hidratado);
-  const order = useMemo(() => history.find((o) => o.id === id) ?? history[0], [history, id]);
+  const order = useMemo(() => (id ? history.find((o) => o.id === id) : history[0]), [history, id]);
   const provisao = useMemo(
     () => (provisaoId ? provisoes.find((p) => p.id === provisaoId) : undefined),
     [provisoes, provisaoId],
@@ -142,12 +142,16 @@ function Confirmation() {
   const reprovarOrder = useOrder((s) => s.reprovarOrder);
   const desfazerReprovacao = useOrder((s) => s.desfazerReprovacao);
   const deleteOrder = useOrder((s) => s.deleteOrder);
+  const hydrateOrderById = useOrder((s) => s.hydrateOrderById);
   const [reprovarOpen, setReprovarOpen] = useState(false);
 
   const [copied, setCopied] = useState(false);
   const [emailDialogAberto, setEmailDialogAberto] = useState(false);
   const [imprimirDialog, setImprimirDialog] = useState(false);
   const [printMode, setPrintMode] = useState<"completo" | "resumo">("completo");
+  const [showExport, setShowExport] = useState(false);
+  const [loadingPedidoCompleto, setLoadingPedidoCompleto] = useState(false);
+  const [pedidoBancoTentadoId, setPedidoBancoTentadoId] = useState<string | null>(null);
 
   function executarImprimir(modo: "completo" | "resumo") {
     setPrintMode(modo);
@@ -165,9 +169,31 @@ function Confirmation() {
     return () => window.removeEventListener("afterprint", cleanup);
   }, []);
 
+  useEffect(() => {
+    if (!id || !ordersHidratado) return;
+    const atual = history.find((o) => o.id === id);
+    const totalAtualItens = atual?.items.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0) ?? 0;
+    const totalAtualBase = atual?.commercial?.bruto ?? atual?.total ?? 0;
+    const precisaBanco = !atual || atual.items.length === 0 || Math.abs(totalAtualItens - totalAtualBase) > 0.05;
+    if (!precisaBanco) {
+      setLoadingPedidoCompleto(false);
+      return;
+    }
+    if (pedidoBancoTentadoId === id) return;
+    let cancelled = false;
+    setLoadingPedidoCompleto(true);
+    hydrateOrderById(id).finally(() => {
+      setPedidoBancoTentadoId(id);
+      if (!cancelled) setLoadingPedidoCompleto(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [history, hydrateOrderById, id, ordersHidratado, pedidoBancoTentadoId]);
+
   // Aguarda a hidratação dos stores antes de declarar "não encontrado".
   // Sem isto o usuário via o erro no primeiro clique e precisava retentar.
-  const aguardandoHidratacao = !ordersHidratado || (!!provisaoId && !provisoesHidratado);
+  const aguardandoHidratacao = !ordersHidratado || loadingPedidoCompleto || (!!id && !order && pedidoBancoTentadoId !== id) || (!!provisaoId && !provisoesHidratado);
 
   if (!order) {
     if (aguardandoHidratacao) {
@@ -194,13 +220,16 @@ function Confirmation() {
   }
 
   const text = formatOrderText(order);
-  const [showExport, setShowExport] = useState(false);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const totalItensBruto = order.items.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0);
+  const totalBase = order.commercial?.bruto ?? order.total;
+  const divergenciaItens = Math.abs(totalItensBruto - totalBase) > 0.05;
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-16">
@@ -237,6 +266,19 @@ function Confirmation() {
                   </p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {(loadingPedidoCompleto || divergenciaItens) && (
+            <div className={`mb-6 rounded-lg border p-4 print-hide ${divergenciaItens ? "border-stock-out/40 bg-stock-out/10" : "border-gold/30 bg-gold/10"}`}>
+              <div className="text-xs uppercase tracking-wider text-text-secondary">
+                {loadingPedidoCompleto ? "Validando pedido completo no banco…" : "Atenção: total dos itens diverge do total do pedido"}
+              </div>
+              {divergenciaItens && (
+                <p className="mt-1 text-sm text-text-muted">
+                  Itens somam {formatBRL(totalItensBruto)} e o pedido registra {formatBRL(totalBase)}.
+                </p>
+              )}
             </div>
           )}
 
@@ -277,6 +319,7 @@ function Confirmation() {
                 </button>
                 <button
                   onClick={() => setShowExport(true)}
+                  disabled={loadingPedidoCompleto}
                   className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
                 >
                   <Download className="h-4 w-4" /> Exportar

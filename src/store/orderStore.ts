@@ -31,6 +31,7 @@ interface OrderState {
   history: SavedOrder[];
   hidratado: boolean;
   hydrate: () => Promise<void>;
+  hydrateOrderById: (orderId: string) => Promise<SavedOrder | null>;
   setHistoryFromRows: (orders: SavedOrder[]) => void;
   addItem: (product: Product, quantity: number) => void;
   addBulk: (entries: { product: Product; quantity: number }[]) => void;
@@ -143,6 +144,48 @@ export function orderItemsToRows(o: SavedOrder): Record<string, unknown>[] {
   }));
 }
 
+const ORDER_ITEMS_PAGE_SIZE = 1000;
+
+async function fetchOrderItemRowsByOrderIds(ids: string[]): Promise<Record<string, CartItem[]>> {
+  const itemsByOrder: Record<string, CartItem[]> = {};
+  if (ids.length === 0) return itemsByOrder;
+  for (let from = 0; ; from += ORDER_ITEMS_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("order_items")
+      .select("*")
+      .in("order_id", ids)
+      .order("order_id", { ascending: true })
+      .order("posicao", { ascending: true })
+      .range(from, from + ORDER_ITEMS_PAGE_SIZE - 1);
+    if (error) throw error;
+    const rows = data ?? [];
+    rows.forEach((r) => {
+      const oid = (r as Record<string, unknown>).order_id as string;
+      if (!itemsByOrder[oid]) itemsByOrder[oid] = [];
+      itemsByOrder[oid].push(rowToItem(r as Record<string, unknown>));
+    });
+    if (rows.length < ORDER_ITEMS_PAGE_SIZE) break;
+  }
+  return itemsByOrder;
+}
+
+async function fetchOrderItemsByOrderId(orderId: string): Promise<CartItem[]> {
+  const items: CartItem[] = [];
+  for (let from = 0; ; from += ORDER_ITEMS_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("order_items")
+      .select("*")
+      .eq("order_id", orderId)
+      .order("posicao", { ascending: true })
+      .range(from, from + ORDER_ITEMS_PAGE_SIZE - 1);
+    if (error) throw error;
+    const rows = data ?? [];
+    items.push(...rows.map((r) => rowToItem(r as Record<string, unknown>)));
+    if (rows.length < ORDER_ITEMS_PAGE_SIZE) break;
+  }
+  return items;
+}
+
 export const useOrder = create<OrderState>()(
   persist(
     (set, get) => ({
@@ -159,21 +202,7 @@ export const useOrder = create<OrderState>()(
             .limit(200);
           if (err1) throw err1;
           const ids = (orderRows ?? []).map((r) => r.id as string);
-          let itemsByOrder: Record<string, CartItem[]> = {};
-          if (ids.length > 0) {
-            const { data: itemRows, error: err2 } = await supabase
-              .from("order_items")
-              .select("*")
-              .in("order_id", ids)
-              .order("posicao", { ascending: true });
-            if (err2) throw err2;
-            itemsByOrder = (itemRows ?? []).reduce<Record<string, CartItem[]>>((acc, r) => {
-              const oid = (r as Record<string, unknown>).order_id as string;
-              if (!acc[oid]) acc[oid] = [];
-              acc[oid].push(rowToItem(r as Record<string, unknown>));
-              return acc;
-            }, {});
-          }
+          const itemsByOrder = await fetchOrderItemRowsByOrderIds(ids);
           const history = (orderRows ?? []).map((r) =>
             rowToOrder(r as Record<string, unknown>, itemsByOrder[(r as Record<string, unknown>).id as string] ?? []),
           );
@@ -181,6 +210,30 @@ export const useOrder = create<OrderState>()(
         } catch (err) {
           console.error("[orderStore] hydrate falhou:", err);
           set({ hidratado: true });
+        }
+      },
+      hydrateOrderById: async (orderId) => {
+        try {
+          const { data: orderRow, error: errO } = await supabase
+            .from("orders")
+            .select("*")
+            .eq("id", orderId)
+            .maybeSingle();
+          if (errO) throw errO;
+          if (!orderRow) return null;
+
+          const order = rowToOrder(
+            orderRow as Record<string, unknown>,
+            await fetchOrderItemsByOrderId(orderId),
+          );
+          set((s) => ({
+            history: [order, ...s.history.filter((o) => o.id !== order.id)].slice(0, 200),
+            hidratado: true,
+          }));
+          return order;
+        } catch (err) {
+          console.error("[orderStore] hydrateOrderById falhou:", err, orderId);
+          return null;
         }
       },
       setHistoryFromRows: (orders) => set({ history: orders }),
