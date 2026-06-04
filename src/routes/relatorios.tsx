@@ -1402,6 +1402,12 @@ function TabTipo({ items, loadingItems, range }: {
   const [filtroGrupo, setFiltroGrupo] = useState<string>("todos");
   const [filtroCategoria, setFiltroCategoria] = useState("todas");
   const [filtroColecao, setFiltroColecao] = useState("todas");
+  const [expandedTipos, setExpandedTipos] = useState<Set<string>>(new Set());
+  const toggleTipo = (k: string) => setExpandedTipos((prev) => {
+    const next = new Set(prev);
+    if (next.has(k)) next.delete(k); else next.add(k);
+    return next;
+  });
 
   useEffect(() => {
     if (filtroGrupo === "todos" && gruposDisponiveis.length > 0) {
@@ -1537,6 +1543,7 @@ function TabTipo({ items, loadingItems, range }: {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border text-[10px] uppercase tracking-wider text-zinc-100">
+                <th className="px-2 py-2 text-left w-6"></th>
                 <th className="px-2 py-2 text-left">Tipo</th>
                 <th className="px-2 py-2 text-left">Grupo</th>
                 <th className="px-2 py-2 text-right">Pedidos</th>
@@ -1547,19 +1554,75 @@ function TabTipo({ items, loadingItems, range }: {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
-              {tipos.map((t) => (
-                <tr key={`${t.grupo}-${t.tipo}`} className="hover:bg-surface-2/40">
-                  <td className="px-2 py-2 text-text-primary">{t.tipo}</td>
-                  <td className="px-2 py-2 text-text-secondary">{t.grupo}</td>
-                  <td className="px-2 py-2 text-right">{t.nPedidos}</td>
-                  <td className="px-2 py-2 text-right">{t.qtd}</td>
-                  <td className="px-2 py-2 text-right text-gold font-medium">{formatBRL(t.bruto)}</td>
-                  <td className="px-2 py-2 text-right text-text-secondary">{t.pctGrupo.toFixed(1)}%</td>
-                  <td className="px-2 py-2 text-right text-text-secondary">
-                    {t.precoMin === t.precoMax ? formatBRL(t.precoMin) : `${formatBRL(t.precoMin)} – ${formatBRL(t.precoMax)}`}
-                  </td>
-                </tr>
-              ))}
+              {tipos.map((t) => {
+                const key = `${t.grupo}||${t.tipo}`;
+                const isOpen = expandedTipos.has(key);
+                const produtos = isOpen ? (() => {
+                  const m = new Map<string, { nome: string; sku: string; pedidos: Set<string>; qtd: number; bruto: number; preco: number }>();
+                  itemsFiltrados.forEach((it) => {
+                    if ((it.product_snapshot?.grupo ?? "—") !== t.grupo) return;
+                    if ((it.product_snapshot?.tipo ?? "—") !== t.tipo) return;
+                    const sku = it.sku;
+                    const nome = it.product_snapshot?.nomeComercial ?? sku;
+                    const cur = m.get(sku) ?? { nome, sku, pedidos: new Set<string>(), qtd: 0, bruto: 0, preco: Number(it.product_snapshot?.precoAtacado) || 0 };
+                    cur.qtd += Number(it.quantity || 0);
+                    cur.bruto += Number(it.subtotal_bruto || 0);
+                    cur.pedidos.add(it.orders.id);
+                    m.set(sku, cur);
+                  });
+                  return Array.from(m.values()).sort((a, b) => b.bruto - a.bruto);
+                })() : [];
+                return (
+                  <Fragment key={key}>
+                    <tr className="hover:bg-surface-2/40 cursor-pointer" onClick={() => toggleTipo(key)}>
+                      <td className="px-2 py-2 text-text-muted">{isOpen ? "▼" : "▶"}</td>
+                      <td className="px-2 py-2 text-text-primary">{t.tipo}</td>
+                      <td className="px-2 py-2 text-text-secondary">{t.grupo}</td>
+                      <td className="px-2 py-2 text-right">{t.nPedidos}</td>
+                      <td className="px-2 py-2 text-right">{t.qtd}</td>
+                      <td className="px-2 py-2 text-right text-gold font-medium">{formatBRL(t.bruto)}</td>
+                      <td className="px-2 py-2 text-right text-text-secondary">{t.pctGrupo.toFixed(1)}%</td>
+                      <td className="px-2 py-2 text-right text-text-secondary">
+                        {t.precoMin === t.precoMax ? formatBRL(t.precoMin) : `${formatBRL(t.precoMin)} – ${formatBRL(t.precoMax)}`}
+                      </td>
+                    </tr>
+                    {isOpen && (
+                      <tr className="bg-surface-2/30">
+                        <td></td>
+                        <td colSpan={7} className="px-2 py-3">
+                          <div className="text-[10px] uppercase tracking-wider text-text-muted mb-2">
+                            Produtos ({produtos.length})
+                          </div>
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="text-[10px] uppercase tracking-wider text-text-muted border-b border-border/50">
+                                <th className="px-2 py-1 text-left">SKU</th>
+                                <th className="px-2 py-1 text-left">Produto</th>
+                                <th className="px-2 py-1 text-right">Pedidos</th>
+                                <th className="px-2 py-1 text-right">Unidades</th>
+                                <th className="px-2 py-1 text-right">Fat. líquido</th>
+                                <th className="px-2 py-1 text-right">Preço un.</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border/30">
+                              {produtos.map((p) => (
+                                <tr key={p.sku}>
+                                  <td className="px-2 py-1 text-text-muted font-mono">{p.sku}</td>
+                                  <td className="px-2 py-1 text-text-primary">{p.nome}</td>
+                                  <td className="px-2 py-1 text-right">{p.pedidos.size}</td>
+                                  <td className="px-2 py-1 text-right">{p.qtd}</td>
+                                  <td className="px-2 py-1 text-right text-gold">{formatBRL(p.bruto)}</td>
+                                  <td className="px-2 py-1 text-right text-text-secondary">{p.preco > 0 ? formatBRL(p.preco) : "—"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
           {tipos.length === 0 && <div className="text-center text-sm text-text-muted py-6">Nenhum item no período.</div>}
