@@ -1494,11 +1494,38 @@ function TabTipo({ items, loadingItems, range }: {
   }, [tipos, filtroGrupo]);
 
   const exportar = () => {
-    downloadCSV(`fetely_relatorio_tipos_${periodSuffix(range.from)}.csv`, tipos.map((t) => ({
-      tipo: t.tipo, grupo: t.grupo, pedidos: t.nPedidos, unidades: t.qtd,
-      fat_liquido: t.bruto.toFixed(2), pct_do_grupo: t.pctGrupo.toFixed(2),
-      preco_medio_unit: `${t.precoMin.toFixed(2)} – ${t.precoMax.toFixed(2)}`,
-    })));
+    // Exporta hierarquia completa: Grupo → Tipo → Coleção → Cor → Nº → Produto (SKU)
+    const rows: Array<Record<string, string | number>> = [];
+    itemsFiltrados.forEach((it) => {
+      const grupo = it.product_snapshot?.grupo ?? "—";
+      const tipo = it.product_snapshot?.tipo ?? "—";
+      const colecao = it.product_snapshot?.colecao ?? "—";
+      const isVela = grupo === "Vela";
+      const isNumerica = isVela && tipo === "Numérica";
+      const cor = isVela ? (it.product_snapshot?.corNome ?? "—") : "";
+      const numero = isNumerica ? extractNumero(it) : "";
+      const qtd = Number(it.quantity || 0);
+      const bruto = Number(it.subtotal_bruto || 0);
+      const preco = Number(it.product_snapshot?.precoAtacado) || 0;
+      const tipoTotal = tipos.find((tp) => tp.grupo === grupo && tp.tipo === tipo)?.bruto ?? 0;
+      rows.push({
+        grupo,
+        tipo,
+        colecao,
+        cor,
+        numero,
+        sku: it.sku,
+        produto: it.product_snapshot?.nomeComercial ?? "",
+        pedido_id: it.orders.id,
+        pedido_data: new Date(it.orders.created_at).toLocaleDateString("pt-BR"),
+        unidades: qtd,
+        preco_unit: preco.toFixed(2),
+        fat_liquido: bruto.toFixed(2),
+        pct_do_tipo: tipoTotal > 0 ? ((bruto / tipoTotal) * 100).toFixed(2) : "0.00",
+        pct_do_grupo: totalGrupoFat > 0 ? ((bruto / totalGrupoFat) * 100).toFixed(2) : "0.00",
+      });
+    });
+    downloadCSV(`fetely_relatorio_tipos_completo_${periodSuffix(range.from)}.csv`, rows);
   };
 
   if (loadingItems) {
