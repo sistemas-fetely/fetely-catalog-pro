@@ -1403,11 +1403,18 @@ function TabTipo({ items, loadingItems, range }: {
   const [filtroCategoria, setFiltroCategoria] = useState("todas");
   const [filtroColecao, setFiltroColecao] = useState("todas");
   const [expandedTipos, setExpandedTipos] = useState<Set<string>>(new Set());
-  const toggleTipo = (k: string) => setExpandedTipos((prev) => {
+  const [expandedColecoes, setExpandedColecoes] = useState<Set<string>>(new Set());
+  const [expandedCores, setExpandedCores] = useState<Set<string>>(new Set());
+  const [expandedNumeros, setExpandedNumeros] = useState<Set<string>>(new Set());
+  const makeToggle = (setter: React.Dispatch<React.SetStateAction<Set<string>>>) => (k: string) => setter((prev) => {
     const next = new Set(prev);
     if (next.has(k)) next.delete(k); else next.add(k);
     return next;
   });
+  const toggleTipo = makeToggle(setExpandedTipos);
+  const toggleColecao = makeToggle(setExpandedColecoes);
+  const toggleCor = makeToggle(setExpandedCores);
+  const toggleNumero = makeToggle(setExpandedNumeros);
 
   useEffect(() => {
     if (filtroGrupo === "todos" && gruposDisponiveis.length > 0) {
