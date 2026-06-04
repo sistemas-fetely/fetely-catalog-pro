@@ -258,7 +258,7 @@ function Confirmation() {
               </div>
             )}
 
-            <pre className="bg-surface-2 rounded-md p-4 text-xs font-mono text-text-secondary overflow-x-auto whitespace-pre-wrap max-h-96 scrollbar-thin">
+            <pre className="bg-surface-2 rounded-md p-4 text-xs font-mono text-text-secondary overflow-x-auto whitespace-pre-wrap">
 {text}
             </pre>
 
