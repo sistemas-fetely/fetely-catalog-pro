@@ -131,7 +131,7 @@ function Confirmation() {
   const ordersHidratado = useOrder((s) => s.hidratado);
   const provisoes = useProvisao((s) => s.provisoes);
   const provisoesHidratado = useProvisao((s) => s.hidratado);
-  const order = useMemo(() => history.find((o) => o.id === id) ?? history[0], [history, id]);
+  const order = useMemo(() => (id ? history.find((o) => o.id === id) : history[0]), [history, id]);
   const provisao = useMemo(
     () => (provisaoId ? provisoes.find((p) => p.id === provisaoId) : undefined),
     [provisoes, provisaoId],
@@ -185,7 +185,7 @@ function Confirmation() {
 
   // Aguarda a hidratação dos stores antes de declarar "não encontrado".
   // Sem isto o usuário via o erro no primeiro clique e precisava retentar.
-  const aguardandoHidratacao = !ordersHidratado || (!!provisaoId && !provisoesHidratado);
+  const aguardandoHidratacao = !ordersHidratado || loadingPedidoCompleto || (!!provisaoId && !provisoesHidratado);
 
   if (!order) {
     if (aguardandoHidratacao) {
