@@ -1625,7 +1625,8 @@ function TabDepartamento({ items, ordersPrev, loadingItems, range }: {
         curMap = node.filhos;
       });
     });
-    const toArr = (m: Map<string, No>): Array<{ nome: string; pedidos: number; qtd: number; bruto: number; filhos: ReturnType<typeof toArr> }> =>
+    type NoArr = { nome: string; pedidos: number; qtd: number; bruto: number; filhos: NoArr[] };
+    const toArr = (m: Map<string, No>): NoArr[] =>
       Array.from(m.values()).map((n) => ({
         nome: n.nome,
         pedidos: n.pedidos.size,
@@ -1634,6 +1635,7 @@ function TabDepartamento({ items, ordersPrev, loadingItems, range }: {
         filhos: toArr(n.filhos),
       })).sort((a, b) => b.bruto - a.bruto);
     return toArr(root);
+
   }, [items]);
 
   // Variação vs período anterior por departamento
