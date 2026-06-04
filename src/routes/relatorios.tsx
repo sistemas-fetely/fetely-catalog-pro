@@ -69,11 +69,14 @@ interface ItemRow {
     nomeComercial?: string;
     colecao?: string;
     grupo?: string;
+    tipo?: string;
     categoria?: string;
+    departamento?: string;
     corNome?: string;
     tamanhoNumero?: string;
     precoAtacado?: number;
   } | null;
+
   orders: { id: string; created_at: string; vendedor_id: string; total: number };
 }
 
