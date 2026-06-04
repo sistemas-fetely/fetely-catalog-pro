@@ -1402,6 +1402,12 @@ function TabTipo({ items, loadingItems, range }: {
   const [filtroGrupo, setFiltroGrupo] = useState<string>("todos");
   const [filtroCategoria, setFiltroCategoria] = useState("todas");
   const [filtroColecao, setFiltroColecao] = useState("todas");
+  const [expandedTipos, setExpandedTipos] = useState<Set<string>>(new Set());
+  const toggleTipo = (k: string) => setExpandedTipos((prev) => {
+    const next = new Set(prev);
+    if (next.has(k)) next.delete(k); else next.add(k);
+    return next;
+  });
 
   useEffect(() => {
     if (filtroGrupo === "todos" && gruposDisponiveis.length > 0) {
