@@ -1873,3 +1873,218 @@ function TabDepartamento({ items, ordersPrev, loadingItems, range }: {
     </div>
   );
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// TipoBreakdown — hierarquia Coleção → Cor → Número → Produtos
+// ────────────────────────────────────────────────────────────────────────────
+
+interface TipoBreakdownProps {
+  tipo: { grupo: string; tipo: string; bruto: number };
+  items: ItemRow[];
+  expandedColecoes: Set<string>;
+  expandedCores: Set<string>;
+  expandedNumeros: Set<string>;
+  toggleColecao: (k: string) => void;
+  toggleCor: (k: string) => void;
+  toggleNumero: (k: string) => void;
+}
+
+function extractNumero(it: ItemRow): string {
+  const tn = it.product_snapshot?.tamanhoNumero;
+  if (tn && /^\d+$/.test(String(tn).trim())) return String(tn).trim();
+  const nome = it.product_snapshot?.nomeComercial ?? "";
+  const m = nome.match(/N[ºo°]\s*(\d+)/i);
+  if (m) return m[1];
+  return "—";
+}
+
+function aggregate<T>(items: ItemRow[], keyFn: (it: ItemRow) => string, meta?: (it: ItemRow) => T) {
+  const map = new Map<string, { key: string; meta: T | undefined; pedidos: Set<string>; qtd: number; bruto: number; precos: Set<number> }>();
+  items.forEach((it) => {
+    const k = keyFn(it);
+    const cur = map.get(k) ?? { key: k, meta: meta?.(it), pedidos: new Set<string>(), qtd: 0, bruto: 0, precos: new Set<number>() };
+    cur.qtd += Number(it.quantity || 0);
+    cur.bruto += Number(it.subtotal_bruto || 0);
+    cur.pedidos.add(it.orders.id);
+    const p = Number(it.product_snapshot?.precoAtacado) || 0;
+    if (p > 0) cur.precos.add(p);
+    map.set(k, cur);
+  });
+  return Array.from(map.values()).sort((a, b) => b.bruto - a.bruto);
+}
+
+function priceRange(precos: Set<number>): string {
+  if (precos.size === 0) return "—";
+  const arr = Array.from(precos);
+  const mn = Math.min(...arr), mx = Math.max(...arr);
+  return mn === mx ? formatBRL(mn) : `${formatBRL(mn)} – ${formatBRL(mx)}`;
+}
+
+function TipoBreakdown({
+  tipo, items,
+  expandedColecoes, expandedCores, expandedNumeros,
+  toggleColecao, toggleCor, toggleNumero,
+}: TipoBreakdownProps) {
+  const isVela = tipo.grupo === "Vela";
+  const isNumerica = isVela && tipo.tipo === "Numérica";
+  const totalTipo = tipo.bruto;
+
+  const colecoes = aggregate(items, (it) => it.product_snapshot?.colecao ?? "—");
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1">
+        Coleções ({colecoes.length})
+      </div>
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-[10px] uppercase tracking-wider text-text-muted border-b border-border/50">
+            <th className="px-2 py-1 text-left w-6"></th>
+            <th className="px-2 py-1 text-left">Coleção {isVela ? "/ Cor" : ""} {isNumerica ? "/ Nº" : ""} / Produto</th>
+            <th className="px-2 py-1 text-right">Pedidos</th>
+            <th className="px-2 py-1 text-right">Unidades</th>
+            <th className="px-2 py-1 text-right">Fat. líquido</th>
+            <th className="px-2 py-1 text-right">% do tipo</th>
+            <th className="px-2 py-1 text-left w-[120px]">Participação</th>
+            <th className="px-2 py-1 text-right">Preço un.</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border/30">
+          {colecoes.map((c) => {
+            const colKey = `${tipo.grupo}||${tipo.tipo}||${c.key}`;
+            const colOpen = expandedColecoes.has(colKey);
+            const colPct = totalTipo > 0 ? (c.bruto / totalTipo) * 100 : 0;
+            const colItems = items.filter((it) => (it.product_snapshot?.colecao ?? "—") === c.key);
+
+            return (
+              <Fragment key={colKey}>
+                <tr className="hover:bg-surface/40 cursor-pointer bg-surface-2/50" onClick={() => toggleColecao(colKey)}>
+                  <td className="px-2 py-1.5 text-text-muted">{colOpen ? "▼" : "▶"}</td>
+                  <td className="px-2 py-1.5 text-text-primary font-medium">{c.key}</td>
+                  <td className="px-2 py-1.5 text-right">{c.pedidos.size}</td>
+                  <td className="px-2 py-1.5 text-right">{c.qtd}</td>
+                  <td className="px-2 py-1.5 text-right text-gold">{formatBRL(c.bruto)}</td>
+                  <td className="px-2 py-1.5 text-right text-text-secondary">{colPct.toFixed(1)}%</td>
+                  <td className="px-2 py-1.5">
+                    <div className="h-1.5 w-full rounded-full bg-surface overflow-hidden">
+                      <div className="h-full bg-gold rounded-full" style={{ width: `${Math.min(100, colPct)}%` }} />
+                    </div>
+                  </td>
+                  <td className="px-2 py-1.5 text-right text-text-secondary">{priceRange(c.precos)}</td>
+                </tr>
+
+                {colOpen && !isVela && (
+                  <ProdutosRows
+                    items={colItems}
+                    totalRef={totalTipo}
+                    indent={1}
+                  />
+                )}
+
+                {colOpen && isVela && (() => {
+                  const cores = aggregate(colItems, (it) => it.product_snapshot?.corNome ?? "—");
+                  return cores.map((cor) => {
+                    const corKey = `${colKey}||${cor.key}`;
+                    const corOpen = expandedCores.has(corKey);
+                    const corPct = totalTipo > 0 ? (cor.bruto / totalTipo) * 100 : 0;
+                    const corItems = colItems.filter((it) => (it.product_snapshot?.corNome ?? "—") === cor.key);
+
+                    return (
+                      <Fragment key={corKey}>
+                        <tr className="hover:bg-surface/40 cursor-pointer" onClick={() => toggleCor(corKey)}>
+                          <td className="px-2 py-1 text-text-muted text-right pr-1">{corOpen ? "▼" : "▶"}</td>
+                          <td className="px-2 py-1 text-text-secondary pl-6">{cor.key}</td>
+                          <td className="px-2 py-1 text-right">{cor.pedidos.size}</td>
+                          <td className="px-2 py-1 text-right">{cor.qtd}</td>
+                          <td className="px-2 py-1 text-right text-gold/80">{formatBRL(cor.bruto)}</td>
+                          <td className="px-2 py-1 text-right text-text-muted">{corPct.toFixed(1)}%</td>
+                          <td className="px-2 py-1">
+                            <div className="h-1 w-full rounded-full bg-surface overflow-hidden">
+                              <div className="h-full bg-gold/70 rounded-full" style={{ width: `${Math.min(100, corPct)}%` }} />
+                            </div>
+                          </td>
+                          <td className="px-2 py-1 text-right text-text-muted">{priceRange(cor.precos)}</td>
+                        </tr>
+
+                        {corOpen && !isNumerica && (
+                          <ProdutosRows items={corItems} totalRef={totalTipo} indent={2} />
+                        )}
+
+                        {corOpen && isNumerica && (() => {
+                          const numeros = aggregate(corItems, extractNumero);
+                          return numeros.map((n) => {
+                            const numKey = `${corKey}||${n.key}`;
+                            const numOpen = expandedNumeros.has(numKey);
+                            const numPct = totalTipo > 0 ? (n.bruto / totalTipo) * 100 : 0;
+                            const numItems = corItems.filter((it) => extractNumero(it) === n.key);
+                            return (
+                              <Fragment key={numKey}>
+                                <tr className="hover:bg-surface/40 cursor-pointer" onClick={() => toggleNumero(numKey)}>
+                                  <td className="px-2 py-1 text-text-muted text-right pr-1">{numOpen ? "▼" : "▶"}</td>
+                                  <td className="px-2 py-1 text-text-secondary pl-12">Nº {n.key}</td>
+                                  <td className="px-2 py-1 text-right">{n.pedidos.size}</td>
+                                  <td className="px-2 py-1 text-right">{n.qtd}</td>
+                                  <td className="px-2 py-1 text-right text-gold/70">{formatBRL(n.bruto)}</td>
+                                  <td className="px-2 py-1 text-right text-text-muted">{numPct.toFixed(1)}%</td>
+                                  <td className="px-2 py-1">
+                                    <div className="h-1 w-full rounded-full bg-surface overflow-hidden">
+                                      <div className="h-full bg-gold/50 rounded-full" style={{ width: `${Math.min(100, numPct)}%` }} />
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1 text-right text-text-muted">{priceRange(n.precos)}</td>
+                                </tr>
+                                {numOpen && (
+                                  <ProdutosRows items={numItems} totalRef={totalTipo} indent={3} />
+                                )}
+                              </Fragment>
+                            );
+                          });
+                        })()}
+                      </Fragment>
+                    );
+                  });
+                })()}
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ProdutosRows({ items, totalRef, indent }: { items: ItemRow[]; totalRef: number; indent: number }) {
+  const produtos = aggregate(items, (it) => it.sku, (it) => ({
+    nome: it.product_snapshot?.nomeComercial ?? it.sku,
+    preco: Number(it.product_snapshot?.precoAtacado) || 0,
+  }));
+  const padLeft = ["pl-2", "pl-8", "pl-14", "pl-20"][indent] ?? "pl-2";
+  return (
+    <>
+      {produtos.map((p) => {
+        const pct = totalRef > 0 ? (p.bruto / totalRef) * 100 : 0;
+        const nome = p.meta?.nome ?? p.key;
+        const preco = p.meta?.preco ?? 0;
+        return (
+          <tr key={p.key} className="bg-background/30">
+            <td></td>
+            <td className={`px-2 py-1 text-text-primary ${padLeft}`}>
+              <span className="font-mono text-text-muted text-[10px] mr-2">{p.key}</span>
+              {nome}
+            </td>
+            <td className="px-2 py-1 text-right">{p.pedidos.size}</td>
+            <td className="px-2 py-1 text-right">{p.qtd}</td>
+            <td className="px-2 py-1 text-right text-gold/80">{formatBRL(p.bruto)}</td>
+            <td className="px-2 py-1 text-right text-text-muted">{pct.toFixed(1)}%</td>
+            <td className="px-2 py-1">
+              <div className="h-1 w-full rounded-full bg-surface overflow-hidden">
+                <div className="h-full bg-gold/60 rounded-full" style={{ width: `${Math.min(100, pct)}%` }} />
+              </div>
+            </td>
+            <td className="px-2 py-1 text-right text-text-secondary">{preco > 0 ? formatBRL(preco) : "—"}</td>
+          </tr>
+        );
+      })}
+    </>
+  );
+}
