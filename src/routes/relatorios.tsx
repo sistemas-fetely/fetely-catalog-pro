@@ -269,8 +269,12 @@ function RelatoriosPage() {
     { key: "geral", label: "Vendas Geral", icon: <FileBarChart className="h-3.5 w-3.5" /> },
     { key: "produto", label: "Por Produto", icon: <Boxes className="h-3.5 w-3.5" /> },
     { key: "colecao", label: "Por Coleção", icon: <Layers className="h-3.5 w-3.5" /> },
+    { key: "grupo", label: "Por Grupo", icon: <Package className="h-3.5 w-3.5" /> },
+    { key: "tipo", label: "Por Tipo", icon: <Tag className="h-3.5 w-3.5" /> },
+    { key: "departamento", label: "Por Departamento", icon: <Building2 className="h-3.5 w-3.5" /> },
     { key: "financeiro", label: "Financeiro", icon: <Wallet className="h-3.5 w-3.5" /> },
   ];
+
 
   return (
     <main className="mx-auto max-w-[1400px] px-3 sm:px-6 py-6 sm:py-8 lg:py-10 space-y-5 print:py-0 print:px-0">
