@@ -202,21 +202,7 @@ export const useOrder = create<OrderState>()(
             .limit(200);
           if (err1) throw err1;
           const ids = (orderRows ?? []).map((r) => r.id as string);
-          let itemsByOrder: Record<string, CartItem[]> = {};
-          if (ids.length > 0) {
-            const { data: itemRows, error: err2 } = await supabase
-              .from("order_items")
-              .select("*")
-              .in("order_id", ids)
-              .order("posicao", { ascending: true });
-            if (err2) throw err2;
-            itemsByOrder = (itemRows ?? []).reduce<Record<string, CartItem[]>>((acc, r) => {
-              const oid = (r as Record<string, unknown>).order_id as string;
-              if (!acc[oid]) acc[oid] = [];
-              acc[oid].push(rowToItem(r as Record<string, unknown>));
-              return acc;
-            }, {});
-          }
+          const itemsByOrder = await fetchOrderItemRowsByOrderIds(ids);
           const history = (orderRows ?? []).map((r) =>
             rowToOrder(r as Record<string, unknown>, itemsByOrder[(r as Record<string, unknown>).id as string] ?? []),
           );
@@ -236,16 +222,9 @@ export const useOrder = create<OrderState>()(
           if (errO) throw errO;
           if (!orderRow) return null;
 
-          const { data: itemRows, error: errI } = await supabase
-            .from("order_items")
-            .select("*")
-            .eq("order_id", orderId)
-            .order("posicao", { ascending: true });
-          if (errI) throw errI;
-
           const order = rowToOrder(
             orderRow as Record<string, unknown>,
-            (itemRows ?? []).map((r) => rowToItem(r as Record<string, unknown>)),
+            await fetchOrderItemsByOrderId(orderId),
           );
           set((s) => ({
             history: [order, ...s.history.filter((o) => o.id !== order.id)].slice(0, 200),
