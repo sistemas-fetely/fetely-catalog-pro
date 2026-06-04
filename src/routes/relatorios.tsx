@@ -1403,11 +1403,18 @@ function TabTipo({ items, loadingItems, range }: {
   const [filtroCategoria, setFiltroCategoria] = useState("todas");
   const [filtroColecao, setFiltroColecao] = useState("todas");
   const [expandedTipos, setExpandedTipos] = useState<Set<string>>(new Set());
-  const toggleTipo = (k: string) => setExpandedTipos((prev) => {
+  const [expandedColecoes, setExpandedColecoes] = useState<Set<string>>(new Set());
+  const [expandedCores, setExpandedCores] = useState<Set<string>>(new Set());
+  const [expandedNumeros, setExpandedNumeros] = useState<Set<string>>(new Set());
+  const makeToggle = (setter: React.Dispatch<React.SetStateAction<Set<string>>>) => (k: string) => setter((prev) => {
     const next = new Set(prev);
     if (next.has(k)) next.delete(k); else next.add(k);
     return next;
   });
+  const toggleTipo = makeToggle(setExpandedTipos);
+  const toggleColecao = makeToggle(setExpandedColecoes);
+  const toggleCor = makeToggle(setExpandedCores);
+  const toggleNumero = makeToggle(setExpandedNumeros);
 
   useEffect(() => {
     if (filtroGrupo === "todos" && gruposDisponiveis.length > 0) {
@@ -1557,21 +1564,6 @@ function TabTipo({ items, loadingItems, range }: {
               {tipos.map((t) => {
                 const key = `${t.grupo}||${t.tipo}`;
                 const isOpen = expandedTipos.has(key);
-                const produtos = isOpen ? (() => {
-                  const m = new Map<string, { nome: string; sku: string; pedidos: Set<string>; qtd: number; bruto: number; preco: number }>();
-                  itemsFiltrados.forEach((it) => {
-                    if ((it.product_snapshot?.grupo ?? "—") !== t.grupo) return;
-                    if ((it.product_snapshot?.tipo ?? "—") !== t.tipo) return;
-                    const sku = it.sku;
-                    const nome = it.product_snapshot?.nomeComercial ?? sku;
-                    const cur = m.get(sku) ?? { nome, sku, pedidos: new Set<string>(), qtd: 0, bruto: 0, preco: Number(it.product_snapshot?.precoAtacado) || 0 };
-                    cur.qtd += Number(it.quantity || 0);
-                    cur.bruto += Number(it.subtotal_bruto || 0);
-                    cur.pedidos.add(it.orders.id);
-                    m.set(sku, cur);
-                  });
-                  return Array.from(m.values()).sort((a, b) => b.bruto - a.bruto);
-                })() : [];
                 return (
                   <Fragment key={key}>
                     <tr className="hover:bg-surface-2/40 cursor-pointer" onClick={() => toggleTipo(key)}>
@@ -1590,44 +1582,19 @@ function TabTipo({ items, loadingItems, range }: {
                       <tr className="bg-surface-2/30">
                         <td></td>
                         <td colSpan={7} className="px-2 py-3">
-                          <div className="text-[10px] uppercase tracking-wider text-text-muted mb-2">
-                            Produtos ({produtos.length})
-                          </div>
-                          <table className="w-full text-xs">
-                            <thead>
-                              <tr className="text-[10px] uppercase tracking-wider text-text-muted border-b border-border/50">
-                                <th className="px-2 py-1 text-left">SKU</th>
-                                <th className="px-2 py-1 text-left">Produto</th>
-                                <th className="px-2 py-1 text-right">Pedidos</th>
-                                <th className="px-2 py-1 text-right">Unidades</th>
-                                <th className="px-2 py-1 text-right">Fat. líquido</th>
-                                <th className="px-2 py-1 text-right">% do tipo</th>
-                                <th className="px-2 py-1 text-left w-[140px]">Participação</th>
-                                <th className="px-2 py-1 text-right">Preço un.</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border/30">
-                              {produtos.map((p) => {
-                                const pct = t.bruto > 0 ? (p.bruto / t.bruto) * 100 : 0;
-                                return (
-                                  <tr key={p.sku}>
-                                    <td className="px-2 py-1 text-text-muted font-mono">{p.sku}</td>
-                                    <td className="px-2 py-1 text-text-primary">{p.nome}</td>
-                                    <td className="px-2 py-1 text-right">{p.pedidos.size}</td>
-                                    <td className="px-2 py-1 text-right">{p.qtd}</td>
-                                    <td className="px-2 py-1 text-right text-gold">{formatBRL(p.bruto)}</td>
-                                    <td className="px-2 py-1 text-right text-text-secondary font-medium">{pct.toFixed(1)}%</td>
-                                    <td className="px-2 py-1">
-                                      <div className="h-2 w-full rounded-full bg-surface-2 overflow-hidden">
-                                        <div className="h-full bg-gold rounded-full" style={{ width: `${Math.min(100, pct)}%` }} />
-                                      </div>
-                                    </td>
-                                    <td className="px-2 py-1 text-right text-text-secondary">{p.preco > 0 ? formatBRL(p.preco) : "—"}</td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
+                          <TipoBreakdown
+                            tipo={t}
+                            items={itemsFiltrados.filter((it) =>
+                              (it.product_snapshot?.grupo ?? "—") === t.grupo &&
+                              (it.product_snapshot?.tipo ?? "—") === t.tipo,
+                            )}
+                            expandedColecoes={expandedColecoes}
+                            expandedCores={expandedCores}
+                            expandedNumeros={expandedNumeros}
+                            toggleColecao={toggleColecao}
+                            toggleCor={toggleCor}
+                            toggleNumero={toggleNumero}
+                          />
                         </td>
                       </tr>
                     )}
@@ -1639,6 +1606,7 @@ function TabTipo({ items, loadingItems, range }: {
           {tipos.length === 0 && <div className="text-center text-sm text-text-muted py-6">Nenhum item no período.</div>}
         </div>
       </Card>
+
 
       <Card title="Mix de tipos por grupo (% do faturamento)">
         <div className="h-[360px]">
@@ -1903,5 +1871,220 @@ function TabDepartamento({ items, ordersPrev, loadingItems, range }: {
         </div>
       </Card>
     </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// TipoBreakdown — hierarquia Coleção → Cor → Número → Produtos
+// ────────────────────────────────────────────────────────────────────────────
+
+interface TipoBreakdownProps {
+  tipo: { grupo: string; tipo: string; bruto: number };
+  items: ItemRow[];
+  expandedColecoes: Set<string>;
+  expandedCores: Set<string>;
+  expandedNumeros: Set<string>;
+  toggleColecao: (k: string) => void;
+  toggleCor: (k: string) => void;
+  toggleNumero: (k: string) => void;
+}
+
+function extractNumero(it: ItemRow): string {
+  const tn = it.product_snapshot?.tamanhoNumero;
+  if (tn && /^\d+$/.test(String(tn).trim())) return String(tn).trim();
+  const nome = it.product_snapshot?.nomeComercial ?? "";
+  const m = nome.match(/N[ºo°]\s*(\d+)/i);
+  if (m) return m[1];
+  return "—";
+}
+
+function aggregate<T>(items: ItemRow[], keyFn: (it: ItemRow) => string, meta?: (it: ItemRow) => T) {
+  const map = new Map<string, { key: string; meta: T | undefined; pedidos: Set<string>; qtd: number; bruto: number; precos: Set<number> }>();
+  items.forEach((it) => {
+    const k = keyFn(it);
+    const cur = map.get(k) ?? { key: k, meta: meta?.(it), pedidos: new Set<string>(), qtd: 0, bruto: 0, precos: new Set<number>() };
+    cur.qtd += Number(it.quantity || 0);
+    cur.bruto += Number(it.subtotal_bruto || 0);
+    cur.pedidos.add(it.orders.id);
+    const p = Number(it.product_snapshot?.precoAtacado) || 0;
+    if (p > 0) cur.precos.add(p);
+    map.set(k, cur);
+  });
+  return Array.from(map.values()).sort((a, b) => b.bruto - a.bruto);
+}
+
+function priceRange(precos: Set<number>): string {
+  if (precos.size === 0) return "—";
+  const arr = Array.from(precos);
+  const mn = Math.min(...arr), mx = Math.max(...arr);
+  return mn === mx ? formatBRL(mn) : `${formatBRL(mn)} – ${formatBRL(mx)}`;
+}
+
+function TipoBreakdown({
+  tipo, items,
+  expandedColecoes, expandedCores, expandedNumeros,
+  toggleColecao, toggleCor, toggleNumero,
+}: TipoBreakdownProps) {
+  const isVela = tipo.grupo === "Vela";
+  const isNumerica = isVela && tipo.tipo === "Numérica";
+  const totalTipo = tipo.bruto;
+
+  const colecoes = aggregate(items, (it) => it.product_snapshot?.colecao ?? "—");
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1">
+        Coleções ({colecoes.length})
+      </div>
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-[10px] uppercase tracking-wider text-text-muted border-b border-border/50">
+            <th className="px-2 py-1 text-left w-6"></th>
+            <th className="px-2 py-1 text-left">Coleção {isVela ? "/ Cor" : ""} {isNumerica ? "/ Nº" : ""} / Produto</th>
+            <th className="px-2 py-1 text-right">Pedidos</th>
+            <th className="px-2 py-1 text-right">Unidades</th>
+            <th className="px-2 py-1 text-right">Fat. líquido</th>
+            <th className="px-2 py-1 text-right">% do tipo</th>
+            <th className="px-2 py-1 text-left w-[120px]">Participação</th>
+            <th className="px-2 py-1 text-right">Preço un.</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border/30">
+          {colecoes.map((c) => {
+            const colKey = `${tipo.grupo}||${tipo.tipo}||${c.key}`;
+            const colOpen = expandedColecoes.has(colKey);
+            const colPct = totalTipo > 0 ? (c.bruto / totalTipo) * 100 : 0;
+            const colItems = items.filter((it) => (it.product_snapshot?.colecao ?? "—") === c.key);
+
+            return (
+              <Fragment key={colKey}>
+                <tr className="hover:bg-surface/40 cursor-pointer bg-surface-2/50" onClick={() => toggleColecao(colKey)}>
+                  <td className="px-2 py-1.5 text-text-muted">{colOpen ? "▼" : "▶"}</td>
+                  <td className="px-2 py-1.5 text-text-primary font-medium">{c.key}</td>
+                  <td className="px-2 py-1.5 text-right">{c.pedidos.size}</td>
+                  <td className="px-2 py-1.5 text-right">{c.qtd}</td>
+                  <td className="px-2 py-1.5 text-right text-gold">{formatBRL(c.bruto)}</td>
+                  <td className="px-2 py-1.5 text-right text-text-secondary">{colPct.toFixed(1)}%</td>
+                  <td className="px-2 py-1.5">
+                    <div className="h-1.5 w-full rounded-full bg-surface overflow-hidden">
+                      <div className="h-full bg-gold rounded-full" style={{ width: `${Math.min(100, colPct)}%` }} />
+                    </div>
+                  </td>
+                  <td className="px-2 py-1.5 text-right text-text-secondary">{priceRange(c.precos)}</td>
+                </tr>
+
+                {colOpen && !isVela && (
+                  <ProdutosRows
+                    items={colItems}
+                    totalRef={totalTipo}
+                    indent={1}
+                  />
+                )}
+
+                {colOpen && isVela && (() => {
+                  const cores = aggregate(colItems, (it) => it.product_snapshot?.corNome ?? "—");
+                  return cores.map((cor) => {
+                    const corKey = `${colKey}||${cor.key}`;
+                    const corOpen = expandedCores.has(corKey);
+                    const corPct = totalTipo > 0 ? (cor.bruto / totalTipo) * 100 : 0;
+                    const corItems = colItems.filter((it) => (it.product_snapshot?.corNome ?? "—") === cor.key);
+
+                    return (
+                      <Fragment key={corKey}>
+                        <tr className="hover:bg-surface/40 cursor-pointer" onClick={() => toggleCor(corKey)}>
+                          <td className="px-2 py-1 text-text-muted text-right pr-1">{corOpen ? "▼" : "▶"}</td>
+                          <td className="px-2 py-1 text-text-secondary pl-6">{cor.key}</td>
+                          <td className="px-2 py-1 text-right">{cor.pedidos.size}</td>
+                          <td className="px-2 py-1 text-right">{cor.qtd}</td>
+                          <td className="px-2 py-1 text-right text-gold/80">{formatBRL(cor.bruto)}</td>
+                          <td className="px-2 py-1 text-right text-text-muted">{corPct.toFixed(1)}%</td>
+                          <td className="px-2 py-1">
+                            <div className="h-1 w-full rounded-full bg-surface overflow-hidden">
+                              <div className="h-full bg-gold/70 rounded-full" style={{ width: `${Math.min(100, corPct)}%` }} />
+                            </div>
+                          </td>
+                          <td className="px-2 py-1 text-right text-text-muted">{priceRange(cor.precos)}</td>
+                        </tr>
+
+                        {corOpen && !isNumerica && (
+                          <ProdutosRows items={corItems} totalRef={totalTipo} indent={2} />
+                        )}
+
+                        {corOpen && isNumerica && (() => {
+                          const numeros = aggregate(corItems, extractNumero);
+                          return numeros.map((n) => {
+                            const numKey = `${corKey}||${n.key}`;
+                            const numOpen = expandedNumeros.has(numKey);
+                            const numPct = totalTipo > 0 ? (n.bruto / totalTipo) * 100 : 0;
+                            const numItems = corItems.filter((it) => extractNumero(it) === n.key);
+                            return (
+                              <Fragment key={numKey}>
+                                <tr className="hover:bg-surface/40 cursor-pointer" onClick={() => toggleNumero(numKey)}>
+                                  <td className="px-2 py-1 text-text-muted text-right pr-1">{numOpen ? "▼" : "▶"}</td>
+                                  <td className="px-2 py-1 text-text-secondary pl-12">Nº {n.key}</td>
+                                  <td className="px-2 py-1 text-right">{n.pedidos.size}</td>
+                                  <td className="px-2 py-1 text-right">{n.qtd}</td>
+                                  <td className="px-2 py-1 text-right text-gold/70">{formatBRL(n.bruto)}</td>
+                                  <td className="px-2 py-1 text-right text-text-muted">{numPct.toFixed(1)}%</td>
+                                  <td className="px-2 py-1">
+                                    <div className="h-1 w-full rounded-full bg-surface overflow-hidden">
+                                      <div className="h-full bg-gold/50 rounded-full" style={{ width: `${Math.min(100, numPct)}%` }} />
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1 text-right text-text-muted">{priceRange(n.precos)}</td>
+                                </tr>
+                                {numOpen && (
+                                  <ProdutosRows items={numItems} totalRef={totalTipo} indent={3} />
+                                )}
+                              </Fragment>
+                            );
+                          });
+                        })()}
+                      </Fragment>
+                    );
+                  });
+                })()}
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ProdutosRows({ items, totalRef, indent }: { items: ItemRow[]; totalRef: number; indent: number }) {
+  const produtos = aggregate(items, (it) => it.sku, (it) => ({
+    nome: it.product_snapshot?.nomeComercial ?? it.sku,
+    preco: Number(it.product_snapshot?.precoAtacado) || 0,
+  }));
+  const padLeft = ["pl-2", "pl-8", "pl-14", "pl-20"][indent] ?? "pl-2";
+  return (
+    <>
+      {produtos.map((p) => {
+        const pct = totalRef > 0 ? (p.bruto / totalRef) * 100 : 0;
+        const nome = p.meta?.nome ?? p.key;
+        const preco = p.meta?.preco ?? 0;
+        return (
+          <tr key={p.key} className="bg-background/30">
+            <td></td>
+            <td className={`px-2 py-1 text-text-primary ${padLeft}`}>
+              <span className="font-mono text-text-muted text-[10px] mr-2">{p.key}</span>
+              {nome}
+            </td>
+            <td className="px-2 py-1 text-right">{p.pedidos.size}</td>
+            <td className="px-2 py-1 text-right">{p.qtd}</td>
+            <td className="px-2 py-1 text-right text-gold/80">{formatBRL(p.bruto)}</td>
+            <td className="px-2 py-1 text-right text-text-muted">{pct.toFixed(1)}%</td>
+            <td className="px-2 py-1">
+              <div className="h-1 w-full rounded-full bg-surface overflow-hidden">
+                <div className="h-full bg-gold/60 rounded-full" style={{ width: `${Math.min(100, pct)}%` }} />
+              </div>
+            </td>
+            <td className="px-2 py-1 text-right text-text-secondary">{preco > 0 ? formatBRL(preco) : "—"}</td>
+          </tr>
+        );
+      })}
+    </>
   );
 }
