@@ -368,12 +368,22 @@ function RelatoriosPage() {
       {!loadingOrders && tab === "colecao" && (
         <TabColecao items={items} loadingItems={loadingItems} range={range} />
       )}
+      {!loadingOrders && tab === "grupo" && (
+        <TabGrupo items={items} loadingItems={loadingItems} range={range} />
+      )}
+      {!loadingOrders && tab === "tipo" && (
+        <TabTipo items={items} loadingItems={loadingItems} range={range} />
+      )}
+      {!loadingOrders && tab === "departamento" && (
+        <TabDepartamento items={items} ordersPrev={ordersPrev} loadingItems={loadingItems} range={range} />
+      )}
       {!loadingOrders && tab === "financeiro" && (
         <TabFinanceiro orders={orders} range={range} />
       )}
     </main>
   );
 }
+
 
 // ────────────────────────────────────────────────────────────────────────────
 // Field components
