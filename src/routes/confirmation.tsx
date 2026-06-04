@@ -171,7 +171,9 @@ function Confirmation() {
   useEffect(() => {
     if (!id || !ordersHidratado) return;
     const atual = history.find((o) => o.id === id);
-    const precisaBanco = !atual || atual.items.length === 0;
+    const totalAtualItens = atual?.items.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0) ?? 0;
+    const totalAtualBase = atual?.commercial?.bruto ?? atual?.total ?? 0;
+    const precisaBanco = !atual || atual.items.length === 0 || Math.abs(totalAtualItens - totalAtualBase) > 0.05;
     if (!precisaBanco) return;
     let cancelled = false;
     setLoadingPedidoCompleto(true);
@@ -311,6 +313,7 @@ function Confirmation() {
                 </button>
                 <button
                   onClick={() => setShowExport(true)}
+                  disabled={loadingPedidoCompleto}
                   className="flex items-center gap-2 rounded-md gold-border px-4 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10 transition"
                 >
                   <Download className="h-4 w-4" /> Exportar
