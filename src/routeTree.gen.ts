@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StandRouteImport } from './routes/stand'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as QualificacaoRouteImport } from './routes/qualificacao'
 import { Route as ProvisoesRouteImport } from './routes/provisoes'
 import { Route as ProdutoRouteImport } from './routes/produto'
@@ -50,6 +51,11 @@ const StandRoute = StandRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatoriosRoute = RelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QualificacaoRoute = QualificacaoRouteImport.update({
@@ -223,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/qualificacao': typeof QualificacaoRoute
+  '/relatorios': typeof RelatoriosRoute
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
@@ -256,6 +263,7 @@ export interface FileRoutesByTo {
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/qualificacao': typeof QualificacaoRoute
+  '/relatorios': typeof RelatoriosRoute
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
@@ -291,6 +299,7 @@ export interface FileRoutesById {
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/qualificacao': typeof QualificacaoRoute
+  '/relatorios': typeof RelatoriosRoute
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
@@ -327,6 +336,7 @@ export interface FileRouteTypes {
     | '/produto'
     | '/provisoes'
     | '/qualificacao'
+    | '/relatorios'
     | '/settings'
     | '/stand'
     | '/admin/cartilhas'
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/produto'
     | '/provisoes'
     | '/qualificacao'
+    | '/relatorios'
     | '/settings'
     | '/stand'
     | '/admin/cartilhas'
@@ -394,6 +405,7 @@ export interface FileRouteTypes {
     | '/produto'
     | '/provisoes'
     | '/qualificacao'
+    | '/relatorios'
     | '/settings'
     | '/stand'
     | '/admin/cartilhas'
@@ -429,6 +441,7 @@ export interface RootRouteChildren {
   ProdutoRoute: typeof ProdutoRoute
   ProvisoesRoute: typeof ProvisoesRoute
   QualificacaoRoute: typeof QualificacaoRoute
+  RelatoriosRoute: typeof RelatoriosRoute
   SettingsRoute: typeof SettingsRoute
   StandRoute: typeof StandRouteWithChildren
   AdminCartilhasRoute: typeof AdminCartilhasRoute
@@ -452,6 +465,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorios': {
+      id: '/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof RelatoriosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qualificacao': {
@@ -726,6 +746,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProdutoRoute: ProdutoRoute,
   ProvisoesRoute: ProvisoesRoute,
   QualificacaoRoute: QualificacaoRoute,
+  RelatoriosRoute: RelatoriosRoute,
   SettingsRoute: SettingsRoute,
   StandRoute: StandRouteWithChildren,
   AdminCartilhasRoute: AdminCartilhasRoute,
