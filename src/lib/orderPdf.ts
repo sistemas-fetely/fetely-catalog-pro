@@ -245,8 +245,9 @@ export function generateOrderPDF(order: SavedOrder): OrderPDFResult {
     yAfterTable += 4.5;
   }
 
-  // ─── OBSERVAÇÕES (se houver) ───
-  if (order.meta.observacoes) {
+  // ─── OBSERVAÇÕES DO CLIENTE (visíveis para o cliente) ───
+  const obsCliente = order.meta.observacoesCliente;
+  if (obsCliente) {
     yAfterTable += 4;
     doc.setFontSize(8);
     doc.setTextColor(COLORS.textSecondary);
@@ -254,7 +255,7 @@ export function generateOrderPDF(order: SavedOrder): OrderPDFResult {
     yAfterTable += 5;
     doc.setFontSize(9);
     doc.setTextColor(COLORS.black);
-    const splitObs = doc.splitTextToSize(order.meta.observacoes, contentWidth);
+    const splitObs = doc.splitTextToSize(obsCliente, contentWidth);
     doc.text(splitObs, margin, yAfterTable);
     yAfterTable += splitObs.length * 4.5;
   }
