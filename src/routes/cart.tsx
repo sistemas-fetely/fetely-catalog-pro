@@ -659,7 +659,20 @@ function CartPage() {
               )}
             </div>
 
-            <Field label="Observações">
+            <Field label="Observações do Cliente">
+              <textarea
+                value={meta.observacoesCliente ?? ""}
+                onChange={(e) => setMeta({ observacoesCliente: e.target.value })}
+                rows={2}
+                className="input resize-none"
+                placeholder="Mensagem que aparecerá no pedido, PDF e email do cliente"
+              />
+              <p className="mt-1 text-[10px] text-text-muted">
+                Visível para o cliente em todos os lugares.
+              </p>
+            </Field>
+
+            <Field label="Observações Fetély (interno)">
               <textarea
                 value={meta.observacoes}
                 onChange={(e) => setMeta({ observacoes: e.target.value })}
@@ -667,6 +680,9 @@ function CartPage() {
                 className="input resize-none"
                 placeholder="Notas internas, prazo, transportadora..."
               />
+              <p className="mt-1 text-[10px] text-text-muted">
+                Uso interno Fetély — nunca aparece para o cliente.
+              </p>
             </Field>
           </div>
 
