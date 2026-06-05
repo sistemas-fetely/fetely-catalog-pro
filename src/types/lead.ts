@@ -6,6 +6,7 @@ export type LeadSegmento =
   | "buffet"
   | "influencer"
   | "consumidor"
+  | "representacao"
   | "outro";
 
 export type LeadPotencial = "alto" | "medio" | "em_desenvolvimento";
