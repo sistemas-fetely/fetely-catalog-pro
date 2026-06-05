@@ -672,18 +672,20 @@ function CartPage() {
               </p>
             </Field>
 
-            <Field label="Observações Fetély (interno)">
-              <textarea
-                value={meta.observacoes}
-                onChange={(e) => setMeta({ observacoes: e.target.value })}
-                rows={3}
-                className="input resize-none"
-                placeholder="Notas internas, prazo, transportadora..."
-              />
-              <p className="mt-1 text-[10px] text-text-muted">
-                Uso interno Fetély — nunca aparece para o cliente.
-              </p>
-            </Field>
+            {!isClientePortal && (
+              <Field label="Observações Fetély (interno)">
+                <textarea
+                  value={meta.observacoes}
+                  onChange={(e) => setMeta({ observacoes: e.target.value })}
+                  rows={3}
+                  className="input resize-none"
+                  placeholder="Notas internas, prazo, transportadora..."
+                />
+                <p className="mt-1 text-[10px] text-text-muted">
+                  Uso interno Fetély — nunca aparece para o cliente.
+                </p>
+              </Field>
+            )}
           </div>
 
           <div className="rounded-lg gold-border bg-surface p-4 sm:p-5">
