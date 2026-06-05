@@ -1,0 +1,1 @@
+ALTER TYPE public.lead_segmento ADD VALUE IF NOT EXISTS 'representacao';

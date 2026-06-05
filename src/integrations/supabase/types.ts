@@ -1733,6 +1733,7 @@ export type Database = {
         | "influencer"
         | "consumidor"
         | "outro"
+        | "representacao"
       lead_status_crm:
         | "novo"
         | "em_contato"
@@ -1922,6 +1923,7 @@ export const Constants = {
         "influencer",
         "consumidor",
         "outro",
+        "representacao",
       ],
       lead_status_crm: [
         "novo",
