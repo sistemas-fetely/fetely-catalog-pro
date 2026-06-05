@@ -12,6 +12,7 @@ const SCORE_SEGMENTO: Record<LeadSegmento, number> = {
   cerimonialista: 22,
   buffet: 18,
   influencer: 12,
+  representacao: 26,
   consumidor: 8,
   outro: 5,
 };

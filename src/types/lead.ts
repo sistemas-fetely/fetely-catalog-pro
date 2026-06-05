@@ -6,6 +6,7 @@ export type LeadSegmento =
   | "buffet"
   | "influencer"
   | "consumidor"
+  | "representacao"
   | "outro";
 
 export type LeadPotencial = "alto" | "medio" | "em_desenvolvimento";
@@ -88,6 +89,7 @@ export const SEGMENTO_LABEL: Record<LeadSegmento, string> = {
   buffet: "Buffet & Eventos",
   influencer: "Influencer / Criador",
   consumidor: "Consumidor / Apaixonado por mesa posta",
+  representacao: "Representação Comercial",
   outro: "Outro",
 };
 
