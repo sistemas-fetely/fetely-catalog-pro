@@ -745,6 +745,7 @@ export type Database = {
           order_id: string
           posicao: number
           preco_unit_atacado: number
+          product_id: string
           product_snapshot: Json
           quantity: number
           sku: string
@@ -755,6 +756,7 @@ export type Database = {
           order_id: string
           posicao: number
           preco_unit_atacado: number
+          product_id: string
           product_snapshot: Json
           quantity: number
           sku: string
@@ -765,6 +767,7 @@ export type Database = {
           order_id?: string
           posicao?: number
           preco_unit_atacado?: number
+          product_id?: string
           product_snapshot?: Json
           quantity?: number
           sku?: string
@@ -776,6 +779,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -990,7 +1000,9 @@ export type Database = {
           cest: string | null
           cod_cadastro: string | null
           colecao: string
+          colecao_id: string
           cor: string | null
+          cor_id: string
           cor_nome: string | null
           created_at: string
           departamento: string | null
@@ -1038,7 +1050,9 @@ export type Database = {
           cest?: string | null
           cod_cadastro?: string | null
           colecao: string
+          colecao_id: string
           cor?: string | null
+          cor_id: string
           cor_nome?: string | null
           created_at?: string
           departamento?: string | null
@@ -1086,7 +1100,9 @@ export type Database = {
           cest?: string | null
           cod_cadastro?: string | null
           colecao?: string
+          colecao_id?: string
           cor?: string | null
+          cor_id?: string
           cor_nome?: string | null
           created_at?: string
           departamento?: string | null
@@ -1128,6 +1144,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "products_colecao_id_fkey"
+            columns: ["colecao_id"]
+            isOneToOne: false
+            referencedRelation: "produto_colecoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_cor_id_fkey"
+            columns: ["cor_id"]
+            isOneToOne: false
+            referencedRelation: "produto_cores"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "products_grupo_id_fkey"
             columns: ["grupo_id"]
@@ -1171,6 +1201,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      produto_colecoes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      produto_cores: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       produto_departamentos: {
         Row: {
