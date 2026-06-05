@@ -117,9 +117,13 @@ function formatOrderText(order: SavedOrder): string {
   } else {
     lines.push(`TOTAL ATACADO: ${formatBRL(order.total)}`);
   }
+  if (order.meta.observacoesCliente) {
+    lines.push("");
+    lines.push(`Observações: ${order.meta.observacoesCliente}`);
+  }
   if (order.meta.observacoes) {
     lines.push("");
-    lines.push(`Observações: ${order.meta.observacoes}`);
+    lines.push(`Observações Fetély (interno): ${order.meta.observacoes}`);
   }
   lines.push(sep);
   return lines.join("\n");
