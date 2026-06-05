@@ -235,13 +235,13 @@ function OrderDetailDrawer({ order, onClose }: { order: SavedOrder; onClose: () 
             </section>
           )}
 
-          {order.meta.observacoes && (
+          {order.meta.observacoesCliente && (
             <section className="rounded-md border border-border bg-surface/40 p-4 text-xs">
               <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
                 Observações
               </div>
               <p className="text-text-secondary whitespace-pre-wrap">
-                {order.meta.observacoes}
+                {order.meta.observacoesCliente}
               </p>
             </section>
           )}
