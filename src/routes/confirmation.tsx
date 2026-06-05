@@ -295,10 +295,18 @@ function Confirmation() {
               <Info label="Pagamento" value={order.meta.condicaoPagamento} />
               <Info label="Vendedor" value={order.meta.vendedor} />
             </div>
+            {order.meta.observacoesCliente && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1">
+                  Observações do Cliente
+                </div>
+                <div className="text-sm text-text-secondary italic">{order.meta.observacoesCliente}</div>
+              </div>
+            )}
             {order.meta.observacoes && (
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1">
-                  Observações
+                  Observações Fetély (interno)
                 </div>
                 <div className="text-sm text-text-secondary italic">{order.meta.observacoes}</div>
               </div>
