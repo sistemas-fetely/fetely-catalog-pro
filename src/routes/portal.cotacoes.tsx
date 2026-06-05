@@ -190,13 +190,13 @@ function CotacaoDrawer({ cotacao, onClose }: { cotacao: Cotacao; onClose: () => 
             </div>
           </section>
 
-          {cotacao.meta?.observacoes && (
+          {cotacao.meta?.observacoesCliente && (
             <section className="rounded-md border border-border bg-surface/40 p-4">
               <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
                 Observações
               </div>
               <p className="text-xs text-text-secondary whitespace-pre-wrap">
-                {cotacao.meta.observacoes}
+                {cotacao.meta.observacoesCliente}
               </p>
             </section>
           )}

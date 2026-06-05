@@ -117,9 +117,13 @@ function formatOrderText(order: SavedOrder): string {
   } else {
     lines.push(`TOTAL ATACADO: ${formatBRL(order.total)}`);
   }
+  if (order.meta.observacoesCliente) {
+    lines.push("");
+    lines.push(`Observações: ${order.meta.observacoesCliente}`);
+  }
   if (order.meta.observacoes) {
     lines.push("");
-    lines.push(`Observações: ${order.meta.observacoes}`);
+    lines.push(`Observações Fetély (interno): ${order.meta.observacoes}`);
   }
   lines.push(sep);
   return lines.join("\n");
@@ -291,10 +295,18 @@ function Confirmation() {
               <Info label="Pagamento" value={order.meta.condicaoPagamento} />
               <Info label="Vendedor" value={order.meta.vendedor} />
             </div>
+            {order.meta.observacoesCliente && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1">
+                  Observações do Cliente
+                </div>
+                <div className="text-sm text-text-secondary italic">{order.meta.observacoesCliente}</div>
+              </div>
+            )}
             {order.meta.observacoes && (
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1">
-                  Observações
+                  Observações Fetély (interno)
                 </div>
                 <div className="text-sm text-text-secondary italic">{order.meta.observacoes}</div>
               </div>
@@ -631,10 +643,10 @@ function PedidoResumoPrintBlock({ order }: { order: SavedOrder }) {
         </div>
       </div>
 
-      {/* Observações */}
-      {order.meta.observacoes && (
+      {/* Observações (visíveis para o cliente — internas Fetély ficam de fora do impresso) */}
+      {order.meta.observacoesCliente && (
         <div style={{ fontSize: "9pt", marginBottom: "12px", paddingTop: "8px", borderTop: "1px solid #eee" }}>
-          <span style={{ fontWeight: 600 }}>Observações:</span> {order.meta.observacoes}
+          <span style={{ fontWeight: 600 }}>Observações:</span> {order.meta.observacoesCliente}
         </div>
       )}
 

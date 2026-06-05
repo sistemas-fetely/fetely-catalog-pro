@@ -100,6 +100,17 @@ export function buildClienteEmail(order: SavedOrder, contatoNome?: string): Emai
                 </tr>
               </table>
 
+              ${
+                order.meta.observacoesCliente
+                  ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #faf8f5; border: 1px solid #ece8df; border-radius: 4px; padding: 16px 20px; margin-bottom: 16px;">
+                <tr><td>
+                  <div style="color: #6a6a6a; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px;">Observações</div>
+                  <div style="color: #1a1a1a; font-size: 13px; line-height: 1.5; white-space: pre-wrap;">${escapeHtml(order.meta.observacoesCliente)}</div>
+                </td></tr>
+              </table>`
+                  : ""
+              }
+
               <p style="margin: 0 0 8px; color: #6a6a6a; font-size: 13px;">📎 Pedido completo em anexo (PDF)</p>
 
               <p style="margin: 28px 0 0; color: #4a4a4a; font-size: 14px; line-height: 1.6;">
@@ -177,7 +188,8 @@ export function buildSOpsEmail(order: SavedOrder): EmailContent {
       ${row("Total final", formatBRL(order.total))}
       ${c?.negociacao ? row("⚠️ Negociação", c.justificativa || "Sim") : ""}
       ${c?.premissasAplicadas ? row("Premissas", "Aplicadas") : ""}
-      ${order.meta.observacoes ? row("Observações", order.meta.observacoes) : ""}
+      ${order.meta.observacoesCliente ? row("Obs. Cliente", order.meta.observacoesCliente) : ""}
+      ${order.meta.observacoes ? row("Obs. Fetély (interno)", order.meta.observacoes) : ""}
     </table>
 
     <p style="margin: 20px 0 0; color: #6a6a6a; font-size: 13px;">📎 PDF do pedido em anexo.</p>

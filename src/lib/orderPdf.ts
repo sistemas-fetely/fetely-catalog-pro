@@ -245,8 +245,9 @@ export function generateOrderPDF(order: SavedOrder): OrderPDFResult {
     yAfterTable += 4.5;
   }
 
-  // ─── OBSERVAÇÕES (se houver) ───
-  if (order.meta.observacoes) {
+  // ─── OBSERVAÇÕES DO CLIENTE (visíveis para o cliente) ───
+  const obsCliente = order.meta.observacoesCliente;
+  if (obsCliente) {
     yAfterTable += 4;
     doc.setFontSize(8);
     doc.setTextColor(COLORS.textSecondary);
@@ -254,7 +255,7 @@ export function generateOrderPDF(order: SavedOrder): OrderPDFResult {
     yAfterTable += 5;
     doc.setFontSize(9);
     doc.setTextColor(COLORS.black);
-    const splitObs = doc.splitTextToSize(order.meta.observacoes, contentWidth);
+    const splitObs = doc.splitTextToSize(obsCliente, contentWidth);
     doc.text(splitObs, margin, yAfterTable);
     yAfterTable += splitObs.length * 4.5;
   }
@@ -353,7 +354,7 @@ export function generateCotacaoPDF(cotacao: Cotacao): OrderPDFResult {
     items: cotacao.items,
     meta: {
       ...cotacao.meta,
-      observacoes: `${cotacao.meta.observacoes ?? ""}\n\nVálida até: ${new Date(cotacao.validoAte).toLocaleDateString("pt-BR")}\nEste documento é uma cotação e não representa compromisso de compra.`.trim(),
+      observacoesCliente: `${cotacao.meta.observacoesCliente ?? cotacao.meta.observacoes ?? ""}\n\nVálida até: ${new Date(cotacao.validoAte).toLocaleDateString("pt-BR")}\nEste documento é uma cotação e não representa compromisso de compra.`.trim(),
     },
     total: cotacao.total,
     commercial: cotacao.commercial,
@@ -405,7 +406,8 @@ export function generateProvisaoPDF(provisao: ProvisaoFutura): OrderPDFResult {
       uf: snap.estado,
       condicaoPagamento: "—",
       vendedor: provisao.vendedorNome,
-      observacoes: `${obsHeader}${provisao.observacoes ? `\n\n${provisao.observacoes}` : ""}`.trim(),
+      observacoes: "",
+      observacoesCliente: `${obsHeader}${provisao.observacoes ? `\n\n${provisao.observacoes}` : ""}`.trim(),
     },
     total: provisao.totalReferencia,
     vendedorId: provisao.vendedorId,
