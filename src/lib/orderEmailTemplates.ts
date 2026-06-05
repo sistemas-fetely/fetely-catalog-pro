@@ -188,7 +188,8 @@ export function buildSOpsEmail(order: SavedOrder): EmailContent {
       ${row("Total final", formatBRL(order.total))}
       ${c?.negociacao ? row("⚠️ Negociação", c.justificativa || "Sim") : ""}
       ${c?.premissasAplicadas ? row("Premissas", "Aplicadas") : ""}
-      ${order.meta.observacoes ? row("Observações", order.meta.observacoes) : ""}
+      ${order.meta.observacoesCliente ? row("Obs. Cliente", order.meta.observacoesCliente) : ""}
+      ${order.meta.observacoes ? row("Obs. Fetély (interno)", order.meta.observacoes) : ""}
     </table>
 
     <p style="margin: 20px 0 0; color: #6a6a6a; font-size: 13px;">📎 PDF do pedido em anexo.</p>
