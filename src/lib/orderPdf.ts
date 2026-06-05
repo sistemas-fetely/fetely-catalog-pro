@@ -354,7 +354,7 @@ export function generateCotacaoPDF(cotacao: Cotacao): OrderPDFResult {
     items: cotacao.items,
     meta: {
       ...cotacao.meta,
-      observacoes: `${cotacao.meta.observacoes ?? ""}\n\nVálida até: ${new Date(cotacao.validoAte).toLocaleDateString("pt-BR")}\nEste documento é uma cotação e não representa compromisso de compra.`.trim(),
+      observacoesCliente: `${cotacao.meta.observacoesCliente ?? cotacao.meta.observacoes ?? ""}\n\nVálida até: ${new Date(cotacao.validoAte).toLocaleDateString("pt-BR")}\nEste documento é uma cotação e não representa compromisso de compra.`.trim(),
     },
     total: cotacao.total,
     commercial: cotacao.commercial,
