@@ -60,6 +60,7 @@ const defaultMeta: OrderMeta = {
   cnpj: "",
   condicaoPagamento: "À vista",
   observacoes: "",
+  observacoesCliente: "",
   vendedor: "Representante Fetély",
 };
 
