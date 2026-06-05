@@ -73,7 +73,10 @@ export interface OrderMeta {
   cliente: string;
   cnpj: string;
   condicaoPagamento: string;
+  /** Observações internas Fetély — NUNCA exibido para o cliente */
   observacoes: string;
+  /** Observações do cliente — aparece no pedido, PDF impresso e email do cliente */
+  observacoesCliente?: string;
   vendedor: string;
   nomeFantasia?: string;
   email?: string;
