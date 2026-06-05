@@ -643,7 +643,6 @@ function PedidoResumoPrintBlock({ order }: { order: SavedOrder }) {
         </div>
       </div>
 
-      {/* Observações */}
       {/* Observações (visíveis para o cliente — internas Fetély ficam de fora do impresso) */}
       {order.meta.observacoesCliente && (
         <div style={{ fontSize: "9pt", marginBottom: "12px", paddingTop: "8px", borderTop: "1px solid #eee" }}>
