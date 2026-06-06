@@ -32,6 +32,7 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as StandLeadsRouteImport } from './routes/stand.leads'
+import { Route as SettingsPedidoOriginalRouteImport } from './routes/settings.pedido-original'
 import { Route as PortalProvisoesRouteImport } from './routes/portal.provisoes'
 import { Route as PortalPedidosRouteImport } from './routes/portal.pedidos'
 import { Route as PortalCotacoesRouteImport } from './routes/portal.cotacoes'
@@ -158,6 +159,11 @@ const StandLeadsRoute = StandLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => StandRoute,
 } as any)
+const SettingsPedidoOriginalRoute = SettingsPedidoOriginalRouteImport.update({
+  id: '/pedido-original',
+  path: '/pedido-original',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const PortalProvisoesRoute = PortalProvisoesRouteImport.update({
   id: '/provisoes',
   path: '/provisoes',
@@ -230,7 +236,7 @@ export interface FileRoutesByFullPath {
   '/provisoes': typeof ProvisoesRoute
   '/qualificacao': typeof QualificacaoRoute
   '/relatorios': typeof RelatoriosRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/leads': typeof AdminLeadsRoute
@@ -241,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/portal/cotacoes': typeof PortalCotacoesRoute
   '/portal/pedidos': typeof PortalPedidosRoute
   '/portal/provisoes': typeof PortalProvisoesRoute
+  '/settings/pedido-original': typeof SettingsPedidoOriginalRoute
   '/stand/leads': typeof StandLeadsRoute
   '/portal/': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
@@ -264,7 +271,7 @@ export interface FileRoutesByTo {
   '/provisoes': typeof ProvisoesRoute
   '/qualificacao': typeof QualificacaoRoute
   '/relatorios': typeof RelatoriosRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/leads': typeof AdminLeadsRoute
@@ -275,6 +282,7 @@ export interface FileRoutesByTo {
   '/portal/cotacoes': typeof PortalCotacoesRoute
   '/portal/pedidos': typeof PortalPedidosRoute
   '/portal/provisoes': typeof PortalProvisoesRoute
+  '/settings/pedido-original': typeof SettingsPedidoOriginalRoute
   '/stand/leads': typeof StandLeadsRoute
   '/portal': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
@@ -300,7 +308,7 @@ export interface FileRoutesById {
   '/provisoes': typeof ProvisoesRoute
   '/qualificacao': typeof QualificacaoRoute
   '/relatorios': typeof RelatoriosRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/leads': typeof AdminLeadsRoute
@@ -311,6 +319,7 @@ export interface FileRoutesById {
   '/portal/cotacoes': typeof PortalCotacoesRoute
   '/portal/pedidos': typeof PortalPedidosRoute
   '/portal/provisoes': typeof PortalProvisoesRoute
+  '/settings/pedido-original': typeof SettingsPedidoOriginalRoute
   '/stand/leads': typeof StandLeadsRoute
   '/portal/': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
@@ -348,6 +357,7 @@ export interface FileRouteTypes {
     | '/portal/cotacoes'
     | '/portal/pedidos'
     | '/portal/provisoes'
+    | '/settings/pedido-original'
     | '/stand/leads'
     | '/portal/'
     | '/catalog/categoria/$categoria'
@@ -382,6 +392,7 @@ export interface FileRouteTypes {
     | '/portal/cotacoes'
     | '/portal/pedidos'
     | '/portal/provisoes'
+    | '/settings/pedido-original'
     | '/stand/leads'
     | '/portal'
     | '/catalog/categoria/$categoria'
@@ -417,6 +428,7 @@ export interface FileRouteTypes {
     | '/portal/cotacoes'
     | '/portal/pedidos'
     | '/portal/provisoes'
+    | '/settings/pedido-original'
     | '/stand/leads'
     | '/portal/'
     | '/catalog/categoria/$categoria'
@@ -442,7 +454,7 @@ export interface RootRouteChildren {
   ProvisoesRoute: typeof ProvisoesRoute
   QualificacaoRoute: typeof QualificacaoRoute
   RelatoriosRoute: typeof RelatoriosRoute
-  SettingsRoute: typeof SettingsRoute
+  SettingsRoute: typeof SettingsRouteWithChildren
   StandRoute: typeof StandRouteWithChildren
   AdminCartilhasRoute: typeof AdminCartilhasRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
@@ -614,6 +626,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StandLeadsRouteImport
       parentRoute: typeof StandRoute
     }
+    '/settings/pedido-original': {
+      id: '/settings/pedido-original'
+      path: '/pedido-original'
+      fullPath: '/settings/pedido-original'
+      preLoaderRoute: typeof SettingsPedidoOriginalRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/portal/provisoes': {
       id: '/portal/provisoes'
       path: '/provisoes'
@@ -717,6 +736,18 @@ const PortalRouteChildren: PortalRouteChildren = {
 const PortalRouteWithChildren =
   PortalRoute._addFileChildren(PortalRouteChildren)
 
+interface SettingsRouteChildren {
+  SettingsPedidoOriginalRoute: typeof SettingsPedidoOriginalRoute
+}
+
+const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsPedidoOriginalRoute: SettingsPedidoOriginalRoute,
+}
+
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
+
 interface StandRouteChildren {
   StandLeadsRoute: typeof StandLeadsRoute
 }
@@ -747,7 +778,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProvisoesRoute: ProvisoesRoute,
   QualificacaoRoute: QualificacaoRoute,
   RelatoriosRoute: RelatoriosRoute,
-  SettingsRoute: SettingsRoute,
+  SettingsRoute: SettingsRouteWithChildren,
   StandRoute: StandRouteWithChildren,
   AdminCartilhasRoute: AdminCartilhasRoute,
   AdminLeadsRoute: AdminLeadsRoute,
