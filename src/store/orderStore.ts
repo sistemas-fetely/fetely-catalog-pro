@@ -133,11 +133,41 @@ export function orderToRow(o: SavedOrder): Record<string, unknown> {
 }
 
 
-export function orderItemsToRows(o: SavedOrder): Record<string, unknown>[] {
+async function fetchSkuToProductId(skus: string[]): Promise<Record<string, string>> {
+  const map: Record<string, string> = {};
+  const unique = Array.from(new Set(skus.filter(Boolean)));
+  if (unique.length === 0) return map;
+  // chunk para evitar URL gigante
+  const chunkSize = 200;
+  for (let i = 0; i < unique.length; i += chunkSize) {
+    const chunk = unique.slice(i, i + chunkSize);
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, sku")
+      .in("sku", chunk);
+    if (error) throw error;
+    (data ?? []).forEach((r) => {
+      const row = r as { id: string; sku: string };
+      map[row.sku] = row.id;
+    });
+  }
+  return map;
+}
+
+export async function orderItemsToRows(o: SavedOrder): Promise<Record<string, unknown>[]> {
+  const skuMap = await fetchSkuToProductId(o.items.map((it) => it.sku));
+  const missing = o.items.filter((it) => !skuMap[it.sku]).map((it) => it.sku);
+  if (missing.length > 0) {
+    throw new Error(
+      `Produtos não encontrados no catálogo do banco: ${missing.join(", ")}. ` +
+        `Atualize o catálogo antes de salvar o pedido.`,
+    );
+  }
   return o.items.map((it, idx) => ({
     order_id: o.id,
     posicao: idx,
     sku: it.sku,
+    product_id: skuMap[it.sku],
     product_snapshot: it.product,
     quantity: it.quantity,
     preco_unit_atacado: it.product.precoAtacado,
