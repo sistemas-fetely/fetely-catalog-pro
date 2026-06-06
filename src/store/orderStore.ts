@@ -387,7 +387,7 @@ export const useOrder = create<OrderState>()(
             .upsert(orderToRow(order) as never, { onConflict: "id" });
           if (errO) throw errO;
 
-          const itemRows = orderItemsToRows(order);
+          const itemRows = await orderItemsToRows(order);
           if (itemRows.length > 0) {
             await supabase.from("order_items").delete().eq("order_id", order.id);
             const { error: errI } = await supabase
