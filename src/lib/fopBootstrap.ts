@@ -196,7 +196,7 @@ async function maybeRunMigration(): Promise<void> {
     } else {
       const orderIds = oldOrders.map((o) => o.id);
       await supabase.from("order_items").delete().in("order_id", orderIds);
-      const allItemRows = oldOrders.flatMap(orderItemsToRows);
+      const allItemRows = (await Promise.all(oldOrders.map(orderItemsToRows))).flat();
       if (allItemRows.length > 0) {
         const { error: errI } = await supabase
           .from("order_items")
