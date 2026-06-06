@@ -194,7 +194,7 @@ function PedidoOriginalPage() {
                     </TableCell>
                     <TableCell className="text-right text-sm tabular-nums">
                       {l.totalProvisoes > 0 ? (
-                        <span className="text-yellow-300">
+                        <span className="text-gold">
                           {formatBRL(l.totalProvisoes)}
                         </span>
                       ) : (
