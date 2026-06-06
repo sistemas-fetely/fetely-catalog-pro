@@ -11,6 +11,7 @@ import {
   Users,
   ExternalLink,
   Target,
+  FileStack,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 
@@ -29,6 +30,12 @@ function SettingsPage() {
       description: "Importar dados do sistema via planilhas",
       to: "/import",
       icon: Upload,
+    },
+    {
+      label: "Pedido Original",
+      description: "Pedido firme + provisões vinculadas, somados por pedido",
+      to: "/settings/pedido-original",
+      icon: FileStack,
     },
     {
       label: "Cartilhas",
