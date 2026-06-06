@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export const Route = createFileRoute("/settings/pedido-original")({
+export const Route = createFileRoute("/pedido-original")({
   component: PedidoOriginalPage,
   head: () => ({
     meta: [{ title: "Pedido Original · Fetély" }],
