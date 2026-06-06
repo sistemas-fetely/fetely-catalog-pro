@@ -34,7 +34,7 @@ function SettingsPage() {
     {
       label: "Pedido Original",
       description: "Pedido firme + provisões vinculadas, somados por pedido",
-      to: "/settings/pedido-original",
+      to: "/pedido-original",
       icon: FileStack,
     },
     {
