@@ -87,7 +87,7 @@ async function retrySyncLocalCache(): Promise<void> {
       } else {
         const missingIds = missing.map((o) => o.id);
         await supabase.from("order_items").delete().in("order_id", missingIds);
-        const itemRows = missing.flatMap(orderItemsToRows);
+        const itemRows = (await Promise.all(missing.map(orderItemsToRows))).flat();
         if (itemRows.length > 0) {
           const { error: errI } = await supabase
             .from("order_items")
