@@ -224,8 +224,10 @@ Deno.serve(async (req) => {
       observacao: c.observacoes ?? null,
       observacao_pedido: (pedido.meta as any)?.observacoes ?? null,
       premissas: c.premissas_comerciais ?? null,
-      valor_frete: commercial?.freteValor ?? 0,
-      frete_tipo: commercial?.frete ?? null,
+      valor_frete:            commercial?.freteValor         ?? 0,
+      frete_tipo:             commercial?.frete              ?? null,
+      desconto_celebra_valor: commercial?.descontoCelebraValor ?? 0,
+      bonus_pix_valor:        commercial?.bonusPixValor        ?? 0,
     };
 
     const enviarPayload = (payload: Record<string, unknown>) => fetch(SNCF_URL, {
