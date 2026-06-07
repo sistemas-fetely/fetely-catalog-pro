@@ -4,6 +4,7 @@ import {
   Building,
   Camera,
   ChevronRight,
+  CreditCard,
   Layers,
   Settings,
   Upload,
