@@ -25,6 +25,7 @@ import { Route as ImportRouteImport } from './routes/import'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CotacoesRouteImport } from './routes/cotacoes'
 import { Route as ConfirmationRouteImport } from './routes/confirmation'
+import { Route as CondicoesPagamentoRouteImport } from './routes/condicoes-pagamento'
 import { Route as CommercialRouteImport } from './routes/commercial'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as CatalogRouteImport } from './routes/catalog'
@@ -122,6 +123,11 @@ const CotacoesRoute = CotacoesRouteImport.update({
 const ConfirmationRoute = ConfirmationRouteImport.update({
   id: '/confirmation',
   path: '/confirmation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CondicoesPagamentoRoute = CondicoesPagamentoRouteImport.update({
+  id: '/condicoes-pagamento',
+  path: '/condicoes-pagamento',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CommercialRoute = CommercialRouteImport.update({
@@ -223,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/catalog': typeof CatalogRouteWithChildren
   '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
+  '/condicoes-pagamento': typeof CondicoesPagamentoRoute
   '/confirmation': typeof ConfirmationRoute
   '/cotacoes': typeof CotacoesRoute
   '/dashboard': typeof DashboardRoute
@@ -259,6 +266,7 @@ export interface FileRoutesByTo {
   '/catalog': typeof CatalogRouteWithChildren
   '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
+  '/condicoes-pagamento': typeof CondicoesPagamentoRoute
   '/confirmation': typeof ConfirmationRoute
   '/cotacoes': typeof CotacoesRoute
   '/dashboard': typeof DashboardRoute
@@ -295,6 +303,7 @@ export interface FileRoutesById {
   '/catalog': typeof CatalogRouteWithChildren
   '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
+  '/condicoes-pagamento': typeof CondicoesPagamentoRoute
   '/confirmation': typeof ConfirmationRoute
   '/cotacoes': typeof CotacoesRoute
   '/dashboard': typeof DashboardRoute
@@ -333,6 +342,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/clientes'
     | '/commercial'
+    | '/condicoes-pagamento'
     | '/confirmation'
     | '/cotacoes'
     | '/dashboard'
@@ -369,6 +379,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/clientes'
     | '/commercial'
+    | '/condicoes-pagamento'
     | '/confirmation'
     | '/cotacoes'
     | '/dashboard'
@@ -404,6 +415,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/clientes'
     | '/commercial'
+    | '/condicoes-pagamento'
     | '/confirmation'
     | '/cotacoes'
     | '/dashboard'
@@ -441,6 +453,7 @@ export interface RootRouteChildren {
   CatalogRoute: typeof CatalogRouteWithChildren
   ClientesRoute: typeof ClientesRoute
   CommercialRoute: typeof CommercialRoute
+  CondicoesPagamentoRoute: typeof CondicoesPagamentoRoute
   ConfirmationRoute: typeof ConfirmationRoute
   CotacoesRoute: typeof CotacoesRoute
   DashboardRoute: typeof DashboardRoute
@@ -576,6 +589,13 @@ declare module '@tanstack/react-router' {
       path: '/confirmation'
       fullPath: '/confirmation'
       preLoaderRoute: typeof ConfirmationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/condicoes-pagamento': {
+      id: '/condicoes-pagamento'
+      path: '/condicoes-pagamento'
+      fullPath: '/condicoes-pagamento'
+      preLoaderRoute: typeof CondicoesPagamentoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/commercial': {
@@ -754,6 +774,7 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogRoute: CatalogRouteWithChildren,
   ClientesRoute: ClientesRoute,
   CommercialRoute: CommercialRoute,
+  CondicoesPagamentoRoute: CondicoesPagamentoRoute,
   ConfirmationRoute: ConfirmationRoute,
   CotacoesRoute: CotacoesRoute,
   DashboardRoute: DashboardRoute,

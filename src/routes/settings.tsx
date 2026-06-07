@@ -4,6 +4,7 @@ import {
   Building,
   Camera,
   ChevronRight,
+  CreditCard,
   Layers,
   Settings,
   Upload,
@@ -42,6 +43,12 @@ function SettingsPage() {
       description: "Gerenciar cartilhas comerciais",
       to: "/commercial",
       icon: BookOpen,
+    },
+    {
+      label: "Condições de Pagamento",
+      description: "Visualizar tabela completa de formas de pagamento",
+      to: "/condicoes-pagamento",
+      icon: CreditCard,
     },
     {
       label: "Portal do Cliente",
