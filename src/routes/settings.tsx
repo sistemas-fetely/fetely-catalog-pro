@@ -45,6 +45,12 @@ function SettingsPage() {
       icon: BookOpen,
     },
     {
+      label: "Condições de Pagamento",
+      description: "Visualizar tabela completa de formas de pagamento",
+      to: "/condicoes-pagamento",
+      icon: CreditCard,
+    },
+    {
       label: "Portal do Cliente",
       description: "Abrir o portal do lojista em uma nova aba",
       to: "/portal",
