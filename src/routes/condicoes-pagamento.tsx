@@ -33,24 +33,43 @@ interface Condicao {
   ordem: number;
 }
 
+interface Faixa {
+  id: number;
+  nome: string;
+  valor_min: number;
+  valor_max: number | null;
+  frete: string;
+  desconto_celebra: number;
+  bonus_pix: number;
+  total_com_pix: number;
+  cartao_ate: string;
+  boleto_ate: string;
+  prazo_medio_boleto: number;
+  requer_senha_master: boolean;
+  bonus_pix_aplicavel: boolean;
+  cor: string | null;
+  icone: string | null;
+  ativa: boolean;
+  ordem: number;
+}
+
 function CondicoesPagamentoPage() {
   const [condicoes, setCondicoes] = useState<Condicao[]>([]);
+  const [faixas, setFaixas] = useState<Faixa[]>([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
 
   useEffect(() => {
-    async function fetchCondicoes() {
-      const { data, error } = await supabase
-        .from("condicoes_pagamento")
-        .select("*")
-        .order("ordem", { ascending: true });
-
-      if (!error && data) {
-        setCondicoes(data as Condicao[]);
-      }
+    async function fetchAll() {
+      const [{ data: condData }, { data: faixaData }] = await Promise.all([
+        supabase.from("condicoes_pagamento").select("*").order("ordem", { ascending: true }),
+        supabase.from("faixas").select("*").order("ordem", { ascending: true }),
+      ]);
+      if (condData) setCondicoes(condData as Condicao[]);
+      if (faixaData) setFaixas(faixaData as Faixa[]);
       setLoading(false);
     }
-    fetchCondicoes();
+    fetchAll();
   }, []);
 
   const filtradas = useMemo(() => {
