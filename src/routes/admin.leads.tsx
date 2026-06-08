@@ -20,6 +20,7 @@ import {
   Lock,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
+import { Can } from "@/components/security/Can";
 import {
   listarLeads,
   atualizarLeadCrm,
