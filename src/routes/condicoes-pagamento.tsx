@@ -140,6 +140,121 @@ function CondicoesPagamentoPage() {
           </div>
         </div>
 
+        {/* Faixas / Descontos */}
+        <div className="mb-8">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="font-display text-lg text-text-primary">
+              Faixas de Desconto
+            </h2>
+            <span className="text-xs text-text-secondary">
+              {faixas.length} faixa(s) — desconto Celebra + Bônus PIX por valor de pedido
+            </span>
+          </div>
+          <div className="rounded-xl border border-border bg-surface overflow-hidden">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-gold border-t-transparent" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b border-border hover:bg-transparent">
+                      <TableHead className="text-text-secondary">Faixa</TableHead>
+                      <TableHead className="text-right text-text-secondary">Valor Mínimo</TableHead>
+                      <TableHead className="text-right text-text-secondary">Valor Máximo</TableHead>
+                      <TableHead className="text-center text-text-secondary">Frete</TableHead>
+                      <TableHead className="text-right text-text-secondary">Desc. Celebra</TableHead>
+                      <TableHead className="text-right text-text-secondary">Bônus PIX</TableHead>
+                      <TableHead className="text-right text-text-secondary">Total c/ PIX</TableHead>
+                      <TableHead className="text-text-secondary">Cartão até</TableHead>
+                      <TableHead className="text-text-secondary">Boleto até</TableHead>
+                      <TableHead className="text-center text-text-secondary">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {faixas.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={10} className="py-12 text-center text-sm text-text-secondary">
+                          Nenhuma faixa cadastrada.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      faixas.map((f) => (
+                        <TableRow
+                          key={f.id}
+                          className={`border-b border-border transition hover:bg-surface-hover ${!f.ativa ? "opacity-50" : ""}`}
+                        >
+                          <TableCell className="font-medium text-text-primary">
+                            <div className="flex items-center gap-2">
+                              {f.cor && (
+                                <span
+                                  className="inline-block h-2.5 w-2.5 rounded-full"
+                                  style={{ backgroundColor: f.cor }}
+                                />
+                              )}
+                              <span>{f.icone ? `${f.icone} ` : ""}{f.nome}</span>
+                              {f.requer_senha_master && (
+                                <span className="rounded bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-violet-400 border border-violet-500/20">
+                                  Master
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm text-text-primary">
+                            {formatBRL(f.valor_min)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm text-text-primary">
+                            {f.valor_max == null || f.valor_max >= 9999999 ? "∞" : formatBRL(f.valor_max)}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${f.frete === "CIF" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"}`}>
+                              {f.frete}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm text-gold">
+                            {f.desconto_celebra}%
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">
+                            {f.bonus_pix_aplicavel && f.bonus_pix > 0 ? (
+                              <span className="text-emerald-400">+{f.bonus_pix}%</span>
+                            ) : (
+                              <span className="text-text-secondary">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm font-semibold text-text-primary">
+                            {f.total_com_pix}%
+                          </TableCell>
+                          <TableCell className="text-xs text-text-secondary">
+                            {f.cartao_ate || "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-text-secondary">
+                            {f.boleto_ate || "—"}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {f.ativa ? (
+                              <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                            ) : (
+                              <span className="inline-flex h-2 w-2 rounded-full bg-red-500" />
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <h2 className="font-display text-lg text-text-primary">
+            Condições de Pagamento
+          </h2>
+        </div>
+
+
         {/* Search */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative max-w-md flex-1">
