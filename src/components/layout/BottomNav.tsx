@@ -15,6 +15,7 @@ export function BottomNav() {
   const count = items.reduce((s, i) => s + i.quantity, 0);
   const setMobileOpen = useUI((s) => s.setMobileSidebarOpen);
   const session = useAuth((s) => s.session);
+  const temPermissao = useTemPermissao();
 
   // Em modo público, não mostra o bottom-nav comercial
   if (!session) return null;
