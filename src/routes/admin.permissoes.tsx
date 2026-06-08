@@ -107,10 +107,22 @@ function PermissoesPage() {
     qc.invalidateQueries({ queryKey: ["app-users"] });
   };
 
-  const [selecao, setSelecao] = useState<Selecao>({ tipo: "perfil", perfil: "admin" });
+  const [selecao, setSelecao] = useState<Selecao>(
+    search.userId
+      ? { tipo: "usuario", userId: search.userId }
+      : search.grupoId
+        ? { tipo: "grupo", grupoId: search.grupoId }
+        : { tipo: "perfil", perfil: "admin" },
+  );
   const [filtroTela, setFiltroTela] = useState("");
   const [novoGrupoAberto, setNovoGrupoAberto] = useState(false);
   const [excecaoAberta, setExcecaoAberta] = useState(false);
+
+  // Sync selection when search params change
+  useEffect(() => {
+    if (search.userId) setSelecao({ tipo: "usuario", userId: search.userId });
+    else if (search.grupoId) setSelecao({ tipo: "grupo", grupoId: search.grupoId });
+  }, [search.userId, search.grupoId]);
 
   // Mutations
   const mutPerfil = useMutation({
