@@ -178,7 +178,7 @@ export function Header() {
             )}
 
             {/* Dashboard link */}
-            {isInternalUser && (
+            {isInternalUser && temPermissao("dashboard", "ver") && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
