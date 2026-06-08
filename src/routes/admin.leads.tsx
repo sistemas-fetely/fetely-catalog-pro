@@ -20,6 +20,7 @@ import {
   Lock,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
+import { Can } from "@/components/security/Can";
 import {
   listarLeads,
   atualizarLeadCrm,
@@ -268,9 +269,11 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
             Limpar
           </Button>
           <div className="ml-auto flex gap-2">
-            <Button variant="outline" size="sm" onClick={exportCsv}>
-              <Download className="h-4 w-4 mr-1" /> Exportar CSV
-            </Button>
+            <Can tela="cfg_leads_exportar" acao="exportar">
+              <Button variant="outline" size="sm" onClick={exportCsv}>
+                <Download className="h-4 w-4 mr-1" /> Exportar CSV
+              </Button>
+            </Can>
           </div>
         </div>
       </div>
@@ -579,14 +582,18 @@ function LeadDrawerBody({ lead, onClose }: { lead: LeadQualificado; onClose: () 
           <Textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={5} maxLength={4000} />
         </div>
         <div className="flex justify-between">
-          <Button variant="ghost" size="sm" onClick={() => {
-            if (confirm("Excluir este lead permanentemente?")) deleteMut.mutate();
-          }}>
-            <Trash2 className="h-4 w-4 mr-1" /> Excluir
-          </Button>
-          <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
-            {saveMut.isPending ? "Salvando..." : "Salvar CRM"}
-          </Button>
+          <Can tela="cfg_leads" acao="excluir">
+            <Button variant="ghost" size="sm" onClick={() => {
+              if (confirm("Excluir este lead permanentemente?")) deleteMut.mutate();
+            }}>
+              <Trash2 className="h-4 w-4 mr-1" /> Excluir
+            </Button>
+          </Can>
+          <Can tela="cfg_leads" acao="editar">
+            <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+              {saveMut.isPending ? "Salvando..." : "Salvar CRM"}
+            </Button>
+          </Can>
         </div>
       </TabsContent>
 

@@ -25,6 +25,47 @@ async function assertAdmin(userId: string): Promise<{ nome: string }> {
 const acaoEnum = z.enum(["ver", "criar", "editar", "excluir", "exportar", "aprovar"]);
 const perfilEnum = z.enum(["master", "admin", "vendedor", "cliente"]);
 
+// ============ PERMISSÕES DO USUÁRIO LOGADO ============
+// Devolve a lista crua de (tela_id, acao) já com as 3 camadas aplicadas.
+// Chamado uma vez após o login para hidratar o permissoesStore.
+
+export const getMinhasPermissoes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context as { userId: string };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { computarPermissoesEfetivas } = await import("@/security/permissionEvaluator");
+
+    const [rolesRes, profileRes, perfisOvRes, grupoOvRes, excecoesRes] = await Promise.all([
+      supabaseAdmin.from("user_roles").select("role").eq("user_id", userId),
+      supabaseAdmin.from("profiles").select("grupo_permissao_id").eq("id", userId).maybeSingle(),
+      supabaseAdmin.from("permissoes_perfis_override").select("perfil, tela_id, acao, permitido"),
+      supabaseAdmin.from("permissoes_grupo_overrides").select("grupo_id, tela_id, acao, permitido"),
+      supabaseAdmin
+        .from("permissoes_usuario_excecoes")
+        .select("tela_id, acao, permitido")
+        .eq("user_id", userId),
+    ]);
+
+    const roles = (rolesRes.data ?? []).map((r) => r.role as string);
+    const grupoId = (profileRes.data as { grupo_permissao_id: string | null } | null)
+      ?.grupo_permissao_id ?? null;
+
+    const set = computarPermissoesEfetivas({
+      roles,
+      grupoId,
+      perfisOverride: (perfisOvRes.data ?? []) as never,
+      grupoOverrides: (grupoOvRes.data ?? []) as never,
+      excecoes: (excecoesRes.data ?? []) as never,
+    });
+
+    // Devolve como array para serialização
+    return Array.from(set).map((k) => {
+      const [tela_id, acao] = k.split(":");
+      return { tela_id, acao };
+    });
+  });
+
 // ============ READ-ALL ============
 
 export const carregarPermissoes = createServerFn({ method: "GET" })

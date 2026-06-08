@@ -15,9 +15,12 @@ import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
+import { usePermissoesStore } from "@/store/permissoesStore";
+import { regraDaRota } from "@/security/routeMap";
 import "@/store/cartilhasStore"; // side-effect: sincroniza commercial.ts com a cartilha persistida
 import { bootstrapFopAfterLogin } from "@/lib/fopBootstrap";
 import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 function NotFoundComponent() {
   return (
@@ -208,6 +211,25 @@ function BootEffects() {
     }
   }, [loading, session, roles, pathname, navigate]);
 
+  // Guarda granular de telas (V18): consulta permissoesStore.
+  const permHydrated = usePermissoesStore((s) => s.hydrated);
+  const permissoes = usePermissoesStore((s) => s.permissoes);
+  useEffect(() => {
+    if (loading || !session || !permHydrated) return;
+    if (roles.includes("admin")) return; // admin nunca é bloqueado
+    const regra = regraDaRota(pathname);
+    if (!regra) return;
+    const ok = permissoes.has(`${regra.telaId}:${regra.acao}`);
+    if (!ok) {
+      toast.error("Acesso negado", {
+        description: "Você não tem permissão para acessar esta tela.",
+      });
+      const destino = roles.includes("cliente") ? "/portal" : "/dashboard";
+      navigate({ to: destino });
+    }
+  }, [loading, session, roles, permHydrated, permissoes, pathname, navigate]);
+
   return null;
 }
+
 

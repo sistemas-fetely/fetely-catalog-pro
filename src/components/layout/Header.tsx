@@ -6,6 +6,7 @@ import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
 import { useNegotiation } from "@/store/negotiationStore";
+import { useTemPermissao } from "@/store/permissoesStore";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
@@ -39,6 +40,7 @@ export function Header() {
   const isAdminOrMaster = useAuth((s) => s.isAdminOrMaster);
   const signOut = useAuth((s) => s.signOut);
   const negociacaoAtiva = useNegotiation((s) => s.ativo);
+  const temPermissao = useTemPermissao();
   const [changePwOpen, setChangePwOpen] = useState(false);
 
   useEffect(() => {
@@ -118,26 +120,35 @@ export function Header() {
           {/* Primary nav (left group) — apenas usuários autenticados */}
           {isInternalUser && (
             <nav className="hidden md:flex items-center gap-1 ml-2">
-              <Link to="/catalog" className={navLinkClass(pathname.startsWith("/catalog"))}>
-                <span className="px-2 py-1.5">Catálogo</span>
-              </Link>
-
-              <Link to="/orders" className={navLinkClass(pathname.startsWith("/orders"))}>
-                <ClipboardList className="h-4 w-4" />
-                <span className="hidden lg:inline px-1 py-1.5">Pedidos</span>
-              </Link>
-              <Link to="/cotacoes" className={navLinkClass(pathname.startsWith("/cotacoes"))}>
-                <FileText className="h-4 w-4" />
-                <span className="hidden lg:inline px-1 py-1.5">Cotações</span>
-              </Link>
-              <Link to="/clientes" className={navLinkClass(pathname.startsWith("/clientes"))}>
-                <Users className="h-4 w-4" />
-                <span className="hidden lg:inline px-1 py-1.5">Clientes</span>
-              </Link>
-              <Link to="/provisoes" className={navLinkClass(pathname.startsWith("/provisoes"))}>
-                <FileClock className="h-4 w-4" />
-                <span className="hidden lg:inline px-1 py-1.5">Provisões</span>
-              </Link>
+              {temPermissao("catalogo", "ver") && (
+                <Link to="/catalog" className={navLinkClass(pathname.startsWith("/catalog"))}>
+                  <span className="px-2 py-1.5">Catálogo</span>
+                </Link>
+              )}
+              {temPermissao("pedidos_lista", "ver") && (
+                <Link to="/orders" className={navLinkClass(pathname.startsWith("/orders"))}>
+                  <ClipboardList className="h-4 w-4" />
+                  <span className="hidden lg:inline px-1 py-1.5">Pedidos</span>
+                </Link>
+              )}
+              {temPermissao("cotacoes_lista", "ver") && (
+                <Link to="/cotacoes" className={navLinkClass(pathname.startsWith("/cotacoes"))}>
+                  <FileText className="h-4 w-4" />
+                  <span className="hidden lg:inline px-1 py-1.5">Cotações</span>
+                </Link>
+              )}
+              {temPermissao("clientes_lista", "ver") && (
+                <Link to="/clientes" className={navLinkClass(pathname.startsWith("/clientes"))}>
+                  <Users className="h-4 w-4" />
+                  <span className="hidden lg:inline px-1 py-1.5">Clientes</span>
+                </Link>
+              )}
+              {temPermissao("provisoes_lista", "ver") && (
+                <Link to="/provisoes" className={navLinkClass(pathname.startsWith("/provisoes"))}>
+                  <FileClock className="h-4 w-4" />
+                  <span className="hidden lg:inline px-1 py-1.5">Provisões</span>
+                </Link>
+              )}
             </nav>
           )}
 
@@ -167,7 +178,7 @@ export function Header() {
             )}
 
             {/* Dashboard link */}
-            {isInternalUser && (
+            {isInternalUser && temPermissao("dashboard", "ver") && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link

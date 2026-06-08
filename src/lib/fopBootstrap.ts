@@ -4,6 +4,7 @@ import { useClientes, clienteToRow } from "@/store/clienteStore";
 import { useProvisao, provisaoToRow, provisaoItensToRows } from "@/store/provisaoStore";
 import { useCartilhas } from "@/store/cartilhasStore";
 import { useCatalog, upsertProductsChunked, productToRow } from "@/store/catalogStore";
+import { usePermissoesStore } from "@/store/permissoesStore";
 import { PRODUCTS as DEFAULT_PRODUCTS } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import type { SavedOrder } from "@/types";
@@ -36,6 +37,7 @@ export async function bootstrapFopAfterLogin(): Promise<void> {
     useProvisao.getState().hydrate(),
     useCartilhas.getState().hydrate(),
     useCatalog.getState().hydrate(),
+    usePermissoesStore.getState().hidratar(auth.user.id),
   ]);
 
   try {

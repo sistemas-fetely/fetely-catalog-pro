@@ -3,6 +3,7 @@ import { BookOpen, FileClock, ClipboardList, Menu, ShoppingBag } from "lucide-re
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
+import { useTemPermissao } from "@/store/permissoesStore";
 
 /**
  * Bottom navigation visível apenas em mobile (< md).
@@ -14,6 +15,7 @@ export function BottomNav() {
   const count = items.reduce((s, i) => s + i.quantity, 0);
   const setMobileOpen = useUI((s) => s.setMobileSidebarOpen);
   const session = useAuth((s) => s.session);
+  const temPermissao = useTemPermissao();
 
   // Em modo público, não mostra o bottom-nav comercial
   if (!session) return null;
@@ -37,9 +39,15 @@ export function BottomNav() {
             <span className="text-[9px] uppercase tracking-wider">Menu</span>
           </button>
         </li>
-        <BottomItem to="/catalog" active={isActive("/catalog")} icon={<BookOpen className="h-5 w-5" />} label="Catálogo" />
-        <BottomItem to="/provisoes" active={isActive("/provisoes")} icon={<FileClock className="h-5 w-5" />} label="Provisões" />
-        <BottomItem to="/orders" active={isActive("/orders")} icon={<ClipboardList className="h-5 w-5" />} label="Pedidos" />
+        {temPermissao("catalogo", "ver") && (
+          <BottomItem to="/catalog" active={isActive("/catalog")} icon={<BookOpen className="h-5 w-5" />} label="Catálogo" />
+        )}
+        {temPermissao("provisoes_lista", "ver") && (
+          <BottomItem to="/provisoes" active={isActive("/provisoes")} icon={<FileClock className="h-5 w-5" />} label="Provisões" />
+        )}
+        {temPermissao("pedidos_lista", "ver") && (
+          <BottomItem to="/orders" active={isActive("/orders")} icon={<ClipboardList className="h-5 w-5" />} label="Pedidos" />
+        )}
         <BottomItem
           to="/cart"
           active={isActive("/cart")}

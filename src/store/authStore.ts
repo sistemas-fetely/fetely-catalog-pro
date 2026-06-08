@@ -119,6 +119,9 @@ export const useAuth = create<AuthState>((set, get) => ({
   signOut: async () => {
     await supabase.auth.signOut();
     set({ session: null, user: null, profile: null, roles: [] });
+    // limpa permissões hidratadas
+    const { usePermissoesStore } = await import("@/store/permissoesStore");
+    usePermissoesStore.getState().reset();
   },
 
   isMaster: () => get().roles.includes("master"),

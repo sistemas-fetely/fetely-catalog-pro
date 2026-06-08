@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, ClipboardList, Package, BookOpen, User as UserIcon, ShoppingCart, FileText } from "lucide-react";
 import { useOrder } from "@/store/orderStore";
+import { useTemPermissao } from "@/store/permissoesStore";
 
 type Item = {
   to: string;
@@ -9,21 +10,24 @@ type Item = {
   exact?: boolean;
   divider?: boolean;
   badgeKey?: "cart";
+  tela?: string;
 };
 
 const items: Item[] = [
-  { to: "/portal", label: "Início", Icon: Home, exact: true },
-  { to: "/catalog", label: "Catálogo", Icon: BookOpen },
+  { to: "/portal", label: "Início", Icon: Home, exact: true, tela: "portal_dashboard" },
+  { to: "/catalog", label: "Catálogo", Icon: BookOpen, tela: "catalogo" },
   { to: "/cart", label: "Meu Carrinho", Icon: ShoppingCart, badgeKey: "cart" },
-  { to: "/portal/cotacoes", label: "Minhas Cotações", Icon: FileText },
-  { to: "/portal/pedidos", label: "Meus Pedidos", Icon: ClipboardList },
-  { to: "/portal/provisoes", label: "Provisões", Icon: Package },
-  { to: "/portal/conta", label: "Minha Conta", Icon: UserIcon, divider: true },
+  { to: "/portal/cotacoes", label: "Minhas Cotações", Icon: FileText, tela: "portal_pedidos" },
+  { to: "/portal/pedidos", label: "Meus Pedidos", Icon: ClipboardList, tela: "portal_pedidos" },
+  { to: "/portal/provisoes", label: "Provisões", Icon: Package, tela: "portal_provisoes" },
+  { to: "/portal/conta", label: "Minha Conta", Icon: UserIcon, divider: true, tela: "portal_conta" },
 ];
 
 export function PortalSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const cartCount = useOrder((s) => s.items.reduce((acc, i) => acc + i.quantity, 0));
+  const temPermissao = useTemPermissao();
+  const visibleItems = items.filter((it) => !it.tela || temPermissao(it.tela, "ver"));
   return (
     <aside className="hidden md:flex flex-col w-64 shrink-0 border-r border-border bg-surface/40 min-h-[calc(100vh-4rem)] py-6 px-3">
       <div className="px-3 mb-6">
@@ -33,7 +37,7 @@ export function PortalSidebar({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </div>
       <nav className="flex flex-col gap-0.5">
-        {items.map((it) => {
+        {visibleItems.map((it) => {
           const active = it.exact
             ? pathname === it.to
             : pathname === it.to || pathname.startsWith(it.to + "/");
