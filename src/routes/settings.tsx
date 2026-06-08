@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Target,
   FileStack,
+  History,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 
