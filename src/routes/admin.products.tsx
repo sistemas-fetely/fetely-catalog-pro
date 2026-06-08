@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/store/authStore";
+import { Can } from "@/components/security/Can";
 import { useCatalog, nextSkuFor } from "@/store/catalogStore";
 import type { Product } from "@/types";
 import { Button } from "@/components/ui/button";
