@@ -1,4 +1,4 @@
-// 🟢 FOP — sincronizar-catalogo
+// 🟢 FOP — sincronizar-catalogo v2
 // Lê todos os produtos ativos e envia ao SNCF para upsert em sncf_produtos
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
