@@ -45,7 +45,17 @@ serve(async () => {
     let totalEnviados = 0;
 
     for (let i = 0; i < produtos.length; i += LOTE) {
-      const lote = produtos.slice(i, i + LOTE);
+      const lote = produtos.slice(i, i + LOTE).map(p => ({
+        sku:             p.sku,
+        nome_comercial:  p.nome_comercial,
+        preco_atacado:   p.preco_atacado,
+        peso_g:          p.peso_g,
+        multiplos:       p.multiplos,
+        ativo:           p.ativo,
+        altura_cm:       p.altura_cm       ?? null,
+        largura_cm:      p.largura_cm      ?? null,
+        profundidade_cm: p.profundidade_cm ?? null,
+      }));
 
       const resp = await fetch(sncfUrl, {
         method: "POST",
