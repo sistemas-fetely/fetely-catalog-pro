@@ -221,7 +221,7 @@ function BootEffects() {
   const permissoes = usePermissoesStore((s) => s.permissoes);
   useEffect(() => {
     if (loading || !session || !permHydrated) return;
-    if (roles.includes("admin")) return; // admin nunca é bloqueado
+    if (roles.includes("admin") || roles.includes("master")) return; // admin/master nunca são bloqueados
     const regra = regraDaRota(pathname);
     if (!regra) return;
     const ok = permissoes.has(`${regra.telaId}:${regra.acao}`);
