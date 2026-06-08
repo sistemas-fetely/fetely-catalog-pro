@@ -17,6 +17,7 @@ import {
   Lock,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
+import { useTemPermissao } from "@/store/permissoesStore";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -26,8 +27,16 @@ function SettingsPage() {
   const session = useAuth((s) => s.session);
   const roles = useAuth((s) => s.roles);
   const isAdminOrMaster = roles.includes("admin") || roles.includes("master");
+  const temPermissao = useTemPermissao();
 
-  const items = [
+  const allItems: Array<{
+    label: string;
+    description: string;
+    to: string;
+    icon: typeof Settings;
+    external?: boolean;
+    tela?: string;
+  }> = [
     {
       label: "Importar",
       description: "Importar dados do sistema via planilhas",
