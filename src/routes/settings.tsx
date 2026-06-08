@@ -93,6 +93,12 @@ function SettingsPage() {
         icon: Target,
       },
       {
+        label: "Histórico de Preços",
+        description: "Auditoria de alterações de preço dos produtos",
+        to: "/admin/precos",
+        icon: History,
+      },
+      {
         label: "Usuários",
         description: "Gerenciar vendedores e acessos do sistema",
         to: "/admin/users",
