@@ -4,6 +4,7 @@ import { Plus, Search, Download, X, Edit2, Power } from "lucide-react";
 import { toast } from "sonner";
 import { useClientes, useVisibleClientes, calcClienteStats } from "@/store/clienteStore";
 import { useAuth } from "@/store/authStore";
+import { Can } from "@/components/security/Can";
 import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import {
   CANAL_LABEL,
