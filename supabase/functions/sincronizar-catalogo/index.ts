@@ -30,7 +30,7 @@ serve(async () => {
     // Busca produtos ativos
     const { data: produtos, error } = await supabase
       .from("products")
-      .select("sku, nome_comercial, preco_atacado, peso_g, multiplos, ativo")
+      .select("sku, nome_comercial, preco_atacado, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm")
       .eq("ativo", true)
       .order("sku");
 
