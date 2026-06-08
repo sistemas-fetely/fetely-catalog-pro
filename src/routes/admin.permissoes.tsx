@@ -109,15 +109,33 @@ function PermissoesPage() {
 
   // Mutations
   const mutPerfil = useMutation({
-    mutationFn: (v: Parameters<typeof setPerfilFn>[0]["data"]) => setPerfilFn({ data: v }),
+    mutationFn: (v: {
+      perfil: PerfilBaseRole;
+      tela_id: string;
+      acao: AcaoPermissao;
+      permitido: boolean;
+      permitido_padrao: boolean;
+    }) => setPerfilFn({ data: v }),
     onSuccess: invalidar,
   });
   const mutGrupo = useMutation({
-    mutationFn: (v: Parameters<typeof setGrupoFn>[0]["data"]) => setGrupoFn({ data: v }),
+    mutationFn: (v: {
+      grupo_id: string;
+      grupo_nome: string;
+      tela_id: string;
+      acao: AcaoPermissao;
+      permitido: boolean;
+      permitido_base: boolean;
+    }) => setGrupoFn({ data: v }),
     onSuccess: invalidar,
   });
   const mutCriarGrupo = useMutation({
-    mutationFn: (v: Parameters<typeof criarGrupoFn>[0]["data"]) => criarGrupoFn({ data: v }),
+    mutationFn: (v: {
+      nome: string;
+      descricao: string | null;
+      baseado_em: PerfilBaseRole;
+      copiar_de_grupo_id: string | null;
+    }) => criarGrupoFn({ data: v }),
     onSuccess: (g) => {
       invalidar();
       setSelecao({ tipo: "grupo", grupoId: g.id });
@@ -132,19 +150,27 @@ function PermissoesPage() {
     },
   });
   const mutExcecao = useMutation({
-    mutationFn: (v: Parameters<typeof setExcecaoFn>[0]["data"]) => setExcecaoFn({ data: v }),
+    mutationFn: (v: {
+      user_id: string;
+      user_nome: string;
+      tela_id: string;
+      acao: AcaoPermissao;
+      permitido: boolean;
+      permitido_atual: boolean;
+    }) => setExcecaoFn({ data: v }),
     onSuccess: invalidar,
   });
   const mutRemoverExcecao = useMutation({
-    mutationFn: (v: Parameters<typeof removerExcecaoFn>[0]["data"]) =>
+    mutationFn: (v: { user_id: string; tela_id: string; acao: AcaoPermissao }) =>
       removerExcecaoFn({ data: v }),
     onSuccess: invalidar,
   });
   const mutGrupoUsuario = useMutation({
-    mutationFn: (v: Parameters<typeof setGrupoUsuarioFn>[0]["data"]) =>
+    mutationFn: (v: { user_id: string; grupo_id: string | null }) =>
       setGrupoUsuarioFn({ data: v }),
     onSuccess: invalidar,
   });
+
 
   const grupos = permsQ.data?.grupos ?? [];
   const perfisOverride = permsQ.data?.perfisOverride ?? [];

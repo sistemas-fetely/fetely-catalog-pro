@@ -42,6 +42,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSincronizacaoSncfRouteImport } from './routes/admin.sincronizacao-sncf'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
+import { Route as AdminPermissoesRouteImport } from './routes/admin.permissoes'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
@@ -211,6 +212,11 @@ const AdminPrecosRoute = AdminPrecosRouteImport.update({
   path: '/admin/precos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPermissoesRoute = AdminPermissoesRouteImport.update({
+  id: '/admin/permissoes',
+  path: '/admin/permissoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLeadsRoute = AdminLeadsRouteImport.update({
   id: '/admin/leads',
   path: '/admin/leads',
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/permissoes': typeof AdminPermissoesRoute
   '/admin/precos': typeof AdminPrecosRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
@@ -291,6 +298,7 @@ export interface FileRoutesByTo {
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/permissoes': typeof AdminPermissoesRoute
   '/admin/precos': typeof AdminPrecosRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
@@ -330,6 +338,7 @@ export interface FileRoutesById {
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/permissoes': typeof AdminPermissoesRoute
   '/admin/precos': typeof AdminPrecosRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
@@ -370,6 +379,7 @@ export interface FileRouteTypes {
     | '/stand'
     | '/admin/cartilhas'
     | '/admin/leads'
+    | '/admin/permissoes'
     | '/admin/precos'
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
@@ -407,6 +417,7 @@ export interface FileRouteTypes {
     | '/stand'
     | '/admin/cartilhas'
     | '/admin/leads'
+    | '/admin/permissoes'
     | '/admin/precos'
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
@@ -445,6 +456,7 @@ export interface FileRouteTypes {
     | '/stand'
     | '/admin/cartilhas'
     | '/admin/leads'
+    | '/admin/permissoes'
     | '/admin/precos'
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
@@ -484,6 +496,7 @@ export interface RootRouteChildren {
   StandRoute: typeof StandRouteWithChildren
   AdminCartilhasRoute: typeof AdminCartilhasRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
+  AdminPermissoesRoute: typeof AdminPermissoesRoute
   AdminPrecosRoute: typeof AdminPrecosRoute
   AdminProductsRoute: typeof AdminProductsRoute
   AdminSincronizacaoSncfRoute: typeof AdminSincronizacaoSncfRoute
@@ -723,6 +736,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPrecosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/permissoes': {
+      id: '/admin/permissoes'
+      path: '/admin/permissoes'
+      fullPath: '/admin/permissoes'
+      preLoaderRoute: typeof AdminPermissoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/leads': {
       id: '/admin/leads'
       path: '/admin/leads'
@@ -813,6 +833,7 @@ const rootRouteChildren: RootRouteChildren = {
   StandRoute: StandRouteWithChildren,
   AdminCartilhasRoute: AdminCartilhasRoute,
   AdminLeadsRoute: AdminLeadsRoute,
+  AdminPermissoesRoute: AdminPermissoesRoute,
   AdminPrecosRoute: AdminPrecosRoute,
   AdminProductsRoute: AdminProductsRoute,
   AdminSincronizacaoSncfRoute: AdminSincronizacaoSncfRoute,
