@@ -14,6 +14,7 @@ import {
   Target,
   FileStack,
   History,
+  Lock,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 
@@ -103,6 +104,12 @@ function SettingsPage() {
         description: "Gerenciar vendedores e acessos do sistema",
         to: "/admin/users",
         icon: Users,
+      },
+      {
+        label: "Permissões",
+        description: "Configurar acessos por perfil, grupo e exceções individuais",
+        to: "/admin/permissoes",
+        icon: Lock,
       },
     );
   }
