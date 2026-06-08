@@ -178,18 +178,20 @@ function ClientesPage() {
           <h1 className="font-display text-4xl mt-1">Clientes</h1>
         </div>
         <div className="flex items-center gap-2">
-          {isAdminOrMaster && (
+          <Can tela="clientes_lista" acao="exportar">
             <ExportMenu onExport={handleExport} />
-          )}
-          <button
-            onClick={() => {
-              setEditing(null);
-              setModalOpen(true);
-            }}
-            className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-background hover:bg-gold-light"
-          >
-            <Plus className="h-4 w-4" /> Novo Cliente
-          </button>
+          </Can>
+          <Can tela="clientes_criar" acao="criar">
+            <button
+              onClick={() => {
+                setEditing(null);
+                setModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-background hover:bg-gold-light"
+            >
+              <Plus className="h-4 w-4" /> Novo Cliente
+            </button>
+          </Can>
         </div>
       </div>
 
