@@ -3,6 +3,7 @@ import { BookOpen, FileClock, ClipboardList, Menu, ShoppingBag } from "lucide-re
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
 import { useAuth } from "@/store/authStore";
+import { useTemPermissao } from "@/store/permissoesStore";
 
 /**
  * Bottom navigation visível apenas em mobile (< md).
