@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, Trash2, UserPlus, Power, Search } from "lucide-react";
+import { Copy, Trash2, UserPlus, Power, Search, Shield } from "lucide-react";
 import { useRegioes } from "@/hooks/useRegioes";
 import { useAuth, type AppRole, type TipoVendedor } from "@/store/authStore";
 import {
@@ -506,6 +506,18 @@ function AdminUsersPage() {
                   <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={() =>
+                        navigate({
+                          to: "/admin/permissoes",
+                          search: { userId: u.id },
+                        })
+                      }
+                      className="text-text-secondary hover:text-gold p-1"
+                      title="Permissões"
+                    >
+                      <Shield className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() =>
                         toggleMut.mutate({ user_id: u.id, ativo: !u.ativo })
                       }
                       className="text-text-secondary hover:text-gold p-1"
@@ -587,6 +599,18 @@ function AdminUsersPage() {
                 </span>
               </div>
               <div className="flex gap-2">
+                <button
+                  onClick={() =>
+                    navigate({
+                      to: "/admin/permissoes",
+                      search: { userId: u.id },
+                    })
+                  }
+                  className="text-text-secondary hover:text-gold p-1"
+                  title="Permissões"
+                >
+                  <Shield className="h-4 w-4" />
+                </button>
                 <button
                   onClick={() =>
                     toggleMut.mutate({ user_id: u.id, ativo: !u.ativo })

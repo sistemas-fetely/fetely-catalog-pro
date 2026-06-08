@@ -45,6 +45,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/permissoes")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    userId: typeof search.userId === "string" ? search.userId : undefined,
+    grupoId: typeof search.grupoId === "string" ? search.grupoId : undefined,
+  }),
   component: PermissoesPage,
 });
 
@@ -62,6 +66,7 @@ const PERFIS_INFO: { perfil: PerfilBaseRole; icone: React.ElementType; cor: stri
 
 function PermissoesPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const init = useAuth((s) => s.init);
   const loading = useAuth((s) => s.loading);
   const session = useAuth((s) => s.session);
@@ -102,10 +107,22 @@ function PermissoesPage() {
     qc.invalidateQueries({ queryKey: ["app-users"] });
   };
 
-  const [selecao, setSelecao] = useState<Selecao>({ tipo: "perfil", perfil: "admin" });
+  const [selecao, setSelecao] = useState<Selecao>(
+    search.userId
+      ? { tipo: "usuario", userId: search.userId }
+      : search.grupoId
+        ? { tipo: "grupo", grupoId: search.grupoId }
+        : { tipo: "perfil", perfil: "admin" },
+  );
   const [filtroTela, setFiltroTela] = useState("");
   const [novoGrupoAberto, setNovoGrupoAberto] = useState(false);
   const [excecaoAberta, setExcecaoAberta] = useState(false);
+
+  // Sync selection when search params change
+  useEffect(() => {
+    if (search.userId) setSelecao({ tipo: "usuario", userId: search.userId });
+    else if (search.grupoId) setSelecao({ tipo: "grupo", grupoId: search.grupoId });
+  }, [search.userId, search.grupoId]);
 
   // Mutations
   const mutPerfil = useMutation({
