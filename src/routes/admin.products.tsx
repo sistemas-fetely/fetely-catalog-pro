@@ -702,6 +702,8 @@ function ProductEditor({
                   type="number" step="0.01"
                   value={product.precoVarejo}
                   onChange={(e) => set("precoVarejo", parseFloat(e.target.value) || 0)}
+                  readOnly={!creating}
+                  disabled={!creating}
                 />
               </Field>
               <Field label="Preço Atacado (R$) *">
@@ -709,12 +711,28 @@ function ProductEditor({
                   type="number" step="0.01"
                   value={product.precoAtacado}
                   onChange={(e) => set("precoAtacado", parseFloat(e.target.value) || 0)}
+                  readOnly={!creating}
+                  disabled={!creating}
                 />
               </Field>
             </div>
             <p className="text-xs">
               Margem implícita: <span className={`font-semibold ${margemColor}`}>{margem.toFixed(1)}%</span>
             </p>
+            {!creating && (
+              <div className="rounded-md border border-gold/30 bg-gold/5 p-3 text-xs text-text-secondary">
+                Os preços deste produto são gerenciados na{" "}
+                <Link to="/admin/precos" className="font-semibold text-gold hover:underline">
+                  Tabela de Preço
+                </Link>
+                . Toda alteração lá gera histórico automático.
+              </div>
+            )}
+            {creating && (
+              <p className="text-xs text-text-secondary">
+                Defina os preços iniciais. Após criar o produto, as alterações devem ser feitas na Tabela de Preço.
+              </p>
+            )}
             <div className="grid grid-cols-3 gap-3">
               <Field label="Múltiplos *">
                 <Input
