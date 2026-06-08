@@ -50,8 +50,8 @@ export function computarPermissoesEfetivas(args: {
 }): Set<string> {
   const set = new Set<string>();
 
-  // Admin = tudo
-  if (args.roles.includes("admin")) {
+  // Admin e Master = tudo
+  if (args.roles.includes("admin") || args.roles.includes("master")) {
     for (const t of TELAS_SISTEMA) {
       for (const a of t.acoes) set.add(chave(t.id, a));
     }
