@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Target,
   FileStack,
+  History,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 
@@ -90,6 +91,12 @@ function SettingsPage() {
         description: "Gestão de leads captados via formulário de qualificação",
         to: "/admin/leads",
         icon: Target,
+      },
+      {
+        label: "Histórico de Preços",
+        description: "Auditoria de alterações de preço dos produtos",
+        to: "/admin/precos",
+        icon: History,
       },
       {
         label: "Usuários",

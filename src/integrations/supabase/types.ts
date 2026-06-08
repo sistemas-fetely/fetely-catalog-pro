@@ -992,6 +992,105 @@ export type Database = {
         }
         Relationships: []
       }
+      product_price_history: {
+        Row: {
+          acao: string
+          alterado_por_id: string | null
+          alterado_por_nome: string | null
+          criado_em: string
+          id: string
+          nome_comercial: string | null
+          observacao: string | null
+          preco_atacado_anterior: number | null
+          preco_atacado_novo: number | null
+          preco_varejo_anterior: number | null
+          preco_varejo_novo: number | null
+          product_id: string
+          sku: string | null
+          variacao_atacado_percent: number | null
+          variacao_varejo_percent: number | null
+        }
+        Insert: {
+          acao?: string
+          alterado_por_id?: string | null
+          alterado_por_nome?: string | null
+          criado_em?: string
+          id?: string
+          nome_comercial?: string | null
+          observacao?: string | null
+          preco_atacado_anterior?: number | null
+          preco_atacado_novo?: number | null
+          preco_varejo_anterior?: number | null
+          preco_varejo_novo?: number | null
+          product_id: string
+          sku?: string | null
+          variacao_atacado_percent?: number | null
+          variacao_varejo_percent?: number | null
+        }
+        Update: {
+          acao?: string
+          alterado_por_id?: string | null
+          alterado_por_nome?: string | null
+          criado_em?: string
+          id?: string
+          nome_comercial?: string | null
+          observacao?: string | null
+          preco_atacado_anterior?: number | null
+          preco_atacado_novo?: number | null
+          preco_varejo_anterior?: number | null
+          preco_varejo_novo?: number | null
+          product_id?: string
+          sku?: string | null
+          variacao_atacado_percent?: number | null
+          variacao_varejo_percent?: number | null
+        }
+        Relationships: []
+      }
+      product_prices: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          criado_por_id: string | null
+          criado_por_nome: string | null
+          id: string
+          observacao: string | null
+          preco_atacado: number
+          preco_varejo: number
+          product_id: string
+          updated_at: string
+          vigencia_fim: string | null
+          vigencia_inicio: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          criado_por_id?: string | null
+          criado_por_nome?: string | null
+          id?: string
+          observacao?: string | null
+          preco_atacado?: number
+          preco_varejo?: number
+          product_id: string
+          updated_at?: string
+          vigencia_fim?: string | null
+          vigencia_inicio?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          criado_por_id?: string | null
+          criado_por_nome?: string | null
+          id?: string
+          observacao?: string | null
+          preco_atacado?: number
+          preco_varejo?: number
+          product_id?: string
+          updated_at?: string
+          vigencia_fim?: string | null
+          vigencia_inicio?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           altura_cm: number

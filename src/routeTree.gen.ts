@@ -41,6 +41,7 @@ import { Route as PortalContaRouteImport } from './routes/portal.conta'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSincronizacaoSncfRouteImport } from './routes/admin.sincronizacao-sncf'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
+import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
@@ -205,6 +206,11 @@ const AdminProductsRoute = AdminProductsRouteImport.update({
   path: '/admin/products',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPrecosRoute = AdminPrecosRouteImport.update({
+  id: '/admin/precos',
+  path: '/admin/precos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLeadsRoute = AdminLeadsRouteImport.update({
   id: '/admin/leads',
   path: '/admin/leads',
@@ -248,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/precos': typeof AdminPrecosRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
@@ -284,6 +291,7 @@ export interface FileRoutesByTo {
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/precos': typeof AdminPrecosRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
@@ -322,6 +330,7 @@ export interface FileRoutesById {
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/precos': typeof AdminPrecosRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
@@ -361,6 +370,7 @@ export interface FileRouteTypes {
     | '/stand'
     | '/admin/cartilhas'
     | '/admin/leads'
+    | '/admin/precos'
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/stand'
     | '/admin/cartilhas'
     | '/admin/leads'
+    | '/admin/precos'
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
@@ -434,6 +445,7 @@ export interface FileRouteTypes {
     | '/stand'
     | '/admin/cartilhas'
     | '/admin/leads'
+    | '/admin/precos'
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
@@ -472,6 +484,7 @@ export interface RootRouteChildren {
   StandRoute: typeof StandRouteWithChildren
   AdminCartilhasRoute: typeof AdminCartilhasRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
+  AdminPrecosRoute: typeof AdminPrecosRoute
   AdminProductsRoute: typeof AdminProductsRoute
   AdminSincronizacaoSncfRoute: typeof AdminSincronizacaoSncfRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -703,6 +716,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProductsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/precos': {
+      id: '/admin/precos'
+      path: '/admin/precos'
+      fullPath: '/admin/precos'
+      preLoaderRoute: typeof AdminPrecosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/leads': {
       id: '/admin/leads'
       path: '/admin/leads'
@@ -793,6 +813,7 @@ const rootRouteChildren: RootRouteChildren = {
   StandRoute: StandRouteWithChildren,
   AdminCartilhasRoute: AdminCartilhasRoute,
   AdminLeadsRoute: AdminLeadsRoute,
+  AdminPrecosRoute: AdminPrecosRoute,
   AdminProductsRoute: AdminProductsRoute,
   AdminSincronizacaoSncfRoute: AdminSincronizacaoSncfRoute,
   AdminUsersRoute: AdminUsersRoute,
