@@ -66,6 +66,7 @@ const PERFIS_INFO: { perfil: PerfilBaseRole; icone: React.ElementType; cor: stri
 
 function PermissoesPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const init = useAuth((s) => s.init);
   const loading = useAuth((s) => s.loading);
   const session = useAuth((s) => s.session);
