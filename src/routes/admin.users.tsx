@@ -506,6 +506,18 @@ function AdminUsersPage() {
                   <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={() =>
+                        navigate({
+                          to: "/admin/permissoes",
+                          search: { userId: u.id },
+                        })
+                      }
+                      className="text-text-secondary hover:text-gold p-1"
+                      title="Permissões"
+                    >
+                      <Shield className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() =>
                         toggleMut.mutate({ user_id: u.id, ativo: !u.ativo })
                       }
                       className="text-text-secondary hover:text-gold p-1"
