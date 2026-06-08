@@ -18,11 +18,11 @@ serve(async () => {
     );
 
     // Lê token e URL do SNCF do cofre
-    const { data: sncfToken } = await supabase.rpc("get_vault_secret", { p_name: "SNCF_OUTBOUND_TOKEN" });
+    const { data: sncfToken } = await supabase.rpc("get_vault_secret", { p_name: "SNCF_CATALOGO_TOKEN" });
     const { data: sncfUrl }   = await supabase.rpc("get_vault_secret", { p_name: "SNCF_CATALOGO_URL" });
 
     if (!sncfToken || !sncfUrl) {
-      return jsonResponse(500, { error: "Secrets SNCF_OUTBOUND_TOKEN ou SNCF_CATALOGO_URL não configurados" });
+      return jsonResponse(500, { error: "Secrets SNCF_CATALOGO_TOKEN ou SNCF_CATALOGO_URL não configurados" });
     }
 
     // Busca produtos ativos
