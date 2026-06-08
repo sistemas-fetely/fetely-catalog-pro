@@ -37,91 +37,30 @@ function SettingsPage() {
     external?: boolean;
     tela?: string;
   }> = [
-    {
-      label: "Importar",
-      description: "Importar dados do sistema via planilhas",
-      to: "/import",
-      icon: Upload,
-    },
-    {
-      label: "Pedido Original",
-      description: "Pedido firme + provisões vinculadas, somados por pedido",
-      to: "/pedido-original",
-      icon: FileStack,
-    },
-    {
-      label: "Cartilhas",
-      description: "Gerenciar cartilhas comerciais",
-      to: "/commercial",
-      icon: BookOpen,
-    },
-    {
-      label: "Condições de Pagamento",
-      description: "Visualizar tabela completa de formas de pagamento",
-      to: "/condicoes-pagamento",
-      icon: CreditCard,
-    },
-    {
-      label: "Portal do Cliente",
-      description: "Abrir o portal do lojista em uma nova aba",
-      to: "/portal",
-      icon: ExternalLink,
-      external: true,
-    },
-    {
-      label: "Captação de Leads",
-      description: "Tela para cadastro de visitantes no stand em feiras",
-      to: "/stand",
-      icon: Building,
-    },
-    {
-      label: "Fotos",
-      description: "Gerenciar fotos do catálogo",
-      to: "/photos",
-      icon: Camera,
-    },
+    { label: "Importar", description: "Importar dados do sistema via planilhas", to: "/import", icon: Upload, tela: "cfg_produtos_importar" },
+    { label: "Pedido Original", description: "Pedido firme + provisões vinculadas, somados por pedido", to: "/pedido-original", icon: FileStack, tela: "pedidos_detalhe" },
+    { label: "Cartilhas", description: "Gerenciar cartilhas comerciais", to: "/commercial", icon: BookOpen, tela: "cfg_cartilhas" },
+    { label: "Condições de Pagamento", description: "Visualizar tabela completa de formas de pagamento", to: "/condicoes-pagamento", icon: CreditCard, tela: "cfg_condicoes_editar" },
+    { label: "Portal do Cliente", description: "Abrir o portal do lojista em uma nova aba", to: "/portal", icon: ExternalLink, external: true },
+    { label: "Captação de Leads", description: "Tela para cadastro de visitantes no stand em feiras", to: "/stand", icon: Building, tela: "cfg_leads" },
+    { label: "Fotos", description: "Gerenciar fotos do catálogo", to: "/photos", icon: Camera, tela: "fotos_gerenciar" },
   ];
 
   if (session && isAdminOrMaster) {
-    items.unshift(
-      {
-        label: "Produtos",
-        description: "Cadastrar, editar e desativar produtos do catálogo",
-        to: "/admin/products",
-        icon: Package,
-      },
-      {
-        label: "Cartilhas e Níveis",
-        description: "Gerenciar faixas, condições de pagamento e regras gerais",
-        to: "/admin/cartilhas",
-        icon: Layers,
-      },
-      {
-        label: "Leads",
-        description: "Gestão de leads captados via formulário de qualificação",
-        to: "/admin/leads",
-        icon: Target,
-      },
-      {
-        label: "Tabela de Preço",
-        description: "Auditoria de alterações de preço dos produtos",
-        to: "/admin/precos",
-        icon: History,
-      },
-      {
-        label: "Usuários",
-        description: "Gerenciar vendedores e acessos do sistema",
-        to: "/admin/users",
-        icon: Users,
-      },
-      {
-        label: "Permissões",
-        description: "Configurar acessos por perfil, grupo e exceções individuais",
-        to: "/admin/permissoes",
-        icon: Lock,
-      },
+    allItems.unshift(
+      { label: "Produtos", description: "Cadastrar, editar e desativar produtos do catálogo", to: "/admin/products", icon: Package, tela: "cfg_produtos" },
+      { label: "Cartilhas e Níveis", description: "Gerenciar faixas, condições de pagamento e regras gerais", to: "/admin/cartilhas", icon: Layers, tela: "cfg_cartilhas" },
+      { label: "Leads", description: "Gestão de leads captados via formulário de qualificação", to: "/admin/leads", icon: Target, tela: "cfg_leads" },
+      { label: "Tabela de Preço", description: "Auditoria de alterações de preço dos produtos", to: "/admin/precos", icon: History, tela: "cfg_produtos" },
+      { label: "Usuários", description: "Gerenciar vendedores e acessos do sistema", to: "/admin/users", icon: Users, tela: "cfg_vendedores" },
+      { label: "Permissões", description: "Configurar acessos por perfil, grupo e exceções individuais", to: "/admin/permissoes", icon: Lock, tela: "cfg_permissoes" },
     );
   }
+
+  // Filtra pelas permissões granulares (admin sempre passa via temPermissao)
+  const items = allItems.filter((it) => !it.tela || temPermissao(it.tela, "ver"));
+
+
 
 
   return (
