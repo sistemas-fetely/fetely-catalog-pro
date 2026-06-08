@@ -18,12 +18,14 @@ serve(async () => {
     );
 
     // Lê token e URL do SNCF do cofre
-    const { data: sncfToken } = await supabase.rpc("get_vault_secret", { p_name: "SNCF_CATALOGO_TOKEN" });
-    const { data: sncfUrl }   = await supabase.rpc("get_vault_secret", { p_name: "SNCF_CATALOGO_URL" });
+    const { data: sncfToken } = await supabase.rpc("get_vault_secret", { p_name: "SNCF_OUTBOUND_TOKEN" });
 
-    if (!sncfToken || !sncfUrl) {
-      return jsonResponse(500, { error: "Secrets SNCF_CATALOGO_TOKEN ou SNCF_CATALOGO_URL não configurados" });
+    if (!sncfToken) {
+      return jsonResponse(500, { error: "Secret SNCF_OUTBOUND_TOKEN não configurado" });
     }
+
+    // Usa recebe-pedido (já deployado) com branch tipo=catalogo
+    const sncfUrl = "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/recebe-pedido";
 
     // Busca produtos ativos
     const { data: produtos, error } = await supabase
@@ -51,7 +53,7 @@ serve(async () => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${sncfToken}`,
         },
-        body: JSON.stringify({ produtos: lote }),
+        body: JSON.stringify({ tipo: "catalogo", produtos: lote }),
       });
 
       if (!resp.ok) {
