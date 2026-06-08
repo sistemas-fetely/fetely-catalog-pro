@@ -98,7 +98,7 @@ function PrecosHistoryPage() {
           </div>
           <div>
             <h1 className="font-display text-2xl text-text-primary">
-              Histórico de Preços
+              Tabela de Preço
             </h1>
             <p className="text-sm text-text-secondary">
               Auditoria de todas as alterações de preço dos produtos

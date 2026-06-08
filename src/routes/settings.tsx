@@ -93,7 +93,7 @@ function SettingsPage() {
         icon: Target,
       },
       {
-        label: "Histórico de Preços",
+        label: "Tabela de Preço",
         description: "Auditoria de alterações de preço dos produtos",
         to: "/admin/precos",
         icon: History,

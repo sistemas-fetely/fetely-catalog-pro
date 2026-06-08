@@ -307,7 +307,7 @@ function AdminProductsPage() {
             </DropdownMenu>
             <Button asChild variant="outline" className="border-border">
               <Link to="/admin/precos">
-                <History className="mr-2 h-4 w-4" /> Histórico de Preços
+                <History className="mr-2 h-4 w-4" /> Tabela de Preço
               </Link>
             </Button>
             <Button onClick={openNew} className="bg-gold text-black hover:bg-gold/90">
