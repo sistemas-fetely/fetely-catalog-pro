@@ -269,9 +269,11 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
             Limpar
           </Button>
           <div className="ml-auto flex gap-2">
-            <Button variant="outline" size="sm" onClick={exportCsv}>
-              <Download className="h-4 w-4 mr-1" /> Exportar CSV
-            </Button>
+            <Can tela="cfg_leads_exportar" acao="exportar">
+              <Button variant="outline" size="sm" onClick={exportCsv}>
+                <Download className="h-4 w-4 mr-1" /> Exportar CSV
+              </Button>
+            </Can>
           </div>
         </div>
       </div>
