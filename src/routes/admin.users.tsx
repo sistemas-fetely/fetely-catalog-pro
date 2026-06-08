@@ -445,65 +445,65 @@ function AdminUsersPage() {
       </div>
 
       {/* List - Desktop */}
-      <div className="hidden md:block rounded-lg border border-border bg-surface overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="hidden md:block rounded-lg border border-border bg-surface overflow-x-auto">
+        <table className="w-full text-xs">
           <thead className="bg-background/40 text-text-secondary text-[10px] uppercase tracking-wider">
             <tr>
-              <th className="text-left px-4 py-3">Nome</th>
-              <th className="text-left px-4 py-3">Tipo</th>
-              <th className="text-left px-4 py-3">Região</th>
-              <th className="text-left px-4 py-3">Login</th>
-              <th className="text-left px-4 py-3">Email</th>
-              <th className="text-left px-4 py-3">Comissão</th>
-              <th className="text-left px-4 py-3">Papel</th>
-              <th className="text-left px-4 py-3">Status</th>
-              <th className="text-right px-4 py-3">Ações</th>
+              <th className="text-left px-3 py-3">Nome</th>
+              <th className="text-left px-2 py-3">Tipo</th>
+              <th className="text-left px-2 py-3">Região</th>
+              <th className="text-left px-2 py-3">Login</th>
+              <th className="text-left px-2 py-3">Email</th>
+              <th className="text-left px-2 py-3">%</th>
+              <th className="text-left px-2 py-3">Papel</th>
+              <th className="text-left px-2 py-3">Status</th>
+              <th className="text-right px-3 py-3">Ações</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((u) => (
-              <tr key={u.id} className="border-t border-border">
-                <td className="px-4 py-3 text-text-primary">
+              <tr key={u.id} className="border-t border-border align-middle">
+                <td className="px-3 py-2.5 text-text-primary max-w-[180px] truncate">
                   {u.nome_completo ?? "—"}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-2 py-2.5">
                   <TipoBadge tipo={u.tipo_vendedor} />
                 </td>
-                <td className="px-4 py-3 text-text-secondary">
+                <td className="px-2 py-2.5 text-text-secondary whitespace-nowrap">
                   {u.regiao ?? "—"}
                 </td>
-                <td className="px-4 py-3 font-mono text-gold text-xs">
+                <td className="px-2 py-2.5 font-mono text-gold max-w-[140px] truncate">
                   {u.login_amigavel ?? "—"}
                 </td>
-                <td className="px-4 py-3 text-text-secondary text-xs">
+                <td className="px-2 py-2.5 text-text-secondary max-w-[200px] truncate">
                   {u.email}
                 </td>
-                <td className="px-4 py-3 text-text-secondary">
+                <td className="px-2 py-2.5 text-text-secondary whitespace-nowrap">
                   {u.comissao_percent != null
                     ? `${u.comissao_percent}%`
                     : "—"}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-2 py-2.5">
                   <div className="flex gap-1 flex-wrap">
                     {u.roles.map((r) => (
                       <span
                         key={r}
-                        className="rounded bg-gold/15 px-2 py-0.5 text-[10px] uppercase tracking-wider text-gold"
+                        className="rounded bg-gold/15 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-gold"
                       >
                         {r}
                       </span>
                     ))}
                   </div>
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-2 py-2.5">
                   <span
                     className={`text-[10px] uppercase tracking-wider ${u.ativo ? "text-stock-in" : "text-text-secondary"}`}
                   >
                     {u.ativo ? "Ativo" : "Inativo"}
                   </span>
                 </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-2">
+                <td className="px-3 py-2.5">
+                  <div className="flex items-center justify-end gap-1.5">
                     <button
                       onClick={() =>
                         navigate({
@@ -511,10 +511,10 @@ function AdminUsersPage() {
                           search: { userId: u.id },
                         })
                       }
-                      className="inline-flex items-center gap-1.5 rounded-md border border-gold/40 bg-gold/10 px-2.5 py-1 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/20 transition"
+                      className="inline-flex items-center gap-1 rounded-md border border-gold/40 bg-gold/10 px-2 py-1 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/20 transition whitespace-nowrap"
                       title="Gerenciar permissões"
                     >
-                      <Shield className="h-3.5 w-3.5" />
+                      <Shield className="h-3 w-3" />
                       Permissões
                     </button>
                     <button
@@ -538,7 +538,6 @@ function AdminUsersPage() {
                     </button>
                   </div>
                 </td>
-
               </tr>
             ))}
             {filtered.length === 0 && (
@@ -554,6 +553,7 @@ function AdminUsersPage() {
           </tbody>
         </table>
       </div>
+
 
       {/* List - Mobile cards */}
       <div className="md:hidden space-y-3">
