@@ -1,9 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Copy as CopyIcon,
   Download,
   FileJson,
+  History,
   Pencil,
   Plus,
   Power,
