@@ -26,6 +26,8 @@ const items: Item[] = [
 export function PortalSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const cartCount = useOrder((s) => s.items.reduce((acc, i) => acc + i.quantity, 0));
+  const temPermissao = useTemPermissao();
+  const visibleItems = items.filter((it) => !it.tela || temPermissao(it.tela, "ver"));
   return (
     <aside className="hidden md:flex flex-col w-64 shrink-0 border-r border-border bg-surface/40 min-h-[calc(100vh-4rem)] py-6 px-3">
       <div className="px-3 mb-6">
@@ -35,7 +37,7 @@ export function PortalSidebar({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </div>
       <nav className="flex flex-col gap-0.5">
-        {items.map((it) => {
+        {visibleItems.map((it) => {
           const active = it.exact
             ? pathname === it.to
             : pathname === it.to || pathname.startsWith(it.to + "/");
