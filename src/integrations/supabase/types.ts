@@ -959,6 +959,170 @@ export type Database = {
           },
         ]
       }
+      permissoes_audit: {
+        Row: {
+          acao: Database["public"]["Enums"]["permissao_acao"]
+          admin_id: string | null
+          admin_nome: string | null
+          alvo_id: string
+          alvo_nome: string | null
+          alvo_tipo: string
+          id: string
+          mudanca: string
+          tela_id: string
+          tela_nome: string | null
+          ts: string
+          valor_anterior: boolean | null
+          valor_novo: boolean | null
+        }
+        Insert: {
+          acao: Database["public"]["Enums"]["permissao_acao"]
+          admin_id?: string | null
+          admin_nome?: string | null
+          alvo_id: string
+          alvo_nome?: string | null
+          alvo_tipo: string
+          id?: string
+          mudanca: string
+          tela_id: string
+          tela_nome?: string | null
+          ts?: string
+          valor_anterior?: boolean | null
+          valor_novo?: boolean | null
+        }
+        Update: {
+          acao?: Database["public"]["Enums"]["permissao_acao"]
+          admin_id?: string | null
+          admin_nome?: string | null
+          alvo_id?: string
+          alvo_nome?: string | null
+          alvo_tipo?: string
+          id?: string
+          mudanca?: string
+          tela_id?: string
+          tela_nome?: string | null
+          ts?: string
+          valor_anterior?: boolean | null
+          valor_novo?: boolean | null
+        }
+        Relationships: []
+      }
+      permissoes_grupo_overrides: {
+        Row: {
+          acao: Database["public"]["Enums"]["permissao_acao"]
+          grupo_id: string
+          permitido: boolean
+          tela_id: string
+          updated_at: string
+        }
+        Insert: {
+          acao: Database["public"]["Enums"]["permissao_acao"]
+          grupo_id: string
+          permitido: boolean
+          tela_id: string
+          updated_at?: string
+        }
+        Update: {
+          acao?: Database["public"]["Enums"]["permissao_acao"]
+          grupo_id?: string
+          permitido?: boolean
+          tela_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permissoes_grupo_overrides_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "permissoes_grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permissoes_grupos: {
+        Row: {
+          baseado_em: Database["public"]["Enums"]["app_role"]
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          baseado_em: Database["public"]["Enums"]["app_role"]
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          baseado_em?: Database["public"]["Enums"]["app_role"]
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      permissoes_perfis_override: {
+        Row: {
+          acao: Database["public"]["Enums"]["permissao_acao"]
+          perfil: Database["public"]["Enums"]["app_role"]
+          permitido: boolean
+          tela_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          acao: Database["public"]["Enums"]["permissao_acao"]
+          perfil: Database["public"]["Enums"]["app_role"]
+          permitido: boolean
+          tela_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          acao?: Database["public"]["Enums"]["permissao_acao"]
+          perfil?: Database["public"]["Enums"]["app_role"]
+          permitido?: boolean
+          tela_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      permissoes_usuario_excecoes: {
+        Row: {
+          acao: Database["public"]["Enums"]["permissao_acao"]
+          permitido: boolean
+          tela_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          acao: Database["public"]["Enums"]["permissao_acao"]
+          permitido: boolean
+          tela_id: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          acao?: Database["public"]["Enums"]["permissao_acao"]
+          permitido?: boolean
+          tela_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       photos: {
         Row: {
           colecao: string
@@ -1422,6 +1586,7 @@ export type Database = {
           created_at: string
           email: string
           empresa: string | null
+          grupo_permissao_id: string | null
           id: string
           login_amigavel: string | null
           nome_completo: string | null
@@ -1444,6 +1609,7 @@ export type Database = {
           created_at?: string
           email: string
           empresa?: string | null
+          grupo_permissao_id?: string | null
           id: string
           login_amigavel?: string | null
           nome_completo?: string | null
@@ -1466,6 +1632,7 @@ export type Database = {
           created_at?: string
           email?: string
           empresa?: string | null
+          grupo_permissao_id?: string | null
           id?: string
           login_amigavel?: string | null
           nome_completo?: string | null
@@ -1491,6 +1658,13 @@ export type Database = {
             columns: ["supervisor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_grupo_permissao_id_fkey"
+            columns: ["grupo_permissao_id"]
+            isOneToOne: false
+            referencedRelation: "permissoes_grupos"
             referencedColumns: ["id"]
           },
           {
@@ -1849,6 +2023,13 @@ export type Database = {
         | "ate_500"
         | "500_1500"
         | "1500_3000"
+      permissao_acao:
+        | "ver"
+        | "criar"
+        | "editar"
+        | "excluir"
+        | "exportar"
+        | "aprovar"
       tipo_condicao_pagamento: "pix" | "boleto" | "cartao"
       tipo_frete: "CIF" | "FOB"
       tipo_vendedor: "interno" | "representante"
@@ -2041,6 +2222,14 @@ export const Constants = {
         "ate_500",
         "500_1500",
         "1500_3000",
+      ],
+      permissao_acao: [
+        "ver",
+        "criar",
+        "editar",
+        "excluir",
+        "exportar",
+        "aprovar",
       ],
       tipo_condicao_pagamento: ["pix", "boleto", "cartao"],
       tipo_frete: ["CIF", "FOB"],
