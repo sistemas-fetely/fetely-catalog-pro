@@ -258,62 +258,66 @@ function AdminProductsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="border-border">
-                  <Download className="mr-2 h-4 w-4" /> Exportar
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel>Cadastro de produtos</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    exportProductsCSV(filtered, ";");
-                    toast.success(`CSV exportado (${filtered.length} produtos)`);
-                  }}
-                >
-                  <TableIcon className="mr-2 h-4 w-4" />
-                  CSV filtrado ({filtered.length})
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    exportProductsCSV(products, ";");
-                    toast.success(`CSV exportado (${products.length} produtos)`);
-                  }}
-                >
-                  <TableIcon className="mr-2 h-4 w-4" />
-                  CSV completo ({products.length})
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    exportProductsJSON(filtered);
-                    toast.success(`JSON exportado (${filtered.length} produtos)`);
-                  }}
-                >
-                  <FileJson className="mr-2 h-4 w-4" />
-                  JSON filtrado ({filtered.length})
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    exportProductsJSON(products);
-                    toast.success(`JSON exportado (${products.length} produtos)`);
-                  }}
-                >
-                  <FileJson className="mr-2 h-4 w-4" />
-                  JSON completo ({products.length})
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Can tela="cfg_produtos" acao="exportar">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="border-border">
+                    <Download className="mr-2 h-4 w-4" /> Exportar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuLabel>Cadastro de produtos</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      exportProductsCSV(filtered, ";");
+                      toast.success(`CSV exportado (${filtered.length} produtos)`);
+                    }}
+                  >
+                    <TableIcon className="mr-2 h-4 w-4" />
+                    CSV filtrado ({filtered.length})
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      exportProductsCSV(products, ";");
+                      toast.success(`CSV exportado (${products.length} produtos)`);
+                    }}
+                  >
+                    <TableIcon className="mr-2 h-4 w-4" />
+                    CSV completo ({products.length})
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      exportProductsJSON(filtered);
+                      toast.success(`JSON exportado (${filtered.length} produtos)`);
+                    }}
+                  >
+                    <FileJson className="mr-2 h-4 w-4" />
+                    JSON filtrado ({filtered.length})
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      exportProductsJSON(products);
+                      toast.success(`JSON exportado (${products.length} produtos)`);
+                    }}
+                  >
+                    <FileJson className="mr-2 h-4 w-4" />
+                    JSON completo ({products.length})
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </Can>
             <Button asChild variant="outline" className="border-border">
               <Link to="/admin/precos">
                 <History className="mr-2 h-4 w-4" /> Tabela de Preço
               </Link>
             </Button>
-            <Button onClick={openNew} className="bg-gold text-black hover:bg-gold/90">
-              <Plus className="mr-2 h-4 w-4" /> Novo Produto
-            </Button>
+            <Can tela="cfg_produtos" acao="criar">
+              <Button onClick={openNew} className="bg-gold text-black hover:bg-gold/90">
+                <Plus className="mr-2 h-4 w-4" /> Novo Produto
+              </Button>
+            </Can>
           </div>
         </div>
 
