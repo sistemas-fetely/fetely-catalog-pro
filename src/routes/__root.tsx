@@ -15,9 +15,12 @@ import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
+import { usePermissoesStore } from "@/store/permissoesStore";
+import { regraDaRota } from "@/security/routeMap";
 import "@/store/cartilhasStore"; // side-effect: sincroniza commercial.ts com a cartilha persistida
 import { bootstrapFopAfterLogin } from "@/lib/fopBootstrap";
 import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 function NotFoundComponent() {
   return (
