@@ -45,6 +45,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/permissoes")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    userId: typeof search.userId === "string" ? search.userId : undefined,
+    grupoId: typeof search.grupoId === "string" ? search.grupoId : undefined,
+  }),
   component: PermissoesPage,
 });
 
