@@ -511,10 +511,11 @@ function AdminUsersPage() {
                           search: { userId: u.id },
                         })
                       }
-                      className="text-text-secondary hover:text-gold p-1"
-                      title="Permissões"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-gold/40 bg-gold/10 px-2.5 py-1 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/20 transition"
+                      title="Gerenciar permissões"
                     >
-                      <Shield className="h-4 w-4" />
+                      <Shield className="h-3.5 w-3.5" />
+                      Permissões
                     </button>
                     <button
                       onClick={() =>
@@ -537,6 +538,7 @@ function AdminUsersPage() {
                     </button>
                   </div>
                 </td>
+
               </tr>
             ))}
             {filtered.length === 0 && (
