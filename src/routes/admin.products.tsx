@@ -1,9 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Copy as CopyIcon,
   Download,
   FileJson,
+  History,
   Pencil,
   Plus,
   Power,
@@ -304,6 +305,11 @@ function AdminProductsPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button asChild variant="outline" className="border-border">
+              <Link to="/admin/precos">
+                <History className="mr-2 h-4 w-4" /> Histórico de Preços
+              </Link>
+            </Button>
             <Button onClick={openNew} className="bg-gold text-black hover:bg-gold/90">
               <Plus className="mr-2 h-4 w-4" /> Novo Produto
             </Button>
