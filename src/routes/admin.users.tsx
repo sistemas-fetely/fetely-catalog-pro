@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, Trash2, UserPlus, Power, Search } from "lucide-react";
+import { Copy, Trash2, UserPlus, Power, Search, Shield } from "lucide-react";
 import { useRegioes } from "@/hooks/useRegioes";
 import { useAuth, type AppRole, type TipoVendedor } from "@/store/authStore";
 import {
