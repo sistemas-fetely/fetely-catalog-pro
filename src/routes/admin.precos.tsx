@@ -343,7 +343,7 @@ function PrecosTablePage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })
               )}
