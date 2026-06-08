@@ -4,6 +4,7 @@ import { useClientes, clienteToRow } from "@/store/clienteStore";
 import { useProvisao, provisaoToRow, provisaoItensToRows } from "@/store/provisaoStore";
 import { useCartilhas } from "@/store/cartilhasStore";
 import { useCatalog, upsertProductsChunked, productToRow } from "@/store/catalogStore";
+import { usePermissoesStore } from "@/store/permissoesStore";
 import { PRODUCTS as DEFAULT_PRODUCTS } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import type { SavedOrder } from "@/types";
