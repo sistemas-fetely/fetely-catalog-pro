@@ -247,7 +247,7 @@ function PrecosTablePage() {
                 filtered.map((r) => {
                   const isEditing = editingId === r.id;
                   return (
-                    <>
+                    <Fragment key={r.id}>
                       <tr key={r.id} className="border-t border-border hover:bg-surface-hover">
                         <td className="sticky left-0 z-10 bg-surface px-4 py-3 font-mono text-xs">{r.sku}</td>
                         <td className="px-4 py-3">{r.nome_comercial}</td>
