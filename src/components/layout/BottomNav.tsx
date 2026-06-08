@@ -39,9 +39,15 @@ export function BottomNav() {
             <span className="text-[9px] uppercase tracking-wider">Menu</span>
           </button>
         </li>
-        <BottomItem to="/catalog" active={isActive("/catalog")} icon={<BookOpen className="h-5 w-5" />} label="Catálogo" />
-        <BottomItem to="/provisoes" active={isActive("/provisoes")} icon={<FileClock className="h-5 w-5" />} label="Provisões" />
-        <BottomItem to="/orders" active={isActive("/orders")} icon={<ClipboardList className="h-5 w-5" />} label="Pedidos" />
+        {temPermissao("catalogo", "ver") && (
+          <BottomItem to="/catalog" active={isActive("/catalog")} icon={<BookOpen className="h-5 w-5" />} label="Catálogo" />
+        )}
+        {temPermissao("provisoes_lista", "ver") && (
+          <BottomItem to="/provisoes" active={isActive("/provisoes")} icon={<FileClock className="h-5 w-5" />} label="Provisões" />
+        )}
+        {temPermissao("pedidos_lista", "ver") && (
+          <BottomItem to="/orders" active={isActive("/orders")} icon={<ClipboardList className="h-5 w-5" />} label="Pedidos" />
+        )}
         <BottomItem
           to="/cart"
           active={isActive("/cart")}
