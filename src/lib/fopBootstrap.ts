@@ -37,6 +37,7 @@ export async function bootstrapFopAfterLogin(): Promise<void> {
     useProvisao.getState().hydrate(),
     useCartilhas.getState().hydrate(),
     useCatalog.getState().hydrate(),
+    usePermissoesStore.getState().hidratar(auth.user.id),
   ]);
 
   try {
