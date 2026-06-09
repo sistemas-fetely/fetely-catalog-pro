@@ -185,36 +185,37 @@ export function CotacaoDetailDrawer({
         </section>
 
         {/* Ações principais */}
-        {cotacao.status !== "convertida" && (
-          <div className="space-y-2 mb-4">
+        <div className="space-y-2 mb-4">
+          {cotacao.status !== "convertida" && (
             <button
               onClick={() => setShowConverter(true)}
               className="w-full rounded-md bg-gold py-3 text-xs font-semibold uppercase tracking-[0.15em] text-background hover:bg-gold-light flex items-center justify-center gap-2"
             >
               <Sparkles className="h-4 w-4" /> Converter em Pedido
             </button>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={handleEditar}
-                className="rounded-md border border-border py-2.5 text-[11px] uppercase tracking-wider text-text-secondary hover:text-gold flex items-center justify-center gap-1.5"
-              >
-                <Edit className="h-3.5 w-3.5" /> Editar
-              </button>
-              <button
-                onClick={handlePdf}
-                className="rounded-md border border-border py-2.5 text-[11px] uppercase tracking-wider text-text-secondary hover:text-gold flex items-center justify-center gap-1.5"
-              >
-                <FileDown className="h-3.5 w-3.5" /> PDF
-              </button>
-              <button
-                onClick={handleDuplicar}
-                className="rounded-md border border-border py-2.5 text-[11px] uppercase tracking-wider text-text-secondary hover:text-gold flex items-center justify-center gap-1.5"
-              >
-                <Copy className="h-3.5 w-3.5" /> Duplicar
-              </button>
-            </div>
+          )}
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={handleEditar}
+              className="rounded-md border border-border py-2.5 text-[11px] uppercase tracking-wider text-text-secondary hover:text-gold flex items-center justify-center gap-1.5"
+            >
+              <Edit className="h-3.5 w-3.5" /> Editar
+            </button>
+            <button
+              onClick={handlePdf}
+              className="rounded-md border border-border py-2.5 text-[11px] uppercase tracking-wider text-text-secondary hover:text-gold flex items-center justify-center gap-1.5"
+            >
+              <FileDown className="h-3.5 w-3.5" /> PDF
+            </button>
+            <button
+              onClick={handleDuplicar}
+              className="rounded-md border border-border py-2.5 text-[11px] uppercase tracking-wider text-text-secondary hover:text-gold flex items-center justify-center gap-1.5"
+            >
+              <Copy className="h-3.5 w-3.5" /> Duplicar
+            </button>
           </div>
-        )}
+        </div>
+
 
         {/* Status quick-update */}
         {(cotacao.status === "aberta" || cotacao.status === "em_negociacao" || cotacao.status === "aprovada") && (
