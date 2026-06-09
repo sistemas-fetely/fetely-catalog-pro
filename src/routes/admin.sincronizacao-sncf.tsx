@@ -40,6 +40,23 @@ function AdminSincronizacaoSncfPage() {
   });
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  const [sincronizando, setSincronizando] = useState(false);
+  const [resultadoSync, setResultadoSync] = useState<string | null>(null);
+
+  async function handleSincronizarCatalogo() {
+    setSincronizando(true);
+    setResultadoSync(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("sincronizar-catalogo");
+      if (error) throw error;
+      setResultadoSync(`✓ ${data?.enviados ?? "?"} produtos sincronizados`);
+    } catch (e) {
+      setResultadoSync(`Erro: ${String(e)}`);
+    } finally {
+      setSincronizando(false);
+    }
+  }
+
   const { data: rows, kpis, isLoading, refetch } = useSyncManagement(filters);
 
   // Vendedores: pega quem tem role vendedor/admin/master via user_roles
