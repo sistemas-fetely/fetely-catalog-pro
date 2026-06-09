@@ -1,5 +1,5 @@
-// 🟢 FOP — sincronizar-catalogo v2
-// Lê todos os produtos ativos e envia ao SNCF para upsert em sncf_produtos
+// 🟢 FOP — sincronizar-catalogo v3 (catálogo B2B expandido)
+// Envia todos os campos de produto necessários para a Tabela de Cadastro dos lojistas
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -17,51 +17,74 @@ serve(async () => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Lê token e URL do SNCF do cofre
-    const { data: sncfToken } = await supabase.rpc("get_vault_secret", { p_name: "SNCF_OUTBOUND_TOKEN" });
-
+    const { data: sncfToken } = await supabase.rpc("get_vault_secret", {
+      p_name: "SNCF_OUTBOUND_TOKEN",
+    });
     if (!sncfToken) {
       return jsonResponse(500, { error: "Secret SNCF_OUTBOUND_TOKEN não configurado" });
     }
 
-    // Usa recebe-pedido (já deployado) com branch tipo=catalogo
-    const sncfUrl = "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/recebe-pedido";
+    const sncfUrl =
+      "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/recebe-pedido";
 
-    // Busca produtos ativos
+    // Busca todos os campos necessários para o catálogo B2B
     const { data: produtos, error } = await supabase
       .from("products")
-      .select("sku, nome_comercial, preco_atacado, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm")
+      .select(`
+        sku, ean, nome_comercial, nome_completo,
+        marca, linha, grupo, tipo, colecao, cor_nome,
+        tamanho_numero, descricao_produto, tipo_embalagem,
+        material, material_descritivo, ncm, cest,
+        origem_fisc, origem_prod,
+        preco_atacado, peso_g, multiplos, ativo,
+        altura_cm, largura_cm, profundidade_cm
+      `)
       .eq("ativo", true)
       .order("sku");
 
     if (error) throw error;
-
     if (!produtos || produtos.length === 0) {
       return jsonResponse(200, { ok: true, enviados: 0, mensagem: "Nenhum produto ativo" });
     }
 
-    // Envia ao SNCF em lotes de 500
     const LOTE = 500;
     let totalEnviados = 0;
 
     for (let i = 0; i < produtos.length; i += LOTE) {
-      const lote = produtos.slice(i, i + LOTE).map(p => ({
-        sku:             p.sku,
-        nome_comercial:  p.nome_comercial,
-        preco_atacado:   p.preco_atacado,
-        peso_g:          p.peso_g,
-        multiplos:       p.multiplos,
-        ativo:           p.ativo,
-        altura_cm:       p.altura_cm       ?? null,
-        largura_cm:      p.largura_cm      ?? null,
-        profundidade_cm: p.profundidade_cm ?? null,
+      const lote = produtos.slice(i, i + LOTE).map((p) => ({
+        sku:                  p.sku,
+        ean:                  p.ean                 ?? null,
+        nome_comercial:       p.nome_comercial,
+        nome_completo:        p.nome_completo        ?? null,
+        marca:                p.marca               ?? null,
+        linha:                p.linha               ?? null,
+        grupo:                p.grupo               ?? null,
+        tipo:                 p.tipo                ?? null,
+        colecao:              p.colecao             ?? null,
+        cor_nome:             p.cor_nome            ?? null,
+        tamanho_numero:       p.tamanho_numero      ?? null,
+        descricao_produto:    p.descricao_produto   ?? null,
+        tipo_embalagem:       p.tipo_embalagem      ?? null,
+        material:             p.material            ?? null,
+        material_descritivo:  p.material_descritivo ?? null,
+        ncm:                  p.ncm                 ?? null,
+        cest:                 p.cest                ?? null,
+        origem_fisc:          p.origem_fisc         ?? null,
+        origem_prod:          p.origem_prod         ?? null,
+        preco_atacado:        p.preco_atacado,
+        peso_g:               p.peso_g,
+        multiplos:            p.multiplos,
+        ativo:                p.ativo,
+        altura_cm:            p.altura_cm           ?? null,
+        largura_cm:           p.largura_cm          ?? null,
+        profundidade_cm:      p.profundidade_cm     ?? null,
       }));
 
       const resp = await fetch(sncfUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${sncfToken}`,
+          Authorization: `Bearer ${sncfToken}`,
         },
         body: JSON.stringify({ tipo: "catalogo", produtos: lote }),
       });
@@ -74,14 +97,13 @@ serve(async () => {
       totalEnviados += lote.length;
     }
 
-    console.log(`[sincronizar-catalogo] ${totalEnviados} produtos enviados ao SNCF`);
+    console.log(`[sincronizar-catalogo v3] ${totalEnviados} produtos enviados ao SNCF`);
 
     return jsonResponse(200, {
       ok: true,
       enviados: totalEnviados,
       mensagem: `${totalEnviados} produtos sincronizados`,
     });
-
   } catch (e) {
     console.error("[sincronizar-catalogo]", e);
     return jsonResponse(500, { error: String(e) });
