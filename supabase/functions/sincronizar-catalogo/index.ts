@@ -1,16 +1,25 @@
-// 🟢 FOP — sincronizar-catalogo v3 (catálogo B2B expandido)
-// Envia todos os campos de produto necessários para a Tabela de Cadastro dos lojistas
+// 🟢 FOP — sincronizar-catalogo v3.1 (catálogo B2B expandido + CORS para chamada browser)
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 const jsonResponse = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
 
-serve(async () => {
+serve(async (req) => {
+  // Preflight CORS
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: CORS_HEADERS });
+  }
+
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -27,18 +36,9 @@ serve(async () => {
     const sncfUrl =
       "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/recebe-pedido";
 
-    // Busca todos os campos necessários para o catálogo B2B
     const { data: produtos, error } = await supabase
       .from("products")
-      .select(`
-        sku, ean, nome_comercial, nome_completo,
-        marca, linha, grupo, tipo, colecao, cor_nome,
-        tamanho_numero, descricao_produto, tipo_embalagem,
-        material, material_descritivo, ncm, cest,
-        origem_fisc, origem_prod,
-        preco_atacado, peso_g, multiplos, ativo,
-        altura_cm, largura_cm, profundidade_cm
-      `)
+      .select("sku, ean, nome_comercial, nome_completo, marca, linha, grupo, tipo, colecao, cor_nome, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm")
       .eq("ativo", true)
       .order("sku");
 
@@ -97,7 +97,7 @@ serve(async () => {
       totalEnviados += lote.length;
     }
 
-    console.log(`[sincronizar-catalogo v3] ${totalEnviados} produtos enviados ao SNCF`);
+    console.log(`[sincronizar-catalogo v3.1] ${totalEnviados} produtos enviados ao SNCF`);
 
     return jsonResponse(200, {
       ok: true,
