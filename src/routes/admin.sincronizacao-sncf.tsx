@@ -40,6 +40,23 @@ function AdminSincronizacaoSncfPage() {
   });
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  const [sincronizando, setSincronizando] = useState(false);
+  const [resultadoSync, setResultadoSync] = useState<string | null>(null);
+
+  async function handleSincronizarCatalogo() {
+    setSincronizando(true);
+    setResultadoSync(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("sincronizar-catalogo");
+      if (error) throw error;
+      setResultadoSync(`✓ ${data?.enviados ?? "?"} produtos sincronizados`);
+    } catch (e) {
+      setResultadoSync(`Erro: ${String(e)}`);
+    } finally {
+      setSincronizando(false);
+    }
+  }
+
   const { data: rows, kpis, isLoading, refetch } = useSyncManagement(filters);
 
   // Vendedores: pega quem tem role vendedor/admin/master via user_roles
@@ -89,6 +106,35 @@ function AdminSincronizacaoSncfPage() {
         <p className="text-xs text-text-secondary">
           Polling automático a cada 60s · {rows.length} pedido{rows.length === 1 ? "" : "s"} no resultset
         </p>
+        <div className="flex items-center gap-3 pt-1">
+          <button
+            onClick={handleSincronizarCatalogo}
+            disabled={sincronizando}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-md border border-gold/40 text-gold hover:bg-gold/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {sincronizando ? (
+              <>
+                <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Sincronizando…
+              </>
+            ) : (
+              <>
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Sincronizar Catálogo
+              </>
+            )}
+          </button>
+          {resultadoSync && (
+            <span className={`text-xs ${resultadoSync.startsWith("Erro") ? "text-red-400" : "text-green-400"}`}>
+              {resultadoSync}
+            </span>
+          )}
+        </div>
       </header>
 
       <SyncKpiCards kpis={kpis} />
