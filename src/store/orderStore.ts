@@ -283,7 +283,20 @@ export const useOrder = create<OrderState>()(
         });
       },
       addBulk: (entries) => {
-        entries.forEach((e) => get().addItem(e.product, e.quantity));
+        const valid = entries.filter((e) => e.quantity > 0);
+        if (valid.length === 0) return;
+        set((s) => {
+          const next = [...s.items];
+          for (const { product, quantity } of valid) {
+            const idx = next.findIndex((i) => i.sku === product.sku);
+            if (idx >= 0) {
+              next[idx] = { ...next[idx], quantity: next[idx].quantity + quantity };
+            } else {
+              next.push({ sku: product.sku, product, quantity });
+            }
+          }
+          return { items: next };
+        });
       },
       updateQty: (sku, quantity) => {
         if (quantity <= 0) return get().removeItem(sku);
