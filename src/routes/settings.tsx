@@ -43,6 +43,7 @@ function SettingsPage() {
     { label: "Condições de Pagamento", description: "Visualizar tabela completa de formas de pagamento", to: "/condicoes-pagamento", icon: CreditCard, tela: "cfg_condicoes_editar" },
     { label: "Portal do Cliente", description: "Abrir o portal do lojista em uma nova aba", to: "/portal", icon: ExternalLink, external: true },
     { label: "Captação de Leads", description: "Tela para cadastro de visitantes no stand em feiras", to: "/stand", icon: Building, tela: "cfg_leads" },
+    { label: "Leads", description: "Gestão de leads captados via formulário de qualificação", to: "/admin/leads", icon: Target, tela: "cfg_leads" },
     { label: "Fotos", description: "Gerenciar fotos do catálogo", to: "/photos", icon: Camera, tela: "fotos_gerenciar" },
   ];
 
@@ -50,7 +51,6 @@ function SettingsPage() {
     allItems.unshift(
       { label: "Produtos", description: "Cadastrar, editar e desativar produtos do catálogo", to: "/admin/products", icon: Package, tela: "cfg_produtos" },
       { label: "Cartilhas e Níveis", description: "Gerenciar faixas, condições de pagamento e regras gerais", to: "/admin/cartilhas", icon: Layers, tela: "cfg_cartilhas" },
-      { label: "Leads", description: "Gestão de leads captados via formulário de qualificação", to: "/admin/leads", icon: Target, tela: "cfg_leads" },
       { label: "Tabela de Preço", description: "Auditoria de alterações de preço dos produtos", to: "/admin/precos", icon: History, tela: "cfg_produtos" },
       { label: "Usuários", description: "Gerenciar vendedores e acessos do sistema", to: "/admin/users", icon: Users, tela: "cfg_vendedores" },
       { label: "Permissões", description: "Configurar acessos por perfil, grupo e exceções individuais", to: "/admin/permissoes", icon: Lock, tela: "cfg_permissoes" },
