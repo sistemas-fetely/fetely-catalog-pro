@@ -42,7 +42,7 @@ function SettingsPage() {
     { label: "Cartilhas", description: "Gerenciar cartilhas comerciais", to: "/commercial", icon: BookOpen, tela: "cfg_cartilhas" },
     { label: "Condições de Pagamento", description: "Visualizar tabela completa de formas de pagamento", to: "/condicoes-pagamento", icon: CreditCard, tela: "cfg_condicoes_editar" },
     { label: "Portal do Cliente", description: "Abrir o portal do lojista em uma nova aba", to: "/portal", icon: ExternalLink, external: true },
-    { label: "Catálogo Público", description: "Link público do catálogo (preço de varejo + previsão). Compartilhe a URL — não exige login.", to: "https://f24862e9-aac1-42a1-bec2-f14e7decae2e.lovableproject.com/catalog", icon: Package, external: true },
+    { label: "Catálogo Público", description: "Link público do catálogo (preço de varejo + previsão). Compartilhe a URL — não exige login.", to: "https://fetely-catalog-pro.lovable.app/catalog", icon: Package, external: true },
     { label: "Captação de Leads", description: "Tela para cadastro de visitantes no stand em feiras", to: "/stand", icon: Building, tela: "cfg_leads" },
     { label: "Leads", description: "Gestão de leads captados via formulário de qualificação", to: "/admin/leads", icon: Target, tela: "cfg_leads" },
     { label: "Fotos", description: "Gerenciar fotos do catálogo", to: "/photos", icon: Camera, tela: "fotos_gerenciar" },
