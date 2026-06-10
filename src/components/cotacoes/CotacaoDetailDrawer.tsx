@@ -40,15 +40,25 @@ export function CotacaoDetailDrawer({
   const expirando = dias >= 0 && dias <= 3 && (cotacao.status === "aberta" || cotacao.status === "em_negociacao");
 
   const handleEditar = () => {
-    clearCart();
-    addBulk(cotacao.items.map((i) => ({ product: i.product, quantity: i.quantity })));
-    setCartMeta({
+    const itens = (cotacao.items ?? []).filter(
+      (i) => i && i.product && i.quantity > 0,
+    );
+    if (itens.length === 0) {
+      toast.error("Esta cotação não possui itens para edição");
+      return;
+    }
+    // Reset + hidrata o carrinho de forma síncrona via getState para evitar
+    // qualquer interferência de re-render / unmount do drawer.
+    const store = useOrder.getState();
+    store.clearCart();
+    store.addBulk(itens.map((i) => ({ product: i.product, quantity: i.quantity })));
+    store.setMeta({
       ...cotacao.meta,
       cotacaoOrigemId: cotacao.id,
     });
     toast.message(`Editando cotação ${cotacao.id}`);
-    onClose();
     navigate({ to: "/cart" });
+    onClose();
   };
 
   const handleDuplicar = async () => {
