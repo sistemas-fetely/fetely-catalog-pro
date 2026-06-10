@@ -433,6 +433,26 @@ function CartPage() {
         commercial: orderCommercial,
       });
 
+      // Itens de provisão também precisam ser registrados na fila de provisão,
+      // assim como acontece no fluxo de pedido (executeConfirm).
+      if (itensProvisao.length > 0) {
+        try {
+          await createProvisao({
+            clienteId: meta.clienteId!,
+            clienteSnapshot: snapshot,
+            itens: itensProvisao.map(toItemProvisao),
+            observacoes: meta.observacoes || `Cotação ${cot.id}`,
+          });
+        } catch (errProv) {
+          console.error("[cart] falha ao salvar provisão da cotação:", errProv);
+          toast.warning("Cotação salva, mas houve falha ao registrar a provisão", {
+            description:
+              errProv instanceof Error ? errProv.message : "Tente reenviar a partir do carrinho.",
+            duration: 8000,
+          });
+        }
+      }
+
       toast.success(`Cotação ${cot.id} salva`, {
         description: `Válida até ${new Date(cot.validoAte).toLocaleDateString("pt-BR")}`,
       });
@@ -440,6 +460,7 @@ function CartPage() {
       resetNegotiation();
       setShowFinalConfirm(false);
       navigate({ to: "/cotacoes" });
+
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Não foi possível salvar a cotação";
       toast.error(msg, { duration: 6000 });
