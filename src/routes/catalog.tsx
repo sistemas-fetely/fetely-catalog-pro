@@ -338,9 +338,9 @@ function EmptyState() {
     <div className="space-y-6">
       <button
         onClick={() => setCategoria(undefined)}
-        className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-text-muted hover:text-gold transition"
+        className="inline-flex items-center gap-2 rounded-lg gold-border px-4 py-2.5 text-[12px] uppercase tracking-wider text-gold bg-gold/5 hover:bg-gold/15 transition font-semibold shadow-sm"
       >
-        <X className="h-3 w-3" /> Trocar categoria
+        <X className="h-4 w-4" /> Trocar categoria
       </button>
 
       <header>
