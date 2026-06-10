@@ -161,6 +161,17 @@ export function CotacaoDetailDrawer({
               <span>− {formatBRL(cotacao.commercial.descontoMasterValor)}</span>
             </div>
           ) : null}
+          {cotacao.commercial?.frete === "FOB" && (cotacao.commercial?.freteValor ?? 0) > 0 ? (
+            <div className="flex justify-between text-xs text-text-secondary mb-1">
+              <span>
+                Frete FOB
+                {cotacao.commercial?.fretePercent
+                  ? ` (${cotacao.commercial.fretePercent.toFixed(1).replace(".", ",")}%)`
+                  : ""}
+              </span>
+              <span>+ {formatBRL(cotacao.commercial.freteValor ?? 0)}</span>
+            </div>
+          ) : null}
           <div className="border-t border-border my-2" />
           <div className="flex justify-between items-baseline">
             <span className="text-xs uppercase tracking-wider text-text-secondary">Total</span>
@@ -168,7 +179,9 @@ export function CotacaoDetailDrawer({
           </div>
           <div className="text-[11px] text-text-muted mt-1">
             {cotacao.commercial?.condicaoDescricao ?? "—"}
-            {cotacao.commercial?.frete ? ` · ${cotacao.commercial.frete}` : ""}
+            {cotacao.commercial?.frete
+              ? ` · ${cotacao.commercial.frete}${cotacao.commercial.frete === "CIF" ? " — Fetély entrega" : " — por conta do lojista"}`
+              : ""}
           </div>
         </section>
 
