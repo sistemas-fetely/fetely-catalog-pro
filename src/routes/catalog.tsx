@@ -6,6 +6,7 @@ import { ChevronRight, X } from "lucide-react";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { NumericalCandleGrid } from "@/components/catalog/NumericalCandleGrid";
+import { NumericalCandleShowcase } from "@/components/catalog/NumericalCandleShowcase";
 import { CutleryGrid } from "@/components/catalog/CutleryGrid";
 import { CollectionBulkFiller } from "@/components/catalog/CollectionBulkFiller";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
@@ -185,12 +186,20 @@ function CatalogPage() {
               </header>
 
               {/* Products */}
-              {isNum && !isPublic ? (
-                <NumericalCandleGrid
-                  products={colecaoProducts}
-                  colecao={colecao}
-                  onColorChange={handleColorChange}
-                />
+              {isNum ? (
+                isPublic ? (
+                  <NumericalCandleShowcase
+                    products={colecaoProducts}
+                    colecao={colecao}
+                    onColorChange={handleColorChange}
+                  />
+                ) : (
+                  <NumericalCandleGrid
+                    products={colecaoProducts}
+                    colecao={colecao}
+                    onColorChange={handleColorChange}
+                  />
+                )
               ) : isCutlery && !isPublic ? (
                 <CutleryGrid
                   products={colecaoProducts}
