@@ -99,14 +99,14 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
 
   return (
     <aside
-      className={`flex flex-col bg-surface border-r border-border h-[calc(100vh-4rem)] sticky top-16 transition-all ${
-        collapsed ? "w-[60px]" : "w-[260px]"
+      className={`flex flex-col bg-surface border-r-2 border-gold/30 h-[calc(100vh-4rem)] sticky top-16 transition-all shadow-[2px_0_12px_-6px_rgba(0,0,0,0.4)] ${
+        collapsed ? "w-[60px]" : "w-[300px]"
       }`}
     >
-      <div className="flex items-center justify-between px-3 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-gold/20 bg-gradient-to-r from-gold/5 to-transparent">
         {!collapsed && (
-          <div className="text-[10px] uppercase tracking-[0.25em] text-gold-muted">
-            Catálogo
+          <div className="text-[11px] uppercase tracking-[0.3em] text-gold font-semibold">
+            Navegar
           </div>
         )}
         {!forceExpanded && (
@@ -124,9 +124,9 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
         )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto scrollbar-thin py-2">
+      <nav className="flex-1 overflow-y-auto scrollbar-thin py-3">
         {Object.entries(tree).map(([categoria, grupos]) => (
-          <div key={categoria} className="mb-3">
+          <div key={categoria} className="mb-4">
             {collapsed ? (
               <div
                 className="flex justify-center py-2 text-gold/60"
@@ -140,11 +140,12 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
                   navigate({ to: "/catalog/categoria/$categoria", params: { categoria } });
                   onNavigate?.();
                 }}
-                className="w-full text-left px-3 pb-1.5 pt-2 text-[10px] uppercase tracking-[0.2em] text-gold hover:text-gold-light flex items-center gap-2 transition"
+                className="w-full text-left px-3 py-2 mb-1 text-[12px] uppercase tracking-[0.18em] text-gold hover:text-gold-light hover:bg-gold/10 flex items-center gap-2 transition font-semibold border-l-2 border-gold/40"
               >
-                <Folder className="h-3 w-3" /> {categoria}
+                <Folder className="h-3.5 w-3.5" /> {categoria}
               </button>
             )}
+
 
             {!collapsed &&
               Object.entries(grupos)

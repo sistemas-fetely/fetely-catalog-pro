@@ -214,21 +214,18 @@ function CatalogPage() {
 function EmptyState() {
   const products = useCatalog((s) => s.products);
   const photos = usePhotos();
-  const { categoria, grupo } = Route.useSearch();
+  const { categoria } = Route.useSearch();
   const navigate = Route.useNavigate();
 
-  const { categorias, gruposByCategoria, collections } = useMemo(() => {
-    const cats = new Set<string>();
-    const grp: Record<string, Set<string>> = {};
+  const { collections, countByCategoria } = useMemo(() => {
     const colMap = new Map<
       string,
       { colecao: string; categoria: string; grupo: string; count: number; sample: Product }
     >();
+    const catCount: Record<string, number> = {};
     for (const p of products) {
       if (!p.precoAtacado || p.precoAtacado <= 0) continue;
-      cats.add(p.categoria);
-      if (!grp[p.categoria]) grp[p.categoria] = new Set();
-      grp[p.categoria].add(p.grupo);
+      catCount[p.categoria] = (catCount[p.categoria] ?? 0) + 1;
       const mapKey = `${p.categoria}::${p.colecao}`;
       const existing = colMap.get(mapKey);
       if (existing) existing.count += 1;
@@ -242,123 +239,123 @@ function EmptyState() {
         });
     }
     return {
-      categorias: Array.from(cats).sort((a, b) => a.localeCompare(b, "pt-BR")),
-      gruposByCategoria: grp,
       collections: Array.from(colMap.values()).sort((a, b) =>
         a.colecao.localeCompare(b.colecao, "pt-BR"),
       ),
+      countByCategoria: catCount,
     };
   }, [products]);
-
-
-  const gruposDisponiveis = useMemo(() => {
-    if (!categoria) return [] as string[];
-    return Array.from(gruposByCategoria[categoria] ?? []).sort((a, b) =>
-      a.localeCompare(b, "pt-BR"),
-    );
-  }, [categoria, gruposByCategoria]);
-
-  const filtered = useMemo(() => {
-    return collections.filter((c) => {
-      if (categoria && c.categoria !== categoria) return false;
-      if (grupo && c.grupo !== grupo) return false;
-      return true;
-    });
-  }, [collections, categoria, grupo]);
 
   type SearchT = { colecao?: string; grupo?: string; categoria?: string; highlight?: string };
   const setCategoria = (c: string | undefined) =>
     navigate({
       search: (prev: SearchT) => ({ ...prev, categoria: c || undefined, grupo: undefined }),
     });
-  const setGrupo = (g: string | undefined) =>
-    navigate({ search: (prev: SearchT) => ({ ...prev, grupo: g || undefined }) });
+
+  // Etapa 1 — escolher categoria
+  if (!categoria) {
+    const CATS: { nome: string; descricao: string }[] = [
+      {
+        nome: "Celebrar à Mesa",
+        descricao:
+          "Coleções completas para mesa posta: jogos americanos, copos, taças e acessórios.",
+      },
+      {
+        nome: "Luz e Momento",
+        descricao:
+          "Velas decorativas, numéricas e aromas para celebrações inesquecíveis.",
+      },
+    ];
+
+    return (
+      <div className="space-y-8">
+        <header className="text-center max-w-2xl mx-auto pt-4 sm:pt-8">
+          <div className="text-[10px] uppercase tracking-[0.3em] text-gold-muted">
+            Catálogo Fetély
+          </div>
+          <h1 className="font-display text-4xl md:text-5xl mt-2">
+            Por onde gostaria de começar?
+          </h1>
+          <p className="text-text-secondary mt-3 text-sm">
+            Escolha uma categoria para descobrir as coleções disponíveis.
+          </p>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          {CATS.map((c) => {
+            const sampleCol = collections.find((x) => x.categoria === c.nome);
+            const img = sampleCol ? getColecaoPhoto(photos, sampleCol.colecao) : undefined;
+            const count = countByCategoria[c.nome] ?? 0;
+            return (
+              <button
+                key={c.nome}
+                onClick={() => setCategoria(c.nome)}
+                className="group relative overflow-hidden rounded-xl gold-border gold-border-hover bg-surface text-left transition"
+              >
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  {img ? (
+                    <img
+                      src={img}
+                      alt={c.nome}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                  ) : (
+                    <PhotoPlaceholder colecao={c.nome} className="h-full w-full" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
+                  <div className="text-[10px] uppercase tracking-[0.3em] text-gold">
+                    Categoria
+                  </div>
+                  <h2 className="font-display text-3xl sm:text-4xl mt-1 leading-tight">
+                    {c.nome}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-text-secondary mt-2 max-w-md">
+                    {c.descricao}
+                  </p>
+                  <div className="mt-3 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-gold opacity-90 group-hover:opacity-100">
+                    Explorar coleções <ChevronRight className="h-3.5 w-3.5" />
+                    {count > 0 && (
+                      <span className="ml-2 text-text-muted normal-case tracking-normal">
+                        · {count} produtos
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Etapa 2 — listar coleções da categoria escolhida (sem filtros de grupo)
+  const filtered = collections.filter((c) => c.categoria === categoria);
 
   return (
     <div className="space-y-6">
+      <button
+        onClick={() => setCategoria(undefined)}
+        className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-text-muted hover:text-gold transition"
+      >
+        <X className="h-3 w-3" /> Trocar categoria
+      </button>
+
       <header>
         <div className="text-[10px] uppercase tracking-[0.3em] text-gold-muted">
-          Catálogo Fetély
+          Categoria
         </div>
-        <h1 className="font-display text-4xl md:text-5xl mt-1">Todas as Coleções</h1>
-        <p className="text-text-secondary mt-2 text-sm max-w-2xl">
-          Explore {collections.length} coleções. Use os filtros abaixo ou o menu
-          lateral para refinar.
+        <h1 className="font-display text-4xl md:text-5xl mt-1">{categoria}</h1>
+        <p className="text-text-secondary mt-2 text-sm">
+          {filtered.length} {filtered.length === 1 ? "coleção disponível" : "coleções disponíveis"}.
         </p>
       </header>
 
-      {/* Filters */}
-      <div className="rounded-lg gold-border bg-surface/60 p-4 space-y-3">
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
-            Categoria
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <FilterChip
-              active={!categoria}
-              onClick={() => setCategoria(undefined)}
-              label="Todas"
-            />
-            {categorias.map((c) => (
-              <FilterChip
-                key={c}
-                active={categoria === c}
-                onClick={() => setCategoria(c)}
-                label={c}
-              />
-            ))}
-          </div>
-        </div>
-
-        {categoria && gruposDisponiveis.length > 1 && (
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted mb-2">
-              Grupo
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <FilterChip
-                active={!grupo}
-                onClick={() => setGrupo(undefined)}
-                label="Todos"
-              />
-              {gruposDisponiveis.map((g) => (
-                <FilterChip
-                  key={g}
-                  active={grupo === g}
-                  onClick={() => setGrupo(g)}
-                  label={g}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {(categoria || grupo) && (
-          <button
-            onClick={() =>
-              navigate({
-                search: (prev: SearchT) => ({
-                  ...prev,
-                  categoria: undefined,
-                  grupo: undefined,
-                }),
-              })
-            }
-            className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-text-muted hover:text-gold transition"
-          >
-            <X className="h-3 w-3" /> Limpar filtros
-          </button>
-        )}
-      </div>
-
-      {/* Results */}
-      <div className="text-[11px] uppercase tracking-wider text-text-muted">
-        {filtered.length} {filtered.length === 1 ? "coleção" : "coleções"}
-      </div>
-
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-text-muted text-sm">
-          Nenhuma coleção encontrada com os filtros selecionados.
+          Nenhuma coleção encontrada nesta categoria.
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -371,7 +368,6 @@ function EmptyState() {
                 search={{ colecao: c.colecao, categoria: c.categoria }}
                 className="group rounded-lg overflow-hidden gold-border gold-border-hover bg-surface transition"
               >
-
                 <div className="relative aspect-square overflow-hidden">
                   {img ? (
                     <img
@@ -380,20 +376,11 @@ function EmptyState() {
                       className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <PhotoPlaceholder
-                      colecao={c.colecao}
-                      className="h-full w-full"
-                    />
+                    <PhotoPlaceholder colecao={c.colecao} className="h-full w-full" />
                   )}
-                  
-                  <div className="absolute top-2 left-2 rounded-full bg-background/80 backdrop-blur px-2 py-0.5 text-[9px] uppercase tracking-wider text-gold">
-                    {c.categoria}
-                  </div>
                 </div>
                 <div className="p-3">
-                  <div className="font-display text-lg leading-tight">
-                    {c.colecao}
-                  </div>
+                  <div className="font-display text-lg leading-tight">{c.colecao}</div>
                   <div className="flex items-center justify-between mt-1">
                     <div className="text-[10px] uppercase tracking-wider text-text-muted">
                       {c.grupo}
@@ -415,25 +402,3 @@ function EmptyState() {
   );
 }
 
-function FilterChip({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded-full text-[11px] uppercase tracking-wider transition border ${
-        active
-          ? "bg-gold text-background border-gold"
-          : "border-border text-text-secondary hover:text-text-primary hover:border-gold/60"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
