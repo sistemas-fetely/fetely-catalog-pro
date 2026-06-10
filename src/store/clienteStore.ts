@@ -183,7 +183,17 @@ export const useClientes = create<ClienteState>()(
 
         try {
           const row = clienteToRow(c) as never;
-          const { error } = i >= 0
+          let exists = i >= 0;
+          if (!exists) {
+            const { data, error } = await supabase
+              .from("clientes")
+              .select("id")
+              .eq("id", c.id)
+              .maybeSingle();
+            if (error) throw error;
+            exists = Boolean(data);
+          }
+          const { error } = exists
             ? await supabase.from("clientes").update(row).eq("id", c.id)
             : await supabase.from("clientes").insert(row);
           if (error) throw error;
