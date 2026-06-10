@@ -22,8 +22,44 @@ const noopStorage: Storage = {
   removeItem: () => {},
   setItem: () => {},
 };
-const safeStorage = (): Storage =>
-  typeof window !== "undefined" ? window.localStorage : noopStorage;
+const safeStorage = (): Storage => {
+  if (typeof window === "undefined") return noopStorage;
+  const ls = window.localStorage;
+  return {
+    get length() {
+      return ls.length;
+    },
+    clear: () => ls.clear(),
+    key: (i: number) => ls.key(i),
+    getItem: (k: string) => {
+      try {
+        return ls.getItem(k);
+      } catch {
+        return null;
+      }
+    },
+    removeItem: (k: string) => {
+      try {
+        ls.removeItem(k);
+      } catch {
+        /* noop */
+      }
+    },
+    setItem: (k: string, v: string) => {
+      try {
+        ls.setItem(k, v);
+      } catch (err) {
+        // Quota exceeded — drop oversized persisted entry and retry once
+        try {
+          ls.removeItem(k);
+          ls.setItem(k, v);
+        } catch {
+          console.warn("[orderStore] localStorage quota exceeded; skipping persist", err);
+        }
+      }
+    },
+  } as Storage;
+};
 
 interface OrderState {
   items: CartItem[];
