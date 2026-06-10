@@ -131,15 +131,24 @@ export const useProvisao = create<ProvisaoState>()(
           const ids = (provRows ?? []).map((r) => r.id as string);
           let itensByProv: Record<string, ItemProvisao[]> = {};
           if (ids.length > 0) {
-            const { data: itemRows, error: err2 } = await supabase
-              .from("provisao_itens")
-              .select("*")
-              .in("provisao_id", ids);
-            if (err2) throw err2;
-            itensByProv = (itemRows ?? []).reduce<Record<string, ItemProvisao[]>>((acc, r) => {
-              const pid = (r as Record<string, unknown>).provisao_id as string;
+            // Paginar para evitar truncamento pelo limite padrão do PostgREST (1000 linhas).
+            const PAGE = 1000;
+            const allItems: Record<string, unknown>[] = [];
+            for (let from = 0; ; from += PAGE) {
+              const { data: itemRows, error: err2 } = await supabase
+                .from("provisao_itens")
+                .select("*")
+                .in("provisao_id", ids)
+                .range(from, from + PAGE - 1);
+              if (err2) throw err2;
+              const rows = (itemRows ?? []) as Record<string, unknown>[];
+              allItems.push(...rows);
+              if (rows.length < PAGE) break;
+            }
+            itensByProv = allItems.reduce<Record<string, ItemProvisao[]>>((acc, r) => {
+              const pid = r.provisao_id as string;
               if (!acc[pid]) acc[pid] = [];
-              acc[pid].push(rowToItemProvisao(r as Record<string, unknown>));
+              acc[pid].push(rowToItemProvisao(r));
               return acc;
             }, {});
           }
