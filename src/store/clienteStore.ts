@@ -182,9 +182,10 @@ export const useClientes = create<ClienteState>()(
         });
 
         try {
-          const { error } = await supabase
-            .from("clientes")
-            .upsert(clienteToRow(c) as never, { onConflict: "id" });
+          const row = clienteToRow(c) as never;
+          const { error } = i >= 0
+            ? await supabase.from("clientes").update(row).eq("id", c.id)
+            : await supabase.from("clientes").insert(row);
           if (error) throw error;
         } catch (err: any) {
           set({ clientes: prevList });
