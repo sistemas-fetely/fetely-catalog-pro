@@ -186,12 +186,20 @@ function CatalogPage() {
               </header>
 
               {/* Products */}
-              {isNum && !isPublic ? (
-                <NumericalCandleGrid
-                  products={colecaoProducts}
-                  colecao={colecao}
-                  onColorChange={handleColorChange}
-                />
+              {isNum ? (
+                isPublic ? (
+                  <NumericalCandleShowcase
+                    products={colecaoProducts}
+                    colecao={colecao}
+                    onColorChange={handleColorChange}
+                  />
+                ) : (
+                  <NumericalCandleGrid
+                    products={colecaoProducts}
+                    colecao={colecao}
+                    onColorChange={handleColorChange}
+                  />
+                )
               ) : isCutlery && !isPublic ? (
                 <CutleryGrid
                   products={colecaoProducts}
