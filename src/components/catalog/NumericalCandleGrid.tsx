@@ -24,16 +24,27 @@ export function NumericalCandleGrid({ products, colecao, onColorChange }: Props)
     [products],
   );
 
-  const [color, setColor] = useState(colors[0]);
-  const [size, setSize] = useState(sizes[0]);
+  const [color, setColor] = useState<string>("");
+  const [size, setSize] = useState<string>("");
   const [qtys, setQtys] = useState<Record<string, number>>({});
   const addBulk = useOrder((s) => s.addBulk);
   const photos = usePhotos();
 
-  // Notify parent of color changes (initial + on change)
+  // Sincroniza cor default quando os produtos/carregam mudam
   useEffect(() => {
-    onColorChange?.(color);
-  }, [color, onColorChange]);
+    if (colors.length > 0 && (!color || !colors.includes(color))) {
+      const defaultColor = colors[0];
+      setColor(defaultColor);
+      onColorChange?.(defaultColor);
+    }
+  }, [colors, color, onColorChange]);
+
+  // Sincroniza tamanho default
+  useEffect(() => {
+    if (sizes.length > 0 && (!size || !sizes.includes(size))) {
+      setSize(sizes[0]);
+    }
+  }, [sizes, size]);
 
   const filtered = products
     .filter((p) => p.corNome === color && p.tamanhoNumero === size)
