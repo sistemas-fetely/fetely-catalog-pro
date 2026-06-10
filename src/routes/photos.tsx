@@ -193,11 +193,16 @@ function CorTab({
     if (!colecoes.includes(colecao)) setColecao(colecoes[0] ?? "");
   }, [colecoes, colecao]);
 
+  // Coleções agrupadas por cor (1 foto por cor): talheres e velas numéricas
   const isCutlery = useMemo(
-    () =>
-      !!colecao &&
-      products.some((p) => p.colecao === colecao) &&
-      products.filter((p) => p.colecao === colecao).every((p) => p.grupo === "Talheres"),
+    () => {
+      if (!colecao) return false;
+      const list = products.filter((p) => p.colecao === colecao);
+      if (!list.length) return false;
+      const allTalheres = list.every((p) => p.grupo === "Talheres");
+      const allNumerica = list.every((p) => p.numeroVela != null);
+      return allTalheres || allNumerica;
+    },
     [products, colecao],
   );
 
