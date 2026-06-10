@@ -45,6 +45,14 @@ function CatalogPage() {
   const isPublic = !useAuth((s) => s.session);
   const fadeRef = useRef<HTMLDivElement>(null);
 
+  // Garante que visitantes públicos também recebam o catálogo do banco
+  // (caso contrário cai no JSON default, que não inclui todas as coleções).
+  useEffect(() => {
+    if (!useCatalog.getState().hidratado) {
+      useCatalog.getState().hydrate();
+    }
+  }, []);
+
   const colecaoProducts = useMemo(
     () =>
       colecao
