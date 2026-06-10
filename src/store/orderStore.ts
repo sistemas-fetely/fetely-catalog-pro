@@ -856,7 +856,6 @@ export const useOrder = create<OrderState>()(
         ({
           items: state.items,
           meta: state.meta,
-          history: state.history,
         }) as Partial<OrderState>,
     },
   ),
