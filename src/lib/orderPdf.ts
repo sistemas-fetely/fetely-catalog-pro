@@ -31,8 +31,7 @@ export interface OrderPDFResult {
   dataUrl: string;
 }
 
-export function generateOrderPDF(order: SavedOrder): OrderPDFResult {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   const contentWidth = pageWidth - margin * 2;
