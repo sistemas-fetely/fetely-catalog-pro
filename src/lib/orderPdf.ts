@@ -414,15 +414,206 @@ export function generateOrdersBatchPDF(
   };
 }
 
+function escapeHtml(s: string | undefined | null): string {
+  if (!s) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderOrderBlockHTML(order: SavedOrder): string {
+  const itensRows = order.items
+    .map((it) => {
+      const subtotal = it.product.precoAtacado * it.quantity;
+      return `
+        <tr>
+          <td class="mono">${escapeHtml(it.sku)}</td>
+          <td>${escapeHtml(it.product.nomeComercial || it.product.nomeCompleto || "")}</td>
+          <td class="r">${it.quantity}</td>
+          <td class="r">${formatBRL(it.product.precoAtacado)}</td>
+          <td class="r">${formatBRL(subtotal)}</td>
+        </tr>`;
+    })
+    .join("");
+
+  const c = order.commercial;
+  const linhasFin: string[] = [];
+  if (c) {
+    linhasFin.push(`<div><span>Subtotal bruto</span><b>${formatBRL(c.bruto)}</b></div>`);
+    if (c.descontoCelebraValor > 0)
+      linhasFin.push(`<div><span>Desconto ${escapeHtml(c.faixaNome)} (${c.descontoCelebraPct}%)</span><b>− ${formatBRL(c.descontoCelebraValor)}</b></div>`);
+    if (c.descontoMasterValor > 0)
+      linhasFin.push(`<div><span>Desconto Master (${c.descontoMasterPct}%)</span><b>− ${formatBRL(c.descontoMasterValor)}</b></div>`);
+    if (c.aplicouPix && c.bonusPixValor > 0)
+      linhasFin.push(`<div><span>Bônus PIX</span><b>− ${formatBRL(c.bonusPixValor)}</b></div>`);
+  }
+
+  const cond: Array<[string, string]> = [];
+  if (c) {
+    cond.push(["Faixa", c.faixaNome]);
+    cond.push(["Frete", `${c.frete}${c.frete === "CIF" ? " — Fetély entrega" : " — Cliente retira"}`]);
+    cond.push(["Pagamento", c.condicaoDescricao || order.meta.condicaoPagamento]);
+  } else {
+    cond.push(["Pagamento", order.meta.condicaoPagamento]);
+  }
+  cond.push(["Vendedor", order.vendedorNome || order.meta.vendedor]);
+
+  const endereco = [
+    [order.meta.logradouro, order.meta.numero].filter(Boolean).join(", "),
+    order.meta.bairro,
+    [order.meta.municipio, order.meta.uf].filter(Boolean).join(" — "),
+    order.meta.cep,
+  ].filter(Boolean).join("  ·  ");
+
+  return `
+  <section class="order">
+    <header class="ohead">
+      <div>
+        <div class="brand">FETÉLY</div>
+        <div class="tag">B2B ORDERS</div>
+      </div>
+      <div class="r">
+        <div class="lbl">PEDIDO</div>
+        <div class="oid">${escapeHtml(order.id)}</div>
+        <div class="dt">${new Date(order.createdAt).toLocaleString("pt-BR")}</div>
+      </div>
+    </header>
+
+    <div class="cli">
+      <div class="lbl">CLIENTE</div>
+      <div class="nm">${escapeHtml(order.meta.cliente || "—")}</div>
+      <div class="sub">${[order.meta.cnpj ? "CNPJ " + order.meta.cnpj : "", order.meta.nomeFantasia].filter(Boolean).map(escapeHtml).join("  ·  ")}</div>
+      <div class="sub">${[order.meta.telefone ? "Tel " + order.meta.telefone : "", order.meta.email].filter(Boolean).map(escapeHtml).join("  ·  ")}</div>
+      <div class="sub">${escapeHtml(endereco)}</div>
+    </div>
+
+    <table class="items">
+      <thead>
+        <tr><th>SKU</th><th>Descrição</th><th class="r">Qtd</th><th class="r">Unit</th><th class="r">Subtotal</th></tr>
+      </thead>
+      <tbody>${itensRows}</tbody>
+    </table>
+
+    <div class="totais">
+      <div class="fin">${linhasFin.join("")}</div>
+      <div class="grand"><span>TOTAL</span><b>${formatBRL(order.total)}</b></div>
+    </div>
+
+    <div class="cond">
+      <div class="lbl">CONDIÇÕES COMERCIAIS</div>
+      ${cond.map(([k, v]) => `<div><span>${escapeHtml(k)}</span><b>${escapeHtml(v)}</b></div>`).join("")}
+    </div>
+
+    ${order.meta.observacoesCliente ? `<div class="obs"><div class="lbl">OBSERVAÇÕES</div><div>${escapeHtml(order.meta.observacoesCliente).replace(/\n/g, "<br/>")}</div></div>` : ""}
+  </section>`;
+}
+
+function buildPrintHTML(orders: SavedOrder[], mode: "completa" | "resumida"): string {
+  const style = `
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;font-family:Helvetica,Arial,sans-serif;color:#1a1a1a;font-size:11px}
+    .wrap{padding:14mm}
+    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+    .r{text-align:right}
+    .lbl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#6a6a6a}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:5px 6px;border-bottom:1px solid #e0e0e0;vertical-align:top}
+    thead th{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#b8923a;border-bottom:1.5px solid #1a1a1a;text-align:left}
+    /* resumida */
+    .sumhead{background:#1a1a1a;color:#fff;padding:10mm 14mm;margin:-14mm -14mm 8mm -14mm;display:flex;justify-content:space-between;align-items:center}
+    .sumhead .brand{color:#b8923a;font-size:22px;letter-spacing:.05em}
+    .sumhead .tag{color:#ccc;font-size:9px;letter-spacing:.3em}
+    .sumhead h1{color:#fff;font-size:13px;margin:0;font-weight:700;letter-spacing:.05em}
+    .sumhead .dt{color:#ccc;font-size:9px;margin-top:3px}
+    tfoot td{font-weight:700;border-top:1.5px solid #1a1a1a;border-bottom:0;padding-top:8px}
+    /* completa */
+    .order{page-break-after:always}
+    .order:last-child{page-break-after:auto}
+    .ohead{background:#1a1a1a;color:#fff;padding:8mm 14mm;margin:-14mm -14mm 6mm -14mm;display:flex;justify-content:space-between;align-items:center}
+    .ohead .brand{color:#b8923a;font-size:22px}
+    .ohead .tag{color:#ccc;font-size:8px;letter-spacing:.3em}
+    .ohead .oid{font-size:14px;font-weight:700}
+    .ohead .dt{font-size:9px;color:#ccc;margin-top:2px}
+    .ohead .lbl{color:#ccc}
+    .cli{margin-bottom:6mm}
+    .cli .nm{font-size:13px;font-weight:700;margin-top:2px}
+    .cli .sub{color:#6a6a6a;margin-top:2px}
+    .items{margin-top:2mm}
+    .totais{display:flex;justify-content:flex-end;flex-direction:column;align-items:flex-end;margin-top:5mm;gap:1mm}
+    .totais .fin{min-width:70mm}
+    .totais .fin div{display:flex;justify-content:space-between;gap:8mm;padding:2px 0;color:#6a6a6a}
+    .totais .fin b{color:#1a1a1a;font-weight:600}
+    .grand{min-width:70mm;display:flex;justify-content:space-between;border-top:1px solid #1a1a1a;padding-top:3mm;margin-top:2mm;align-items:baseline}
+    .grand span{font-size:10px;font-weight:700;letter-spacing:.1em}
+    .grand b{color:#b8923a;font-size:14px}
+    .cond{margin-top:6mm;border-top:1px solid #e0e0e0;padding-top:3mm}
+    .cond div{display:flex;gap:4mm;padding:1px 0}
+    .cond span{color:#6a6a6a;min-width:28mm}
+    .obs{margin-top:5mm;border-top:1px solid #e0e0e0;padding-top:3mm}
+    @page{size:A4;margin:0}
+    @media print{html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  `;
+
+  let body = "";
+  if (mode === "completa") {
+    body = orders.map(renderOrderBlockHTML).join("");
+  } else {
+    const totalGeral = orders.reduce((s, o) => s + o.total, 0);
+    const totalItens = orders.reduce(
+      (s, o) => s + o.items.reduce((ss, i) => ss + i.quantity, 0),
+      0,
+    );
+    const rows = orders
+      .map((o) => {
+        const qty = o.items.reduce((s, i) => s + i.quantity, 0);
+        return `<tr>
+          <td class="mono">${escapeHtml(o.id)}</td>
+          <td>${escapeHtml(new Date(o.createdAt).toLocaleDateString("pt-BR"))}</td>
+          <td>${escapeHtml(o.meta.cliente || "—")}</td>
+          <td>${escapeHtml(o.meta.cnpj || "—")}</td>
+          <td>${escapeHtml(o.vendedorNome || o.meta.vendedor || "—")}</td>
+          <td class="r">${qty}</td>
+          <td class="r">${formatBRL(o.total)}</td>
+        </tr>`;
+      })
+      .join("");
+
+    body = `
+      <header class="sumhead">
+        <div>
+          <div class="brand">FETÉLY</div>
+          <div class="tag">B2B ORDERS</div>
+        </div>
+        <div class="r">
+          <h1>PEDIDOS — RESUMO</h1>
+          <div class="dt">${new Date().toLocaleString("pt-BR")}</div>
+        </div>
+      </header>
+      <table>
+        <thead>
+          <tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>CNPJ</th><th>Vendedor</th><th class="r">Itens</th><th class="r">Total</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr><td colspan="5" class="r">TOTAL</td><td class="r">${totalItens}</td><td class="r">${formatBRL(totalGeral)}</td></tr></tfoot>
+      </table>`;
+  }
+
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Impressão de pedidos</title><style>${style}</style></head><body><div class="wrap">${body}</div></body></html>`;
+}
+
 /**
  * Imprime vários pedidos numa única chamada (resumida ou completa).
+ * Renderiza HTML em iframe same-origin (via srcdoc) e dispara o diálogo
+ * nativo de impressão — evita o bloqueio do Chrome ao imprimir blobs PDF.
  */
 export function printOrdersBatch(
   orders: SavedOrder[],
   mode: "completa" | "resumida",
 ): void {
-  const { blob } = generateOrdersBatchPDF(orders, mode);
-  const url = URL.createObjectURL(blob);
+  const html = buildPrintHTML(orders, mode);
 
   const old = document.getElementById("__print_order_iframe");
   if (old) old.remove();
@@ -437,24 +628,34 @@ export function printOrdersBatch(
   iframe.style.height = "0";
   iframe.style.border = "0";
   iframe.style.visibility = "hidden";
-  iframe.src = url;
   document.body.appendChild(iframe);
 
-  iframe.addEventListener("load", () => {
-    setTimeout(() => {
-      try {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-      } catch (err) {
-        console.error("[printOrdersBatch] print direto falhou, abrindo nova aba:", err);
-        window.open(url, "_blank");
+  const triggerPrint = () => {
+    try {
+      const win = iframe.contentWindow;
+      if (!win) throw new Error("iframe sem contentWindow");
+      win.focus();
+      win.print();
+    } catch (err) {
+      console.error("[printOrdersBatch] print direto falhou, abrindo nova aba:", err);
+      const w = window.open("", "_blank");
+      if (w) {
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+        w.focus();
+        setTimeout(() => w.print(), 300);
       }
-    }, 300);
+    }
+  };
+
+  iframe.addEventListener("load", () => {
+    setTimeout(triggerPrint, 200);
   });
+  iframe.srcdoc = html;
 
   setTimeout(() => {
     document.getElementById("__print_order_iframe")?.remove();
-    URL.revokeObjectURL(url);
   }, 60_000);
 }
 
