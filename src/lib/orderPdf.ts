@@ -269,14 +269,193 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
     pageHeight - 10,
   );
   doc.text("fetelycorp.com.br", pageWidth - margin, pageHeight - 10, { align: "right" });
+}
 
-  // ─── OUTPUTS ───
+export function generateOrderPDF(order: SavedOrder): OrderPDFResult {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  renderOrderToDoc(doc, order);
   const blob = doc.output("blob");
   const dataUrl = doc.output("datauristring");
   const base64 = dataUrl.split(",")[1];
   const filename = `Pedido-${sanitizeFilename(order.id)}-${sanitizeFilename(order.meta.cliente || "cliente")}.pdf`;
-
   return { blob, base64, filename, dataUrl };
+}
+
+/**
+ * Gera um único PDF com vários pedidos.
+ * - mode "completa": cada pedido em página(s) próprias, no mesmo layout do PDF individual.
+ * - mode "resumida": uma única tabela compacta listando pedido / data / cliente / itens / total.
+ */
+export function generateOrdersBatchPDF(
+  orders: SavedOrder[],
+  mode: "completa" | "resumida",
+): OrderPDFResult {
+  if (mode === "completa") {
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    orders.forEach((order, idx) => {
+      if (idx > 0) doc.addPage();
+      renderOrderToDoc(doc, order);
+    });
+    const blob = doc.output("blob");
+    const dataUrl = doc.output("datauristring");
+    const base64 = dataUrl.split(",")[1];
+    return {
+      blob,
+      base64,
+      dataUrl,
+      filename: `Pedidos-${orders.length}-completo.pdf`,
+    };
+  }
+
+  // ─── RESUMIDA ───
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 15;
+
+  // Header
+  doc.setFillColor(COLORS.black);
+  doc.rect(0, 0, pageWidth, 28, "F");
+  doc.setTextColor(COLORS.gold);
+  doc.setFontSize(22);
+  doc.text("FETÉLY", margin, 17);
+  doc.setFontSize(7);
+  doc.setTextColor("#cccccc");
+  doc.text("B2B ORDERS", margin, 22);
+  doc.setTextColor("#ffffff");
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("PEDIDOS — RESUMO", pageWidth - margin, 17, { align: "right" });
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor("#cccccc");
+  doc.text(
+    new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }),
+    pageWidth - margin,
+    23,
+    { align: "right" },
+  );
+
+  const totalGeral = orders.reduce((s, o) => s + o.total, 0);
+  const totalItens = orders.reduce(
+    (s, o) => s + o.items.reduce((ss, i) => ss + i.quantity, 0),
+    0,
+  );
+
+  const rows = orders.map((o) => {
+    const qty = o.items.reduce((s, i) => s + i.quantity, 0);
+    return [
+      o.id,
+      new Date(o.createdAt).toLocaleDateString("pt-BR"),
+      o.meta.cliente || "—",
+      o.meta.cnpj || "—",
+      o.vendedorNome || o.meta.vendedor || "—",
+      `${qty}`,
+      formatBRL(o.total),
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 36,
+    head: [["Pedido", "Data", "Cliente", "CNPJ", "Vendedor", "Itens", "Total"]],
+    body: rows,
+    foot: [["", "", "", "", "TOTAL", `${totalItens}`, formatBRL(totalGeral)]],
+    margin: { left: margin, right: margin },
+    theme: "plain",
+    styles: {
+      fontSize: 8.5,
+      cellPadding: 2.5,
+      textColor: COLORS.black,
+      lineColor: COLORS.separator,
+      lineWidth: 0.1,
+    },
+    headStyles: {
+      fontStyle: "bold",
+      fontSize: 8,
+      textColor: COLORS.gold,
+      fillColor: false as unknown as undefined,
+      lineWidth: { bottom: 0.5 },
+      lineColor: COLORS.black,
+    },
+    footStyles: {
+      fontStyle: "bold",
+      fontSize: 9,
+      textColor: COLORS.black,
+      fillColor: false as unknown as undefined,
+      lineWidth: { top: 0.5 },
+      lineColor: COLORS.black,
+    },
+    columnStyles: {
+      0: { cellWidth: 28 },
+      1: { cellWidth: 20 },
+      5: { cellWidth: 14, halign: "right" },
+      6: { cellWidth: 28, halign: "right" },
+    },
+  });
+
+  // Rodapé
+  const pageCount = (doc as unknown as { internal: { getNumberOfPages: () => number } }).internal.getNumberOfPages();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(COLORS.textSecondary);
+    doc.text(`Página ${i} de ${pageCount}`, margin, pageHeight - 10);
+    doc.text("fetelycorp.com.br", pageWidth - margin, pageHeight - 10, { align: "right" });
+  }
+
+  const blob = doc.output("blob");
+  const dataUrl = doc.output("datauristring");
+  const base64 = dataUrl.split(",")[1];
+  return {
+    blob,
+    base64,
+    dataUrl,
+    filename: `Pedidos-${orders.length}-resumido.pdf`,
+  };
+}
+
+/**
+ * Imprime vários pedidos numa única chamada (resumida ou completa).
+ */
+export function printOrdersBatch(
+  orders: SavedOrder[],
+  mode: "completa" | "resumida",
+): void {
+  const { blob } = generateOrdersBatchPDF(orders, mode);
+  const url = URL.createObjectURL(blob);
+
+  const old = document.getElementById("__print_order_iframe");
+  if (old) old.remove();
+
+  const iframe = document.createElement("iframe");
+  iframe.id = "__print_order_iframe";
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.style.visibility = "hidden";
+  iframe.src = url;
+  document.body.appendChild(iframe);
+
+  iframe.addEventListener("load", () => {
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch (err) {
+        console.error("[printOrdersBatch] print direto falhou, abrindo nova aba:", err);
+        window.open(url, "_blank");
+      }
+    }, 300);
+  });
+
+  setTimeout(() => {
+    document.getElementById("__print_order_iframe")?.remove();
+    URL.revokeObjectURL(url);
+  }, 60_000);
 }
 
 export function openOrderPDFInNewTab(order: SavedOrder): void {
