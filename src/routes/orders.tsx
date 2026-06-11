@@ -46,6 +46,7 @@ function OrdersPage() {
   const [hydrated, setHydrated] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exportOrders, setExportOrders] = useState<typeof history | null>(null);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
   useEffect(() => setHydrated(true), []);
 
   const toggleSelected = (id: string) =>
