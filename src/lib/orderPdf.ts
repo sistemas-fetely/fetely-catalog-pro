@@ -557,49 +557,16 @@ function buildPrintHTML(orders: SavedOrder[], mode: "completa" | "resumida"): st
     @media print{html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
   `;
 
-  let body = "";
-  if (mode === "completa") {
-    body = orders.map(renderOrderBlockHTML).join("");
-  } else {
-    const totalGeral = orders.reduce((s, o) => s + o.total, 0);
-    const totalItens = orders.reduce(
-      (s, o) => s + o.items.reduce((ss, i) => ss + i.quantity, 0),
-      0,
-    );
-    const rows = orders
-      .map((o) => {
-        const qty = o.items.reduce((s, i) => s + i.quantity, 0);
-        return `<tr>
-          <td class="mono">${escapeHtml(o.id)}</td>
-          <td>${escapeHtml(new Date(o.createdAt).toLocaleDateString("pt-BR"))}</td>
-          <td>${escapeHtml(o.meta.cliente || "—")}</td>
-          <td>${escapeHtml(o.meta.cnpj || "—")}</td>
-          <td>${escapeHtml(o.vendedorNome || o.meta.vendedor || "—")}</td>
-          <td class="r">${qty}</td>
-          <td class="r">${formatBRL(o.total)}</td>
-        </tr>`;
-      })
-      .join("");
-
-    body = `
-      <header class="sumhead">
-        <div>
-          <div class="brand">FETÉLY</div>
-          <div class="tag">B2B ORDERS</div>
-        </div>
-        <div class="r">
-          <h1>PEDIDOS — RESUMO</h1>
-          <div class="dt">${new Date().toLocaleString("pt-BR")}</div>
-        </div>
-      </header>
-      <table>
-        <thead>
-          <tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>CNPJ</th><th>Vendedor</th><th class="r">Itens</th><th class="r">Total</th></tr>
-        </thead>
-        <tbody>${rows}</tbody>
-        <tfoot><tr><td colspan="5" class="r">TOTAL</td><td class="r">${totalItens}</td><td class="r">${formatBRL(totalGeral)}</td></tr></tfoot>
-      </table>`;
-  }
+  // Ambos os modos usam o layout do pedido individual, 1 por página.
+  // "resumida" omite a tabela de itens; "completa" mantém o detalhamento.
+  const body =
+    mode === "completa"
+      ? orders.map(renderOrderBlockHTML).join("")
+      : orders
+          .map((o) =>
+            renderOrderBlockHTML(o).replace(/<table class="items">[\s\S]*?<\/table>/, ""),
+          )
+          .join("");
 
   return `<!doctype html><html><head><meta charset="utf-8"><title>Impressão de pedidos</title><style>${style}</style></head><body><div class="wrap">${body}</div></body></html>`;
 }
