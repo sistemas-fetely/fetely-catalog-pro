@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Download, Eye, Package, Trash2, UserCog, XCircle, RotateCcw, FileEdit } from "lucide-react";
+import { Download, Eye, Package, Printer, Trash2, UserCog, XCircle, RotateCcw, FileEdit } from "lucide-react";
+import { printOrdersBatch } from "@/lib/orderPdf";
 import { BotaoEnviarSncf } from "@/components/BotaoEnviarSncf";
 import { formatBRL } from "@/lib/format";
 import { useOrder, useVisibleOrders } from "@/store/orderStore";
@@ -45,6 +46,7 @@ function OrdersPage() {
   const [hydrated, setHydrated] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exportOrders, setExportOrders] = useState<typeof history | null>(null);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
   useEffect(() => setHydrated(true), []);
 
   const toggleSelected = (id: string) =>
@@ -103,14 +105,22 @@ function OrdersPage() {
         </div>
         <div className="flex gap-2 items-center flex-wrap">
           {selectedIds.size > 0 && (
-            <button
-              onClick={() =>
-                setExportOrders(history.filter((o) => selectedIds.has(o.id)))
-              }
-              className="flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
-            >
-              <Download className="h-3.5 w-3.5" /> Exportar {selectedIds.size}
-            </button>
+            <>
+              <button
+                onClick={() => setPrintDialogOpen(true)}
+                className="flex items-center gap-1.5 rounded-md gold-border bg-surface px-3 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10"
+              >
+                <Printer className="h-3.5 w-3.5" /> Imprimir {selectedIds.size}
+              </button>
+              <button
+                onClick={() =>
+                  setExportOrders(history.filter((o) => selectedIds.has(o.id)))
+                }
+                className="flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
+              >
+                <Download className="h-3.5 w-3.5" /> Exportar {selectedIds.size}
+              </button>
+            </>
           )}
           {isAdminOrMaster && vendedores.length > 0 && (
             <select
@@ -432,6 +442,26 @@ function OrdersPage() {
           }
         }}
       />
+
+      {printDialogOpen && (
+        <PrintModeDialog
+          count={selectedIds.size}
+          onClose={() => setPrintDialogOpen(false)}
+          onConfirm={(mode) => {
+            const toPrint = history.filter((o) => selectedIds.has(o.id));
+            if (toPrint.length === 0) {
+              toast.error("Nenhum pedido selecionado");
+              return;
+            }
+            try {
+              printOrdersBatch(toPrint, mode);
+              setPrintDialogOpen(false);
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "Erro ao imprimir");
+            }
+          }}
+        />
+      )}
     </main>
   );
 }
@@ -506,4 +536,89 @@ function ReassignModal({
     </div>
   );
 }
+
+function PrintModeDialog({
+  count,
+  onClose,
+  onConfirm,
+}: {
+  count: number;
+  onClose: () => void;
+  onConfirm: (mode: "completa" | "resumida") => void;
+}) {
+  const [mode, setMode] = useState<"completa" | "resumida">("resumida");
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-lg border border-gold/40 bg-surface p-6 space-y-5">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-gold">Impressão</div>
+          <h3 className="font-display text-lg mt-1">Imprimir {count} pedido{count === 1 ? "" : "s"}</h3>
+          <p className="text-xs text-text-muted mt-1">Escolha o formato da impressão.</p>
+        </div>
+
+        <div className="space-y-2">
+          <label
+            className={`flex items-start gap-3 rounded-md border p-3 cursor-pointer transition ${
+              mode === "resumida"
+                ? "border-gold bg-gold/5"
+                : "border-border hover:border-gold/40"
+            }`}
+          >
+            <input
+              type="radio"
+              name="print-mode"
+              className="accent-gold mt-1"
+              checked={mode === "resumida"}
+              onChange={() => setMode("resumida")}
+            />
+            <div>
+              <div className="text-sm font-semibold">Resumida</div>
+              <div className="text-xs text-text-muted">
+                Uma única página com tabela: pedido, cliente, vendedor, itens e total.
+              </div>
+            </div>
+          </label>
+
+          <label
+            className={`flex items-start gap-3 rounded-md border p-3 cursor-pointer transition ${
+              mode === "completa"
+                ? "border-gold bg-gold/5"
+                : "border-border hover:border-gold/40"
+            }`}
+          >
+            <input
+              type="radio"
+              name="print-mode"
+              className="accent-gold mt-1"
+              checked={mode === "completa"}
+              onChange={() => setMode("completa")}
+            />
+            <div>
+              <div className="text-sm font-semibold">Completa</div>
+              <div className="text-xs text-text-muted">
+                Um PDF com todos os pedidos no formato detalhado (itens, valores, condições).
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={onClose}
+            className="rounded-md border border-border px-4 py-2 text-xs uppercase tracking-wider text-text-secondary hover:bg-surface-2"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => onConfirm(mode)}
+            className="rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
+          >
+            Imprimir
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
