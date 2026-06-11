@@ -512,6 +512,123 @@ function renderOrderBlockHTML(order: SavedOrder): string {
   </section>`;
 }
 
+function renderOrderResumoHTML(order: SavedOrder): string {
+  const c = order.commercial;
+  const fmt = (n: number) => formatBRL(n);
+
+  const map = new Map<string, { skus: number; qtd: number; valor: number }>();
+  for (const item of order.items) {
+    const key = item.product.colecao || "—";
+    const cur = map.get(key) ?? { skus: 0, qtd: 0, valor: 0 };
+    cur.skus += 1;
+    cur.qtd += item.quantity;
+    cur.valor += item.product.precoAtacado * item.quantity;
+    map.set(key, cur);
+  }
+  const grupos = Array.from(map.entries())
+    .map(([colecao, d]) => ({ colecao, ...d }))
+    .sort((a, b) => b.valor - a.valor);
+
+  const totalUnidades = order.items.reduce((s, i) => s + i.quantity, 0);
+  const totalSkus = order.items.length;
+
+  const gruposRows = grupos
+    .map(
+      (g) => `<tr class="rg">
+        <td>${escapeHtml(g.colecao)}</td>
+        <td class="r">${g.skus}</td>
+        <td class="r">${g.qtd}</td>
+        <td class="r">${fmt(g.valor)}</td>
+      </tr>`,
+    )
+    .join("");
+
+  const linhasFin: string[] = [];
+  if (c) {
+    if (c.descontoCelebraValor > 0)
+      linhasFin.push(`<div>Desconto ${escapeHtml(c.faixaNome)} (${c.descontoCelebraPct}%): − ${fmt(c.descontoCelebraValor)}</div>`);
+    if (c.descontoMasterValor > 0)
+      linhasFin.push(`<div>Desconto Master (${c.descontoMasterPct}%): − ${fmt(c.descontoMasterValor)}</div>`);
+    if (c.aplicouPix && c.bonusPixValor > 0)
+      linhasFin.push(`<div>Bônus PIX: − ${fmt(c.bonusPixValor)}</div>`);
+    if (c.frete === "FOB") {
+      const subAposDesc = c.bruto - c.descontoCelebraValor - c.descontoMasterValor;
+      const fretePct = c.fretePercent ?? FRETE_PERCENT;
+      const freteVal = c.freteValor ?? subAposDesc * (fretePct / 100);
+      if (freteVal > 0) {
+        linhasFin.push(
+          `<div class="b">Frete FOB (${fretePct.toFixed(1).replace(".", ",")}%): + ${fmt(freteVal)}</div>`,
+        );
+      }
+    }
+  } else {
+    linhasFin.push(`<div>Pagamento: ${escapeHtml(order.meta.condicaoPagamento)}</div>`);
+  }
+
+  const condRight = c
+    ? `<div class="cbox"><div class="lbl">FRETE</div><div class="v">${escapeHtml(c.frete)}${c.frete === "CIF" ? " — Fetély entrega" : " — Cliente retira"}</div></div>
+       <div class="cbox"><div class="lbl">FAIXA</div><div class="v">${escapeHtml(c.faixaNome)}</div></div>`
+    : "";
+
+  return `
+  <section class="ordR">
+    <header class="rhead">
+      <div>
+        <div class="brand">FETÉLY</div>
+        <div class="tag">B2B ORDERS</div>
+      </div>
+      <div class="r">
+        <div class="lbl">PEDIDO</div>
+        <div class="oid">${escapeHtml(order.id)}</div>
+        <div class="dt">${new Date(order.createdAt).toLocaleString("pt-BR")}</div>
+      </div>
+    </header>
+
+    <div class="rcli">
+      <div>
+        <div class="lbl">CLIENTE</div>
+        <div class="nm">${escapeHtml(order.meta.cliente || "—")}</div>
+        <div class="sub">CNPJ ${escapeHtml(order.meta.cnpj || "—")}${order.meta.nomeFantasia ? "   ·   " + escapeHtml(order.meta.nomeFantasia) : ""}</div>
+      </div>
+      <div>
+        <div class="lbl">VENDEDOR</div>
+        <div class="nm">${escapeHtml(order.vendedorNome || order.meta.vendedor || "—")}</div>
+      </div>
+    </div>
+
+    <div class="rcond">
+      <div class="cbox"><div class="lbl">PAGAMENTO</div><div class="v">${escapeHtml(c?.condicaoDescricao || order.meta.condicaoPagamento)}</div></div>
+      ${condRight}
+    </div>
+
+    <div class="lbl rttl">ITENS AGRUPADOS POR COLEÇÃO</div>
+    <table class="rgrp">
+      <thead>
+        <tr><th>Coleção</th><th class="r">SKUs</th><th class="r">Unidades</th><th class="r">Subtotal</th></tr>
+      </thead>
+      <tbody>
+        ${gruposRows}
+        <tr class="rtot"><td>Total bruto</td><td class="r">${totalSkus}</td><td class="r">${totalUnidades}</td><td class="r">${fmt(c?.bruto || order.total)}</td></tr>
+      </tbody>
+    </table>
+
+    <div class="rfin">
+      <div class="rfinL">${linhasFin.join("")}</div>
+      <div class="rfinR">
+        <div class="lbl">TOTAL FINAL</div>
+        <div class="rtotalv">${fmt(order.total)}</div>
+      </div>
+    </div>
+
+    ${order.meta.observacoesCliente ? `<div class="robs"><b>Observações:</b> ${escapeHtml(order.meta.observacoesCliente).replace(/\n/g, "<br/>")}</div>` : ""}
+
+    <div class="rfoot">
+      <span>Documento gerado em ${new Date().toLocaleString("pt-BR")}</span>
+      <span>fetelycorp.com.br</span>
+    </div>
+  </section>`;
+}
+
 function buildPrintHTML(orders: SavedOrder[], mode: "completa" | "resumida"): string {
   const style = `
     *{box-sizing:border-box}
