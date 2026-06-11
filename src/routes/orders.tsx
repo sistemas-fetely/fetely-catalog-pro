@@ -442,6 +442,26 @@ function OrdersPage() {
           }
         }}
       />
+
+      {printDialogOpen && (
+        <PrintModeDialog
+          count={selectedIds.size}
+          onClose={() => setPrintDialogOpen(false)}
+          onConfirm={(mode) => {
+            const toPrint = history.filter((o) => selectedIds.has(o.id));
+            if (toPrint.length === 0) {
+              toast.error("Nenhum pedido selecionado");
+              return;
+            }
+            try {
+              printOrdersBatch(toPrint, mode);
+              setPrintDialogOpen(false);
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "Erro ao imprimir");
+            }
+          }}
+        />
+      )}
     </main>
   );
 }
