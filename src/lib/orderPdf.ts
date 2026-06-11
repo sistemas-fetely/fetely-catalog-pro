@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import type { CartItem, Product, SavedOrder } from "@/types";
 import type { Cotacao } from "@/types/cotacao";
 import type { ProvisaoFutura } from "@/types/provisao";
+import { FRETE_PERCENT } from "@/lib/commercial";
 
 const COLORS = {
   black: "#1a1a1a",
