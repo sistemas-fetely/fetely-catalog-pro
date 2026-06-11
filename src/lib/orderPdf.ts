@@ -640,13 +640,35 @@ function buildPrintHTML(orders: SavedOrder[], mode: "completa" | "resumida"): st
     table{width:100%;border-collapse:collapse}
     th,td{padding:5px 6px;border-bottom:1px solid #e0e0e0;vertical-align:top}
     thead th{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#b8923a;border-bottom:1.5px solid #1a1a1a;text-align:left}
-    /* resumida */
-    .sumhead{background:#1a1a1a;color:#fff;padding:10mm 14mm;margin:-14mm -14mm 8mm -14mm;display:flex;justify-content:space-between;align-items:center}
-    .sumhead .brand{color:#b8923a;font-size:22px;letter-spacing:.05em}
-    .sumhead .tag{color:#ccc;font-size:9px;letter-spacing:.3em}
-    .sumhead h1{color:#fff;font-size:13px;margin:0;font-weight:700;letter-spacing:.05em}
-    .sumhead .dt{color:#ccc;font-size:9px;margin-top:3px}
-    tfoot td{font-weight:700;border-top:1.5px solid #1a1a1a;border-bottom:0;padding-top:8px}
+    /* resumida — layout agrupado por coleção, 1 pedido por página */
+    .ordR{page-break-after:always;font-size:11px;line-height:1.4;color:#000}
+    .ordR:last-child{page-break-after:auto}
+    .rhead{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:12px}
+    .rhead .brand{font-size:18pt;font-weight:700;letter-spacing:.05em}
+    .rhead .tag{font-size:8pt;letter-spacing:.2em;color:#555}
+    .rhead .oid{font-size:14pt;font-weight:600}
+    .rhead .dt{font-size:8.5pt;color:#555}
+    .rcli{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px}
+    .rcli .nm{font-size:11pt;font-weight:600}
+    .rcli .sub{font-size:8.5pt;color:#444}
+    .rcond{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;border:1px solid #ccc;padding:8px 10px;margin-bottom:12px}
+    .rcond .cbox .lbl{font-size:7.5pt;letter-spacing:.15em;color:#666}
+    .rcond .cbox .v{font-size:9.5pt;font-weight:500}
+    .rttl{font-size:8pt;letter-spacing:.15em;color:#666;margin-bottom:4px}
+    .rgrp{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:12px}
+    .rgrp thead tr{border-bottom:1.5px solid #000}
+    .rgrp th{text-align:left;padding:4px 6px;color:#000;letter-spacing:0;text-transform:none;border-bottom:0}
+    .rgrp th.r{text-align:right}
+    .rgrp td{padding:4px 6px;border-bottom:1px solid #eee}
+    .rgrp tr.rtot td{border-top:1.5px solid #000;border-bottom:0;font-weight:600;padding:6px}
+    .rfin{display:grid;grid-template-columns:1fr 1fr;gap:16px;border:1px solid #ccc;padding:10px 12px;margin-bottom:12px;align-items:center}
+    .rfinL{font-size:9pt}
+    .rfinL .b{font-weight:600}
+    .rfinR{text-align:right}
+    .rfinR .lbl{font-size:8pt;letter-spacing:.2em;color:#666}
+    .rtotalv{font-size:20pt;font-weight:700}
+    .robs{font-size:9pt;margin-bottom:12px;padding-top:8px;border-top:1px solid #eee}
+    .rfoot{border-top:1px solid #ccc;padding-top:6px;margin-top:16px;display:flex;justify-content:space-between;font-size:7.5pt;color:#666}
     /* completa */
     .order{page-break-after:always}
     .order:last-child{page-break-after:auto}
@@ -675,16 +697,12 @@ function buildPrintHTML(orders: SavedOrder[], mode: "completa" | "resumida"): st
     @media print{html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
   `;
 
-  // Ambos os modos usam o layout do pedido individual, 1 por página.
-  // "resumida" omite a tabela de itens; "completa" mantém o detalhamento.
+  // "completa" = layout do pedido individual com itens detalhados (1 por página).
+  // "resumida" = layout do PED-2014 agrupado por coleção (1 por página).
   const body =
     mode === "completa"
       ? orders.map(renderOrderBlockHTML).join("")
-      : orders
-          .map((o) =>
-            renderOrderBlockHTML(o).replace(/<table class="items">[\s\S]*?<\/table>/, ""),
-          )
-          .join("");
+      : orders.map(renderOrderResumoHTML).join("");
 
   return `<!doctype html><html><head><meta charset="utf-8"><title>Impressão de pedidos</title><style>${style}</style></head><body><div class="wrap">${body}</div></body></html>`;
 }
