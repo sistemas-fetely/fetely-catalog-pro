@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import type { CartItem, Product, SavedOrder } from "@/types";
 import type { Cotacao } from "@/types/cotacao";
 import type { ProvisaoFutura } from "@/types/provisao";
+import { FRETE_PERCENT } from "@/lib/commercial";
 
 const COLORS = {
   black: "#1a1a1a",
@@ -511,6 +512,123 @@ function renderOrderBlockHTML(order: SavedOrder): string {
   </section>`;
 }
 
+function renderOrderResumoHTML(order: SavedOrder): string {
+  const c = order.commercial;
+  const fmt = (n: number) => formatBRL(n);
+
+  const map = new Map<string, { skus: number; qtd: number; valor: number }>();
+  for (const item of order.items) {
+    const key = item.product.colecao || "—";
+    const cur = map.get(key) ?? { skus: 0, qtd: 0, valor: 0 };
+    cur.skus += 1;
+    cur.qtd += item.quantity;
+    cur.valor += item.product.precoAtacado * item.quantity;
+    map.set(key, cur);
+  }
+  const grupos = Array.from(map.entries())
+    .map(([colecao, d]) => ({ colecao, ...d }))
+    .sort((a, b) => b.valor - a.valor);
+
+  const totalUnidades = order.items.reduce((s, i) => s + i.quantity, 0);
+  const totalSkus = order.items.length;
+
+  const gruposRows = grupos
+    .map(
+      (g) => `<tr class="rg">
+        <td>${escapeHtml(g.colecao)}</td>
+        <td class="r">${g.skus}</td>
+        <td class="r">${g.qtd}</td>
+        <td class="r">${fmt(g.valor)}</td>
+      </tr>`,
+    )
+    .join("");
+
+  const linhasFin: string[] = [];
+  if (c) {
+    if (c.descontoCelebraValor > 0)
+      linhasFin.push(`<div>Desconto ${escapeHtml(c.faixaNome)} (${c.descontoCelebraPct}%): − ${fmt(c.descontoCelebraValor)}</div>`);
+    if (c.descontoMasterValor > 0)
+      linhasFin.push(`<div>Desconto Master (${c.descontoMasterPct}%): − ${fmt(c.descontoMasterValor)}</div>`);
+    if (c.aplicouPix && c.bonusPixValor > 0)
+      linhasFin.push(`<div>Bônus PIX: − ${fmt(c.bonusPixValor)}</div>`);
+    if (c.frete === "FOB") {
+      const subAposDesc = c.bruto - c.descontoCelebraValor - c.descontoMasterValor;
+      const fretePct = c.fretePercent ?? FRETE_PERCENT;
+      const freteVal = c.freteValor ?? subAposDesc * (fretePct / 100);
+      if (freteVal > 0) {
+        linhasFin.push(
+          `<div class="b">Frete FOB (${fretePct.toFixed(1).replace(".", ",")}%): + ${fmt(freteVal)}</div>`,
+        );
+      }
+    }
+  } else {
+    linhasFin.push(`<div>Pagamento: ${escapeHtml(order.meta.condicaoPagamento)}</div>`);
+  }
+
+  const condRight = c
+    ? `<div class="cbox"><div class="lbl">FRETE</div><div class="v">${escapeHtml(c.frete)}${c.frete === "CIF" ? " — Fetély entrega" : " — Cliente retira"}</div></div>
+       <div class="cbox"><div class="lbl">FAIXA</div><div class="v">${escapeHtml(c.faixaNome)}</div></div>`
+    : "";
+
+  return `
+  <section class="ordR">
+    <header class="rhead">
+      <div>
+        <div class="brand">FETÉLY</div>
+        <div class="tag">B2B ORDERS</div>
+      </div>
+      <div class="r">
+        <div class="lbl">PEDIDO</div>
+        <div class="oid">${escapeHtml(order.id)}</div>
+        <div class="dt">${new Date(order.createdAt).toLocaleString("pt-BR")}</div>
+      </div>
+    </header>
+
+    <div class="rcli">
+      <div>
+        <div class="lbl">CLIENTE</div>
+        <div class="nm">${escapeHtml(order.meta.cliente || "—")}</div>
+        <div class="sub">CNPJ ${escapeHtml(order.meta.cnpj || "—")}${order.meta.nomeFantasia ? "   ·   " + escapeHtml(order.meta.nomeFantasia) : ""}</div>
+      </div>
+      <div>
+        <div class="lbl">VENDEDOR</div>
+        <div class="nm">${escapeHtml(order.vendedorNome || order.meta.vendedor || "—")}</div>
+      </div>
+    </div>
+
+    <div class="rcond">
+      <div class="cbox"><div class="lbl">PAGAMENTO</div><div class="v">${escapeHtml(c?.condicaoDescricao || order.meta.condicaoPagamento)}</div></div>
+      ${condRight}
+    </div>
+
+    <div class="lbl rttl">ITENS AGRUPADOS POR COLEÇÃO</div>
+    <table class="rgrp">
+      <thead>
+        <tr><th>Coleção</th><th class="r">SKUs</th><th class="r">Unidades</th><th class="r">Subtotal</th></tr>
+      </thead>
+      <tbody>
+        ${gruposRows}
+        <tr class="rtot"><td>Total bruto</td><td class="r">${totalSkus}</td><td class="r">${totalUnidades}</td><td class="r">${fmt(c?.bruto || order.total)}</td></tr>
+      </tbody>
+    </table>
+
+    <div class="rfin">
+      <div class="rfinL">${linhasFin.join("")}</div>
+      <div class="rfinR">
+        <div class="lbl">TOTAL FINAL</div>
+        <div class="rtotalv">${fmt(order.total)}</div>
+      </div>
+    </div>
+
+    ${order.meta.observacoesCliente ? `<div class="robs"><b>Observações:</b> ${escapeHtml(order.meta.observacoesCliente).replace(/\n/g, "<br/>")}</div>` : ""}
+
+    <div class="rfoot">
+      <span>Documento gerado em ${new Date().toLocaleString("pt-BR")}</span>
+      <span>fetelycorp.com.br</span>
+    </div>
+  </section>`;
+}
+
 function buildPrintHTML(orders: SavedOrder[], mode: "completa" | "resumida"): string {
   const style = `
     *{box-sizing:border-box}
@@ -522,13 +640,35 @@ function buildPrintHTML(orders: SavedOrder[], mode: "completa" | "resumida"): st
     table{width:100%;border-collapse:collapse}
     th,td{padding:5px 6px;border-bottom:1px solid #e0e0e0;vertical-align:top}
     thead th{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#b8923a;border-bottom:1.5px solid #1a1a1a;text-align:left}
-    /* resumida */
-    .sumhead{background:#1a1a1a;color:#fff;padding:10mm 14mm;margin:-14mm -14mm 8mm -14mm;display:flex;justify-content:space-between;align-items:center}
-    .sumhead .brand{color:#b8923a;font-size:22px;letter-spacing:.05em}
-    .sumhead .tag{color:#ccc;font-size:9px;letter-spacing:.3em}
-    .sumhead h1{color:#fff;font-size:13px;margin:0;font-weight:700;letter-spacing:.05em}
-    .sumhead .dt{color:#ccc;font-size:9px;margin-top:3px}
-    tfoot td{font-weight:700;border-top:1.5px solid #1a1a1a;border-bottom:0;padding-top:8px}
+    /* resumida — layout agrupado por coleção, 1 pedido por página */
+    .ordR{page-break-after:always;font-size:11px;line-height:1.4;color:#000}
+    .ordR:last-child{page-break-after:auto}
+    .rhead{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:12px}
+    .rhead .brand{font-size:18pt;font-weight:700;letter-spacing:.05em}
+    .rhead .tag{font-size:8pt;letter-spacing:.2em;color:#555}
+    .rhead .oid{font-size:14pt;font-weight:600}
+    .rhead .dt{font-size:8.5pt;color:#555}
+    .rcli{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px}
+    .rcli .nm{font-size:11pt;font-weight:600}
+    .rcli .sub{font-size:8.5pt;color:#444}
+    .rcond{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;border:1px solid #ccc;padding:8px 10px;margin-bottom:12px}
+    .rcond .cbox .lbl{font-size:7.5pt;letter-spacing:.15em;color:#666}
+    .rcond .cbox .v{font-size:9.5pt;font-weight:500}
+    .rttl{font-size:8pt;letter-spacing:.15em;color:#666;margin-bottom:4px}
+    .rgrp{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:12px}
+    .rgrp thead tr{border-bottom:1.5px solid #000}
+    .rgrp th{text-align:left;padding:4px 6px;color:#000;letter-spacing:0;text-transform:none;border-bottom:0}
+    .rgrp th.r{text-align:right}
+    .rgrp td{padding:4px 6px;border-bottom:1px solid #eee}
+    .rgrp tr.rtot td{border-top:1.5px solid #000;border-bottom:0;font-weight:600;padding:6px}
+    .rfin{display:grid;grid-template-columns:1fr 1fr;gap:16px;border:1px solid #ccc;padding:10px 12px;margin-bottom:12px;align-items:center}
+    .rfinL{font-size:9pt}
+    .rfinL .b{font-weight:600}
+    .rfinR{text-align:right}
+    .rfinR .lbl{font-size:8pt;letter-spacing:.2em;color:#666}
+    .rtotalv{font-size:20pt;font-weight:700}
+    .robs{font-size:9pt;margin-bottom:12px;padding-top:8px;border-top:1px solid #eee}
+    .rfoot{border-top:1px solid #ccc;padding-top:6px;margin-top:16px;display:flex;justify-content:space-between;font-size:7.5pt;color:#666}
     /* completa */
     .order{page-break-after:always}
     .order:last-child{page-break-after:auto}
@@ -557,16 +697,12 @@ function buildPrintHTML(orders: SavedOrder[], mode: "completa" | "resumida"): st
     @media print{html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
   `;
 
-  // Ambos os modos usam o layout do pedido individual, 1 por página.
-  // "resumida" omite a tabela de itens; "completa" mantém o detalhamento.
+  // "completa" = layout do pedido individual com itens detalhados (1 por página).
+  // "resumida" = layout do PED-2014 agrupado por coleção (1 por página).
   const body =
     mode === "completa"
       ? orders.map(renderOrderBlockHTML).join("")
-      : orders
-          .map((o) =>
-            renderOrderBlockHTML(o).replace(/<table class="items">[\s\S]*?<\/table>/, ""),
-          )
-          .join("");
+      : orders.map(renderOrderResumoHTML).join("");
 
   return `<!doctype html><html><head><meta charset="utf-8"><title>Impressão de pedidos</title><style>${style}</style></head><body><div class="wrap">${body}</div></body></html>`;
 }
