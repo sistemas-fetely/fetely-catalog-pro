@@ -456,6 +456,7 @@ function AdminUsersPage() {
               <th className="text-left px-2 py-3">Email</th>
               <th className="text-left px-2 py-3">%</th>
               <th className="text-left px-2 py-3">Papel</th>
+              <th className="text-left px-2 py-3">Acessos</th>
               <th className="text-left px-2 py-3">Status</th>
               <th className="text-right px-3 py-3">Ações</th>
             </tr>
