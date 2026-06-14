@@ -23,6 +23,9 @@ export interface Profile {
   observacoes: string | null;
   login_amigavel: string | null;
   cliente_id: string | null;
+  first_login_at: string | null;
+  last_login_at: string | null;
+  login_count: number | null;
 }
 
 interface AuthState {
