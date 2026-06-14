@@ -77,7 +77,7 @@ export function PortalAccessTab({ cliente }: Props) {
           cnpjDigits: cliente.cnpj,
         },
       });
-      setInfo({ userId: result.userId, email: result.email });
+      setInfo({ userId: result.userId, email: result.email, firstLoginAt: null, lastLoginAt: null, loginCount: 0 });
       setCredentials({ email: result.email, password: result.password });
       toast.success("Acesso criado com sucesso");
     } catch (err) {
