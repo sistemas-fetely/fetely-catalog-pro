@@ -13,6 +13,9 @@ import type { Cliente } from "@/types/cliente";
 interface PortalUserInfo {
   userId: string;
   email: string;
+  firstLoginAt: string | null;
+  lastLoginAt: string | null;
+  loginCount: number;
 }
 
 interface Props {
@@ -36,11 +39,21 @@ export function PortalAccessTab({ cliente }: Props) {
       // procura profile com cliente_id === cliente.id
       const { data } = await supabase
         .from("profiles")
-        .select("id, email")
+        .select("id, email, first_login_at, last_login_at, login_count")
         .eq("cliente_id", cliente.id)
         .maybeSingle();
       if (cancelled) return;
-      setInfo(data ? { userId: data.id, email: data.email } : null);
+      setInfo(
+        data
+          ? {
+              userId: data.id,
+              email: data.email,
+              firstLoginAt: data.first_login_at,
+              lastLoginAt: data.last_login_at,
+              loginCount: data.login_count ?? 0,
+            }
+          : null,
+      );
       setLoading(false);
     };
     void load();
