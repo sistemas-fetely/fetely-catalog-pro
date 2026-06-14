@@ -456,6 +456,7 @@ function AdminUsersPage() {
               <th className="text-left px-2 py-3">Email</th>
               <th className="text-left px-2 py-3">%</th>
               <th className="text-left px-2 py-3">Papel</th>
+              <th className="text-left px-2 py-3">Acessos</th>
               <th className="text-left px-2 py-3">Status</th>
               <th className="text-right px-3 py-3">Ações</th>
             </tr>
@@ -494,6 +495,20 @@ function AdminUsersPage() {
                       </span>
                     ))}
                   </div>
+                </td>
+                <td className="px-2 py-2.5 text-text-secondary whitespace-nowrap text-[11px] leading-tight">
+                  {u.last_login_at ? (
+                    <div>
+                      <div title={`Último acesso: ${new Date(u.last_login_at).toLocaleString("pt-BR")}`}>
+                        {new Date(u.last_login_at).toLocaleDateString("pt-BR")}
+                      </div>
+                      <div className="text-[9px] text-text-muted uppercase tracking-wider">
+                        {u.login_count ?? 0}× · 1º {u.first_login_at ? new Date(u.first_login_at).toLocaleDateString("pt-BR") : "—"}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-text-muted">Nunca</span>
+                  )}
                 </td>
                 <td className="px-2 py-2.5">
                   <span
@@ -543,7 +558,7 @@ function AdminUsersPage() {
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={10}
                   className="px-4 py-8 text-center text-text-secondary"
                 >
                   Nenhum usuário encontrado.

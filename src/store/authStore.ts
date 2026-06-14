@@ -23,6 +23,9 @@ export interface Profile {
   observacoes: string | null;
   login_amigavel: string | null;
   cliente_id: string | null;
+  first_login_at: string | null;
+  last_login_at: string | null;
+  login_count: number | null;
 }
 
 interface AuthState {
@@ -90,6 +93,15 @@ export const useAuth = create<AuthState>((set, get) => ({
         set({ session, user: session.user, loading: !jaTemPerfil });
         // Defer pra evitar deadlock com o próprio listener.
         setTimeout(async () => {
+          // Registra acesso APENAS no SIGNED_IN real (login interativo).
+          // INITIAL_SESSION (reabrir aba com sessão persistida) não conta.
+          if (event === "SIGNED_IN") {
+            try {
+              await supabase.rpc("record_login");
+            } catch {
+              /* não bloqueia o login se a RPC falhar */
+            }
+          }
           const { profile, roles } = await loadProfileAndRoles(session.user.id);
           set({ profile, roles, loading: false });
         }, 0);

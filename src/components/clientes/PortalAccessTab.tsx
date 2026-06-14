@@ -13,6 +13,9 @@ import type { Cliente } from "@/types/cliente";
 interface PortalUserInfo {
   userId: string;
   email: string;
+  firstLoginAt: string | null;
+  lastLoginAt: string | null;
+  loginCount: number;
 }
 
 interface Props {
@@ -36,11 +39,21 @@ export function PortalAccessTab({ cliente }: Props) {
       // procura profile com cliente_id === cliente.id
       const { data } = await supabase
         .from("profiles")
-        .select("id, email")
+        .select("id, email, first_login_at, last_login_at, login_count")
         .eq("cliente_id", cliente.id)
         .maybeSingle();
       if (cancelled) return;
-      setInfo(data ? { userId: data.id, email: data.email } : null);
+      setInfo(
+        data
+          ? {
+              userId: data.id,
+              email: data.email,
+              firstLoginAt: data.first_login_at,
+              lastLoginAt: data.last_login_at,
+              loginCount: data.login_count ?? 0,
+            }
+          : null,
+      );
       setLoading(false);
     };
     void load();
@@ -64,7 +77,7 @@ export function PortalAccessTab({ cliente }: Props) {
           cnpjDigits: cliente.cnpj,
         },
       });
-      setInfo({ userId: result.userId, email: result.email });
+      setInfo({ userId: result.userId, email: result.email, firstLoginAt: null, lastLoginAt: null, loginCount: 0 });
       setCredentials({ email: result.email, password: result.password });
       toast.success("Acesso criado com sucesso");
     } catch (err) {
@@ -127,6 +140,24 @@ export function PortalAccessTab({ cliente }: Props) {
             <div className="text-lg text-text-primary mt-1">✅ Portal ativo</div>
             <div className="text-xs text-text-secondary mt-2">
               E-mail de acesso: <span className="text-text-primary">{info.email}</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gold/20 grid grid-cols-3 gap-2 text-[11px]">
+              <div>
+                <div className="text-[9px] uppercase tracking-wider text-text-muted">Primeiro acesso</div>
+                <div className="text-text-primary mt-0.5">
+                  {info.firstLoginAt ? new Date(info.firstLoginAt).toLocaleString("pt-BR") : "Nunca"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[9px] uppercase tracking-wider text-text-muted">Último acesso</div>
+                <div className="text-text-primary mt-0.5">
+                  {info.lastLoginAt ? new Date(info.lastLoginAt).toLocaleString("pt-BR") : "Nunca"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[9px] uppercase tracking-wider text-text-muted">Total de acessos</div>
+                <div className="text-gold font-semibold mt-0.5">{info.loginCount}</div>
+              </div>
             </div>
           </div>
 

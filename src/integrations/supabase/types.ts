@@ -1586,9 +1586,12 @@ export type Database = {
           created_at: string
           email: string
           empresa: string | null
+          first_login_at: string | null
           grupo_permissao_id: string | null
           id: string
+          last_login_at: string | null
           login_amigavel: string | null
+          login_count: number
           nome_completo: string | null
           observacoes: string | null
           regiao: string | null
@@ -1609,9 +1612,12 @@ export type Database = {
           created_at?: string
           email: string
           empresa?: string | null
+          first_login_at?: string | null
           grupo_permissao_id?: string | null
           id: string
+          last_login_at?: string | null
           login_amigavel?: string | null
+          login_count?: number
           nome_completo?: string | null
           observacoes?: string | null
           regiao?: string | null
@@ -1632,9 +1638,12 @@ export type Database = {
           created_at?: string
           email?: string
           empresa?: string | null
+          first_login_at?: string | null
           grupo_permissao_id?: string | null
           id?: string
+          last_login_at?: string | null
           login_amigavel?: string | null
+          login_count?: number
           nome_completo?: string | null
           observacoes?: string | null
           regiao?: string | null
@@ -1965,6 +1974,7 @@ export type Database = {
       is_admin_or_master: { Args: { _user_id: string }; Returns: boolean }
       next_cotacao_id: { Args: never; Returns: string }
       next_order_id: { Args: never; Returns: string }
+      record_login: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "master" | "admin" | "vendedor" | "cliente"
