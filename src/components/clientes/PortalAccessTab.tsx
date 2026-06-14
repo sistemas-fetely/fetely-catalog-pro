@@ -141,6 +141,24 @@ export function PortalAccessTab({ cliente }: Props) {
             <div className="text-xs text-text-secondary mt-2">
               E-mail de acesso: <span className="text-text-primary">{info.email}</span>
             </div>
+            <div className="mt-3 pt-3 border-t border-gold/20 grid grid-cols-3 gap-2 text-[11px]">
+              <div>
+                <div className="text-[9px] uppercase tracking-wider text-text-muted">Primeiro acesso</div>
+                <div className="text-text-primary mt-0.5">
+                  {info.firstLoginAt ? new Date(info.firstLoginAt).toLocaleString("pt-BR") : "Nunca"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[9px] uppercase tracking-wider text-text-muted">Último acesso</div>
+                <div className="text-text-primary mt-0.5">
+                  {info.lastLoginAt ? new Date(info.lastLoginAt).toLocaleString("pt-BR") : "Nunca"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[9px] uppercase tracking-wider text-text-muted">Total de acessos</div>
+                <div className="text-gold font-semibold mt-0.5">{info.loginCount}</div>
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
