@@ -558,7 +558,7 @@ function AdminUsersPage() {
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={10}
                   className="px-4 py-8 text-center text-text-secondary"
                 >
                   Nenhum usuário encontrado.
