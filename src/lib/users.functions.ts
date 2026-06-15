@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-type AppRole = "master" | "admin" | "vendedor";
+type AppRole = "master" | "admin" | "vendedor" | "cliente";
 
 async function assertCallerCan(
   userId: string,
