@@ -90,6 +90,17 @@ function PermissoesPage() {
   const setExcecaoFn = useServerFn(setExcecaoUsuario);
   const removerExcecaoFn = useServerFn(removerExcecaoUsuario);
   const setGrupoUsuarioFn = useServerFn(setGrupoUsuario);
+  const setUserRoleFn = useServerFn(setUserRole);
+
+  const mutUserRole = useMutation({
+    mutationFn: (v: { user_id: string; role: PerfilBaseRole }) =>
+      setUserRoleFn({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["app-users"] });
+      toast.success("Perfil do usuário atualizado");
+    },
+    onError: (e: Error) => toast.error(e.message ?? "Falha ao atualizar perfil"),
+  });
 
   const permsQ = useQuery({
     queryKey: ["permissoes"],
