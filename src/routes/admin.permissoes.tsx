@@ -399,6 +399,31 @@ function PermissoesPage() {
               </p>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            {pendentesCount > 0 && (
+              <>
+                <span className="text-xs text-gold">
+                  {pendentesCount} alteração(ões) pendente(s)
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setPendentes({})}
+                  disabled={salvando}
+                >
+                  <RotateCcw className="h-3 w-3" /> Descartar
+                </Button>
+              </>
+            )}
+            <Button
+              size="sm"
+              onClick={salvarPendentes}
+              disabled={pendentesCount === 0 || salvando}
+            >
+              <Save className="h-3 w-3" />
+              {salvando ? "Salvando..." : "Salvar alterações"}
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_1fr]">
