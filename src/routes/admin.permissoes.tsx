@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, X, Minus, Plus, Trash2, Users as UsersIcon, Search, Shield, Star, ShoppingBag, Briefcase, ChevronLeft } from "lucide-react";
+import { Check, X, Minus, Plus, Trash2, Users as UsersIcon, Search, Shield, Star, ShoppingBag, Briefcase, ChevronLeft, Save, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/store/authStore";
 import { listAppUsers } from "@/lib/users.functions";
 import {
@@ -117,6 +118,14 @@ function PermissoesPage() {
   const [filtroTela, setFiltroTela] = useState("");
   const [novoGrupoAberto, setNovoGrupoAberto] = useState(false);
   const [excecaoAberta, setExcecaoAberta] = useState(false);
+  // Buffer de alterações pendentes — key: `${tela_id}:${acao}` → { permitido, padrao }
+  const [pendentes, setPendentes] = useState<Record<string, { permitido: boolean; padrao: boolean }>>({});
+  const [salvando, setSalvando] = useState(false);
+
+  // Limpa pendências ao trocar de seleção
+  useEffect(() => {
+    setPendentes({});
+  }, [selecao]);
 
   // Sync selection when search params change
   useEffect(() => {
@@ -214,21 +223,24 @@ function PermissoesPage() {
     );
 
     function permissaoCalculada(telaId: string, acao: AcaoPermissao) {
+      const pend = pendentes[`${telaId}:${acao}`];
       if (selecao.tipo === "perfil") {
         const ov = perfisOverride.find(
           (p) => p.perfil === selecao.perfil && p.tela_id === telaId && p.acao === acao,
         );
         const padrao = perfilBaseConcede(selecao.perfil, telaId, acao);
+        const base = ov ? ov.permitido : padrao;
         return {
-          permitido: ov ? ov.permitido : padrao,
+          permitido: pend ? pend.permitido : base,
           padrao,
-          custom: !!ov,
-          origem: ov ? "override" : "padrão",
+          custom: pend ? pend.permitido !== padrao : !!ov,
+          origem: pend ? "pendente" : ov ? "override" : "padrão",
+          pendente: !!pend,
         };
       }
       if (selecao.tipo === "grupo") {
         const grupo = grupos.find((g) => g.id === selecao.grupoId);
-        if (!grupo) return { permitido: false, padrao: false, custom: false, origem: "—" };
+        if (!grupo) return { permitido: false, padrao: false, custom: false, origem: "—", pendente: false };
         const perfilBase = grupo.baseado_em as PerfilBaseRole;
         const baseOv = perfisOverride.find(
           (p) => p.perfil === perfilBase && p.tela_id === telaId && p.acao === acao,
@@ -237,16 +249,18 @@ function PermissoesPage() {
         const ov = grupoOverrides.find(
           (o) => o.grupo_id === selecao.grupoId && o.tela_id === telaId && o.acao === acao,
         );
+        const atual = ov ? ov.permitido : base;
         return {
-          permitido: ov ? ov.permitido : base,
+          permitido: pend ? pend.permitido : atual,
           padrao: base,
-          custom: !!ov,
-          origem: ov ? "grupo" : "perfil base",
+          custom: pend ? pend.permitido !== base : !!ov,
+          origem: pend ? "pendente" : ov ? "grupo" : "perfil base",
+          pendente: !!pend,
         };
       }
       // usuário
       const u = usuarios.find((x) => x.id === selecao.userId);
-      if (!u) return { permitido: false, padrao: false, custom: false, origem: "—" };
+      if (!u) return { permitido: false, padrao: false, custom: false, origem: "—", pendente: false };
       const perfilBase = (u.roles?.[0] ?? "vendedor") as PerfilBaseRole;
       const baseOv = perfisOverride.find(
         (p) => p.perfil === perfilBase && p.tela_id === telaId && p.acao === acao,
@@ -266,48 +280,103 @@ function PermissoesPage() {
       const exc = excecoes.find(
         (e) => e.user_id === selecao.userId && e.tela_id === telaId && e.acao === acao,
       );
-      if (exc) {
-        return { permitido: exc.permitido, padrao: efetivo, custom: true, origem: "exceção" };
+      const atual = exc ? exc.permitido : efetivo;
+      const base = efetivo;
+      if (pend) {
+        return { permitido: pend.permitido, padrao: base, custom: pend.permitido !== base, origem: "pendente", pendente: true };
       }
-      return { permitido: efetivo, padrao: efetivo, custom: false, origem };
+      if (exc) {
+        return { permitido: exc.permitido, padrao: efetivo, custom: true, origem: "exceção", pendente: false };
+      }
+      return { permitido: atual, padrao: efetivo, custom: false, origem, pendente: false };
     }
 
     return { telas: telasFiltradas, permissao: permissaoCalculada };
-  }, [selecao, perfisOverride, grupos, grupoOverrides, excecoes, usuarios, filtroTela]);
+  }, [selecao, perfisOverride, grupos, grupoOverrides, excecoes, usuarios, filtroTela, pendentes]);
 
   const handleToggle = (telaId: string, acao: AcaoPermissao, atual: boolean, padrao: boolean) => {
-    const novoValor = !atual;
-    if (selecao.tipo === "perfil") {
-      if (selecao.perfil === "admin") return; // admin nunca muda
-      mutPerfil.mutate({
-        perfil: selecao.perfil,
-        tela_id: telaId,
-        acao,
-        permitido: novoValor,
-        permitido_padrao: padrao,
-      });
-    } else if (selecao.tipo === "grupo") {
-      const grupo = grupos.find((g) => g.id === selecao.grupoId);
-      if (!grupo) return;
-      mutGrupo.mutate({
-        grupo_id: grupo.id,
-        grupo_nome: grupo.nome,
-        tela_id: telaId,
-        acao,
-        permitido: novoValor,
-        permitido_base: padrao,
-      });
-    } else {
-      const u = usuarios.find((x) => x.id === selecao.userId);
-      if (!u) return;
-      mutExcecao.mutate({
-        user_id: u.id,
-        user_nome: u.nome_completo ?? u.email,
-        tela_id: telaId,
-        acao,
-        permitido: novoValor,
-        permitido_atual: atual,
-      });
+    if (selecao.tipo === "perfil" && selecao.perfil === "admin") return;
+    const key = `${telaId}:${acao}`;
+    setPendentes((prev) => {
+      const next = { ...prev };
+      const novoValor = !atual;
+      // Se voltar ao valor original (sem o pendente), remover do buffer
+      const original = (() => {
+        if (selecao.tipo === "perfil") {
+          const ov = perfisOverride.find(
+            (p) => p.perfil === selecao.perfil && p.tela_id === telaId && p.acao === acao,
+          );
+          return ov ? ov.permitido : padrao;
+        }
+        if (selecao.tipo === "grupo") {
+          const ov = grupoOverrides.find(
+            (o) => o.grupo_id === selecao.grupoId && o.tela_id === telaId && o.acao === acao,
+          );
+          return ov ? ov.permitido : padrao;
+        }
+        const exc = excecoes.find(
+          (e) => e.user_id === selecao.userId && e.tela_id === telaId && e.acao === acao,
+        );
+        return exc ? exc.permitido : padrao;
+      })();
+      if (novoValor === original) {
+        delete next[key];
+      } else {
+        next[key] = { permitido: novoValor, padrao };
+      }
+      return next;
+    });
+  };
+
+  const pendentesCount = Object.keys(pendentes).length;
+
+  const salvarPendentes = async () => {
+    if (pendentesCount === 0) return;
+    setSalvando(true);
+    try {
+      const entries = Object.entries(pendentes);
+      for (const [key, { permitido, padrao }] of entries) {
+        const [tela_id, acaoStr] = key.split(":");
+        const acao = acaoStr as AcaoPermissao;
+        if (selecao.tipo === "perfil") {
+          await mutPerfil.mutateAsync({
+            perfil: selecao.perfil,
+            tela_id,
+            acao,
+            permitido,
+            permitido_padrao: padrao,
+          });
+        } else if (selecao.tipo === "grupo") {
+          const grupo = grupos.find((g) => g.id === selecao.grupoId);
+          if (!grupo) continue;
+          await mutGrupo.mutateAsync({
+            grupo_id: grupo.id,
+            grupo_nome: grupo.nome,
+            tela_id,
+            acao,
+            permitido,
+            permitido_base: padrao,
+          });
+        } else {
+          const u = usuarios.find((x) => x.id === selecao.userId);
+          if (!u) continue;
+          await mutExcecao.mutateAsync({
+            user_id: u.id,
+            user_nome: u.nome_completo ?? u.email,
+            tela_id,
+            acao,
+            permitido,
+            permitido_atual: padrao,
+          });
+        }
+      }
+      toast.success(`${entries.length} alteração(ões) salvas`);
+      setPendentes({});
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao salvar alterações");
+    } finally {
+      setSalvando(false);
     }
   };
 
@@ -329,6 +398,31 @@ function PermissoesPage() {
                 Configure acessos por perfil base, grupo customizado ou usuário individual
               </p>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {pendentesCount > 0 && (
+              <>
+                <span className="text-xs text-gold">
+                  {pendentesCount} alteração(ões) pendente(s)
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setPendentes({})}
+                  disabled={salvando}
+                >
+                  <RotateCcw className="h-3 w-3" /> Descartar
+                </Button>
+              </>
+            )}
+            <Button
+              size="sm"
+              onClick={salvarPendentes}
+              disabled={pendentesCount === 0 || salvando}
+            >
+              <Save className="h-3 w-3" />
+              {salvando ? "Salvando..." : "Salvar alterações"}
+            </Button>
           </div>
         </div>
 
