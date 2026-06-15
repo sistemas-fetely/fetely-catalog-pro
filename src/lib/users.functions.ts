@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-type AppRole = "master" | "admin" | "vendedor";
+type AppRole = "master" | "admin" | "vendedor" | "cliente";
 
 async function assertCallerCan(
   userId: string,
@@ -252,5 +252,43 @@ export const deleteAppUser = createServerFn({ method: "POST" })
 
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const setRoleSchema = z.object({
+  user_id: z.string().uuid(),
+  role: z.enum(["master", "admin", "vendedor", "cliente"]),
+});
+
+export const setUserRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => setRoleSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as { userId: string };
+    const { data: myRoles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    const roles = (myRoles ?? []).map((r) => r.role as AppRole);
+    const isMaster = roles.includes("master");
+    const isAdmin = roles.includes("admin");
+    if (!isMaster && !isAdmin) throw new Error("Sem permissão");
+    // Only master can promote to admin or master
+    if ((data.role === "admin" || data.role === "master") && !isMaster) {
+      throw new Error("Apenas o master pode definir admin ou master");
+    }
+    if (data.user_id === userId && (data.role !== "master" && data.role !== "admin")) {
+      throw new Error("Não é possível rebaixar a si mesmo");
+    }
+    // Replace existing roles with the new single role
+    const { error: delErr } = await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.user_id);
+    if (delErr) throw new Error(delErr.message);
+    const { error: insErr } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: data.user_id, role: data.role });
+    if (insErr) throw new Error(insErr.message);
     return { ok: true };
   });

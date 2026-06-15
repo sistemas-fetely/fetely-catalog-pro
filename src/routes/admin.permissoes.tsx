@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, X, Minus, Plus, Trash2, Users as UsersIcon, Search, Shield, Star, ShoppingBag, Briefcase, ChevronLeft, Save, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/store/authStore";
-import { listAppUsers } from "@/lib/users.functions";
+import { listAppUsers, setUserRole } from "@/lib/users.functions";
 import {
   carregarPermissoes,
   setPermissaoPerfil,
@@ -90,6 +90,17 @@ function PermissoesPage() {
   const setExcecaoFn = useServerFn(setExcecaoUsuario);
   const removerExcecaoFn = useServerFn(removerExcecaoUsuario);
   const setGrupoUsuarioFn = useServerFn(setGrupoUsuario);
+  const setUserRoleFn = useServerFn(setUserRole);
+
+  const mutUserRole = useMutation({
+    mutationFn: (v: { user_id: string; role: PerfilBaseRole }) =>
+      setUserRoleFn({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["app-users"] });
+      toast.success("Perfil do usuário atualizado");
+    },
+    onError: (e: Error) => toast.error(e.message ?? "Falha ao atualizar perfil"),
+  });
 
   const permsQ = useQuery({
     queryKey: ["permissoes"],
@@ -430,21 +441,55 @@ function PermissoesPage() {
           {/* PAINEL ESQUERDO */}
           <aside className="space-y-4">
             <SectionCard title="Perfis base">
-              {PERFIS_INFO.map(({ perfil, icone: Icon, cor }) => (
-                <button
-                  key={perfil}
-                  onClick={() => setSelecao({ tipo: "perfil", perfil })}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition",
-                    selecao.tipo === "perfil" && selecao.perfil === perfil
-                      ? "bg-gold/15 text-text-primary"
-                      : "text-text-secondary hover:bg-surface-hover",
-                  )}
-                >
-                  <Icon className={cn("h-4 w-4", cor)} />
-                  <span className="capitalize">{perfil}</span>
-                </button>
-              ))}
+              {PERFIS_INFO.map(({ perfil, icone: Icon, cor }) => {
+                const userSelecionado =
+                  selecao.tipo === "usuario"
+                    ? usuarios.find((u) => u.id === selecao.userId)
+                    : null;
+                const roleAtualDoUsuario =
+                  (userSelecionado?.roles?.[0] as PerfilBaseRole | undefined) ?? null;
+                const ativo =
+                  selecao.tipo === "perfil"
+                    ? selecao.perfil === perfil
+                    : userSelecionado
+                      ? roleAtualDoUsuario === perfil
+                      : false;
+                return (
+                  <button
+                    key={perfil}
+                    onClick={() => {
+                      if (selecao.tipo === "usuario" && userSelecionado) {
+                        if (roleAtualDoUsuario === perfil) {
+                          setSelecao({ tipo: "perfil", perfil });
+                          return;
+                        }
+                        const nome = userSelecionado.nome_completo ?? userSelecionado.email;
+                        if (
+                          confirm(
+                            `Definir ${nome} como ${perfil.toUpperCase()}? Isso substitui o perfil base atual.`,
+                          )
+                        ) {
+                          mutUserRole.mutate({ user_id: userSelecionado.id, role: perfil });
+                        }
+                        return;
+                      }
+                      setSelecao({ tipo: "perfil", perfil });
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition",
+                      ativo
+                        ? "bg-gold/15 text-text-primary"
+                        : "text-text-secondary hover:bg-surface-hover",
+                    )}
+                  >
+                    <Icon className={cn("h-4 w-4", cor)} />
+                    <span className="capitalize">{perfil}</span>
+                    {selecao.tipo === "usuario" && roleAtualDoUsuario === perfil && (
+                      <span className="ml-auto text-[10px] text-gold">atual</span>
+                    )}
+                  </button>
+                );
+              })}
             </SectionCard>
 
             <SectionCard
