@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, X, Minus, Plus, Trash2, Users as UsersIcon, Search, Shield, Star, ShoppingBag, Briefcase, ChevronLeft, Save, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/store/authStore";
-import { listAppUsers } from "@/lib/users.functions";
+import { listAppUsers, setUserRole } from "@/lib/users.functions";
 import {
   carregarPermissoes,
   setPermissaoPerfil,
