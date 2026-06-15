@@ -118,6 +118,14 @@ function PermissoesPage() {
   const [filtroTela, setFiltroTela] = useState("");
   const [novoGrupoAberto, setNovoGrupoAberto] = useState(false);
   const [excecaoAberta, setExcecaoAberta] = useState(false);
+  // Buffer de alterações pendentes — key: `${tela_id}:${acao}` → { permitido, padrao }
+  const [pendentes, setPendentes] = useState<Record<string, { permitido: boolean; padrao: boolean }>>({});
+  const [salvando, setSalvando] = useState(false);
+
+  // Limpa pendências ao trocar de seleção
+  useEffect(() => {
+    setPendentes({});
+  }, [selecao]);
 
   // Sync selection when search params change
   useEffect(() => {
