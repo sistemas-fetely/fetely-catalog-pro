@@ -741,6 +741,12 @@ function _buildPdfInternal(pedido: PedidoExportavel, tipo: "cliente" | "interno"
     totaisBody.push([`Desconto negociação (${pedido.descontoNegociacaoPercent}%)`, `– ${fmtBRL(pedido.totalDescontoNegociacao)}`]);
   if (pedido.totalDescontoBonusPix > 0)
     totaisBody.push([`Bônus PIX (${pedido.bonusPixPercent}%)`, `– ${fmtBRL(pedido.totalDescontoBonusPix)}`]);
+  const fretePctStr2 = pedido.fretePercent.toFixed(1).replace(".", ",");
+  if (pedido.freteIsento || pedido.frete === "CIF") {
+    totaisBody.push([`Frete CIF (incluso · faixa ${pedido.faixaNome})`, "Grátis"]);
+  } else if (pedido.frete === "FOB") {
+    totaisBody.push([`Frete FOB (${fretePctStr2}%)`, `+ ${fmtBRL(pedido.freteValor)}`]);
+  }
   totaisBody.push(["TOTAL DO PEDIDO", fmtBRL(pedido.totalLiquido)]);
   autoTable(doc, {
     startY: (doc as any).lastAutoTable.finalY + 4, body: totaisBody,
