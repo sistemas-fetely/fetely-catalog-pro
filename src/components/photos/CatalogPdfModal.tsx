@@ -46,8 +46,30 @@ export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [version, setVersion] = useState<CatalogVersion>("cliente");
+  const [fields, setFields] = useState<Set<CatalogFieldKey>>(
+    () => new Set(DEFAULT_FIELDS),
+  );
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ pct: number; label: string } | null>(null);
+
+  const fieldsByGroup = useMemo(() => {
+    const m = new Map<string, typeof CATALOG_FIELDS>();
+    for (const f of CATALOG_FIELDS) {
+      if (!m.has(f.group)) m.set(f.group, []);
+      m.get(f.group)!.push(f);
+    }
+    return Array.from(m.entries());
+  }, []);
+
+  const toggleField = (k: CatalogFieldKey) => {
+    setFields((s) => {
+      const next = new Set(s);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  };
+
 
   const keyOf = (e: ColecaoEntry) => `${e.categoria}::${e.nome}`;
 
