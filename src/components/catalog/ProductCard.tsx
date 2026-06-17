@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
+import { X } from "lucide-react";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { formatBRL, isValidMultiple } from "@/lib/format";
@@ -16,6 +17,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const [qty, setQty] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
   const addItem = useOrder((s) => s.addItem);
   const session = useAuth((s) => s.session);
   const isPublic = !session;
@@ -30,20 +32,28 @@ export function ProductCard({ product }: ProductCardProps) {
     : product.precoAtacado <= 0;
   const canAdd = qty > 0 && isValidMultiple(qty, product.multiplos) && !indisponivel;
 
-  // Em modo público, não vinculamos para /produto (essa rota exige login)
-  const ImageWrapper: React.ElementType = isPublic ? "div" : Link;
-  const imageWrapperProps = isPublic
-    ? { className: "relative aspect-square overflow-hidden block" }
-    : {
-        to: "/produto",
-        search: { sku: product.sku },
-        className: "relative aspect-square overflow-hidden block",
-        "aria-label": `Ver detalhes de ${product.nomeComercial}`,
-      };
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightbox(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [lightbox]);
 
   return (
     <article className="group flex flex-col rounded-lg bg-surface gold-border gold-border-hover overflow-hidden transition">
-      <ImageWrapper {...imageWrapperProps}>
+      <button
+        type="button"
+        onClick={() => photo && setLightbox(true)}
+        aria-label={`Ampliar foto de ${product.nomeComercial}`}
+        className="relative aspect-square overflow-hidden block w-full text-left cursor-zoom-in"
+      >
         {photo ? (
           <img
             src={photo}
@@ -67,7 +77,43 @@ export function ProductCard({ product }: ProductCardProps) {
           <StockBadge status={product.statusEstoque} />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent pointer-events-none" />
-      </ImageWrapper>
+      </button>
+
+      {lightbox && photo && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]"
+          onClick={() => setLightbox(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightbox(false);
+            }}
+            className="absolute top-4 right-4 rounded-full bg-background/80 hover:bg-background p-2 text-text-primary transition"
+            aria-label="Fechar"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={photo}
+            alt={`${product.nomeComercial} — ${product.corNome}`}
+            className="max-h-[92vh] max-w-[92vw] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none px-4">
+            <div className="text-[10px] uppercase tracking-[0.3em] text-gold">{product.colecao}</div>
+            <div className="font-display text-xl text-text-primary mt-1">
+              {product.nomeComercial}
+            </div>
+            <div className="text-xs text-text-secondary mt-0.5">
+              {product.corNome} · {product.tamanhoNumero}
+            </div>
+          </div>
+        </div>
+      )}
 
 
 
