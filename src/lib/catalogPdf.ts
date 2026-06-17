@@ -401,7 +401,12 @@ function renderProductCell(
   doc.setLineWidth(0.15);
   doc.rect(x, y, w, h);
 
-  const imgH = h * 0.5;
+  // Adapta área da foto conforme nº de campos selecionados (menos campos = foto maior)
+  const extraCount = Array.from(fields).filter(
+    (k) => k !== "nomeComercial" && k !== "descricaoProduto",
+  ).length;
+  const imgFrac = extraCount > 14 ? 0.3 : extraCount > 8 ? 0.36 : extraCount > 4 ? 0.42 : 0.5;
+  const imgH = h * imgFrac;
   const imgBoxX = x + 2;
   const imgBoxY = y + 2;
   const imgBoxW = w - 4;
@@ -422,63 +427,92 @@ function renderProductCell(
   doc.text(`${p.grupo.toUpperCase()} · ${p.corNome}`, x + 3, ty);
   ty += 4;
 
-  // Nome do produto (sempre que selecionado)
   if (fields.has("nomeComercial")) {
     doc.setTextColor(COLORS.black);
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setFont("helvetica", "bold");
     const nome = p.nomeComercial || p.nomeCompleto || p.sku;
     const nomeLines = doc.splitTextToSize(nome, w - 6);
-    doc.text(nomeLines.slice(0, 2), x + 3, ty);
-    ty += (nomeLines.length > 1 ? 7 : 4) + 1;
+    const shown = nomeLines.slice(0, 2);
+    doc.text(shown, x + 3, ty);
+    ty += shown.length * 3.4 + 1;
   }
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.5);
+  const fontSize = extraCount > 10 ? 5.5 : 6;
+  doc.setFontSize(fontSize);
   doc.setTextColor(COLORS.muted);
 
-  // Limite vertical para a área de texto (acima do bloco de preço)
   const priceBlockTop = y + h - 9;
-  const lineH = 3.4;
-  const wrapW = w - 6;
+  const lineH = extraCount > 10 ? 2.7 : 3.1;
 
-  // Demais campos
-  const printedKeys: CatalogFieldKey[] = [];
+  const SHORT_LABELS: Partial<Record<CatalogFieldKey, string>> = {
+    sku: "SKU", ean: "EAN", codCadastro: "Cód.", ncm: "NCM", cest: "CEST",
+    corNome: "Cor", cor: "Cor cód.", estampa: "Estampa", tamanho: "Tam.",
+    referencia: "Ref.", material: "Mat.", materialDescritivo: "Mat. desc.",
+    tipoEmbalagem: "Embal.", dimensoes: "Dim.", peso: "Peso", multiplos: "Múlt.",
+    qtdKit: "Kit", origemFisc: "Orig. fisc.", origemProd: "Orig. prod.",
+    linha: "Linha", categoria: "Cat.", departamento: "Depto.", grupo: "Grupo",
+    tipo: "Tipo", familia: "Família", subColecao2: "Sub-col.",
+  };
+
+  type Row = { label: string; value: string; long: boolean };
+  const rows: Row[] = [];
   for (const f of CATALOG_FIELDS) {
-    if (f.key === "nomeComercial") continue;
-    if (f.key === "descricaoProduto") continue;
+    if (f.key === "nomeComercial" || f.key === "descricaoProduto") continue;
     if (!fields.has(f.key)) continue;
     const v = fieldValue(p, f.key);
     if (!v) continue;
+    const label = SHORT_LABELS[f.key] ?? f.label;
+    rows.push({ label, value: v, long: v.length > 14 });
+  }
+
+  const shortRows = rows.filter((r) => !r.long);
+  const longRows = rows.filter((r) => r.long);
+  const colW = (w - 6) / 2;
+
+  for (let i = 0; i < shortRows.length; i += 2) {
     if (ty + lineH > priceBlockTop) break;
-    // Campos curtos: label inline
-    const inlineLabels: Record<string, string> = {
-      sku: "SKU",
-      ean: "EAN",
-      codCadastro: "Cód.",
-      ncm: "NCM",
-      cest: "CEST",
-    };
-    const label = inlineLabels[f.key];
-    const text = label ? `${label} ${v}` : v;
-    const lines = doc.splitTextToSize(text, wrapW);
+    const a = shortRows[i];
+    const b = shortRows[i + 1];
+    doc.setTextColor(COLORS.muted);
+    doc.text(`${a.label}:`, x + 3, ty);
+    const aLW = doc.getTextWidth(`${a.label}: `);
+    doc.setTextColor(COLORS.text);
+    doc.text(doc.splitTextToSize(a.value, colW - aLW)[0] ?? a.value, x + 3 + aLW, ty);
+    if (b) {
+      doc.setTextColor(COLORS.muted);
+      doc.text(`${b.label}:`, x + 3 + colW, ty);
+      const bLW = doc.getTextWidth(`${b.label}: `);
+      doc.setTextColor(COLORS.text);
+      doc.text(doc.splitTextToSize(b.value, colW - bLW)[0] ?? b.value, x + 3 + colW + bLW, ty);
+    }
+    ty += lineH;
+  }
+
+  for (const r of longRows) {
+    if (ty + lineH > priceBlockTop) break;
+    doc.setTextColor(COLORS.muted);
+    const labelStr = `${r.label}: `;
+    doc.text(labelStr, x + 3, ty);
+    const lw = doc.getTextWidth(labelStr);
+    doc.setTextColor(COLORS.text);
+    const lines = doc.splitTextToSize(r.value, w - 6 - lw);
+    for (let i = 0; i < lines.length; i++) {
+      if (ty + lineH > priceBlockTop) break;
+      doc.text(lines[i], x + 3 + (i === 0 ? lw : 0), ty);
+      ty += lineH;
+    }
+  }
+
+  if (fields.has("descricaoProduto") && p.descricaoProduto && ty + lineH <= priceBlockTop) {
+    doc.setFontSize(Math.max(5, fontSize - 0.5));
+    doc.setTextColor(COLORS.text);
+    const lines = doc.splitTextToSize(p.descricaoProduto, w - 6);
     for (const ln of lines) {
       if (ty + lineH > priceBlockTop) break;
       doc.text(ln, x + 3, ty);
       ty += lineH;
-    }
-    printedKeys.push(f.key);
-  }
-
-  // Descrição (se selecionada e couber)
-  if (fields.has("descricaoProduto") && p.descricaoProduto && ty + lineH <= priceBlockTop) {
-    doc.setFontSize(6);
-    doc.setTextColor(COLORS.text);
-    const lines = doc.splitTextToSize(p.descricaoProduto, wrapW);
-    for (const ln of lines) {
-      if (ty + 3 > priceBlockTop) break;
-      doc.text(ln, x + 3, ty);
-      ty += 3;
     }
   }
 
