@@ -470,6 +470,11 @@ function renderOrderBlockHTML(order: SavedOrder): string {
     } else {
       linhasFin.push(`<div><span>Frete FOB (${fretePctStr}%)</span><b>+ ${formatBRL(c.freteValor ?? 0)}</b></div>`);
     }
+    const provisaoRefHTML = Math.max(0, (order.total ?? 0) - (c.totalFinal ?? 0));
+    if (provisaoRefHTML > 0.01) {
+      linhasFin.push(`<div><span>Subtotal pronta entrega</span><b>${formatBRL(c.totalFinal)}</b></div>`);
+      linhasFin.push(`<div><span>Provisão futura (ref.)</span><b>+ ${formatBRL(provisaoRefHTML)}</b></div>`);
+    }
   }
 
 
