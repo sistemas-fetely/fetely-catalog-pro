@@ -61,7 +61,9 @@ function ProductPage() {
   const photo =
     getProdutoPhoto(photos, product.colecao, product.sku) ??
     getProdutoPhoto(photos, product.colecao, product.corNome);
-  const indisponivel = product.precoAtacado <= 0;
+  const indisponivel = isPublic
+    ? product.precoVarejo <= 0
+    : product.precoAtacado <= 0;
   const canAdd =
     qty > 0 && isValidMultiple(qty, product.multiplos) && !indisponivel;
 
