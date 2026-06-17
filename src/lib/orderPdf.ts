@@ -178,6 +178,13 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
     if (c.aplicouPix && c.bonusPixValor > 0) {
       items.push([`Bônus PIX`, `− ${formatBRL(c.bonusPixValor)}`]);
     }
+    // Frete — sempre exibir (cobrado quando FOB, cortesia/incluso quando CIF)
+    const fretePctStr = (c.fretePercent ?? FRETE_PERCENT).toFixed(1).replace(".", ",");
+    if (c.freteIsento || c.frete === "CIF") {
+      items.push([`Frete CIF (incluso · faixa ${c.faixaNome})`, "Grátis"]);
+    } else {
+      items.push([`Frete FOB (${fretePctStr}%)`, `+ ${formatBRL(c.freteValor ?? 0)}`]);
+    }
 
     doc.setFontSize(8.5);
     doc.setFont("helvetica", "normal");
@@ -450,7 +457,15 @@ function renderOrderBlockHTML(order: SavedOrder): string {
       linhasFin.push(`<div><span>Desconto Master (${c.descontoMasterPct}%)</span><b>− ${formatBRL(c.descontoMasterValor)}</b></div>`);
     if (c.aplicouPix && c.bonusPixValor > 0)
       linhasFin.push(`<div><span>Bônus PIX</span><b>− ${formatBRL(c.bonusPixValor)}</b></div>`);
+    const fretePctStr = (c.fretePercent ?? FRETE_PERCENT).toFixed(1).replace(".", ",");
+    if (c.freteIsento || c.frete === "CIF") {
+      linhasFin.push(`<div><span>Frete CIF (incluso · faixa ${escapeHtml(c.faixaNome)})</span><b>Grátis</b></div>`);
+    } else {
+      linhasFin.push(`<div><span>Frete FOB (${fretePctStr}%)</span><b>+ ${formatBRL(c.freteValor ?? 0)}</b></div>`);
+    }
   }
+
+
 
   const cond: Array<[string, string]> = [];
   if (c) {
