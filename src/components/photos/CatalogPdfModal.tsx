@@ -5,8 +5,12 @@ import { usePhotos } from "@/store/photoStore";
 import {
   buildCatalogPDF,
   downloadCatalogPDF,
+  CATALOG_FIELDS,
+  DEFAULT_FIELDS,
   type CatalogVersion,
+  type CatalogFieldKey,
 } from "@/lib/catalogPdf";
+
 
 interface ColecaoEntry {
   nome: string;
