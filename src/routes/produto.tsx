@@ -29,6 +29,8 @@ function ProductPage() {
   const navigate = useNavigate();
   const products = useCatalog((s) => s.products);
   const addItem = useOrder((s) => s.addItem);
+  const session = useAuth((s) => s.session);
+  const isPublic = !session;
   const photos = usePhotos();
   const [qty, setQty] = useState(0);
 
