@@ -183,13 +183,15 @@ function ProductPage() {
           <div className="flex items-end justify-between gap-4 rounded-lg bg-surface p-4 gold-border">
             <div>
               <div className="text-[10px] uppercase tracking-[0.18em] text-gold-muted">
-                Atacado
+                {isPublic ? "Preço sugerido" : "Atacado"}
               </div>
               <span className="text-3xl font-semibold text-gold leading-none">
-                {indisponivel ? "—" : formatBRL(product.precoAtacado)}
+                {indisponivel
+                  ? "—"
+                  : formatBRL(isPublic ? product.precoVarejo : product.precoAtacado)}
               </span>
             </div>
-            {!indisponivel && product.precoVarejo > 0 && (
+            {!isPublic && !indisponivel && product.precoVarejo > 0 && (
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-[0.18em] text-text-muted">
                   Varejo sugerido
@@ -200,6 +202,8 @@ function ProductPage() {
               </div>
             )}
           </div>
+
+          {!isPublic && (
 
           <div className="space-y-3 rounded-lg bg-surface p-4 gold-border">
             <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-text-muted">
