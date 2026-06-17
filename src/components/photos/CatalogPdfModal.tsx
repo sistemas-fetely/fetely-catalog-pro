@@ -115,7 +115,9 @@ export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
         photos,
         colecoesSelecionadas: colecoes,
         version,
+        fields: Array.from(fields),
         onProgress: (pct, label) => setProgress({ pct, label }),
+
       });
       downloadCatalogPDF(blob, version);
       onClose();
