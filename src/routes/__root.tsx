@@ -191,6 +191,7 @@ function BootEffects() {
         pathname === "/login" ||
         pathname === "/catalog" ||
         pathname.startsWith("/catalog/") ||
+        pathname === "/produto" ||
         pathname === "/stand" ||
         pathname.startsWith("/stand/") ||
         pathname === "/qualificacao";
