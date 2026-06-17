@@ -94,7 +94,7 @@ function CategoriaPage() {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                     {colecoes.map((c) => {
-                      const img = getColecaoPhoto(photos, c.colecao);
+                      const img = getColecaoPhoto(photos, c.colecao, categoria);
                       return (
                         <Link
                           key={c.colecao}
