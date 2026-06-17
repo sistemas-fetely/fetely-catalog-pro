@@ -411,11 +411,10 @@ export function exportarPDF(
     }
   }
   // Frete — sempre exibir (cobrado quando FOB, incluso quando CIF)
-  const fretePctStr = pedido.fretePercent.toFixed(1).replace(".", ",");
   if (pedido.freteIsento || pedido.frete === "CIF") {
     totaisBody.push([`Frete CIF (incluso · faixa ${pedido.faixaNome})`, "Grátis"]);
   } else if (pedido.frete === "FOB") {
-    totaisBody.push([`Frete FOB (${fretePctStr}%)`, `+ ${fmtBRL(pedido.freteValor)}`]);
+    totaisBody.push([`Frete FOB`, `+ ${fmtBRL(pedido.freteValor)}`]);
   }
   totaisBody.push(["TOTAL DO PEDIDO", fmtBRL(pedido.totalLiquido)]);
 
