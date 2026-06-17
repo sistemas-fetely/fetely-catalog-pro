@@ -144,46 +144,70 @@ export function CotacaoDetailDrawer({
         </section>
 
         {/* Resumo financeiro */}
-        <section className="rounded-md gold-border bg-surface p-4 mb-4">
-          <div className="flex justify-between text-xs text-text-secondary mb-1">
-            <span>Bruto</span>
-            <span>{formatBRL(cotacao.commercial?.bruto ?? cotacao.total)}</span>
-          </div>
-          {cotacao.commercial?.descontoCelebraValor ? (
-            <div className="flex justify-between text-xs text-text-secondary mb-1">
-              <span>Desconto Celebra ({cotacao.commercial.descontoCelebraPct}%)</span>
-              <span>− {formatBRL(cotacao.commercial.descontoCelebraValor)}</span>
-            </div>
-          ) : null}
-          {cotacao.commercial?.descontoMasterValor ? (
-            <div className="flex justify-between text-xs text-text-secondary mb-1">
-              <span>Negociação ({cotacao.commercial.descontoMasterPct}%)</span>
-              <span>− {formatBRL(cotacao.commercial.descontoMasterValor)}</span>
-            </div>
-          ) : null}
-          {cotacao.commercial?.frete === "FOB" && (cotacao.commercial?.freteValor ?? 0) > 0 ? (
-            <div className="flex justify-between text-xs text-text-secondary mb-1">
-              <span>
-                Frete FOB
-                {cotacao.commercial?.fretePercent
-                  ? ` (${cotacao.commercial.fretePercent.toFixed(1).replace(".", ",")}%)`
+        {(() => {
+          const c = cotacao.commercial;
+          const prontaTotal = c?.totalFinal ?? cotacao.total;
+          const provisaoRef = Math.max(0, cotacao.total - prontaTotal);
+          const temProvisao = provisaoRef > 0.01;
+          return (
+            <section className="rounded-md gold-border bg-surface p-4 mb-4">
+              <div className="flex justify-between text-xs text-text-secondary mb-1">
+                <span>{temProvisao ? "Bruto (pronta entrega)" : "Bruto"}</span>
+                <span>{formatBRL(c?.bruto ?? cotacao.total)}</span>
+              </div>
+              {c?.descontoCelebraValor ? (
+                <div className="flex justify-between text-xs text-text-secondary mb-1">
+                  <span>Desconto Celebra ({c.descontoCelebraPct}%)</span>
+                  <span>− {formatBRL(c.descontoCelebraValor)}</span>
+                </div>
+              ) : null}
+              {c?.descontoMasterValor ? (
+                <div className="flex justify-between text-xs text-text-secondary mb-1">
+                  <span>Negociação ({c.descontoMasterPct}%)</span>
+                  <span>− {formatBRL(c.descontoMasterValor)}</span>
+                </div>
+              ) : null}
+              {c?.frete === "FOB" && (c?.freteValor ?? 0) > 0 ? (
+                <div className="flex justify-between text-xs text-text-secondary mb-1">
+                  <span>
+                    Frete FOB
+                    {c?.fretePercent
+                      ? ` (${c.fretePercent.toFixed(1).replace(".", ",")}%)`
+                      : ""}
+                  </span>
+                  <span>+ {formatBRL(c.freteValor ?? 0)}</span>
+                </div>
+              ) : null}
+              {temProvisao && (
+                <>
+                  <div className="border-t border-border my-2" />
+                  <div className="flex justify-between text-xs text-text-secondary mb-1">
+                    <span>Subtotal pronta entrega</span>
+                    <span>{formatBRL(prontaTotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-amber-500 mb-1">
+                    <span>Provisão futura (referência)</span>
+                    <span>+ {formatBRL(provisaoRef)}</span>
+                  </div>
+                  <div className="text-[10px] text-text-muted -mt-0.5 mb-1">
+                    Itens de provisão entram pelo preço de referência, sem desconto/frete aplicados.
+                  </div>
+                </>
+              )}
+              <div className="border-t border-border my-2" />
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs uppercase tracking-wider text-text-secondary">Total</span>
+                <span className="font-display text-2xl text-gold">{formatBRL(cotacao.total)}</span>
+              </div>
+              <div className="text-[11px] text-text-muted mt-1">
+                {c?.condicaoDescricao ?? "—"}
+                {c?.frete
+                  ? ` · ${c.frete}${c.frete === "CIF" ? " — Fetély entrega" : " — por conta do lojista"}`
                   : ""}
-              </span>
-              <span>+ {formatBRL(cotacao.commercial.freteValor ?? 0)}</span>
-            </div>
-          ) : null}
-          <div className="border-t border-border my-2" />
-          <div className="flex justify-between items-baseline">
-            <span className="text-xs uppercase tracking-wider text-text-secondary">Total</span>
-            <span className="font-display text-2xl text-gold">{formatBRL(cotacao.total)}</span>
-          </div>
-          <div className="text-[11px] text-text-muted mt-1">
-            {cotacao.commercial?.condicaoDescricao ?? "—"}
-            {cotacao.commercial?.frete
-              ? ` · ${cotacao.commercial.frete}${cotacao.commercial.frete === "CIF" ? " — Fetély entrega" : " — por conta do lojista"}`
-              : ""}
-          </div>
-        </section>
+              </div>
+            </section>
+          );
+        })()}
 
         {cotacao.meta?.observacoes && (
           <section className="rounded-md border border-border bg-surface/40 p-4 mb-4">
