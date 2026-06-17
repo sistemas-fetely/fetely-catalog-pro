@@ -178,6 +178,16 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
     if (c.aplicouPix && c.bonusPixValor > 0) {
       items.push([`Bônus PIX`, `− ${formatBRL(c.bonusPixValor)}`]);
     }
+    // Frete — sempre exibir (cobrado quando FOB, cortesia/incluso quando CIF)
+    const fretePctStr = (c.fretePercent ?? FRETE_PERCENT).toFixed(1).replace(".", ",");
+    if (c.freteIsento) {
+      const motivo = c.freteGratisNegociado
+        ? "cortesia negociada"
+        : `incluso · faixa ${c.faixaNome}`;
+      items.push([`Frete CIF (${motivo})`, "Grátis"]);
+    } else {
+      items.push([`Frete FOB (${fretePctStr}%)`, `+ ${formatBRL(c.freteValor ?? 0)}`]);
+    }
 
     doc.setFontSize(8.5);
     doc.setFont("helvetica", "normal");
