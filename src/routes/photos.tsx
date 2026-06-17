@@ -96,6 +96,8 @@ function PhotosPage() {
       ) : (
         <CorTab products={products} photos={photos} initialColecao={paramCol} initialCategoria={paramCat} />
       )}
+
+      {catalogOpen && <CatalogPdfModal onClose={() => setCatalogOpen(false)} />}
     </main>
   );
 }
