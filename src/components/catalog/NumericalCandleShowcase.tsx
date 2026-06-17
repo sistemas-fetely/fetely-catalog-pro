@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { COLLECTION_ACCENT } from "@/data/products";
 import { formatBRL } from "@/lib/format";
-import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
-import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
+import { ColorVariantChips } from "@/components/catalog/ColorVariantChips";
 import type { Product } from "@/types";
 
 interface Props {
