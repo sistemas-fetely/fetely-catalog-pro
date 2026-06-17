@@ -26,7 +26,6 @@ export function NumericalCandleShowcase({ products, colecao, onColorChange }: Pr
 
   const [color, setColor] = useState<string>("");
   const [size, setSize] = useState<string>("");
-  const photos = usePhotos();
 
   // Sincroniza cor default quando os produtos/carregam mudam
   useEffect(() => {
