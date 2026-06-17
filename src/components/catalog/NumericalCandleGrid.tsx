@@ -72,39 +72,17 @@ export function NumericalCandleGrid({ products, colecao, onColorChange }: Props)
         <div className="text-[10px] uppercase tracking-[0.2em] text-text-muted mb-2">
           Variante de cor
         </div>
-        <div className="flex flex-wrap gap-2">
-          {colors.map((c) => {
-            const photo = getProdutoPhoto(photos, colecao, c);
-            const active = c === color;
-            return (
-              <button
-                key={c}
-                onClick={() => setColor(c)}
-                className={`flex items-center gap-2 pl-1 pr-4 py-1 rounded-full text-xs uppercase tracking-wider border transition ${
-                  active
-                    ? "bg-gold text-background border-gold"
-                    : "border-border text-text-secondary hover:border-gold/60 hover:text-gold-light"
-                }`}
-              >
-                {photo ? (
-                  <img
-                    src={photo}
-                    alt={c}
-                    className="h-8 w-8 rounded-full object-cover flex-shrink-0"
-                  />
-                ) : (
-                  <PhotoPlaceholder
-                    colecao={colecao}
-                    label={c}
-                    className="h-8 w-8 rounded-full flex-shrink-0"
-                    showIcon={false}
-                  />
-                )}
-                <span>{c}</span>
-              </button>
-            );
-          })}
-        </div>
+        <ColorVariantChips
+          colecao={colecao}
+          colors={colors}
+          active={color}
+          onSelect={(c) => {
+            setColor(c);
+            onColorChange?.(c);
+          }}
+          size={48}
+        />
+
       </div>
 
       {/* Seletor de tamanho */}
