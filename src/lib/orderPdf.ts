@@ -463,6 +463,9 @@ function renderOrderBlockHTML(order: SavedOrder): string {
     } else {
       linhasFin.push(`<div><span>Frete FOB (${fretePctStr}%)</span><b>+ ${formatBRL(c.freteValor ?? 0)}</b></div>`);
     }
+  }
+
+
 
   const cond: Array<[string, string]> = [];
   if (c) {
