@@ -27,7 +27,6 @@ export function NumericalCandleGrid({ products, colecao, onColorChange }: Props)
   const [size, setSize] = useState<string>("");
   const [qtys, setQtys] = useState<Record<string, number>>({});
   const addBulk = useOrder((s) => s.addBulk);
-  const photos = usePhotos();
 
   // Sincroniza cor default quando os produtos/carregam mudam
   useEffect(() => {
