@@ -5,7 +5,7 @@ import JSZip from "jszip";
 import FileSaver from "file-saver";
 const { saveAs } = FileSaver;
 import type { SavedOrder, CartItem } from "@/types";
-import { FAIXAS } from "@/lib/commercial";
+import { FAIXAS, FRETE_PERCENT } from "@/lib/commercial";
 
 // ===== Tipos =====
 export interface ItemExportavel {
@@ -72,6 +72,9 @@ export interface PedidoExportavel {
   faixaId: number;
   faixaNome: string;
   frete: "CIF" | "FOB" | "";
+  freteValor: number;
+  fretePercent: number;
+  freteIsento: boolean;
   descontoCelebraPercent: number;
   descontoNegociacaoPercent: number;
   descontoNegociacaoJustificativa?: string;
@@ -197,6 +200,9 @@ export function buildPedidoExportavel(order: SavedOrder): PedidoExportavel {
     faixaId: c?.faixaId ?? 0,
     faixaNome: c?.faixaNome ?? "—",
     frete: c?.frete ?? "",
+    freteValor: c?.freteValor ?? 0,
+    fretePercent: c?.fretePercent ?? FRETE_PERCENT,
+    freteIsento: c?.freteIsento ?? (c?.frete === "CIF"),
     descontoCelebraPercent: c?.descontoCelebraPct ?? 0,
     descontoNegociacaoPercent: c?.descontoMasterPct ?? 0,
     descontoNegociacaoJustificativa: c?.justificativa,
@@ -403,6 +409,13 @@ export function exportarPDF(
     if (pedido.totalDescontoBonusPix > 0) {
       totaisBody.push([`Bônus PIX (${pedido.bonusPixPercent}%)`, `– ${fmtBRL(pedido.totalDescontoBonusPix)}`]);
     }
+  }
+  // Frete — sempre exibir (cobrado quando FOB, incluso quando CIF)
+  const fretePctStr = pedido.fretePercent.toFixed(1).replace(".", ",");
+  if (pedido.freteIsento || pedido.frete === "CIF") {
+    totaisBody.push([`Frete CIF (incluso · faixa ${pedido.faixaNome})`, "Grátis"]);
+  } else if (pedido.frete === "FOB") {
+    totaisBody.push([`Frete FOB (${fretePctStr}%)`, `+ ${fmtBRL(pedido.freteValor)}`]);
   }
   totaisBody.push(["TOTAL DO PEDIDO", fmtBRL(pedido.totalLiquido)]);
 
@@ -728,6 +741,12 @@ function _buildPdfInternal(pedido: PedidoExportavel, tipo: "cliente" | "interno"
     totaisBody.push([`Desconto negociação (${pedido.descontoNegociacaoPercent}%)`, `– ${fmtBRL(pedido.totalDescontoNegociacao)}`]);
   if (pedido.totalDescontoBonusPix > 0)
     totaisBody.push([`Bônus PIX (${pedido.bonusPixPercent}%)`, `– ${fmtBRL(pedido.totalDescontoBonusPix)}`]);
+  const fretePctStr2 = pedido.fretePercent.toFixed(1).replace(".", ",");
+  if (pedido.freteIsento || pedido.frete === "CIF") {
+    totaisBody.push([`Frete CIF (incluso · faixa ${pedido.faixaNome})`, "Grátis"]);
+  } else if (pedido.frete === "FOB") {
+    totaisBody.push([`Frete FOB (${fretePctStr2}%)`, `+ ${fmtBRL(pedido.freteValor)}`]);
+  }
   totaisBody.push(["TOTAL DO PEDIDO", fmtBRL(pedido.totalLiquido)]);
   autoTable(doc, {
     startY: (doc as any).lastAutoTable.finalY + 4, body: totaisBody,
