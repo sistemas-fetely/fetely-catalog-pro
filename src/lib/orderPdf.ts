@@ -186,6 +186,13 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
       items.push([`Frete FOB (${fretePctStr}%)`, `+ ${formatBRL(c.freteValor ?? 0)}`]);
     }
 
+    // Provisão futura (referência) — diferença entre total salvo e totalFinal comercial
+    const provisaoRef = Math.max(0, (order.total ?? 0) - (c.totalFinal ?? 0));
+    if (provisaoRef > 0.01) {
+      items.push(["Subtotal pronta entrega", formatBRL(c.totalFinal)]);
+      items.push(["Provisão futura (ref.)", `+ ${formatBRL(provisaoRef)}`]);
+    }
+
     doc.setFontSize(8.5);
     doc.setFont("helvetica", "normal");
     for (const [label, valor] of items) {
@@ -462,6 +469,11 @@ function renderOrderBlockHTML(order: SavedOrder): string {
       linhasFin.push(`<div><span>Frete CIF (incluso · faixa ${escapeHtml(c.faixaNome)})</span><b>Grátis</b></div>`);
     } else {
       linhasFin.push(`<div><span>Frete FOB (${fretePctStr}%)</span><b>+ ${formatBRL(c.freteValor ?? 0)}</b></div>`);
+    }
+    const provisaoRefHTML = Math.max(0, (order.total ?? 0) - (c.totalFinal ?? 0));
+    if (provisaoRefHTML > 0.01) {
+      linhasFin.push(`<div><span>Subtotal pronta entrega</span><b>${formatBRL(c.totalFinal)}</b></div>`);
+      linhasFin.push(`<div><span>Provisão futura (ref.)</span><b>+ ${formatBRL(provisaoRefHTML)}</b></div>`);
     }
   }
 
