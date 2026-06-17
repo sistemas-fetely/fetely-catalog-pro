@@ -72,6 +72,9 @@ export interface PedidoExportavel {
   faixaId: number;
   faixaNome: string;
   frete: "CIF" | "FOB" | "";
+  freteValor: number;
+  fretePercent: number;
+  freteIsento: boolean;
   descontoCelebraPercent: number;
   descontoNegociacaoPercent: number;
   descontoNegociacaoJustificativa?: string;
