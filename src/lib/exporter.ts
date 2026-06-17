@@ -5,7 +5,7 @@ import JSZip from "jszip";
 import FileSaver from "file-saver";
 const { saveAs } = FileSaver;
 import type { SavedOrder, CartItem } from "@/types";
-import { FAIXAS } from "@/lib/commercial";
+import { FAIXAS, FRETE_PERCENT } from "@/lib/commercial";
 
 // ===== Tipos =====
 export interface ItemExportavel {
