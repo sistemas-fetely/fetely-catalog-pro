@@ -235,6 +235,7 @@ function ProductPage() {
               ← Ver mais da coleção {product.colecao}
             </button>
           </div>
+          )}
         </div>
       </div>
 
