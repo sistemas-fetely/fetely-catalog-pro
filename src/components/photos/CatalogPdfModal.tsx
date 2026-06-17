@@ -166,6 +166,71 @@ export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] uppercase tracking-wider text-text-muted">
+              Campos exibidos ({fields.size})
+            </div>
+            <div className="flex gap-2 text-[11px]">
+              <button
+                onClick={() => setFields(new Set(CATALOG_FIELDS.map((f) => f.key)))}
+                className="text-gold hover:underline"
+              >
+                Todos
+              </button>
+              <span className="text-border">·</span>
+              <button
+                onClick={() => setFields(new Set(DEFAULT_FIELDS))}
+                className="text-text-muted hover:text-text-primary"
+              >
+                Padrão
+              </button>
+              <span className="text-border">·</span>
+              <button
+                onClick={() => setFields(new Set())}
+                className="text-text-muted hover:text-text-primary"
+              >
+                Nenhum
+              </button>
+            </div>
+          </div>
+          <div className="border border-border rounded-md p-3 max-h-44 overflow-y-auto space-y-2">
+            {fieldsByGroup.map(([group, items]) => (
+              <div key={group}>
+                <div className="text-[9px] uppercase tracking-wider text-gold mb-1">
+                  {group}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                  {items.map((f) => {
+                    const on = fields.has(f.key);
+                    return (
+                      <button
+                        key={f.key}
+                        onClick={() => toggleField(f.key)}
+                        className={`flex items-center gap-1.5 rounded px-2 py-1 text-left text-[11px] transition ${
+                          on
+                            ? "border border-gold bg-gold/10"
+                            : "border border-border hover:bg-surface-2"
+                        }`}
+                      >
+                        <span
+                          className={`h-3 w-3 rounded border flex-shrink-0 flex items-center justify-center ${
+                            on ? "border-gold bg-gold" : "border-border"
+                          }`}
+                        >
+                          {on && <Check className="h-2 w-2 text-background" />}
+                        </span>
+                        <span className="truncate">{f.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+
         <div className="flex items-center justify-between">
           <div className="text-[10px] uppercase tracking-wider text-text-muted">
             Coleções ({selected.size} selecionadas)
