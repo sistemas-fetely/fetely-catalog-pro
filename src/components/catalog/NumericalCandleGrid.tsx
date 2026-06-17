@@ -4,8 +4,7 @@ import { StockBadge } from "@/components/ui/StockBadge";
 import { COLLECTION_ACCENT } from "@/data/products";
 import { formatBRL } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
-import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
-import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
+import { ColorVariantChips } from "@/components/catalog/ColorVariantChips";
 import type { Product } from "@/types";
 
 interface Props {
