@@ -111,7 +111,7 @@ function CatalogPage() {
   const handleColorChange = useCallback((c: string) => setActiveColor(c), []);
 
   const colorPhoto = colecao && activeColor ? getProdutoPhoto(photos, colecao, activeColor) : undefined;
-  const heroPhoto = colorPhoto ?? (colecao ? getColecaoPhoto(photos, colecao) : undefined);
+  const heroPhoto = colorPhoto ?? (colecao ? getColecaoPhoto(photos, colecao, categoria || meta?.categoria) : undefined);
 
   return (
     <div className="flex">
