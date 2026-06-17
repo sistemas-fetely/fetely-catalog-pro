@@ -301,7 +301,7 @@ function EmptyState() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {CATS.map((c) => {
             const sampleCol = collections.find((x) => x.categoria === c.nome);
-            const img = sampleCol ? getColecaoPhoto(photos, sampleCol.colecao) : undefined;
+            const img = sampleCol ? getColecaoPhoto(photos, sampleCol.colecao, sampleCol.categoria) : undefined;
             const count = countByCategoria[c.nome] ?? 0;
             return (
               <button
