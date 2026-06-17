@@ -5,6 +5,7 @@ import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { ArrowLeft, ChevronRight, Package } from "lucide-react";
 import { useCatalog } from "@/store/catalogStore";
 import { useOrder } from "@/store/orderStore";
+import { useAuth } from "@/store/authStore";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import { QuantityInput } from "@/components/ui/QuantityInput";
@@ -28,6 +29,8 @@ function ProductPage() {
   const navigate = useNavigate();
   const products = useCatalog((s) => s.products);
   const addItem = useOrder((s) => s.addItem);
+  const session = useAuth((s) => s.session);
+  const isPublic = !session;
   const photos = usePhotos();
   const [qty, setQty] = useState(0);
 
@@ -58,7 +61,9 @@ function ProductPage() {
   const photo =
     getProdutoPhoto(photos, product.colecao, product.sku) ??
     getProdutoPhoto(photos, product.colecao, product.corNome);
-  const indisponivel = product.precoAtacado <= 0;
+  const indisponivel = isPublic
+    ? product.precoVarejo <= 0
+    : product.precoAtacado <= 0;
   const canAdd =
     qty > 0 && isValidMultiple(qty, product.multiplos) && !indisponivel;
 
@@ -178,13 +183,15 @@ function ProductPage() {
           <div className="flex items-end justify-between gap-4 rounded-lg bg-surface p-4 gold-border">
             <div>
               <div className="text-[10px] uppercase tracking-[0.18em] text-gold-muted">
-                Atacado
+                {isPublic ? "Preço sugerido" : "Atacado"}
               </div>
               <span className="text-3xl font-semibold text-gold leading-none">
-                {indisponivel ? "—" : formatBRL(product.precoAtacado)}
+                {indisponivel
+                  ? "—"
+                  : formatBRL(isPublic ? product.precoVarejo : product.precoAtacado)}
               </span>
             </div>
-            {!indisponivel && product.precoVarejo > 0 && (
+            {!isPublic && !indisponivel && product.precoVarejo > 0 && (
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-[0.18em] text-text-muted">
                   Varejo sugerido
@@ -195,6 +202,8 @@ function ProductPage() {
               </div>
             )}
           </div>
+
+          {!isPublic && (
 
           <div className="space-y-3 rounded-lg bg-surface p-4 gold-border">
             <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-text-muted">
@@ -226,6 +235,7 @@ function ProductPage() {
               ← Ver mais da coleção {product.colecao}
             </button>
           </div>
+          )}
         </div>
       </div>
 
