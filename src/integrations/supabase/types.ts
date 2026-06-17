@@ -1125,6 +1125,7 @@ export type Database = {
       }
       photos: {
         Row: {
+          categoria: string | null
           colecao: string
           cor: string | null
           created_at: string
@@ -1135,6 +1136,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          categoria?: string | null
           colecao: string
           cor?: string | null
           created_at?: string
@@ -1145,6 +1147,7 @@ export type Database = {
           url: string
         }
         Update: {
+          categoria?: string | null
           colecao?: string
           cor?: string | null
           created_at?: string

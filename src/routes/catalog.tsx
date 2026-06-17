@@ -111,7 +111,7 @@ function CatalogPage() {
   const handleColorChange = useCallback((c: string) => setActiveColor(c), []);
 
   const colorPhoto = colecao && activeColor ? getProdutoPhoto(photos, colecao, activeColor) : undefined;
-  const heroPhoto = colorPhoto ?? (colecao ? getColecaoPhoto(photos, colecao) : undefined);
+  const heroPhoto = colorPhoto ?? (colecao ? getColecaoPhoto(photos, colecao, categoria || meta?.categoria) : undefined);
 
   return (
     <div className="flex">
@@ -301,7 +301,7 @@ function EmptyState() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {CATS.map((c) => {
             const sampleCol = collections.find((x) => x.categoria === c.nome);
-            const img = sampleCol ? getColecaoPhoto(photos, sampleCol.colecao) : undefined;
+            const img = sampleCol ? getColecaoPhoto(photos, sampleCol.colecao, sampleCol.categoria) : undefined;
             const count = countByCategoria[c.nome] ?? 0;
             return (
               <button
@@ -377,7 +377,7 @@ function EmptyState() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {filtered.map((c) => {
-            const img = getColecaoPhoto(photos, c.colecao);
+            const img = getColecaoPhoto(photos, c.colecao, c.categoria);
             return (
               <Link
                 key={`${c.categoria}::${c.colecao}`}

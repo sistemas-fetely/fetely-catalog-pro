@@ -97,37 +97,47 @@ function ColecaoTab({
   products: ReturnType<typeof useCatalog.getState>["products"];
   photos: ReturnType<typeof usePhotos.getState>;
 }) {
+  // Uma entrada por par (coleção × categoria) para permitir fotos diferentes
+  // quando a mesma coleção aparece em mais de uma categoria (ex.: Spirale).
   const colecoes = useMemo(() => {
-    const set = new Map<string, { categoria: string; grupo: string }>();
+    const map = new Map<string, { nome: string; categoria: string; grupos: Set<string> }>();
     for (const p of products) {
-      if (!set.has(p.colecao)) set.set(p.colecao, { categoria: p.categoria, grupo: p.grupo });
+      const key = `${p.colecao}::${p.categoria}`;
+      const cur = map.get(key);
+      if (cur) {
+        cur.grupos.add(p.grupo);
+      } else {
+        map.set(key, { nome: p.colecao, categoria: p.categoria, grupos: new Set([p.grupo]) });
+      }
     }
-    return Array.from(set.entries())
-      .map(([nome, meta]) => ({ nome, ...meta }))
-      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+    return Array.from(map.entries())
+      .map(([key, v]) => ({ key, ...v, grupo: Array.from(v.grupos).join(" · ") }))
+      .sort((a, b) =>
+        a.nome.localeCompare(b.nome, "pt-BR") || a.categoria.localeCompare(b.categoria, "pt-BR"),
+      );
   }, [products]);
 
-  const [open, setOpen] = useState<string | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
   const setColecaoPhoto = usePhotos((s) => s.setColecaoPhoto);
   const removeColecaoPhoto = usePhotos((s) => s.removeColecaoPhoto);
 
-  const target = colecoes.find((c) => c.nome === open) ?? null;
-  const current = open ? getColecaoPhoto(photos, open) : undefined;
+  const target = colecoes.find((c) => c.key === openKey) ?? null;
+  const current = target ? getColecaoPhoto(photos, target.nome, target.categoria) : undefined;
 
   return (
     <>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {colecoes.map((c) => {
-          const img = getColecaoPhoto(photos, c.nome);
+          const img = getColecaoPhoto(photos, c.nome, c.categoria);
           return (
             <button
-              key={c.nome}
-              onClick={() => setOpen(c.nome)}
+              key={c.key}
+              onClick={() => setOpenKey(c.key)}
               className="text-left rounded-lg overflow-hidden gold-border gold-border-hover bg-surface transition"
             >
               <div className="relative aspect-[4/3]">
                 {img ? (
-                  <img src={img} alt={c.nome} className="h-full w-full object-cover" />
+                  <img src={img} alt={`${c.nome} — ${c.categoria}`} className="h-full w-full object-cover" />
                 ) : (
                   <PhotoPlaceholder colecao={c.nome} className="h-full w-full" />
                 )}
@@ -148,16 +158,16 @@ function ColecaoTab({
       </div>
 
       <PhotoUploadModal
-        open={!!open}
-        onOpenChange={(v) => !v && setOpen(null)}
+        open={!!openKey}
+        onOpenChange={(v) => !v && setOpenKey(null)}
         title={target ? `Foto da coleção ${target.nome}` : ""}
         subtitle={target ? `${target.categoria} · ${target.grupo}` : ""}
         current={current}
         onSave={async (data) => {
-          if (open) await setColecaoPhoto(open, data);
+          if (target) await setColecaoPhoto(target.nome, target.categoria, data);
         }}
         onRemove={current ? async () => {
-          if (open) await removeColecaoPhoto(open);
+          if (target) await removeColecaoPhoto(target.nome, target.categoria);
         } : undefined}
       />
     </>
