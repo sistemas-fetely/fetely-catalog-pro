@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { Camera, AlertTriangle } from "lucide-react";
+import { Camera, AlertTriangle, FileText } from "lucide-react";
 import { useCatalog } from "@/store/catalogStore";
 import {
   usePhotos,
@@ -12,6 +12,7 @@ import {
 } from "@/store/photoStore";
 import { PhotoUploadModal } from "@/components/photos/PhotoUploadModal";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
+import { CatalogPdfModal } from "@/components/photos/CatalogPdfModal";
 
 const searchSchema = z.object({
   tab: fallback(z.enum(["colecao", "cor"]), "colecao").default("colecao"),
