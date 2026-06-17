@@ -180,11 +180,8 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
     }
     // Frete — sempre exibir (cobrado quando FOB, cortesia/incluso quando CIF)
     const fretePctStr = (c.fretePercent ?? FRETE_PERCENT).toFixed(1).replace(".", ",");
-    if (c.freteIsento) {
-      const motivo = c.freteGratisNegociado
-        ? "cortesia negociada"
-        : `incluso · faixa ${c.faixaNome}`;
-      items.push([`Frete CIF (${motivo})`, "Grátis"]);
+    if (c.freteIsento || c.frete === "CIF") {
+      items.push([`Frete CIF (incluso · faixa ${c.faixaNome})`, "Grátis"]);
     } else {
       items.push([`Frete FOB (${fretePctStr}%)`, `+ ${formatBRL(c.freteValor ?? 0)}`]);
     }
