@@ -54,6 +54,68 @@ Deno.serve(async (req) => {
     } catch {
       return jsonResponse(400, { error: "Body JSON malformado" });
     }
+
+    // ── Branch: Farol de Pedidos (proxy leitura → SNCF) ──
+    if (body?.tipo === "farol") {
+      // Guarda de papel: apenas master / admin / vendedor podem acessar o farol
+      const jwtFarol = req.headers.get("Authorization")?.substring(7).trim();
+      if (!jwtFarol) return jsonResponse(401, { error: "JWT ausente" });
+
+      const { data: { user: userFarol }, error: userErrFarol } =
+        await supabase.auth.getUser(jwtFarol);
+      if (userErrFarol || !userFarol) {
+        return jsonResponse(401, { error: "Token inválido" });
+      }
+
+      const { data: rolesData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userFarol.id);
+      const papeis = (rolesData ?? []).map((r: any) => r.role as string);
+      if (!papeis.some((r) => ["master", "admin", "vendedor"].includes(r))) {
+        return jsonResponse(403, { error: "Acesso restrito a usuários internos" });
+      }
+
+      // Lê o token SNCF do cofre (mesma chave usada no envio de pedidos)
+      const { data: senhaSncf, error: vaultErrFarol } = await supabase
+        .rpc("get_vault_secret", { p_name: "SNCF_OUTBOUND_TOKEN" });
+      if (vaultErrFarol || !senhaSncf) {
+        console.error("[enviar-para-sncf] farol: falha ao ler SNCF_OUTBOUND_TOKEN", vaultErrFarol);
+        return jsonResponse(500, { error: "Erro de configuração interna" });
+      }
+
+      const sncfFarolResp = await fetch(SNCF_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${senhaSncf}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tipo: "farol" }),
+      });
+
+      const sncfFarolBody = await sncfFarolResp.json().catch(() => ({
+        error: "Resposta sem JSON do SNCF",
+      }));
+
+      if (!sncfFarolResp.ok) {
+        console.error(
+          "[enviar-para-sncf] farol: SNCF retornou erro",
+          sncfFarolResp.status,
+          sncfFarolBody,
+        );
+        return jsonResponse(500, {
+          error: sncfFarolBody?.error ?? `SNCF retornou HTTP ${sncfFarolResp.status}`,
+        });
+      }
+
+      return jsonResponse(200, {
+        ok: true,
+        pedidos: sncfFarolBody.pedidos ?? [],
+        regua: sncfFarolBody.regua ?? [],
+      });
+    }
+    // ── fim branch farol ──
+
     orderId = body?.order_id;
     if (!orderId) return jsonResponse(400, { error: "order_id obrigatório" });
 
