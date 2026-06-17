@@ -9,15 +9,21 @@ async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
   return res.blob();
 }
 
+function colKey(colecao: string, categoria?: string | null): string {
+  const nc = normalizeKey(colecao);
+  const ncat = categoria ? normalizeKey(categoria) : "";
+  return ncat ? `${nc}__${ncat}` : nc;
+}
+
 interface PhotoState {
-  colecoes: Record<string, string>; // normalized colecao -> public url
+  colecoes: Record<string, string>; // `${nc}` ou `${nc}__${ncat}` -> public url
   produtos: Record<string, string>; // `${nc}__${ncor}` -> public url
-  paths: Record<string, string>; // same keys -> storage path (for delete)
+  paths: Record<string, string>;
   loaded: boolean;
   loading: boolean;
   fetchAll: () => Promise<void>;
-  setColecaoPhoto: (colecao: string, dataUrl: string) => Promise<void>;
-  removeColecaoPhoto: (colecao: string) => Promise<void>;
+  setColecaoPhoto: (colecao: string, categoria: string | null, dataUrl: string) => Promise<void>;
+  removeColecaoPhoto: (colecao: string, categoria: string | null) => Promise<void>;
   setProdutoPhoto: (colecao: string, cor: string, dataUrl: string) => Promise<void>;
   removeProdutoPhoto: (colecao: string, cor: string) => Promise<void>;
 }
@@ -34,7 +40,7 @@ export const usePhotos = create<PhotoState>()((set, get) => ({
     set({ loading: true });
     const { data, error } = await supabase
       .from("photos")
-      .select("kind, colecao, cor, url, path");
+      .select("kind, colecao, categoria, cor, url, path");
     if (error) {
       console.error("photos fetch error", error);
       set({ loading: false });
@@ -44,11 +50,12 @@ export const usePhotos = create<PhotoState>()((set, get) => ({
     const produtos: Record<string, string> = {};
     const paths: Record<string, string> = {};
     for (const row of data ?? []) {
-      const nc = normalizeKey(row.colecao);
       if (row.kind === "colecao") {
-        colecoes[nc] = row.url;
-        paths[`c:${nc}`] = row.path;
+        const k = colKey(row.colecao, (row as any).categoria);
+        colecoes[k] = row.url;
+        paths[`c:${k}`] = row.path;
       } else if (row.kind === "produto" && row.cor) {
+        const nc = normalizeKey(row.colecao);
         const key = `${nc}__${normalizeKey(row.cor)}`;
         produtos[key] = row.url;
         paths[`p:${key}`] = row.path;
@@ -57,9 +64,9 @@ export const usePhotos = create<PhotoState>()((set, get) => ({
     set({ colecoes, produtos, paths, loaded: true, loading: false });
   },
 
-  setColecaoPhoto: async (colecao, dataUrl) => {
-    const nc = normalizeKey(colecao);
-    const path = `colecoes/${nc}-${Date.now()}.jpg`;
+  setColecaoPhoto: async (colecao, categoria, dataUrl) => {
+    const k = colKey(colecao, categoria);
+    const path = `colecoes/${k}-${Date.now()}.jpg`;
     const blob = await dataUrlToBlob(dataUrl);
     const up = await supabase.storage
       .from(BUCKET)
@@ -68,45 +75,47 @@ export const usePhotos = create<PhotoState>()((set, get) => ({
     const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
     const url = pub.publicUrl;
 
-    // Remove old file if exists
-    const oldPath = get().paths[`c:${nc}`];
+    const oldPath = get().paths[`c:${k}`];
 
-    const { error } = await supabase
+    // Delete existing row for this (colecao, categoria) then insert
+    let del = supabase
       .from("photos")
-      .upsert(
-        { kind: "colecao", colecao, cor: null, url, path },
-        { onConflict: "colecao", ignoreDuplicates: false },
-      );
-    // The unique partial index requires a manual merge since onConflict doesn't match partial indexes
-    if (error) {
-      // Fallback: delete existing then insert
-      await supabase.from("photos").delete().eq("kind", "colecao").eq("colecao", colecao);
-      const ins = await supabase
-        .from("photos")
-        .insert({ kind: "colecao", colecao, cor: null, url, path });
-      if (ins.error) throw ins.error;
-    }
+      .delete()
+      .eq("kind", "colecao")
+      .eq("colecao", colecao);
+    del = categoria ? del.eq("categoria", categoria) : del.is("categoria", null);
+    await del;
+    const ins = await supabase
+      .from("photos")
+      .insert({ kind: "colecao", colecao, categoria, cor: null, url, path });
+    if (ins.error) throw ins.error;
 
     if (oldPath && oldPath !== path) {
       await supabase.storage.from(BUCKET).remove([oldPath]);
     }
 
     set((s) => ({
-      colecoes: { ...s.colecoes, [nc]: url },
-      paths: { ...s.paths, [`c:${nc}`]: path },
+      colecoes: { ...s.colecoes, [k]: url },
+      paths: { ...s.paths, [`c:${k}`]: path },
     }));
   },
 
-  removeColecaoPhoto: async (colecao) => {
-    const nc = normalizeKey(colecao);
-    const path = get().paths[`c:${nc}`];
-    await supabase.from("photos").delete().eq("kind", "colecao").eq("colecao", colecao);
+  removeColecaoPhoto: async (colecao, categoria) => {
+    const k = colKey(colecao, categoria);
+    const path = get().paths[`c:${k}`];
+    let del = supabase
+      .from("photos")
+      .delete()
+      .eq("kind", "colecao")
+      .eq("colecao", colecao);
+    del = categoria ? del.eq("categoria", categoria) : del.is("categoria", null);
+    await del;
     if (path) await supabase.storage.from(BUCKET).remove([path]);
     set((s) => {
       const colecoes = { ...s.colecoes };
-      delete colecoes[nc];
+      delete colecoes[k];
       const paths = { ...s.paths };
-      delete paths[`c:${nc}`];
+      delete paths[`c:${k}`];
       return { colecoes, paths };
     });
   },
@@ -172,8 +181,14 @@ export const usePhotos = create<PhotoState>()((set, get) => ({
 export function getColecaoPhoto(
   state: { colecoes: Record<string, string> },
   colecao: string,
+  categoria?: string | null,
 ): string | undefined {
-  return state.colecoes[normalizeKey(colecao)];
+  const nc = normalizeKey(colecao);
+  if (categoria) {
+    const specific = state.colecoes[`${nc}__${normalizeKey(categoria)}`];
+    if (specific) return specific;
+  }
+  return state.colecoes[nc];
 }
 
 export function getProdutoPhoto(
@@ -186,6 +201,5 @@ export function getProdutoPhoto(
 }
 
 export function photoStorageBytes(_state: unknown): number {
-  // Photos now live in remote storage; local usage not tracked.
   return 0;
 }
