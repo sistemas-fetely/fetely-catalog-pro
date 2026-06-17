@@ -36,21 +36,30 @@ function PhotosPage() {
   const navigate = Route.useNavigate();
   const products = useCatalog((s) => s.products);
   const photos = usePhotos();
+  const [catalogOpen, setCatalogOpen] = useState(false);
 
   const bytes = photoStorageBytes(photos);
   const warn = bytes > 4 * 1024 * 1024;
 
   return (
     <main className="mx-auto max-w-[1200px] px-6 py-10">
-      <header className="mb-8">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-gold-muted">
-          Mídia
+      <header className="mb-8 flex items-start justify-between gap-6 flex-wrap">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-gold-muted">
+            Mídia
+          </div>
+          <h1 className="font-display text-4xl mt-1">Gerenciar Fotos</h1>
+          <p className="text-sm text-text-secondary mt-2 max-w-2xl">
+            Suba uma foto principal para cada coleção e fotos específicas por cor.
+            Imagens são redimensionadas (800px / JPEG 80%) e salvas localmente.
+          </p>
         </div>
-        <h1 className="font-display text-4xl mt-1">Gerenciar Fotos</h1>
-        <p className="text-sm text-text-secondary mt-2 max-w-2xl">
-          Suba uma foto principal para cada coleção e fotos específicas por cor.
-          Imagens são redimensionadas (800px / JPEG 80%) e salvas localmente.
-        </p>
+        <button
+          onClick={() => setCatalogOpen(true)}
+          className="flex items-center gap-2 rounded-md bg-gold px-4 py-2.5 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
+        >
+          <FileText className="h-3.5 w-3.5" /> Gerar catálogo PDF
+        </button>
       </header>
 
       {warn && (
