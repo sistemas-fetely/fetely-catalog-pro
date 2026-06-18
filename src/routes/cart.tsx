@@ -845,6 +845,12 @@ function CartPage() {
         />
       )}
 
+      {showSalvarModelo && (
+        <SalvarModeloModal itens={items} onClose={() => setShowSalvarModelo(false)} />
+      )}
+
+
+
       <style>{`
         .input {
           width: 100%;
