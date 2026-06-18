@@ -104,6 +104,8 @@ function CartPage() {
   const [showFinalConfirm, setShowFinalConfirm] = useState(false);
   const [salvandoPedido, setSalvandoPedido] = useState(false);
   const [showSalvarModelo, setShowSalvarModelo] = useState(false);
+  // V21 — modo do desconto por item: "pct" | "abs" (apenas UI; salvo como %)
+  const [descMode, setDescMode] = useState<Record<string, "pct" | "abs">>({});
   const handleCommercialChange = useCallback((s: CommercialState) => setCommercial(s), []);
 
   // V21 — Quando o modo negociação for desligado, limpa overrides por item
