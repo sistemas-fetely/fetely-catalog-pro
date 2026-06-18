@@ -13,6 +13,7 @@ import {
 import appCss from "../styles.css?url";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { FilaDuplicacaoBar } from "@/components/duplicar/FilaDuplicacaoBar";
 import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
 import { usePermissoesStore } from "@/store/permissoesStore";
@@ -153,6 +154,7 @@ function RootComponent() {
       ) : (
         <div className="min-h-screen bg-background text-text-primary pb-16 md:pb-0">
           <Header />
+          <FilaDuplicacaoBar />
           <Outlet />
           <BottomNav />
         </div>

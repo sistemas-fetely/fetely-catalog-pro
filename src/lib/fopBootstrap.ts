@@ -5,6 +5,8 @@ import { useProvisao, provisaoToRow, provisaoItensToRows } from "@/store/provisa
 import { useCartilhas } from "@/store/cartilhasStore";
 import { useCatalog, upsertProductsChunked, productToRow } from "@/store/catalogStore";
 import { usePermissoesStore } from "@/store/permissoesStore";
+import { useGrupos } from "@/store/grupoStore";
+import { useModelos } from "@/store/modeloStore";
 import { PRODUCTS as DEFAULT_PRODUCTS } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import type { SavedOrder } from "@/types";
@@ -38,6 +40,8 @@ export async function bootstrapFopAfterLogin(): Promise<void> {
     useCartilhas.getState().hydrate(),
     useCatalog.getState().hydrate(),
     usePermissoesStore.getState().hidratar(auth.user.id),
+    useGrupos.getState().hydrate(),
+    useModelos.getState().hydrate(),
   ]);
 
   try {
