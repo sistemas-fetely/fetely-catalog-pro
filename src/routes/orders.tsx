@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Download, Eye, Package, Printer, Trash2, UserCog, XCircle, RotateCcw, FileEdit } from "lucide-react";
+import { Download, Eye, Package, Printer, Trash2, UserCog, XCircle, RotateCcw, FileEdit, Copy } from "lucide-react";
 import { printOrdersBatch } from "@/lib/orderPdf";
 import { BotaoEnviarSncf } from "@/components/BotaoEnviarSncf";
 import { formatBRL } from "@/lib/format";
@@ -14,6 +14,7 @@ import { useClientes } from "@/store/clienteStore";
 import { listAppUsers } from "@/lib/users.functions";
 import { ExportModal } from "@/components/export/ExportModal";
 import { ReprovarDialog } from "@/components/ReprovarDialog";
+import { DuplicarPedidoModal } from "@/components/duplicar/DuplicarPedidoModal";
 
 
 export const Route = createFileRoute("/orders")({
@@ -46,6 +47,7 @@ function OrdersPage() {
   const [hydrated, setHydrated] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exportOrders, setExportOrders] = useState<typeof history | null>(null);
+  const [duplicarTarget, setDuplicarTarget] = useState<(typeof history)[number] | null>(null);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   useEffect(() => setHydrated(true), []);
 
@@ -392,6 +394,13 @@ function OrdersPage() {
                         >
                           <Download className="h-3 w-3" />
                         </button>
+                        <button
+                          onClick={() => setDuplicarTarget(o)}
+                          title="Duplicar pedido"
+                          className="inline-flex items-center gap-1 rounded-md gold-border px-2 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </button>
                         <BotaoEnviarSncf orderId={o.id} />
                         <Link
                           to="/confirmation"
@@ -424,6 +433,13 @@ function OrdersPage() {
 
       {exportOrders && (
         <ExportModal orders={exportOrders} onClose={() => setExportOrders(null)} />
+      )}
+
+      {duplicarTarget && (
+        <DuplicarPedidoModal
+          pedidoInicial={duplicarTarget}
+          onClose={() => setDuplicarTarget(null)}
+        />
       )}
 
       <ReprovarDialog
