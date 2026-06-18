@@ -132,6 +132,9 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
     temSolicitacaoAjuste: Boolean(row.tem_solicitacao_ajuste ?? false),
     ajusteMensagem: (row.ajuste_mensagem as string | null) ?? null,
     historico: (row.historico as PedidoHistoricoEvento[] | null) ?? [],
+    duplicadoDe: (row.duplicado_de as string | null) ?? null,
+    modeloOrigemId: (row.modelo_origem_id as string | null) ?? null,
+    grupoOrigemId: (row.grupo_origem_id as string | null) ?? null,
   };
 }
 
@@ -165,6 +168,9 @@ export function orderToRow(o: SavedOrder): Record<string, unknown> {
     origem_perfil: o.origemPerfil ?? "vendedor",
     status_pedido: o.statusPedido ?? "confirmado",
     historico: o.historico ?? [],
+    duplicado_de: o.duplicadoDe ?? null,
+    modelo_origem_id: o.modeloOrigemId ?? null,
+    grupo_origem_id: o.grupoOrigemId ?? null,
   };
 }
 
@@ -416,6 +422,27 @@ export const useOrder = create<OrderState>()(
           console.error("[orderStore] next_order_id RPC falhou, usando fallback timestamp:", err);
         }
 
+        // V19 — Carimba origem de duplicação se houver fila ativa
+        let duplicadoDe: string | null = null;
+        let modeloOrigemId: string | null = null;
+        let grupoOrigemId: string | null = null;
+        try {
+          const { useDuplicacao } = await import("@/store/duplicacaoStore");
+          const dup = useDuplicacao.getState();
+          if (dup.ativo && dup.origem) {
+            const isClienteNaFila = dup.fila.some(
+              (f) => f.clienteId === meta.clienteId && f.status === "pendente",
+            );
+            if (isClienteNaFila) {
+              if (dup.origem.tipo === "pedido") duplicadoDe = dup.origem.refId;
+              if (dup.origem.tipo === "modelo") modeloOrigemId = dup.origem.refId;
+              grupoOrigemId = dup.origem.grupoOrigemId ?? null;
+            }
+          }
+        } catch {
+          /* noop */
+        }
+
         const order: SavedOrder = {
           id: nextId,
           createdAt: new Date().toISOString(),
@@ -427,6 +454,9 @@ export const useOrder = create<OrderState>()(
           vendedorNome: vendedorNomeFinal,
           vendedorLogin: profile?.login_amigavel ?? profile?.email ?? undefined,
           vendedorTipo: profile?.tipo_vendedor ?? null,
+          duplicadoDe,
+          modeloOrigemId,
+          grupoOrigemId,
         };
 
         // ── SAVE NO BANCO COM AWAIT REAL ──
