@@ -205,16 +205,24 @@ export async function orderItemsToRows(o: SavedOrder): Promise<Record<string, un
         `Atualize o catálogo antes de salvar o pedido.`,
     );
   }
-  return o.items.map((it, idx) => ({
-    order_id: o.id,
-    posicao: idx,
-    sku: it.sku,
-    product_id: skuMap[it.sku],
-    product_snapshot: it.product,
-    quantity: it.quantity,
-    preco_unit_atacado: it.product.precoAtacado,
-    subtotal_bruto: it.product.precoAtacado * it.quantity,
-  }));
+  return o.items.map((it, idx) => {
+    const desc = it.descontoItemPct ?? 0;
+    const precoUnitEfetivo = (it.precoOverride ?? it.product.precoAtacado);
+    const subtotalEfetivo = precoUnitEfetivo * it.quantity * (1 - desc / 100);
+    return {
+      order_id: o.id,
+      posicao: idx,
+      sku: it.sku,
+      product_id: skuMap[it.sku],
+      product_snapshot: it.product,
+      quantity: it.quantity,
+      preco_unit_atacado: it.product.precoAtacado, // snapshot do preço de tabela
+      preco_unit_override: it.precoOverride ?? null,
+      desconto_item_pct: it.descontoItemPct ?? null,
+      justificativa_negociacao: it.justificativaNegociacao ?? null,
+      subtotal_bruto: subtotalEfetivo, // contribuição efetiva ao bruto do pedido (já considera override + desconto)
+    };
+  });
 }
 
 const ORDER_ITEMS_PAGE_SIZE = 1000;
