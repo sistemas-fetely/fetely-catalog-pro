@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BarChart3, ChevronDown, ClipboardList, FileClock, FileText, KeyRound, Lock, LogOut, Menu, Moon, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
+import { BarChart3, ChevronDown, ClipboardList, FileClock, FileText, KeyRound, Lock, LogOut, Menu, Moon, Radar, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
 import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
@@ -129,6 +129,12 @@ export function Header() {
                 <Link to="/orders" className={navLinkClass(pathname.startsWith("/orders"))}>
                   <ClipboardList className="h-4 w-4" />
                   <span className="hidden lg:inline px-1 py-1.5">Pedidos</span>
+                </Link>
+              )}
+              {temPermissao("pedidos_lista", "ver") && (
+                <Link to="/farol" className={navLinkClass(pathname.startsWith("/farol"))}>
+                  <Radar className="h-4 w-4" />
+                  <span className="hidden lg:inline px-1 py-1.5">Farol</span>
                 </Link>
               )}
               {temPermissao("cotacoes_lista", "ver") && (

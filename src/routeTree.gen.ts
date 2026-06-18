@@ -22,6 +22,7 @@ import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as NewOrderRouteImport } from './routes/new-order'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ImportRouteImport } from './routes/import'
+import { Route as FarolRouteImport } from './routes/farol'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CotacoesRouteImport } from './routes/cotacoes'
 import { Route as ConfirmationRouteImport } from './routes/confirmation'
@@ -110,6 +111,11 @@ const LoginRoute = LoginRouteImport.update({
 const ImportRoute = ImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FarolRoute = FarolRouteImport.update({
+  id: '/farol',
+  path: '/farol',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -245,6 +251,7 @@ export interface FileRoutesByFullPath {
   '/confirmation': typeof ConfirmationRoute
   '/cotacoes': typeof CotacoesRoute
   '/dashboard': typeof DashboardRoute
+  '/farol': typeof FarolRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
@@ -284,6 +291,7 @@ export interface FileRoutesByTo {
   '/confirmation': typeof ConfirmationRoute
   '/cotacoes': typeof CotacoesRoute
   '/dashboard': typeof DashboardRoute
+  '/farol': typeof FarolRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
@@ -323,6 +331,7 @@ export interface FileRoutesById {
   '/confirmation': typeof ConfirmationRoute
   '/cotacoes': typeof CotacoesRoute
   '/dashboard': typeof DashboardRoute
+  '/farol': typeof FarolRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
@@ -364,6 +373,7 @@ export interface FileRouteTypes {
     | '/confirmation'
     | '/cotacoes'
     | '/dashboard'
+    | '/farol'
     | '/import'
     | '/login'
     | '/new-order'
@@ -403,6 +413,7 @@ export interface FileRouteTypes {
     | '/confirmation'
     | '/cotacoes'
     | '/dashboard'
+    | '/farol'
     | '/import'
     | '/login'
     | '/new-order'
@@ -441,6 +452,7 @@ export interface FileRouteTypes {
     | '/confirmation'
     | '/cotacoes'
     | '/dashboard'
+    | '/farol'
     | '/import'
     | '/login'
     | '/new-order'
@@ -481,6 +493,7 @@ export interface RootRouteChildren {
   ConfirmationRoute: typeof ConfirmationRoute
   CotacoesRoute: typeof CotacoesRoute
   DashboardRoute: typeof DashboardRoute
+  FarolRoute: typeof FarolRoute
   ImportRoute: typeof ImportRoute
   LoginRoute: typeof LoginRoute
   NewOrderRoute: typeof NewOrderRoute
@@ -594,6 +607,13 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/import'
       preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/farol': {
+      id: '/farol'
+      path: '/farol'
+      fullPath: '/farol'
+      preLoaderRoute: typeof FarolRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -818,6 +838,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfirmationRoute: ConfirmationRoute,
   CotacoesRoute: CotacoesRoute,
   DashboardRoute: DashboardRoute,
+  FarolRoute: FarolRoute,
   ImportRoute: ImportRoute,
   LoginRoute: LoginRoute,
   NewOrderRoute: NewOrderRoute,
