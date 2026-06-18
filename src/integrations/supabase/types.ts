@@ -807,10 +807,13 @@ export type Database = {
       }
       order_items: {
         Row: {
+          desconto_item_pct: number | null
           id: string
+          justificativa_negociacao: string | null
           order_id: string
           posicao: number
           preco_unit_atacado: number
+          preco_unit_override: number | null
           product_id: string
           product_snapshot: Json
           quantity: number
@@ -818,10 +821,13 @@ export type Database = {
           subtotal_bruto: number
         }
         Insert: {
+          desconto_item_pct?: number | null
           id?: string
+          justificativa_negociacao?: string | null
           order_id: string
           posicao: number
           preco_unit_atacado: number
+          preco_unit_override?: number | null
           product_id: string
           product_snapshot: Json
           quantity: number
@@ -829,10 +835,13 @@ export type Database = {
           subtotal_bruto: number
         }
         Update: {
+          desconto_item_pct?: number | null
           id?: string
+          justificativa_negociacao?: string | null
           order_id?: string
           posicao?: number
           preco_unit_atacado?: number
+          preco_unit_override?: number | null
           product_id?: string
           product_snapshot?: Json
           quantity?: number
