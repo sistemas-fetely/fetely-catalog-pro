@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/store/authStore";
 import { useClientes, rowToCliente } from "@/store/clienteStore";
@@ -15,6 +15,7 @@ import { ClienteSelector } from "@/components/clientes/ClienteSelector";
 import { MixedCartBanner } from "@/components/cart/MixedCartBanner";
 import { ProvisaoSection } from "@/components/cart/ProvisaoSection";
 import { FinalConfirmModal } from "@/components/cart/FinalConfirmModal";
+import { SalvarModeloModal } from "@/components/duplicar/SalvarModeloModal";
 import { classificarItem, extrairDataPrevisao, compararPrevisao } from "@/lib/classifyItem";
 import { useProvisao } from "@/store/provisaoStore";
 import { useCotacao } from "@/store/cotacaoStore";
