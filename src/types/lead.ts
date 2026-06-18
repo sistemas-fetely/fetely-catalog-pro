@@ -16,7 +16,12 @@ export type LeadStatusCrm =
   | "em_contato"
   | "qualificado"
   | "proposta_enviada"
+  | "agendamento_enviado"
+  | "agendado"
+  | "reuniao_realizada"
+  | "pedido_fechado"
   | "convertido"
+  | "sac"
   | "descartado";
 
 export type LeadOrigem =
