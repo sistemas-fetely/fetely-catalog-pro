@@ -2111,6 +2111,11 @@ export type Database = {
         | "proposta_enviada"
         | "convertido"
         | "descartado"
+        | "agendado"
+        | "agendamento_enviado"
+        | "reuniao_realizada"
+        | "pedido_fechado"
+        | "sac"
       lead_volume_estimado:
         | "ate_2500"
         | "2500_10k"
@@ -2309,6 +2314,11 @@ export const Constants = {
         "proposta_enviada",
         "convertido",
         "descartado",
+        "agendado",
+        "agendamento_enviado",
+        "reuniao_realizada",
+        "pedido_fechado",
+        "sac",
       ],
       lead_volume_estimado: [
         "ate_2500",

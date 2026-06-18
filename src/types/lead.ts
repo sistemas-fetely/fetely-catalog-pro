@@ -16,7 +16,12 @@ export type LeadStatusCrm =
   | "em_contato"
   | "qualificado"
   | "proposta_enviada"
+  | "agendamento_enviado"
+  | "agendado"
+  | "reuniao_realizada"
+  | "pedido_fechado"
   | "convertido"
+  | "sac"
   | "descartado";
 
 export type LeadOrigem =
@@ -104,7 +109,12 @@ export const STATUS_CRM_LABEL: Record<LeadStatusCrm, string> = {
   em_contato: "Em contato",
   qualificado: "Qualificado",
   proposta_enviada: "Proposta enviada",
+  agendamento_enviado: "Agendamento enviado",
+  agendado: "Agendado",
+  reuniao_realizada: "Reunião realizada",
+  pedido_fechado: "Pedido fechado",
   convertido: "Convertido",
+  sac: "SAC",
   descartado: "Descartado",
 };
 
@@ -113,7 +123,12 @@ export const STATUS_CRM_COLOR: Record<LeadStatusCrm, string> = {
   em_contato: "bg-blue-500/15 text-blue-600 border-blue-500/30",
   qualificado: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
   proposta_enviada: "bg-purple-500/15 text-purple-600 border-purple-500/30",
+  agendamento_enviado: "bg-sky-500/15 text-sky-600 border-sky-500/30",
+  agendado: "bg-indigo-500/15 text-indigo-600 border-indigo-500/30",
+  reuniao_realizada: "bg-teal-500/15 text-teal-600 border-teal-500/30",
+  pedido_fechado: "bg-green-600/15 text-green-700 border-green-600/30",
   convertido: "bg-gold/15 text-gold border-gold/30",
+  sac: "bg-rose-500/15 text-rose-600 border-rose-500/30",
   descartado: "bg-muted text-muted-foreground border-border",
 };
 
