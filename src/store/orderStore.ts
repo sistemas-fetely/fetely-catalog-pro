@@ -371,7 +371,7 @@ export const useOrder = create<OrderState>()(
         const items = itemsOverride ?? allItems;
         const total =
           commercial?.totalFinal ??
-          items.reduce((sum, i) => sum + effectiveItemSubtotal_inline(i), 0);
+          items.reduce((sum, i) => sum + effectiveItemSubtotal(i), 0);
 
         // ── GUARD: session pronta e usuário identificado ──
         const auth = useAuth.getState();
@@ -642,7 +642,7 @@ export const useOrder = create<OrderState>()(
         const meta = get().meta;
         const total =
           commercial?.totalFinal ??
-          items.reduce((s, i) => s + effectiveItemSubtotal_inline(i), 0);
+          items.reduce((s, i) => s + effectiveItemSubtotal(i), 0);
 
         let nextId = `PED-${Date.now()}`;
         try {
@@ -758,7 +758,7 @@ export const useOrder = create<OrderState>()(
         const statusFinal: StatusPedido = itensFirmes.length > 0 ? "aprovado" : "convertido";
         const novosItens = itensFirmes.length > 0 ? itensFirmes : order.items;
         const novoTotal = itensFirmes.reduce(
-          (s, i) => s + effectiveItemSubtotal_inline(i),
+          (s, i) => s + effectiveItemSubtotal(i),
           0,
         );
 
