@@ -17,7 +17,7 @@ import {
 } from "@/types/cliente";
 import { formatBRL } from "@/lib/format";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortalAccessTab } from "@/components/clientes/PortalAccessTab";
 import { PremissasComercialTab } from "@/components/clientes/PremissasComercialTab";
 import { statusPremissas, diasParaExpirar, diffPremissas } from "@/lib/premissas";
