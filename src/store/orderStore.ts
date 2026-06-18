@@ -132,6 +132,9 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
     temSolicitacaoAjuste: Boolean(row.tem_solicitacao_ajuste ?? false),
     ajusteMensagem: (row.ajuste_mensagem as string | null) ?? null,
     historico: (row.historico as PedidoHistoricoEvento[] | null) ?? [],
+    duplicadoDe: (row.duplicado_de as string | null) ?? null,
+    modeloOrigemId: (row.modelo_origem_id as string | null) ?? null,
+    grupoOrigemId: (row.grupo_origem_id as string | null) ?? null,
   };
 }
 
@@ -165,6 +168,9 @@ export function orderToRow(o: SavedOrder): Record<string, unknown> {
     origem_perfil: o.origemPerfil ?? "vendedor",
     status_pedido: o.statusPedido ?? "confirmado",
     historico: o.historico ?? [],
+    duplicado_de: o.duplicadoDe ?? null,
+    modelo_origem_id: o.modeloOrigemId ?? null,
+    grupo_origem_id: o.grupoOrigemId ?? null,
   };
 }
 

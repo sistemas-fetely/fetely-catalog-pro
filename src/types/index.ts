@@ -186,6 +186,10 @@ export interface SavedOrder {
   temSolicitacaoAjuste?: boolean;
   ajusteMensagem?: string | null;
   historico?: PedidoHistoricoEvento[];
+  // V19 — Rastreabilidade de duplicação
+  duplicadoDe?: string | null;
+  modeloOrigemId?: string | null;
+  grupoOrigemId?: string | null;
 }
 
 
