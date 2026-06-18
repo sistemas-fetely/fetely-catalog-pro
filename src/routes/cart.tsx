@@ -759,9 +759,10 @@ function CartPage() {
                       resetNegotiation();
                     }
                   }}
-                  className="mt-2 w-full text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-out"
+                  disabled={items.length === 0}
+                  className="mt-2 w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-stock-out/40 px-3 py-1.5 text-[10px] uppercase tracking-wider text-stock-out hover:bg-stock-out/10 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Limpar carrinho
+                  <Trash2 className="h-3 w-3" /> Limpar carrinho
                 </button>
                 <button
                   onClick={() => setShowSalvarModelo(true)}
