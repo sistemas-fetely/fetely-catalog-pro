@@ -1,111 +1,84 @@
-# V19 — Grupos de Clientes + Duplicar Pedido
+# Snapshot de preço + Override por item
 
-Implementação unificada de dois recursos interligados: agrupamento de CNPJs e duplicação de pedidos (mesmo cliente, grupo, manual) com fila de revisão e biblioteca de modelos.
+## Diagnóstico — o que já funciona
 
-## 1. Modelo de dados
+Boa parte do snapshot **já existe** no projeto:
 
-**Novos tipos** (`src/types/grupo.ts`, `src/types/modelo.ts`):
-- `GrupoCliente` — id, nome, descricao, cor, clienteIds[], criadoPorVendedorId, criadoEm, atualizadoEm, ativo
-- `ModeloPedido` — id, nome, descricao, criadoEm, criadoPorVendedorId, itens[{sku, nomeComercial, quantidade}]
+- **`order_items`** já grava `preco_unit_atacado` (preço congelado) e `product_snapshot` (jsonb do produto inteiro) no momento do insert.
+- **`cotacoes.items`** (jsonb) já guarda o `product` completo com `precoAtacado` dentro de cada item — quando você reabre uma cotação, ela lê o preço do snapshot, não o preço vigente. O `ConverterEmPedidoModal` inclusive já carrega `precoAtacadoReferencia` para detectar reajustes.
 
-**Cliente** (`src/types/cliente.ts`): adicionar `gruposIds?: string[]` (derivado — não persistido no cliente; calculado do grupo).
+Ou seja: **cotações e pedidos antigos já estão protegidos** contra reajuste futuro de preços. Não precisa migração nem mudança de fluxo nesse ponto.
 
-**SavedOrder** (`src/types/index.ts`): adicionar `duplicadoDe?`, `modeloOrigemId?`, `grupoOrigemId?`.
+O que falta é (a) garantir que ao **converter cotação em pedido** o snapshot da cotação prevaleça sobre o preço vigente, e (b) adicionar o **override por linha no modo negociação**.
 
-## 2. Persistência
+## Escopo desta entrega
 
-**Tabelas Lovable Cloud:**
-- `grupos_clientes` (id uuid, nome, descricao, cor, cliente_ids uuid[], criado_por_vendedor_id, criado_em, atualizado_em, ativo)
-- `modelos_pedido` (id uuid, nome, descricao, itens jsonb, criado_por_vendedor_id, criado_em)
+### 1. Override de preço/desconto por item (modo negociação)
 
-RLS: vendedor lê/escreve só os próprios; admin/master vê todos (via `has_role`/`is_admin_or_master`). GRANTs para `authenticated` + `service_role`.
+**Tipos** — `src/types/index.ts` (CartItem ganha):
+- `precoOverride?: number` — preço unitário manual
+- `descontoItemPct?: number` — desconto extra por linha (0–100)
+- `justificativaNegociacao?: string` — obrigatória quando qualquer override está ativo
 
-**Colunas em `orders`:** `duplicado_de text`, `modelo_origem_id uuid`, `grupo_origem_id uuid`.
+**Store** — `src/store/orderStore.ts`:
+- Ações: `setItemPrecoOverride`, `setItemDesconto`, `setItemJustificativa`, `clearItemNegociacao`
+- Recalcular subtotal do item: `(precoOverride ?? precoAtacado) * qty * (1 - descontoItemPct/100)`
+- `clearNegociacao` (ao desativar modo) limpa todos os overrides
 
-## 3. Stores
+**UI** — `src/routes/cart.tsx`:
+- Quando `useNegotiation().ativo === true`, cada linha do carrinho mostra dois campos inline editáveis:
+  - "Preço unit." (input numérico, default = preço de tabela)
+  - "Desc. %" (input 0–100)
+- Badge "Negociado" + tooltip com diferença vs. tabela
+- Campo "Justificativa" (textarea pequena) obrigatório por item alterado — bloqueia confirmação se vazio
+- Botão "Resetar item" volta ao preço de tabela
 
-- `src/store/grupoStore.ts` — Zustand + persist + hydrate/upsert/delete (mesmo padrão de `clienteStore`).
-- `src/store/modeloStore.ts` — idem para modelos.
-- `src/store/duplicacaoStore.ts` — fila ativa: `{ origem, itens, fila: {clienteId, status: 'pendente'|'feito'|'pulado', pedidoGerado?}[], indiceAtual }`, com `iniciar()`, `avancar()`, `pular()`, `finalizar()`.
+**Persistência** — migração adiciona a `order_items`:
+- `preco_unit_override numeric NULL`
+- `desconto_item_pct numeric NULL`
+- `justificativa_negociacao text NULL`
+- `preco_unit_efetivo numeric GENERATED` (calculado) — para queries
 
-## 4. UI — Grupos
+Em cotações, os mesmos campos vão dentro do jsonb `items` (sem migração de schema).
 
-**Rota Clientes (`src/routes/clientes.tsx`):** adicionar Tabs no topo `Lista | Grupos`.
+**Auditoria**:
+- `negociacaoLog` já existe; estender `NegociacaoLog` com `overridesPorItem: Array<{sku, precoTabela, precoOverride, descontoPct, justificativa}>`.
 
-**Componentes** (`src/components/grupos/`):
-- `GruposListPage.tsx` — lista com busca, badge de cor, contagem, ações Duplicar/Editar/Excluir.
-- `GrupoFormModal.tsx` — 2 passos (Identidade com seletor de cor; Selecionar Clientes com busca/checkbox).
-- `GrupoBadgeList.tsx` — badges na ficha do cliente (`ClienteFormModal`).
+### 2. Garantia de snapshot na conversão cotação → pedido
 
-## 5. UI — Duplicar Pedido
+`ConverterEmPedidoModal` hoje recarrega produtos vigentes. Ajustar para:
+- Usar `i.product.precoAtacado` (do snapshot da cotação) como preço base no novo pedido.
+- Mostrar aviso visual se o preço vigente diverge do snapshot, mas **não recalcular automaticamente** (regra "congelar tudo" escolhida).
 
-**Componente central** `src/components/duplicar/DuplicarPedidoModal.tsx`:
-- Seção ORIGEM: radio Pedido / Modelo + busca/select.
-- Seção DESTINO: radio Mesmo cliente / Grupo / Manual; lista editável de clientes selecionados (marcador "via grupo").
-- Seção MODO: radio Revisar carrinho (sequencial) / Gerar como cotações.
-- Estado pré-preenchido conforme ponto de entrada.
+## Detalhes técnicos
 
-**Pontos de entrada:**
-- `src/routes/orders.tsx` — botão 📋 por linha + dropdown na ficha.
-- `src/components/grupos/GruposListPage.tsx` — botão "Duplicar pedido p/ grupo".
-- `src/routes/cart.tsx` — botão "💾 Salvar como modelo" (abre `SalvarModeloModal`).
-- `src/routes/new-order.tsx` — botão "Usar modelo".
-
-**Fila de revisão** `src/components/duplicar/FilaDuplicacaoBar.tsx`:
-- Barra fixa no topo enquanto fila ativa, mostrando "[N/M] cliente", botões Revisar/Pular/Pausar.
-- Quando "Revisar agora": navega para `/cart` com itens pré-populados via `cartStore` + `clienteStore` + `negotiationStore` (recalcula faixa/desconto com premissas do cliente destino).
-- Ao confirmar pedido (em `confirmation.tsx`/`orderStore`), se houver fila ativa: marca item como feito, salva `duplicadoDe`/`grupoOrigemId`, avança para próximo.
-- Tela final: `FilaConclusaoModal` com lista de pedidos gerados.
-
-**Modo cotações:** loop que cria N cotações via `cotacaoStore.criar()` com snapshot de cada cliente e itens recalculados; mostra `ConclusaoCotacoesModal`.
-
-## 6. Recálculo
-
-`src/lib/duplicar.ts`:
-```ts
-prepararCarrinhoDuplicado(origem, clienteDestino) {
-  // mapeia itens → preço atual, statusEstoque, ativo
-  // filtra inativos
-  // marca precoAlterado quando diverge do original
-  // NÃO copia faixa/desconto/frete — deixa o cartCommercial recalcular
-}
+**Cálculo do subtotal por item:**
+```text
+precoEfetivo = precoOverride ?? product.precoAtacado
+subtotalItem = precoEfetivo * quantity * (1 - (descontoItemPct ?? 0) / 100)
 ```
 
-Alertas no carrinho: banner "Preço atualizado em X itens", badge âmbar em provisão (já existente), item removido listado em toast inicial.
+O `CartCommercialPanel` (faixas, frete, bonus PIX) continua usando `subtotalBruto = Σ subtotalItem` — toda a régua comercial existente passa a operar sobre o bruto já negociado, sem mudança.
 
-## 7. Rastreabilidade
+**Validação na confirmação do pedido:**
+- Se houver override em alguma linha E `justificativaNegociacao` vazia → bloqueia + toast
+- Se modo negociação não estiver ativo mas houver override → limpar overrides (defensivo)
 
-- `SavedOrder.historico` ganha evento `duplicado` com referência ao original/grupo/modelo.
-- Ficha do pedido (`orders.tsx` drawer): mostra "Duplicado do Pedido #XXXX" e "Parte da duplicação para Rede X (N pedidos)".
+**Permissão:**
+- Override só liberado quando `useNegotiation().ativo === true` (já protegido por senha master)
 
-## 8. Isolamento por vendedor
+## Arquivos afetados
 
-RLS no banco + filtro no store (`useVisibleGrupos`, `useVisibleModelos`) seguindo padrão de `useVisibleClientes`.
+- `src/types/index.ts` — campos novos em CartItem
+- `src/store/orderStore.ts` — ações + recálculo
+- `src/store/negotiationStore.ts` — extensão do log
+- `src/routes/cart.tsx` — UI inline de override
+- `src/components/cart/FinalConfirmModal.tsx` — exibir resumo de negociações por item
+- `src/components/cotacoes/ConverterEmPedidoModal.tsx` — respeitar snapshot
+- `supabase/migrations/<novo>.sql` — colunas em order_items
 
-## Arquivos novos
+## Fora de escopo
 
-- `src/types/grupo.ts`, `src/types/modelo.ts`
-- `src/store/grupoStore.ts`, `src/store/modeloStore.ts`, `src/store/duplicacaoStore.ts`
-- `src/lib/duplicar.ts`
-- `src/components/grupos/{GruposListPage,GrupoFormModal,GrupoBadgeList}.tsx`
-- `src/components/duplicar/{DuplicarPedidoModal,FilaDuplicacaoBar,FilaConclusaoModal,SalvarModeloModal,UsarModeloModal}.tsx`
-- 1 migration (tabelas + colunas em orders + RLS + GRANTs)
-
-## Arquivos alterados
-
-- `src/types/index.ts` (campos de origem em SavedOrder)
-- `src/types/cliente.ts` (gruposIds opcional)
-- `src/routes/clientes.tsx` (tabs)
-- `src/routes/orders.tsx` (botões duplicar + histórico)
-- `src/routes/cart.tsx` (salvar modelo + integração fila)
-- `src/routes/new-order.tsx` (usar modelo)
-- `src/routes/confirmation.tsx` (avança fila ao confirmar)
-- `src/routes/__root.tsx` (FilaDuplicacaoBar global)
-- `src/components/clientes/ClienteFormModal.tsx` (badges de grupo)
-- `src/store/orderStore.ts` (grava duplicadoDe/grupoOrigemId/modeloOrigemId)
-
-## Confirmações antes de prosseguir
-
-1. Posso criar as 2 tabelas novas + colunas em `orders` via migration?
-2. A "fila" durante a revisão sequencial deve persistir entre reloads? (proposta: sim, em localStorage via Zustand persist, para sobreviver a F5).
-3. "Salvar como modelo" no carrinho — captura apenas SKU+qtd (sem preços/condições), correto?
+- Piso por produto (`preco_minimo`) — não foi escolhido
+- UI de auditoria histórica das negociações (log já é gravado, leitura fica para depois)
+- Alteração no fluxo de cotações antigas (snapshot já funciona)

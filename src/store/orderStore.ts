@@ -76,6 +76,12 @@ interface OrderState {
   removeItems: (skus: string[]) => void;
   clearCart: () => void;
   setMeta: (m: Partial<OrderMeta>) => void;
+  // V21 — Negociação por item (modo negociação ativo)
+  setItemPrecoOverride: (sku: string, preco: number | undefined) => void;
+  setItemDescontoPct: (sku: string, pct: number | undefined) => void;
+  setItemJustificativa: (sku: string, texto: string) => void;
+  clearItemNegociacao: (sku: string) => void;
+  clearAllItemNegociacoes: () => void;
   saveOrder: (commercial?: OrderCommercial, itemsOverride?: CartItem[]) => Promise<SavedOrder>;
   reassignOrder: (
     orderId: string,
@@ -139,10 +145,15 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
 }
 
 function rowToItem(row: Record<string, unknown>): CartItem {
+  const override = row.preco_unit_override;
+  const desc = row.desconto_item_pct;
   return {
     sku: row.sku as string,
     product: row.product_snapshot as Product,
     quantity: Number(row.quantity ?? 0),
+    precoOverride: override == null ? undefined : Number(override),
+    descontoItemPct: desc == null ? undefined : Number(desc),
+    justificativaNegociacao: (row.justificativa_negociacao as string | null) ?? undefined,
   };
 }
 
@@ -205,16 +216,24 @@ export async function orderItemsToRows(o: SavedOrder): Promise<Record<string, un
         `Atualize o catálogo antes de salvar o pedido.`,
     );
   }
-  return o.items.map((it, idx) => ({
-    order_id: o.id,
-    posicao: idx,
-    sku: it.sku,
-    product_id: skuMap[it.sku],
-    product_snapshot: it.product,
-    quantity: it.quantity,
-    preco_unit_atacado: it.product.precoAtacado,
-    subtotal_bruto: it.product.precoAtacado * it.quantity,
-  }));
+  return o.items.map((it, idx) => {
+    const desc = it.descontoItemPct ?? 0;
+    const precoUnitEfetivo = (it.precoOverride ?? it.product.precoAtacado);
+    const subtotalEfetivo = precoUnitEfetivo * it.quantity * (1 - desc / 100);
+    return {
+      order_id: o.id,
+      posicao: idx,
+      sku: it.sku,
+      product_id: skuMap[it.sku],
+      product_snapshot: it.product,
+      quantity: it.quantity,
+      preco_unit_atacado: it.product.precoAtacado, // snapshot do preço de tabela
+      preco_unit_override: it.precoOverride ?? null,
+      desconto_item_pct: it.descontoItemPct ?? null,
+      justificativa_negociacao: it.justificativaNegociacao ?? null,
+      subtotal_bruto: subtotalEfetivo, // contribuição efetiva ao bruto do pedido (já considera override + desconto)
+    };
+  });
 }
 
 const ORDER_ITEMS_PAGE_SIZE = 1000;
@@ -353,12 +372,60 @@ export const useOrder = create<OrderState>()(
       },
       clearCart: () => set({ items: [], meta: defaultMeta }),
       setMeta: (m) => set((s) => ({ meta: { ...s.meta, ...m } })),
+      setItemPrecoOverride: (sku, preco) =>
+        set((s) => ({
+          items: s.items.map((i) =>
+            i.sku === sku
+              ? { ...i, precoOverride: preco != null && preco > 0 ? preco : undefined }
+              : i,
+          ),
+        })),
+      setItemDescontoPct: (sku, pct) =>
+        set((s) => ({
+          items: s.items.map((i) =>
+            i.sku === sku
+              ? {
+                  ...i,
+                  descontoItemPct:
+                    pct != null && pct > 0 ? Math.min(100, pct) : undefined,
+                }
+              : i,
+          ),
+        })),
+      setItemJustificativa: (sku, texto) =>
+        set((s) => ({
+          items: s.items.map((i) =>
+            i.sku === sku ? { ...i, justificativaNegociacao: texto } : i,
+          ),
+        })),
+      clearItemNegociacao: (sku) =>
+        set((s) => ({
+          items: s.items.map((i) =>
+            i.sku === sku
+              ? {
+                  ...i,
+                  precoOverride: undefined,
+                  descontoItemPct: undefined,
+                  justificativaNegociacao: undefined,
+                }
+              : i,
+          ),
+        })),
+      clearAllItemNegociacoes: () =>
+        set((s) => ({
+          items: s.items.map((i) => ({
+            ...i,
+            precoOverride: undefined,
+            descontoItemPct: undefined,
+            justificativaNegociacao: undefined,
+          })),
+        })),
       saveOrder: async (commercial, itemsOverride) => {
         const { items: allItems, meta } = get();
         const items = itemsOverride ?? allItems;
         const total =
           commercial?.totalFinal ??
-          items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
+          items.reduce((sum, i) => sum + effectiveItemSubtotal(i), 0);
 
         // ── GUARD: session pronta e usuário identificado ──
         const auth = useAuth.getState();
@@ -629,7 +696,7 @@ export const useOrder = create<OrderState>()(
         const meta = get().meta;
         const total =
           commercial?.totalFinal ??
-          items.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0);
+          items.reduce((s, i) => s + effectiveItemSubtotal(i), 0);
 
         let nextId = `PED-${Date.now()}`;
         try {
@@ -745,7 +812,7 @@ export const useOrder = create<OrderState>()(
         const statusFinal: StatusPedido = itensFirmes.length > 0 ? "aprovado" : "convertido";
         const novosItens = itensFirmes.length > 0 ? itensFirmes : order.items;
         const novoTotal = itensFirmes.reduce(
-          (s, i) => s + i.product.precoAtacado * i.quantity,
+          (s, i) => s + effectiveItemSubtotal(i),
           0,
         );
 
@@ -938,9 +1005,26 @@ export const useOrder = create<OrderState>()(
   ),
 );
 
-export function cartTotal(items: CartItem[]): number {
-  return items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
+/** V21 — preço unitário efetivo após override de negociação por item */
+export function effectiveUnitPrice(item: CartItem): number {
+  return item.precoOverride ?? item.product.precoAtacado;
 }
+
+/** V21 — subtotal por item considerando override + desconto por linha */
+export function effectiveItemSubtotal(item: CartItem): number {
+  const desc = item.descontoItemPct ?? 0;
+  return effectiveUnitPrice(item) * item.quantity * (1 - desc / 100);
+}
+
+/** V21 — true quando o item teve algum ajuste no modo negociação */
+export function hasItemOverride(item: CartItem): boolean {
+  return item.precoOverride !== undefined || (item.descontoItemPct ?? 0) > 0;
+}
+
+export function cartTotal(items: CartItem[]): number {
+  return items.reduce((sum, i) => sum + effectiveItemSubtotal(i), 0);
+}
+
 
 export function useVisibleOrders(opts?: { includeReprovados?: boolean }): SavedOrder[] {
   const history = useOrder((s) => s.history);
