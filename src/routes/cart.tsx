@@ -104,6 +104,8 @@ function CartPage() {
   const [showFinalConfirm, setShowFinalConfirm] = useState(false);
   const [salvandoPedido, setSalvandoPedido] = useState(false);
   const [showSalvarModelo, setShowSalvarModelo] = useState(false);
+  // V21 — modo do desconto por item: "pct" | "abs" (apenas UI; salvo como %)
+  const [descMode, setDescMode] = useState<Record<string, "pct" | "abs">>({});
   const handleCommercialChange = useCallback((s: CommercialState) => setCommercial(s), []);
 
   // V21 — Quando o modo negociação for desligado, limpa overrides por item
@@ -683,22 +685,66 @@ function CartPage() {
                               />
                             </label>
                             <label className="block">
-                              <div className="text-[9px] uppercase tracking-wider text-gold/80 mb-0.5">
-                                Desc. %
+                              <div className="flex items-center justify-between mb-0.5">
+                                <span className="text-[9px] uppercase tracking-wider text-gold/80">
+                                  Desconto
+                                </span>
+                                <div className="inline-flex rounded border border-gold/30 overflow-hidden text-[9px]">
+                                  {(["pct", "abs"] as const).map((m) => {
+                                    const active = (descMode[item.sku] ?? "pct") === m;
+                                    return (
+                                      <button
+                                        key={m}
+                                        type="button"
+                                        onClick={() => setDescMode((p) => ({ ...p, [item.sku]: m }))}
+                                        className={`px-1.5 py-0.5 ${active ? "bg-gold/20 text-gold" : "text-text-muted hover:text-text-primary"}`}
+                                      >
+                                        {m === "pct" ? "%" : "R$"}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
-                              <input
-                                type="number"
-                                step="0.5"
-                                min={0}
-                                max={100}
-                                value={item.descontoItemPct ?? ""}
-                                placeholder="0"
-                                onChange={(e) => {
-                                  const v = e.target.value === "" ? undefined : Number(e.target.value);
-                                  setItemDescontoPct(item.sku, v);
-                                }}
-                                className="input text-sm"
-                              />
+                              {(descMode[item.sku] ?? "pct") === "pct" ? (
+                                <input
+                                  type="number"
+                                  step="0.5"
+                                  min={0}
+                                  max={100}
+                                  value={item.descontoItemPct ?? ""}
+                                  placeholder="0"
+                                  onChange={(e) => {
+                                    const v = e.target.value === "" ? undefined : Number(e.target.value);
+                                    setItemDescontoPct(item.sku, v);
+                                  }}
+                                  className="input text-sm"
+                                />
+                              ) : (
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min={0}
+                                  value={
+                                    item.descontoItemPct != null && item.descontoItemPct > 0
+                                      ? +((precoEfetivo * item.quantity * item.descontoItemPct) / 100).toFixed(2)
+                                      : ""
+                                  }
+                                  placeholder="0,00"
+                                  onChange={(e) => {
+                                    const raw = e.target.value;
+                                    if (raw === "") {
+                                      setItemDescontoPct(item.sku, undefined);
+                                      return;
+                                    }
+                                    const valor = Number(raw);
+                                    const base = precoEfetivo * item.quantity;
+                                    if (base <= 0) return;
+                                    const pct = Math.min(100, Math.max(0, (valor / base) * 100));
+                                    setItemDescontoPct(item.sku, +pct.toFixed(4));
+                                  }}
+                                  className="input text-sm"
+                                />
+                              )}
                             </label>
                             <label className="block">
                               <div className="text-[9px] uppercase tracking-wider text-gold/80 mb-0.5">
