@@ -34,6 +34,7 @@ const ROTAS: RotaProtegida[] = [
   { prefix: "/relatorios", telaId: "relatorios" },
   { prefix: "/analytics", telaId: "relatorios" },
   { prefix: "/orders", telaId: "pedidos_lista" },
+  { prefix: "/farol", telaId: "pedidos_lista" },
   { prefix: "/new-order", telaId: "pedidos_novo", acao: "criar" },
   { prefix: "/cotacoes", telaId: "cotacoes_lista" },
   { prefix: "/provisoes", telaId: "provisoes_lista" },
