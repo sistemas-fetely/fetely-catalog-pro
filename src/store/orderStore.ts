@@ -76,6 +76,12 @@ interface OrderState {
   removeItems: (skus: string[]) => void;
   clearCart: () => void;
   setMeta: (m: Partial<OrderMeta>) => void;
+  // V21 — Negociação por item (modo negociação ativo)
+  setItemPrecoOverride: (sku: string, preco: number | undefined) => void;
+  setItemDescontoPct: (sku: string, pct: number | undefined) => void;
+  setItemJustificativa: (sku: string, texto: string) => void;
+  clearItemNegociacao: (sku: string) => void;
+  clearAllItemNegociacoes: () => void;
   saveOrder: (commercial?: OrderCommercial, itemsOverride?: CartItem[]) => Promise<SavedOrder>;
   reassignOrder: (
     orderId: string,
