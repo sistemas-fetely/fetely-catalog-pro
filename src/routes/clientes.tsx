@@ -195,6 +195,35 @@ function ClientesPage() {
         </div>
       </div>
 
+      <Tabs defaultValue="lista" className="mb-4">
+        <TabsList>
+          <TabsTrigger value="lista">Lista de Clientes</TabsTrigger>
+          <TabsTrigger value="grupos">Grupos</TabsTrigger>
+        </TabsList>
+        <TabsContent value="grupos" className="mt-4">
+          <GruposListPage />
+        </TabsContent>
+        <TabsContent value="lista" className="mt-4">
+          <ClientesListaConteudo
+            all={all}
+            sorted={sorted}
+            enriched={enriched}
+            ativos={ativos}
+            novosEsteMes={novosEsteMes}
+            query={query} setQuery={setQuery}
+            segFilter={segFilter} setSegFilter={setSegFilter}
+            canalFilter={canalFilter} setCanalFilter={setCanalFilter}
+            estadoFilter={estadoFilter} setEstadoFilter={setEstadoFilter}
+            sitFilter={sitFilter} setSitFilter={setSitFilter}
+            vendedorFilter={vendedorFilter} setVendedorFilter={setVendedorFilter}
+            sortBy={sortBy} setSortBy={setSortBy}
+            isAdminOrMaster={isAdminOrMaster} vendedores={vendedores}
+            setSelectedId={setSelectedId}
+          />
+        </TabsContent>
+      </Tabs>
+
+
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <Kpi label="Total de clientes" value={String(all.length)} />
