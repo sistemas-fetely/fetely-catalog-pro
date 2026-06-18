@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { formatBRL } from "@/lib/format";
-import { useOrder, cartTotal } from "@/store/orderStore";
+import { useOrder, cartTotal, effectiveUnitPrice, effectiveItemSubtotal, hasItemOverride } from "@/store/orderStore";
 import { useNegotiation, registrarNegociacao } from "@/store/negotiationStore";
 import { CartCommercialPanel, type CommercialState } from "@/components/cart/CartCommercialPanel";
 import { ClienteSelector } from "@/components/clientes/ClienteSelector";
