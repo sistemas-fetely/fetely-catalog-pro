@@ -587,10 +587,7 @@ function CartPage() {
             </div>
           )}
           {groupedFirmes.map(([col, group]) => {
-            const sub = group.reduce(
-              (s, i) => s + i.quantity * i.product.precoAtacado,
-              0,
-            );
+            const sub = group.reduce((s, i) => s + effectiveItemSubtotal(i), 0);
             return (
               <section key={col} className="rounded-lg gold-border bg-surface overflow-hidden">
                 <header className="flex items-center justify-between gap-3 px-3 py-2.5 sm:px-5 sm:py-3 border-b border-border bg-surface-2">
@@ -601,57 +598,139 @@ function CartPage() {
                   </div>
                 </header>
                 <ul>
-                  {group.map((item) => (
-                    <li
-                      key={item.sku}
-                      className="flex flex-col sm:grid sm:grid-cols-[1fr_140px_140px_40px] sm:items-center gap-3 sm:gap-4 px-3 py-3 sm:px-5 sm:py-4 border-t border-border/50 first:border-t-0"
-                    >
-                      <div className="min-w-0 flex items-start justify-between gap-2 sm:block">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm text-text-primary line-clamp-2 sm:truncate">
-                            {item.product.nomeComercial}
+                  {group.map((item) => {
+                    const precoTabela = item.product.precoAtacado;
+                    const precoEfetivo = effectiveUnitPrice(item);
+                    const subtotal = effectiveItemSubtotal(item);
+                    const negociado = hasItemOverride(item);
+                    return (
+                      <li
+                        key={item.sku}
+                        className={`flex flex-col sm:grid sm:grid-cols-[1fr_140px_140px_40px] sm:items-center gap-3 sm:gap-4 px-3 py-3 sm:px-5 sm:py-4 border-t border-border/50 first:border-t-0 ${negociado ? "bg-gold/[0.03]" : ""}`}
+                      >
+                        <div className="min-w-0 flex items-start justify-between gap-2 sm:block">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm text-text-primary line-clamp-2 sm:truncate flex items-center gap-2">
+                              {item.product.nomeComercial}
+                              {negociado && (
+                                <span className="shrink-0 rounded-sm border border-gold/50 bg-gold/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-gold">
+                                  Negociado
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] font-mono text-text-muted mt-0.5">
+                              {item.product.sku} · Caixa {item.product.multiplos}
+                            </div>
                           </div>
-                          <div className="text-[10px] font-mono text-text-muted mt-0.5">
-                            {item.product.sku} · Caixa {item.product.multiplos}
-                          </div>
+                          <button
+                            onClick={() => removeItem(item.sku)}
+                            className="sm:hidden text-text-muted hover:text-stock-out p-2 -mr-2 -mt-1 shrink-0"
+                            aria-label="Remover"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => removeItem(item.sku)}
-                          className="sm:hidden text-text-muted hover:text-stock-out p-2 -mr-2 -mt-1 shrink-0"
-                          aria-label="Remover"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between gap-3 sm:contents">
-                        <QuantityInput
-                          value={item.quantity}
-                          onChange={(v) => updateQty(item.sku, v)}
-                          multiplos={item.product.multiplos}
-                          compact
-                        />
-                        <div className="text-right">
-                          <div className="text-gold font-medium">
-                            {formatBRL(item.quantity * item.product.precoAtacado)}
+                        <div className="flex items-center justify-between gap-3 sm:contents">
+                          <QuantityInput
+                            value={item.quantity}
+                            onChange={(v) => updateQty(item.sku, v)}
+                            multiplos={item.product.multiplos}
+                            compact
+                          />
+                          <div className="text-right">
+                            <div className="text-gold font-medium">{formatBRL(subtotal)}</div>
+                            <div className="text-[10px] text-text-muted">
+                              {negociado ? (
+                                <>
+                                  <span className="line-through text-text-muted/60">
+                                    {formatBRL(precoTabela)}
+                                  </span>{" "}
+                                  <span className="text-gold">{formatBRL(precoEfetivo)}</span> un.
+                                  {(item.descontoItemPct ?? 0) > 0 && (
+                                    <span className="text-gold"> · −{item.descontoItemPct}%</span>
+                                  )}
+                                </>
+                              ) : (
+                                <>{formatBRL(precoTabela)} un.</>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-[10px] text-text-muted">
-                            {formatBRL(item.product.precoAtacado)} un.
-                          </div>
+                          <button
+                            onClick={() => removeItem(item.sku)}
+                            className="hidden sm:block text-text-muted hover:text-stock-out p-2"
+                            aria-label="Remover"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => removeItem(item.sku)}
-                          className="hidden sm:block text-text-muted hover:text-stock-out p-2"
-                          aria-label="Remover"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </li>
-                  ))}
+                        {negotiationAtivo && (
+                          <div className="sm:col-span-4 rounded-md border border-gold/30 bg-gold/[0.04] p-2.5 mt-1 grid grid-cols-1 sm:grid-cols-[140px_110px_1fr_auto] gap-2 items-start">
+                            <label className="block">
+                              <div className="text-[9px] uppercase tracking-wider text-gold/80 mb-0.5">
+                                Preço unit.
+                              </div>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min={0}
+                                value={item.precoOverride ?? ""}
+                                placeholder={precoTabela.toFixed(2)}
+                                onChange={(e) => {
+                                  const v = e.target.value === "" ? undefined : Number(e.target.value);
+                                  setItemPrecoOverride(item.sku, v);
+                                }}
+                                className="input text-sm"
+                              />
+                            </label>
+                            <label className="block">
+                              <div className="text-[9px] uppercase tracking-wider text-gold/80 mb-0.5">
+                                Desc. %
+                              </div>
+                              <input
+                                type="number"
+                                step="0.5"
+                                min={0}
+                                max={100}
+                                value={item.descontoItemPct ?? ""}
+                                placeholder="0"
+                                onChange={(e) => {
+                                  const v = e.target.value === "" ? undefined : Number(e.target.value);
+                                  setItemDescontoPct(item.sku, v);
+                                }}
+                                className="input text-sm"
+                              />
+                            </label>
+                            <label className="block">
+                              <div className="text-[9px] uppercase tracking-wider text-gold/80 mb-0.5">
+                                Justificativa {negociado && <span className="text-stock-out">*</span>}
+                              </div>
+                              <input
+                                type="text"
+                                value={item.justificativaNegociacao ?? ""}
+                                placeholder="Motivo do ajuste neste item"
+                                onChange={(e) => setItemJustificativa(item.sku, e.target.value)}
+                                className="input text-sm"
+                              />
+                            </label>
+                            {negociado && (
+                              <button
+                                onClick={() => clearItemNegociacao(item.sku)}
+                                className="self-end h-9 rounded-md border border-border px-3 text-[10px] uppercase tracking-wider text-text-muted hover:text-text-primary hover:border-gold/50"
+                                title="Voltar ao preço de tabela"
+                              >
+                                Resetar
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
             );
           })}
+
 
           {itensProvisao.length > 0 && <ProvisaoSection items={itensProvisao} />}
         </div>
