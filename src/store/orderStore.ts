@@ -139,10 +139,15 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
 }
 
 function rowToItem(row: Record<string, unknown>): CartItem {
+  const override = row.preco_unit_override;
+  const desc = row.desconto_item_pct;
   return {
     sku: row.sku as string,
     product: row.product_snapshot as Product,
     quantity: Number(row.quantity ?? 0),
+    precoOverride: override == null ? undefined : Number(override),
+    descontoItemPct: desc == null ? undefined : Number(desc),
+    justificativaNegociacao: (row.justificativa_negociacao as string | null) ?? undefined,
   };
 }
 
