@@ -319,7 +319,7 @@ function FarolPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </div></div>
 
           <p className="text-[11px] text-text-secondary">
             prazo base ≈ {regua.totalDias} dias úteis = {regua.somaInternos} preparação + 8 logística · sábados e domingos não contam
