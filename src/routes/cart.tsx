@@ -98,6 +98,7 @@ function CartPage() {
   const [commercial, setCommercial] = useState<CommercialState | null>(null);
   const [showFinalConfirm, setShowFinalConfirm] = useState(false);
   const [salvandoPedido, setSalvandoPedido] = useState(false);
+  const [showSalvarModelo, setShowSalvarModelo] = useState(false);
   const handleCommercialChange = useCallback((s: CommercialState) => setCommercial(s), []);
 
   // Split firme / provisao
@@ -761,6 +762,13 @@ function CartPage() {
                   className="mt-2 w-full text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-out"
                 >
                   Limpar carrinho
+                </button>
+                <button
+                  onClick={() => setShowSalvarModelo(true)}
+                  disabled={items.length === 0}
+                  className="mt-2 w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-gold/40 px-3 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10 disabled:opacity-40"
+                >
+                  <Save className="h-3 w-3" /> Salvar como modelo
                 </button>
                 {isMisto && (
                   <button
