@@ -399,6 +399,8 @@ function ClientesPage() {
           )}
         </SheetContent>
       </Sheet>
+        </>
+      )}
     </main>
   );
 }
