@@ -938,9 +938,26 @@ export const useOrder = create<OrderState>()(
   ),
 );
 
-export function cartTotal(items: CartItem[]): number {
-  return items.reduce((sum, i) => sum + i.product.precoAtacado * i.quantity, 0);
+/** V21 — preço unitário efetivo após override de negociação por item */
+export function effectiveUnitPrice(item: CartItem): number {
+  return item.precoOverride ?? item.product.precoAtacado;
 }
+
+/** V21 — subtotal por item considerando override + desconto por linha */
+export function effectiveItemSubtotal(item: CartItem): number {
+  const desc = item.descontoItemPct ?? 0;
+  return effectiveUnitPrice(item) * item.quantity * (1 - desc / 100);
+}
+
+/** V21 — true quando o item teve algum ajuste no modo negociação */
+export function hasItemOverride(item: CartItem): boolean {
+  return item.precoOverride !== undefined || (item.descontoItemPct ?? 0) > 0;
+}
+
+export function cartTotal(items: CartItem[]): number {
+  return items.reduce((sum, i) => sum + effectiveItemSubtotal(i), 0);
+}
+
 
 export function useVisibleOrders(opts?: { includeReprovados?: boolean }): SavedOrder[] {
   const history = useOrder((s) => s.history);
