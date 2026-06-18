@@ -271,7 +271,7 @@ function FarolPage() {
             </p>
           </div>
 
-          <div className="space-y-3">
+          <div className="overflow-x-auto"><div className="flex items-start gap-4 min-w-max">
             {/* Preparação interna */}
             <div>
               <p className="text-[11px] uppercase tracking-wider text-text-secondary flex items-center gap-1.5 mb-2">
