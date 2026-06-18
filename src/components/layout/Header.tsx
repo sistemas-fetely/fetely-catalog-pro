@@ -131,6 +131,12 @@ export function Header() {
                   <span className="hidden lg:inline px-1 py-1.5">Pedidos</span>
                 </Link>
               )}
+              {temPermissao("pedidos_lista", "ver") && (
+                <Link to="/farol" className={navLinkClass(pathname.startsWith("/farol"))}>
+                  <Radar className="h-4 w-4" />
+                  <span className="hidden lg:inline px-1 py-1.5">Farol</span>
+                </Link>
+              )}
               {temPermissao("cotacoes_lista", "ver") && (
                 <Link to="/cotacoes" className={navLinkClass(pathname.startsWith("/cotacoes"))}>
                   <FileText className="h-4 w-4" />
