@@ -17,10 +17,11 @@ import {
 } from "@/types/cliente";
 import { formatBRL } from "@/lib/format";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortalAccessTab } from "@/components/clientes/PortalAccessTab";
 import { PremissasComercialTab } from "@/components/clientes/PremissasComercialTab";
 import { statusPremissas, diasParaExpirar, diffPremissas } from "@/lib/premissas";
+import { GruposListPage } from "@/components/grupos/GruposListPage";
 
 export const Route = createFileRoute("/clientes")({
   head: () => ({
@@ -42,6 +43,7 @@ function ClientesPage() {
   const roles = useAuth((s) => s.roles);
   const isAdminOrMaster = roles.includes("admin") || roles.includes("master");
 
+  const [tabAtiva, setTabAtiva] = useState<"lista" | "grupos">("lista");
   const [query, setQuery] = useState("");
   const [segFilter, setSegFilter] = useState<SegmentoCliente | "all">("all");
   const [canalFilter, setCanalFilter] = useState<CanalCliente | "all">("all");
@@ -195,18 +197,19 @@ function ClientesPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="lista" className="mb-4">
+      <Tabs value={tabAtiva} onValueChange={(v) => setTabAtiva(v as "lista" | "grupos")} className="mb-4">
         <TabsList>
           <TabsTrigger value="lista">Lista de Clientes</TabsTrigger>
           <TabsTrigger value="grupos">Grupos</TabsTrigger>
         </TabsList>
-        <TabsContent value="grupos" className="mt-4">
-          <GruposListPage />
-        </TabsContent>
-        <TabsContent value="lista" className="mt-4">
-          <ClientesListaInline />
-        </TabsContent>
       </Tabs>
+
+      {tabAtiva === "grupos" ? (
+        <GruposListPage />
+      ) : (
+        <>
+
+
 
 
 
