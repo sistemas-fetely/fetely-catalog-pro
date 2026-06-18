@@ -204,24 +204,10 @@ function ClientesPage() {
           <GruposListPage />
         </TabsContent>
         <TabsContent value="lista" className="mt-4">
-          <ClientesListaConteudo
-            all={all}
-            sorted={sorted}
-            enriched={enriched}
-            ativos={ativos}
-            novosEsteMes={novosEsteMes}
-            query={query} setQuery={setQuery}
-            segFilter={segFilter} setSegFilter={setSegFilter}
-            canalFilter={canalFilter} setCanalFilter={setCanalFilter}
-            estadoFilter={estadoFilter} setEstadoFilter={setEstadoFilter}
-            sitFilter={sitFilter} setSitFilter={setSitFilter}
-            vendedorFilter={vendedorFilter} setVendedorFilter={setVendedorFilter}
-            sortBy={sortBy} setSortBy={setSortBy}
-            isAdminOrMaster={isAdminOrMaster} vendedores={vendedores}
-            setSelectedId={setSelectedId}
-          />
+          <ClientesListaInline />
         </TabsContent>
       </Tabs>
+
 
 
       {/* KPIs */}
