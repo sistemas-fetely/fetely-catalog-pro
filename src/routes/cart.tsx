@@ -77,6 +77,11 @@ function CartPage() {
   const saveOrderAsCliente = useOrder((s) => s.saveOrderAsCliente);
   const removeItems = useOrder((s) => s.removeItems);
   const clearCart = useOrder((s) => s.clearCart);
+  const setItemPrecoOverride = useOrder((s) => s.setItemPrecoOverride);
+  const setItemDescontoPct = useOrder((s) => s.setItemDescontoPct);
+  const setItemJustificativa = useOrder((s) => s.setItemJustificativa);
+  const clearItemNegociacao = useOrder((s) => s.clearItemNegociacao);
+  const clearAllItemNegociacoes = useOrder((s) => s.clearAllItemNegociacoes);
   const roles = useAuth((s) => s.roles);
   const profile = useAuth((s) => s.profile);
   const clientesAll = useClientes((s) => s.clientes);
