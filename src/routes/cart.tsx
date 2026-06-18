@@ -106,6 +106,16 @@ function CartPage() {
   const [showSalvarModelo, setShowSalvarModelo] = useState(false);
   const handleCommercialChange = useCallback((s: CommercialState) => setCommercial(s), []);
 
+  // V21 — Quando o modo negociação for desligado, limpa overrides por item
+  useEffect(() => {
+    if (!negotiationAtivo) {
+      const hasAny = items.some(hasItemOverride);
+      if (hasAny) clearAllItemNegociacoes();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [negotiationAtivo]);
+
+
   // Split firme / provisao
   const { itensFirmes, itensProvisao } = useMemo(() => {
     const firmes: CartItem[] = [];
