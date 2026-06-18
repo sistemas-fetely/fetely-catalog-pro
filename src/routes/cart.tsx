@@ -268,6 +268,19 @@ function CartPage() {
     if (!commercial?.podeFinalizar || !commercial.calculo.faixa || !commercial.condicao) {
       return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
     }
+
+    // V21 — Negociação por item exige justificativa
+    const itensNegociadosSemJust = [...itensFirmes, ...itensProvisao].filter(
+      (i) => hasItemOverride(i) && !(i.justificativaNegociacao ?? "").trim(),
+    );
+    if (itensNegociadosSemJust.length > 0) {
+      toast.error("Justificativa obrigatória na negociação por item", {
+        description: `Preencha a justificativa de: ${itensNegociadosSemJust.map((i) => i.sku).join(", ")}`,
+        duration: 6000,
+      });
+      return;
+    }
+
     const c = commercial.calculo;
     const faixa = c.faixa!;
     const orderCommercial: OrderCommercial = {
