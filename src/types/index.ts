@@ -67,6 +67,12 @@ export interface CartItem {
   sku: string;
   product: Product;
   quantity: number;
+  /** V21 — Negociação por item: preço unitário manual (override). undefined = usa product.precoAtacado */
+  precoOverride?: number;
+  /** V21 — Negociação por item: desconto extra por linha em %, 0–100 */
+  descontoItemPct?: number;
+  /** V21 — Justificativa obrigatória quando há precoOverride ou descontoItemPct */
+  justificativaNegociacao?: string;
 }
 
 export interface OrderMeta {
