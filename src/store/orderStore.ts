@@ -372,6 +372,54 @@ export const useOrder = create<OrderState>()(
       },
       clearCart: () => set({ items: [], meta: defaultMeta }),
       setMeta: (m) => set((s) => ({ meta: { ...s.meta, ...m } })),
+      setItemPrecoOverride: (sku, preco) =>
+        set((s) => ({
+          items: s.items.map((i) =>
+            i.sku === sku
+              ? { ...i, precoOverride: preco != null && preco > 0 ? preco : undefined }
+              : i,
+          ),
+        })),
+      setItemDescontoPct: (sku, pct) =>
+        set((s) => ({
+          items: s.items.map((i) =>
+            i.sku === sku
+              ? {
+                  ...i,
+                  descontoItemPct:
+                    pct != null && pct > 0 ? Math.min(100, pct) : undefined,
+                }
+              : i,
+          ),
+        })),
+      setItemJustificativa: (sku, texto) =>
+        set((s) => ({
+          items: s.items.map((i) =>
+            i.sku === sku ? { ...i, justificativaNegociacao: texto } : i,
+          ),
+        })),
+      clearItemNegociacao: (sku) =>
+        set((s) => ({
+          items: s.items.map((i) =>
+            i.sku === sku
+              ? {
+                  ...i,
+                  precoOverride: undefined,
+                  descontoItemPct: undefined,
+                  justificativaNegociacao: undefined,
+                }
+              : i,
+          ),
+        })),
+      clearAllItemNegociacoes: () =>
+        set((s) => ({
+          items: s.items.map((i) => ({
+            ...i,
+            precoOverride: undefined,
+            descontoItemPct: undefined,
+            justificativaNegociacao: undefined,
+          })),
+        })),
       saveOrder: async (commercial, itemsOverride) => {
         const { items: allItems, meta } = get();
         const items = itemsOverride ?? allItems;
