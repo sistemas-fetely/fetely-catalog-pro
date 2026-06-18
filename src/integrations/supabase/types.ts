@@ -533,6 +533,42 @@ export type Database = {
         }
         Relationships: []
       }
+      grupos_clientes: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          cliente_ids: string[]
+          cor: string
+          criado_em: string
+          criado_por_vendedor_id: string
+          descricao: string | null
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          cliente_ids?: string[]
+          cor?: string
+          criado_em?: string
+          criado_por_vendedor_id: string
+          descricao?: string | null
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          cliente_ids?: string[]
+          cor?: string
+          criado_em?: string
+          criado_por_vendedor_id?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       lead_grupos_campanha: {
         Row: {
           criado_em: string
@@ -739,6 +775,36 @@ export type Database = {
         }
         Relationships: []
       }
+      modelos_pedido: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          criado_por_vendedor_id: string
+          descricao: string | null
+          id: string
+          itens: Json
+          nome: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por_vendedor_id: string
+          descricao?: string | null
+          id?: string
+          itens?: Json
+          nome: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por_vendedor_id?: string
+          descricao?: string | null
+          id?: string
+          itens?: Json
+          nome?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           id: string
@@ -801,11 +867,14 @@ export type Database = {
           cliente_snapshot: Json | null
           commercial: Json | null
           created_at: string
+          duplicado_de: string | null
           forma_pagamento: string | null
           frete: string | null
+          grupo_origem_id: string | null
           historico: Json
           id: string
           meta: Json
+          modelo_origem_id: string | null
           origem_perfil: string
           provisao_origem_id: string | null
           recusado_em: string | null
@@ -849,11 +918,14 @@ export type Database = {
           cliente_snapshot?: Json | null
           commercial?: Json | null
           created_at?: string
+          duplicado_de?: string | null
           forma_pagamento?: string | null
           frete?: string | null
+          grupo_origem_id?: string | null
           historico?: Json
           id: string
           meta: Json
+          modelo_origem_id?: string | null
           origem_perfil?: string
           provisao_origem_id?: string | null
           recusado_em?: string | null
@@ -897,11 +969,14 @@ export type Database = {
           cliente_snapshot?: Json | null
           commercial?: Json | null
           created_at?: string
+          duplicado_de?: string | null
           forma_pagamento?: string | null
           frete?: string | null
+          grupo_origem_id?: string | null
           historico?: Json
           id?: string
           meta?: Json
+          modelo_origem_id?: string | null
           origem_perfil?: string
           provisao_origem_id?: string | null
           recusado_em?: string | null
