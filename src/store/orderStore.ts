@@ -495,6 +495,17 @@ export const useOrder = create<OrderState>()(
         // ── SÓ ADICIONA AO HISTORY APÓS SUCESSO NO BANCO ──
         set((s) => ({ history: [order, ...s.history].slice(0, 200) }));
 
+        // V19 — Marca cliente como concluído na fila de duplicação, se aplicável
+        if (order.duplicadoDe || order.modeloOrigemId) {
+          try {
+            const { useDuplicacao } = await import("@/store/duplicacaoStore");
+            const dup = useDuplicacao.getState();
+            if (dup.ativo && meta.clienteId) {
+              dup.marcarFeito(meta.clienteId, order.id);
+            }
+          } catch { /* noop */ }
+        }
+
         return order;
       },
       reassignOrder: (orderId, novo) => {
