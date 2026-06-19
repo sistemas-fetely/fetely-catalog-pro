@@ -155,19 +155,6 @@ export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-gold">
-              <FileText className="h-3 w-3" /> Catálogo PDF
-            </div>
-            <h3 className="font-display text-2xl mt-1">Gerar catálogo</h3>
-            <p className="text-xs text-text-secondary mt-1">
-              Selecione as coleções e a versão desejada.
-            </p>
-          </div>
-          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-gold">
               <FileText className="h-3 w-3" /> Catálogo
             </div>
             <h3 className="font-display text-2xl mt-1">Gerar catálogo</h3>
@@ -210,6 +197,22 @@ export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
             </label>
           )}
         </div>
+
+        <div className="space-y-2">
+          <div className="text-[10px] uppercase tracking-wider text-text-muted">Versão</div>
+          <div className="grid grid-cols-2 gap-2">
+            <VersionOpt
+              active={version === "cliente"}
+              onClick={() => setVersion("cliente")}
+              title="Cliente"
+              hint="Apenas preço sugerido (varejo)"
+            />
+            <VersionOpt
+              active={version === "interno"}
+              onClick={() => setVersion("interno")}
+              title="Interno"
+              hint="Atacado + varejo"
+            />
           </div>
         </div>
 
