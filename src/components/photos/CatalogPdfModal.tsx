@@ -378,8 +378,12 @@ export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
             disabled={busy || selected.size === 0}
             className="flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light disabled:opacity-50"
           >
-            <FileText className="h-3.5 w-3.5" />
-            {busy ? "Gerando..." : "Gerar PDF"}
+            {format === "pdf" ? (
+              <FileText className="h-3.5 w-3.5" />
+            ) : (
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+            )}
+            {busy ? "Gerando..." : `Gerar ${format === "pdf" ? "PDF" : "Excel"}`}
           </button>
         </div>
       </div>
@@ -411,3 +415,34 @@ function VersionOpt({
     </button>
   );
 }
+
+function FormatOpt({
+  active,
+  onClick,
+  icon,
+  title,
+  hint,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  title: string;
+  hint: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-start gap-2.5 rounded-md border px-3 py-2.5 text-left transition ${
+        active ? "border-gold bg-gold/10" : "border-border hover:bg-surface-2"
+      }`}
+    >
+      <span className={active ? "text-gold mt-0.5" : "text-text-muted mt-0.5"}>{icon}</span>
+      <span>
+        <span className="block text-sm font-medium">{title}</span>
+        <span className="block text-[11px] text-text-muted">{hint}</span>
+      </span>
+    </button>
+  );
+}
+
