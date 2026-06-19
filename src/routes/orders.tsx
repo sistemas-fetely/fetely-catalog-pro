@@ -489,6 +489,16 @@ function OrdersPage() {
         />
       )}
 
+      {canalTarget && (
+        <CanalDialog
+          open={!!canalTarget}
+          onClose={() => setCanalTarget(null)}
+          sncfPedidoId={canalTarget.sncfPedidoId}
+          numeroPedido={canalTarget.numero}
+          nomeCliente={canalTarget.cliente}
+        />
+      )}
+
       <ReprovarDialog
         open={!!reprovarTarget}
         onOpenChange={(o) => !o && setReprovarTarget(null)}
