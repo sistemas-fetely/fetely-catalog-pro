@@ -167,21 +167,49 @@ export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-gold">
+              <FileText className="h-3 w-3" /> Catálogo
+            </div>
+            <h3 className="font-display text-2xl mt-1">Gerar catálogo</h3>
+            <p className="text-xs text-text-secondary mt-1">
+              Selecione o formato, as coleções e a versão desejada.
+            </p>
+          </div>
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
         <div className="space-y-2">
-          <div className="text-[10px] uppercase tracking-wider text-text-muted">Versão</div>
+          <div className="text-[10px] uppercase tracking-wider text-text-muted">Formato</div>
           <div className="grid grid-cols-2 gap-2">
-            <VersionOpt
-              active={version === "cliente"}
-              onClick={() => setVersion("cliente")}
-              title="Cliente"
-              hint="Apenas preço sugerido (varejo)"
+            <FormatOpt
+              active={format === "pdf"}
+              onClick={() => setFormat("pdf")}
+              icon={<FileText className="h-4 w-4" />}
+              title="PDF"
+              hint="Layout impresso com fotos"
             />
-            <VersionOpt
-              active={version === "interno"}
-              onClick={() => setVersion("interno")}
-              title="Interno"
-              hint="Atacado + varejo"
+            <FormatOpt
+              active={format === "xlsx"}
+              onClick={() => setFormat("xlsx")}
+              icon={<FileSpreadsheet className="h-4 w-4" />}
+              title="Excel (XLSX)"
+              hint="Planilha editável, filtros e fotos"
             />
+          </div>
+          {format === "xlsx" && (
+            <label className="flex items-center gap-2 text-xs text-text-secondary pt-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includePhotosXlsx}
+                onChange={(e) => setIncludePhotosXlsx(e.target.checked)}
+                className="accent-gold"
+              />
+              Incluir fotos dos produtos na planilha
+            </label>
+          )}
+        </div>
           </div>
         </div>
 
