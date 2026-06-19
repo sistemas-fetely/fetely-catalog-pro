@@ -193,6 +193,7 @@ export interface SavedOrder {
   ajusteMensagem?: string | null;
   historico?: PedidoHistoricoEvento[];
   // V19 — Rastreabilidade de duplicação
+  sncfPedidoId?: string | null;
   duplicadoDe?: string | null;
   modeloOrigemId?: string | null;
   grupoOrigemId?: string | null;
