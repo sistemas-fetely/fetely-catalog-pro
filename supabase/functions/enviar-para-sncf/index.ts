@@ -116,6 +116,75 @@ Deno.serve(async (req) => {
     }
     // ── fim branch farol ──
 
+    // ── Branch: Canal por Pedido — proxy FOP → SNCF ──
+    if (
+      body?.tipo === "canal_criar" ||
+      body?.tipo === "canal_listar" ||
+      body?.tipo === "canal_badges"
+    ) {
+      // Guarda de papel: apenas usuários internos (master/admin/vendedor)
+      const jwtCanal = req.headers.get("Authorization")?.substring(7).trim();
+      if (!jwtCanal) return jsonResponse(401, { error: "JWT ausente" });
+
+      const { data: { user: userCanal }, error: userErrCanal } =
+        await supabase.auth.getUser(jwtCanal);
+      if (userErrCanal || !userCanal) {
+        return jsonResponse(401, { error: "Token inválido" });
+      }
+
+      const { data: rolesCanal } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userCanal.id);
+      const papeisCanal = (rolesCanal ?? []).map((r: any) => r.role as string);
+      if (!papeisCanal.some((r) => ["master", "admin", "vendedor"].includes(r))) {
+        return jsonResponse(403, { error: "Acesso restrito a usuários internos" });
+      }
+
+      // Token SNCF do cofre
+      const { data: senhaCanalSncf, error: vaultErrCanal } = await supabase
+        .rpc("get_vault_secret", { p_name: "SNCF_OUTBOUND_TOKEN" });
+      if (vaultErrCanal || !senhaCanalSncf) {
+        console.error("[enviar-para-sncf] canal: falha ao ler SNCF_OUTBOUND_TOKEN", vaultErrCanal);
+        return jsonResponse(500, { error: "Erro de configuração interna" });
+      }
+
+      // Monta body para o SNCF
+      const canalForward: Record<string, unknown> = { tipo: body.tipo };
+      if (body?.sncf_pedido_id) canalForward.sncf_pedido_id = body.sncf_pedido_id;
+      if (body?.tipo === "canal_criar") {
+        canalForward.texto = body?.texto ?? "";
+        canalForward.autor_nome = userCanal.email ?? "Comercial";
+      }
+
+      const sncfCanalResp = await fetch(SNCF_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${senhaCanalSncf}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(canalForward),
+      });
+
+      const sncfCanalBody = await sncfCanalResp.json().catch(() => ({
+        error: "Resposta sem JSON do SNCF",
+      }));
+
+      if (!sncfCanalResp.ok) {
+        console.error(
+          "[enviar-para-sncf] canal: SNCF retornou erro",
+          sncfCanalResp.status,
+          sncfCanalBody,
+        );
+        return jsonResponse(500, {
+          error: sncfCanalBody?.error ?? `SNCF retornou HTTP ${sncfCanalResp.status}`,
+        });
+      }
+
+      return jsonResponse(200, { ok: true, ...sncfCanalBody });
+    }
+    // ── fim branch canal ──
+
     orderId = body?.order_id;
     if (!orderId) return jsonResponse(400, { error: "order_id obrigatório" });
 
