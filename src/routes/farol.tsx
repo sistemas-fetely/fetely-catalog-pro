@@ -136,6 +136,25 @@ function FarolPage() {
   const [filtroPrazo, setFiltroPrazo] = useState("todos");
   const [filtroBloqueio, setFiltroBloqueio] = useState("todos");
 
+  const [canalTarget, setCanalTarget] = useState<{
+    sncfPedidoId: string;
+    numero: string;
+    cliente: string;
+  } | null>(null);
+
+  const { data: badgesData } = useQuery({
+    queryKey: ["canal_badges"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("enviar-para-sncf", {
+        body: { tipo: "canal_badges" },
+      });
+      if (error) return {} as Record<string, number>;
+      return (data?.badges ?? {}) as Record<string, number>;
+    },
+    refetchInterval: 60_000,
+  });
+  const badges: Record<string, number> = badgesData ?? {};
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["farol_pedidos"],
     queryFn: async () => {
