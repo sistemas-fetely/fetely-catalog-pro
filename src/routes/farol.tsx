@@ -567,7 +567,7 @@ function FarolPage() {
       {canalTarget && (
         <CanalDialog
           open={!!canalTarget}
-          onOpenChange={(o) => !o && setCanalTarget(null)}
+          onClose={() => setCanalTarget(null)}
           sncfPedidoId={canalTarget.sncfPedidoId}
           numeroPedido={canalTarget.numero}
           nomeCliente={canalTarget.cliente}
