@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Download, Eye, Package, Printer, Trash2, UserCog, XCircle, RotateCcw, FileEdit, Copy } from "lucide-react";
+import { Download, Eye, Package, Printer, Trash2, UserCog, XCircle, RotateCcw, FileEdit, Copy, MessageCircle } from "lucide-react";
 import { printOrdersBatch } from "@/lib/orderPdf";
 import { BotaoEnviarSncf } from "@/components/BotaoEnviarSncf";
 import { formatBRL } from "@/lib/format";
@@ -15,6 +15,8 @@ import { listAppUsers } from "@/lib/users.functions";
 import { ExportModal } from "@/components/export/ExportModal";
 import { ReprovarDialog } from "@/components/ReprovarDialog";
 import { DuplicarPedidoModal } from "@/components/duplicar/DuplicarPedidoModal";
+import { supabase } from "@/integrations/supabase/client";
+import { CanalDialog } from "@/components/canal/CanalDialog";
 
 
 export const Route = createFileRoute("/orders")({
@@ -48,6 +50,24 @@ function OrdersPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exportOrders, setExportOrders] = useState<typeof history | null>(null);
   const [duplicarTarget, setDuplicarTarget] = useState<(typeof history)[number] | null>(null);
+  const [canalTarget, setCanalTarget] = useState<{
+    sncfPedidoId: string;
+    numero: string;
+    cliente: string;
+  } | null>(null);
+
+  const { data: badgesData } = useQuery({
+    queryKey: ["canal_badges"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("enviar-para-sncf", {
+        body: { tipo: "canal_badges" },
+      });
+      if (error) return {} as Record<string, number>;
+      return (data?.badges ?? {}) as Record<string, number>;
+    },
+    refetchInterval: 60_000,
+  });
+  const badges: Record<string, number> = badgesData ?? {};
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   useEffect(() => setHydrated(true), []);
 
@@ -402,6 +422,33 @@ function OrdersPage() {
                           <Copy className="h-3 w-3" />
                         </button>
                         <BotaoEnviarSncf orderId={o.id} />
+                        {o.sncfPedidoId && (
+                          <button
+                            onClick={() =>
+                              setCanalTarget({
+                                sncfPedidoId: o.sncfPedidoId!,
+                                numero: o.id.slice(0, 8).toUpperCase(),
+                                cliente: o.meta?.cliente ?? "—",
+                              })
+                            }
+                            title={
+                              badges[o.sncfPedidoId]
+                                ? `${badges[o.sncfPedidoId]} resposta(s) não lida(s) do SOPS`
+                                : "Canal com SOPS"
+                            }
+                            className="relative inline-flex items-center justify-center w-7 h-7 rounded-md border hover:bg-muted transition-colors"
+                            style={
+                              badges[o.sncfPedidoId]
+                                ? { color: "#185FA5", borderColor: "#85B7EB" }
+                                : { color: "var(--color-text-secondary)", borderColor: "var(--color-border-secondary)" }
+                            }
+                          >
+                            <MessageCircle className="h-3.5 w-3.5" />
+                            {(badges[o.sncfPedidoId] ?? 0) > 0 && (
+                              <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            )}
+                          </button>
+                        )}
                         <Link
                           to="/confirmation"
                           search={{ id: o.id }}
@@ -439,6 +486,16 @@ function OrdersPage() {
         <DuplicarPedidoModal
           pedidoInicial={duplicarTarget}
           onClose={() => setDuplicarTarget(null)}
+        />
+      )}
+
+      {canalTarget && (
+        <CanalDialog
+          open={!!canalTarget}
+          onClose={() => setCanalTarget(null)}
+          sncfPedidoId={canalTarget.sncfPedidoId}
+          numeroPedido={canalTarget.numero}
+          nomeCliente={canalTarget.cliente}
         />
       )}
 
