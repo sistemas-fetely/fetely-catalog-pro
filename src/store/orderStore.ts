@@ -138,6 +138,7 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
     temSolicitacaoAjuste: Boolean(row.tem_solicitacao_ajuste ?? false),
     ajusteMensagem: (row.ajuste_mensagem as string | null) ?? null,
     historico: (row.historico as PedidoHistoricoEvento[] | null) ?? [],
+    sncfPedidoId: (row.sncf_pedido_id as string | null) ?? null,
     duplicadoDe: (row.duplicado_de as string | null) ?? null,
     modeloOrigemId: (row.modelo_origem_id as string | null) ?? null,
     grupoOrigemId: (row.grupo_origem_id as string | null) ?? null,
