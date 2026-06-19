@@ -49,6 +49,8 @@ export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [version, setVersion] = useState<CatalogVersion>("cliente");
+  const [format, setFormat] = useState<ExportFormat>("pdf");
+  const [includePhotosXlsx, setIncludePhotosXlsx] = useState(true);
   const [fields, setFields] = useState<Set<CatalogFieldKey>>(
     () => new Set(DEFAULT_FIELDS),
   );
