@@ -80,8 +80,7 @@ function fieldValue(p: Product, key: CatalogFieldKey): string | number | null {
 function variantesDaColecao(products: Product[], colecao: string): Product[] {
   const list = products.filter((p) => p.colecao === colecao && p.ativo !== false);
   const allTalheres = list.length > 0 && list.every((p) => p.grupo === "Talheres");
-  const allNumerica = list.length > 0 && list.every((p) => p.numeroVela != null);
-  if (allTalheres || allNumerica) {
+  if (allTalheres) {
     const seen = new Set<string>();
     return list.filter((p) => {
       if (seen.has(p.corNome)) return false;
@@ -89,6 +88,7 @@ function variantesDaColecao(products: Product[], colecao: string): Product[] {
       return true;
     });
   }
+  // Velas numéricas e demais: uma linha por SKU (cor + número + tamanho)
   const seen = new Set<string>();
   return list.filter((p) => {
     if (seen.has(p.sku)) return false;
@@ -96,6 +96,7 @@ function variantesDaColecao(products: Product[], colecao: string): Product[] {
     return true;
   });
 }
+
 
 interface BuildOpts {
   products: Product[];
@@ -138,6 +139,7 @@ export async function buildCatalogXLSX(opts: BuildOpts): Promise<Blob> {
     const def = CATALOG_FIELDS.find((f) => f.key === k);
     headers.push(def?.label ?? k);
   }
+  headers.push("Previsão");
   if (version === "cliente") {
     headers.push("Preço varejo (R$)");
   } else {
@@ -158,9 +160,11 @@ export async function buildCatalogXLSX(opts: BuildOpts): Promise<Blob> {
           : 14;
     widths.push(w);
   }
+  widths.push(16); // Previsão
   widths.push(16);
   if (version === "interno") widths.push(16);
   ws.columns = widths.map((w) => ({ width: w }));
+
 
   // Style do cabeçalho
   const headerRow = ws.getRow(1);
@@ -219,11 +223,13 @@ export async function buildCatalogXLSX(opts: BuildOpts): Promise<Blob> {
       if (includePhotos) row.push(null);
       row.push(col.nome, col.categoria);
       for (const k of orderedFields) row.push(fieldValue(p, k));
+      row.push(p.statusEstoque || "—");
       if (version === "cliente") {
         row.push(p.precoVarejo ?? null);
       } else {
         row.push(p.precoAtacado ?? null, p.precoVarejo ?? null);
       }
+
       const r = ws.addRow(row);
       r.alignment = { vertical: "middle", wrapText: true };
       r.font = { size: 9 };
