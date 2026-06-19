@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { X, FileText, Loader2, Check } from "lucide-react";
+import { X, FileText, Loader2, Check, FileSpreadsheet } from "lucide-react";
 import { useCatalog } from "@/store/catalogStore";
 import { usePhotos } from "@/store/photoStore";
 import {
@@ -10,6 +10,9 @@ import {
   type CatalogVersion,
   type CatalogFieldKey,
 } from "@/lib/catalogPdf";
+import { buildCatalogXLSX, downloadCatalogXLSX } from "@/lib/catalogXlsx";
+
+type ExportFormat = "pdf" | "xlsx";
 
 
 interface ColecaoEntry {
