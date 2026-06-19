@@ -16,6 +16,7 @@ import {
   Building, Truck, CheckCircle, ArrowRight, MessageCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { CanalDialog } from "@/components/canal/CanalDialog";
 
 export const Route = createFileRoute("/farol")({
   head: () => ({
