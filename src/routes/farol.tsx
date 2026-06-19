@@ -563,6 +563,16 @@ function FarolPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {canalTarget && (
+        <CanalDialog
+          open={!!canalTarget}
+          onOpenChange={(o) => !o && setCanalTarget(null)}
+          sncfPedidoId={canalTarget.sncfPedidoId}
+          numeroPedido={canalTarget.numero}
+          nomeCliente={canalTarget.cliente}
+        />
+      )}
     </div>
   );
 }
