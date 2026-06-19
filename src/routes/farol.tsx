@@ -519,7 +519,42 @@ function FarolPage() {
                         <p className="text-xs">eta {fmtCurta(r.eta_vivo)}</p>
                         <p className="text-[11px] text-text-secondary">meta {fmtDate(r.meta)}</p>
                       </TableCell>
-                      <TableCell>{situacao}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0">{situacao}</div>
+                          {r.pedido_id && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCanalTarget({
+                                  sncfPedidoId: r.pedido_id,
+                                  numero: r.id_externo ?? r.pedido_id.slice(0, 8).toUpperCase(),
+                                  cliente: r.cliente ?? "—",
+                                })
+                              }
+                              title={
+                                badges[r.pedido_id]
+                                  ? `${badges[r.pedido_id]} resposta(s) não lida(s) do SOPS`
+                                  : "Canal com SOPS"
+                              }
+                              className="relative inline-flex items-center justify-center w-6 h-6 rounded border hover:bg-muted transition-colors shrink-0"
+                              style={
+                                badges[r.pedido_id]
+                                  ? { color: "#185FA5", borderColor: "#85B7EB" }
+                                  : {
+                                      color: "var(--color-text-secondary)",
+                                      borderColor: "var(--color-border-secondary)",
+                                    }
+                              }
+                            >
+                              <MessageCircle className="h-3 w-3" />
+                              {(badges[r.pedido_id] ?? 0) > 0 && (
+                                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
                 })
