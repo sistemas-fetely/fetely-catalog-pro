@@ -115,20 +115,34 @@ export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
         const [categoria, nome] = k.split("::");
         return { nome, categoria };
       });
-      const blob = await buildCatalogPDF({
-        products,
-        photos,
-        colecoesSelecionadas: colecoes,
-        version,
-        fields: Array.from(fields),
-        onProgress: (pct, label) => setProgress({ pct, label }),
-
-      });
-      downloadCatalogPDF(blob, version);
+      if (format === "pdf") {
+        const blob = await buildCatalogPDF({
+          products,
+          photos,
+          colecoesSelecionadas: colecoes,
+          version,
+          fields: Array.from(fields),
+          onProgress: (pct, label) => setProgress({ pct, label }),
+        });
+        downloadCatalogPDF(blob, version);
+      } else {
+        const blob = await buildCatalogXLSX({
+          products,
+          photos,
+          colecoesSelecionadas: colecoes,
+          version,
+          fields: Array.from(fields),
+          includePhotos: includePhotosXlsx,
+          onProgress: (pct, label) => setProgress({ pct, label }),
+        });
+        downloadCatalogXLSX(blob, version);
+      }
       onClose();
     } catch (err) {
       console.error(err);
-      alert("Erro ao gerar PDF: " + (err as Error).message);
+      alert(
+        `Erro ao gerar ${format.toUpperCase()}: ` + (err as Error).message,
+      );
     } finally {
       setBusy(false);
       setProgress(null);
