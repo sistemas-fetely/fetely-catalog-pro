@@ -250,7 +250,7 @@ export async function buildCatalogXLSX(opts: BuildOpts): Promise<Blob> {
         if (img) {
           const imageId = wb.addImage({ base64: img.base64, extension: img.ext });
           ws.addImage(imageId, {
-            tl: { col: photoColIdx - 1 + 0.1, row: currentRow - 1 + 0.1 } as ExcelJS.Anchor,
+            tl: { col: photoColIdx - 1 + 0.1, row: currentRow - 1 + 0.1 },
             ext: { width: photoCellPx, height: photoCellPx },
             editAs: "oneCell",
           });
