@@ -13,9 +13,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChevronRight, Pause, AlertTriangle, Circle,
-  Building, Truck, CheckCircle, ArrowRight,
+  Building, Truck, CheckCircle, ArrowRight, MessageCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { CanalDialog } from "@/components/canal/CanalDialog";
 
 export const Route = createFileRoute("/farol")({
   head: () => ({
@@ -134,6 +135,25 @@ function FarolPage() {
   const [busca, setBusca] = useState("");
   const [filtroPrazo, setFiltroPrazo] = useState("todos");
   const [filtroBloqueio, setFiltroBloqueio] = useState("todos");
+
+  const [canalTarget, setCanalTarget] = useState<{
+    sncfPedidoId: string;
+    numero: string;
+    cliente: string;
+  } | null>(null);
+
+  const { data: badgesData } = useQuery({
+    queryKey: ["canal_badges"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("enviar-para-sncf", {
+        body: { tipo: "canal_badges" },
+      });
+      if (error) return {} as Record<string, number>;
+      return (data?.badges ?? {}) as Record<string, number>;
+    },
+    refetchInterval: 60_000,
+  });
+  const badges: Record<string, number> = badgesData ?? {};
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["farol_pedidos"],
@@ -499,7 +519,42 @@ function FarolPage() {
                         <p className="text-xs">eta {fmtCurta(r.eta_vivo)}</p>
                         <p className="text-[11px] text-text-secondary">meta {fmtDate(r.meta)}</p>
                       </TableCell>
-                      <TableCell>{situacao}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0">{situacao}</div>
+                          {r.pedido_id && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCanalTarget({
+                                  sncfPedidoId: r.pedido_id,
+                                  numero: r.id_externo ?? r.pedido_id.slice(0, 8).toUpperCase(),
+                                  cliente: r.cliente ?? "—",
+                                })
+                              }
+                              title={
+                                badges[r.pedido_id]
+                                  ? `${badges[r.pedido_id]} resposta(s) não lida(s) do SOPS`
+                                  : "Canal com SOPS"
+                              }
+                              className="relative inline-flex items-center justify-center w-6 h-6 rounded border hover:bg-muted transition-colors shrink-0"
+                              style={
+                                badges[r.pedido_id]
+                                  ? { color: "#185FA5", borderColor: "#85B7EB" }
+                                  : {
+                                      color: "var(--color-text-secondary)",
+                                      borderColor: "var(--color-border-secondary)",
+                                    }
+                              }
+                            >
+                              <MessageCircle className="h-3 w-3" />
+                              {(badges[r.pedido_id] ?? 0) > 0 && (
+                                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
                 })
@@ -508,6 +563,16 @@ function FarolPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {canalTarget && (
+        <CanalDialog
+          open={!!canalTarget}
+          onClose={() => setCanalTarget(null)}
+          sncfPedidoId={canalTarget.sncfPedidoId}
+          numeroPedido={canalTarget.numero}
+          nomeCliente={canalTarget.cliente}
+        />
+      )}
     </div>
   );
 }
