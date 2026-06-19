@@ -15,6 +15,8 @@ import { listAppUsers } from "@/lib/users.functions";
 import { ExportModal } from "@/components/export/ExportModal";
 import { ReprovarDialog } from "@/components/ReprovarDialog";
 import { DuplicarPedidoModal } from "@/components/duplicar/DuplicarPedidoModal";
+import { supabase } from "@/integrations/supabase/client";
+import { CanalDialog } from "@/components/canal/CanalDialog";
 
 
 export const Route = createFileRoute("/orders")({
