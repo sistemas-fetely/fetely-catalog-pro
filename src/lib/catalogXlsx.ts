@@ -223,11 +223,13 @@ export async function buildCatalogXLSX(opts: BuildOpts): Promise<Blob> {
       if (includePhotos) row.push(null);
       row.push(col.nome, col.categoria);
       for (const k of orderedFields) row.push(fieldValue(p, k));
+      row.push(p.statusEstoque || "—");
       if (version === "cliente") {
         row.push(p.precoVarejo ?? null);
       } else {
         row.push(p.precoAtacado ?? null, p.precoVarejo ?? null);
       }
+
       const r = ws.addRow(row);
       r.alignment = { vertical: "middle", wrapText: true };
       r.font = { size: 9 };
