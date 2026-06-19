@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { X, FileText, Loader2, Check } from "lucide-react";
+import { X, FileText, Loader2, Check, FileSpreadsheet } from "lucide-react";
 import { useCatalog } from "@/store/catalogStore";
 import { usePhotos } from "@/store/photoStore";
 import {
@@ -10,6 +10,9 @@ import {
   type CatalogVersion,
   type CatalogFieldKey,
 } from "@/lib/catalogPdf";
+import { buildCatalogXLSX, downloadCatalogXLSX } from "@/lib/catalogXlsx";
+
+type ExportFormat = "pdf" | "xlsx";
 
 
 interface ColecaoEntry {
@@ -46,6 +49,8 @@ export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [version, setVersion] = useState<CatalogVersion>("cliente");
+  const [format, setFormat] = useState<ExportFormat>("pdf");
+  const [includePhotosXlsx, setIncludePhotosXlsx] = useState(true);
   const [fields, setFields] = useState<Set<CatalogFieldKey>>(
     () => new Set(DEFAULT_FIELDS),
   );
@@ -110,20 +115,34 @@ export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
         const [categoria, nome] = k.split("::");
         return { nome, categoria };
       });
-      const blob = await buildCatalogPDF({
-        products,
-        photos,
-        colecoesSelecionadas: colecoes,
-        version,
-        fields: Array.from(fields),
-        onProgress: (pct, label) => setProgress({ pct, label }),
-
-      });
-      downloadCatalogPDF(blob, version);
+      if (format === "pdf") {
+        const blob = await buildCatalogPDF({
+          products,
+          photos,
+          colecoesSelecionadas: colecoes,
+          version,
+          fields: Array.from(fields),
+          onProgress: (pct, label) => setProgress({ pct, label }),
+        });
+        downloadCatalogPDF(blob, version);
+      } else {
+        const blob = await buildCatalogXLSX({
+          products,
+          photos,
+          colecoesSelecionadas: colecoes,
+          version,
+          fields: Array.from(fields),
+          includePhotos: includePhotosXlsx,
+          onProgress: (pct, label) => setProgress({ pct, label }),
+        });
+        downloadCatalogXLSX(blob, version);
+      }
       onClose();
     } catch (err) {
       console.error(err);
-      alert("Erro ao gerar PDF: " + (err as Error).message);
+      alert(
+        `Erro ao gerar ${format.toUpperCase()}: ` + (err as Error).message,
+      );
     } finally {
       setBusy(false);
       setProgress(null);
@@ -136,16 +155,47 @@ export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-gold">
-              <FileText className="h-3 w-3" /> Catálogo PDF
+              <FileText className="h-3 w-3" /> Catálogo
             </div>
             <h3 className="font-display text-2xl mt-1">Gerar catálogo</h3>
             <p className="text-xs text-text-secondary mt-1">
-              Selecione as coleções e a versão desejada.
+              Selecione o formato, as coleções e a versão desejada.
             </p>
           </div>
           <button onClick={onClose} className="text-text-muted hover:text-text-primary">
             <X className="h-5 w-5" />
           </button>
+        </div>
+
+        <div className="space-y-2">
+          <div className="text-[10px] uppercase tracking-wider text-text-muted">Formato</div>
+          <div className="grid grid-cols-2 gap-2">
+            <FormatOpt
+              active={format === "pdf"}
+              onClick={() => setFormat("pdf")}
+              icon={<FileText className="h-4 w-4" />}
+              title="PDF"
+              hint="Layout impresso com fotos"
+            />
+            <FormatOpt
+              active={format === "xlsx"}
+              onClick={() => setFormat("xlsx")}
+              icon={<FileSpreadsheet className="h-4 w-4" />}
+              title="Excel (XLSX)"
+              hint="Planilha editável, filtros e fotos"
+            />
+          </div>
+          {format === "xlsx" && (
+            <label className="flex items-center gap-2 text-xs text-text-secondary pt-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includePhotosXlsx}
+                onChange={(e) => setIncludePhotosXlsx(e.target.checked)}
+                className="accent-gold"
+              />
+              Incluir fotos dos produtos na planilha
+            </label>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -328,8 +378,12 @@ export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
             disabled={busy || selected.size === 0}
             className="flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light disabled:opacity-50"
           >
-            <FileText className="h-3.5 w-3.5" />
-            {busy ? "Gerando..." : "Gerar PDF"}
+            {format === "pdf" ? (
+              <FileText className="h-3.5 w-3.5" />
+            ) : (
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+            )}
+            {busy ? "Gerando..." : `Gerar ${format === "pdf" ? "PDF" : "Excel"}`}
           </button>
         </div>
       </div>
@@ -361,3 +415,34 @@ function VersionOpt({
     </button>
   );
 }
+
+function FormatOpt({
+  active,
+  onClick,
+  icon,
+  title,
+  hint,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  title: string;
+  hint: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-start gap-2.5 rounded-md border px-3 py-2.5 text-left transition ${
+        active ? "border-gold bg-gold/10" : "border-border hover:bg-surface-2"
+      }`}
+    >
+      <span className={active ? "text-gold mt-0.5" : "text-text-muted mt-0.5"}>{icon}</span>
+      <span>
+        <span className="block text-sm font-medium">{title}</span>
+        <span className="block text-[11px] text-text-muted">{hint}</span>
+      </span>
+    </button>
+  );
+}
+
