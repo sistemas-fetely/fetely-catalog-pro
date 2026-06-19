@@ -13,7 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChevronRight, Pause, AlertTriangle, Circle,
-  Building, Truck, CheckCircle, ArrowRight,
+  Building, Truck, CheckCircle, ArrowRight, MessageCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
