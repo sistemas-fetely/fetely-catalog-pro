@@ -139,6 +139,7 @@ export async function buildCatalogXLSX(opts: BuildOpts): Promise<Blob> {
     const def = CATALOG_FIELDS.find((f) => f.key === k);
     headers.push(def?.label ?? k);
   }
+  headers.push("Previsão");
   if (version === "cliente") {
     headers.push("Preço varejo (R$)");
   } else {
@@ -159,9 +160,11 @@ export async function buildCatalogXLSX(opts: BuildOpts): Promise<Blob> {
           : 14;
     widths.push(w);
   }
+  widths.push(16); // Previsão
   widths.push(16);
   if (version === "interno") widths.push(16);
   ws.columns = widths.map((w) => ({ width: w }));
+
 
   // Style do cabeçalho
   const headerRow = ws.getRow(1);
