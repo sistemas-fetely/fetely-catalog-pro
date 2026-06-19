@@ -80,8 +80,7 @@ function fieldValue(p: Product, key: CatalogFieldKey): string | number | null {
 function variantesDaColecao(products: Product[], colecao: string): Product[] {
   const list = products.filter((p) => p.colecao === colecao && p.ativo !== false);
   const allTalheres = list.length > 0 && list.every((p) => p.grupo === "Talheres");
-  const allNumerica = list.length > 0 && list.every((p) => p.numeroVela != null);
-  if (allTalheres || allNumerica) {
+  if (allTalheres) {
     const seen = new Set<string>();
     return list.filter((p) => {
       if (seen.has(p.corNome)) return false;
@@ -89,6 +88,7 @@ function variantesDaColecao(products: Product[], colecao: string): Product[] {
       return true;
     });
   }
+  // Velas numéricas e demais: uma linha por SKU (cor + número + tamanho)
   const seen = new Set<string>();
   return list.filter((p) => {
     if (seen.has(p.sku)) return false;
@@ -96,6 +96,7 @@ function variantesDaColecao(products: Product[], colecao: string): Product[] {
     return true;
   });
 }
+
 
 interface BuildOpts {
   products: Product[];
