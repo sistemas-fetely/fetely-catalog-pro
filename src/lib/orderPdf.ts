@@ -812,6 +812,10 @@ function buildPrintHTML(orders: SavedOrder[], mode: "completa" | "resumida"): st
     .cond div{display:flex;gap:4mm;padding:1px 0}
     .cond span{color:#6a6a6a;min-width:28mm}
     .obs{margin-top:5mm;border-top:1px solid #e0e0e0;padding-top:3mm}
+    .items tr.sec td{font-weight:700;font-size:10px;letter-spacing:.1em;padding:6px 8px;color:#fff;border:0}
+    .items tr.sec-firme td{background:#1a1a1a}
+    .items tr.sec-prov td{background:#b8923a}
+    .items tr.grp td{background:#f4ecd9;font-weight:600;font-size:9.5px;color:#1a1a1a;padding:4px 8px;border-bottom:1px solid #e0e0e0}
     @page{size:A4;margin:0}
     @media print{html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
   `;
