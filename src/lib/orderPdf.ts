@@ -517,10 +517,18 @@ function escapeHtml(s: string | undefined | null): string {
 }
 
 function renderOrderBlockHTML(order: SavedOrder): string {
-  const itensRows = order.items
-    .map((it) => {
-      const subtotal = it.product.precoAtacado * it.quantity;
-      return `
+  const secoes = agruparItensPorSecao(order.items);
+  const itensRows = secoes
+    .map((sec) => {
+      const secCls = sec.tipo === "firme" ? "sec-firme" : "sec-prov";
+      const head = `<tr class="sec ${secCls}"><td colspan="5">${escapeHtml(sec.titulo)} · ${sec.qtd} un. · ${formatBRL(sec.subtotal)}</td></tr>`;
+      const grupos = sec.grupos
+        .map((g) => {
+          const gh = `<tr class="grp"><td colspan="5">${escapeHtml(g.colecao)} · ${g.qtd} un. · ${formatBRL(g.subtotal)}</td></tr>`;
+          const linhas = g.items
+            .map((it) => {
+              const subtotal = it.product.precoAtacado * it.quantity;
+              return `
         <tr>
           <td class="mono">${escapeHtml(it.sku)}</td>
           <td>${escapeHtml(it.product.nomeComercial || it.product.nomeCompleto || "")}</td>
@@ -528,8 +536,15 @@ function renderOrderBlockHTML(order: SavedOrder): string {
           <td class="r">${formatBRL(it.product.precoAtacado)}</td>
           <td class="r">${formatBRL(subtotal)}</td>
         </tr>`;
+            })
+            .join("");
+          return gh + linhas;
+        })
+        .join("");
+      return head + grupos;
     })
     .join("");
+
 
   const c = order.commercial;
   const linhasFin: string[] = [];
