@@ -170,6 +170,7 @@ export const CONDICOES_DEFAULT: CondicaoPagamento[] = [
   { id: 11, descricao: "Cartão 4x sem juros (0/30/60/90)", valorMinimo: 8000, tipo: "cartao", numeroParcelas: 4, diasParcelas: [0, 30, 60, 90], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 11 },
   { id: 12, descricao: "Cartão 5x sem juros (0/30/60/90/120)", valorMinimo: 12000, tipo: "cartao", numeroParcelas: 5, diasParcelas: [0, 30, 60, 90, 120], semJuros: true, ativa: true, exibirParaVendedor: true, ordem: 12 },
   { id: 13, descricao: "Boleto 0/15 (à vista + 1)", valorMinimo: 1500, tipo: "boleto", numeroParcelas: 2, diasParcelas: [0, 15], ativa: true, exibirParaVendedor: true, ordem: 13 },
+  { id: 14, descricao: "Boleto 30/60/90/120 (4x)", valorMinimo: 8000, tipo: "boleto", numeroParcelas: 4, diasParcelas: [30, 60, 90, 120], ativa: true, exibirParaVendedor: true, ordem: 14 },
 ];
 
 export const REGRAS_DEFAULT: RegrasGerais = {
