@@ -4,6 +4,49 @@ import type { CartItem, Product, SavedOrder } from "@/types";
 import type { Cotacao } from "@/types/cotacao";
 import type { ProvisaoFutura } from "@/types/provisao";
 import { FRETE_PERCENT } from "@/lib/commercial";
+import { classificarItem } from "@/lib/classifyItem";
+
+type GrupoColecao = { colecao: string; items: CartItem[]; subtotal: number; qtd: number };
+type SecaoItens = { tipo: "firme" | "provisao"; titulo: string; grupos: GrupoColecao[]; subtotal: number; qtd: number };
+
+function agruparItensPorSecao(items: CartItem[]): SecaoItens[] {
+  const firmes: CartItem[] = [];
+  const prov: CartItem[] = [];
+  for (const it of items) {
+    if (classificarItem(it.product.statusEstoque || "") === "firme") firmes.push(it);
+    else prov.push(it);
+  }
+  const fazGrupos = (arr: CartItem[]): { grupos: GrupoColecao[]; subtotal: number; qtd: number } => {
+    const map = new Map<string, CartItem[]>();
+    for (const it of arr) {
+      const k = it.product.colecao || "—";
+      const list = map.get(k) ?? [];
+      list.push(it);
+      map.set(k, list);
+    }
+    const grupos = Array.from(map.entries())
+      .map(([colecao, items]) => {
+        const subtotal = items.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0);
+        const qtd = items.reduce((s, i) => s + i.quantity, 0);
+        return { colecao, items, subtotal, qtd };
+      })
+      .sort((a, b) => a.colecao.localeCompare(b.colecao, "pt-BR"));
+    const subtotal = grupos.reduce((s, g) => s + g.subtotal, 0);
+    const qtd = grupos.reduce((s, g) => s + g.qtd, 0);
+    return { grupos, subtotal, qtd };
+  };
+  const secoes: SecaoItens[] = [];
+  if (firmes.length) {
+    const r = fazGrupos(firmes);
+    secoes.push({ tipo: "firme", titulo: "PRONTA ENTREGA", ...r });
+  }
+  if (prov.length) {
+    const r = fazGrupos(prov);
+    secoes.push({ tipo: "provisao", titulo: "PROVISÃO FUTURA", ...r });
+  }
+  return secoes;
+}
+
 
 const COLORS = {
   black: "#1a1a1a",
