@@ -9,6 +9,16 @@ import { classificarItem } from "@/lib/classifyItem";
 type GrupoColecao = { colecao: string; items: CartItem[]; subtotal: number; qtd: number };
 type SecaoItens = { tipo: "firme" | "provisao"; titulo: string; grupos: GrupoColecao[]; subtotal: number; qtd: number };
 
+// Ordem macro: Mesa Posta → Jogos Americanos → Taças → Velas
+function macroRank(p: Product): number {
+  const g = (p.grupo || "").toLowerCase();
+  if (g === "prato" || g === "guardanapo" || g === "travessa" || g === "talheres") return 1; // Mesa posta
+  if (g === "jogo americano") return 2;
+  if (g === "copos e taças" || g === "copos e tacas") return 3;
+  if (g === "vela") return 4;
+  return 5;
+}
+
 function agruparItensPorSecao(items: CartItem[]): SecaoItens[] {
   const firmes: CartItem[] = [];
   const prov: CartItem[] = [];
@@ -26,11 +36,22 @@ function agruparItensPorSecao(items: CartItem[]): SecaoItens[] {
     }
     const grupos = Array.from(map.entries())
       .map(([colecao, items]) => {
-        const subtotal = items.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0);
-        const qtd = items.reduce((s, i) => s + i.quantity, 0);
-        return { colecao, items, subtotal, qtd };
+        const itemsOrdenados = [...items].sort((a, b) => {
+          const ra = macroRank(a.product);
+          const rb = macroRank(b.product);
+          if (ra !== rb) return ra - rb;
+          return (a.product.nomeComercial || "").localeCompare(b.product.nomeComercial || "", "pt-BR");
+        });
+        const subtotal = itemsOrdenados.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0);
+        const qtd = itemsOrdenados.reduce((s, i) => s + i.quantity, 0);
+        const rankColecao = Math.min(...itemsOrdenados.map((i) => macroRank(i.product)));
+        return { colecao, items: itemsOrdenados, subtotal, qtd, rank: rankColecao };
       })
-      .sort((a, b) => a.colecao.localeCompare(b.colecao, "pt-BR"));
+      .sort((a, b) => {
+        if (a.rank !== b.rank) return a.rank - b.rank;
+        return a.colecao.localeCompare(b.colecao, "pt-BR");
+      })
+      .map(({ rank: _r, ...g }) => g);
     const subtotal = grupos.reduce((s, g) => s + g.subtotal, 0);
     const qtd = grupos.reduce((s, g) => s + g.qtd, 0);
     return { grupos, subtotal, qtd };
