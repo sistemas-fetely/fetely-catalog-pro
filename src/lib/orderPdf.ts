@@ -161,22 +161,55 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
   doc.line(margin, y, pageWidth - margin, y);
   y += 6;
 
-  // ─── TABELA DE ITENS ───
-  const rows = order.items.map((item) => {
-    const subtotal = item.product.precoAtacado * item.quantity;
-    return [
-      item.sku,
-      item.product.nomeComercial || item.product.nomeCompleto || "",
-      `${item.quantity}`,
-      formatBRL(item.product.precoAtacado),
-      formatBRL(subtotal),
-    ];
-  });
+  // ─── TABELA DE ITENS (agrupada por seção → coleção) ───
+  const secoes = agruparItensPorSecao(order.items);
+  type Row = (string | { content: string; colSpan?: number; styles?: Record<string, unknown> })[];
+  const body: Row[] = [];
+  for (const sec of secoes) {
+    body.push([
+      {
+        content: `${sec.titulo}  ·  ${sec.qtd} un.  ·  ${formatBRL(sec.subtotal)}`,
+        colSpan: 5,
+        styles: {
+          fontStyle: "bold",
+          fontSize: 9,
+          textColor: "#ffffff",
+          fillColor: sec.tipo === "firme" ? COLORS.black : COLORS.gold,
+          cellPadding: 3,
+        },
+      },
+    ]);
+    for (const g of sec.grupos) {
+      body.push([
+        {
+          content: `${g.colecao}  ·  ${g.qtd} un.  ·  ${formatBRL(g.subtotal)}`,
+          colSpan: 5,
+          styles: {
+            fontStyle: "bold",
+            fontSize: 8.5,
+            textColor: COLORS.black,
+            fillColor: "#f4ecd9",
+            cellPadding: 2.5,
+          },
+        },
+      ]);
+      for (const item of g.items) {
+        const subtotal = item.product.precoAtacado * item.quantity;
+        body.push([
+          item.sku,
+          item.product.nomeComercial || item.product.nomeCompleto || "",
+          `${item.quantity}`,
+          formatBRL(item.product.precoAtacado),
+          formatBRL(subtotal),
+        ]);
+      }
+    }
+  }
 
   autoTable(doc, {
     startY: y,
     head: [["SKU", "Descrição", "Qtd", "Unit", "Subtotal"]],
-    body: rows,
+    body: body as unknown as (string | number)[][],
     margin: { left: margin, right: margin },
     theme: "plain",
     styles: {
@@ -201,6 +234,7 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
       4: { cellWidth: 28, halign: "right" },
     },
   });
+
 
   let yAfterTable: number = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
 
