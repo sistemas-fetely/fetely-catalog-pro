@@ -4,6 +4,49 @@ import type { CartItem, Product, SavedOrder } from "@/types";
 import type { Cotacao } from "@/types/cotacao";
 import type { ProvisaoFutura } from "@/types/provisao";
 import { FRETE_PERCENT } from "@/lib/commercial";
+import { classificarItem } from "@/lib/classifyItem";
+
+type GrupoColecao = { colecao: string; items: CartItem[]; subtotal: number; qtd: number };
+type SecaoItens = { tipo: "firme" | "provisao"; titulo: string; grupos: GrupoColecao[]; subtotal: number; qtd: number };
+
+function agruparItensPorSecao(items: CartItem[]): SecaoItens[] {
+  const firmes: CartItem[] = [];
+  const prov: CartItem[] = [];
+  for (const it of items) {
+    if (classificarItem(it.product.statusEstoque || "") === "firme") firmes.push(it);
+    else prov.push(it);
+  }
+  const fazGrupos = (arr: CartItem[]): { grupos: GrupoColecao[]; subtotal: number; qtd: number } => {
+    const map = new Map<string, CartItem[]>();
+    for (const it of arr) {
+      const k = it.product.colecao || "—";
+      const list = map.get(k) ?? [];
+      list.push(it);
+      map.set(k, list);
+    }
+    const grupos = Array.from(map.entries())
+      .map(([colecao, items]) => {
+        const subtotal = items.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0);
+        const qtd = items.reduce((s, i) => s + i.quantity, 0);
+        return { colecao, items, subtotal, qtd };
+      })
+      .sort((a, b) => a.colecao.localeCompare(b.colecao, "pt-BR"));
+    const subtotal = grupos.reduce((s, g) => s + g.subtotal, 0);
+    const qtd = grupos.reduce((s, g) => s + g.qtd, 0);
+    return { grupos, subtotal, qtd };
+  };
+  const secoes: SecaoItens[] = [];
+  if (firmes.length) {
+    const r = fazGrupos(firmes);
+    secoes.push({ tipo: "firme", titulo: "PRONTA ENTREGA", ...r });
+  }
+  if (prov.length) {
+    const r = fazGrupos(prov);
+    secoes.push({ tipo: "provisao", titulo: "PROVISÃO FUTURA", ...r });
+  }
+  return secoes;
+}
+
 
 const COLORS = {
   black: "#1a1a1a",
@@ -118,22 +161,55 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
   doc.line(margin, y, pageWidth - margin, y);
   y += 6;
 
-  // ─── TABELA DE ITENS ───
-  const rows = order.items.map((item) => {
-    const subtotal = item.product.precoAtacado * item.quantity;
-    return [
-      item.sku,
-      item.product.nomeComercial || item.product.nomeCompleto || "",
-      `${item.quantity}`,
-      formatBRL(item.product.precoAtacado),
-      formatBRL(subtotal),
-    ];
-  });
+  // ─── TABELA DE ITENS (agrupada por seção → coleção) ───
+  const secoes = agruparItensPorSecao(order.items);
+  type Row = (string | { content: string; colSpan?: number; styles?: Record<string, unknown> })[];
+  const body: Row[] = [];
+  for (const sec of secoes) {
+    body.push([
+      {
+        content: `${sec.titulo}  ·  ${sec.qtd} un.  ·  ${formatBRL(sec.subtotal)}`,
+        colSpan: 5,
+        styles: {
+          fontStyle: "bold",
+          fontSize: 9,
+          textColor: "#ffffff",
+          fillColor: sec.tipo === "firme" ? COLORS.black : COLORS.gold,
+          cellPadding: 3,
+        },
+      },
+    ]);
+    for (const g of sec.grupos) {
+      body.push([
+        {
+          content: `${g.colecao}  ·  ${g.qtd} un.  ·  ${formatBRL(g.subtotal)}`,
+          colSpan: 5,
+          styles: {
+            fontStyle: "bold",
+            fontSize: 8.5,
+            textColor: COLORS.black,
+            fillColor: "#f4ecd9",
+            cellPadding: 2.5,
+          },
+        },
+      ]);
+      for (const item of g.items) {
+        const subtotal = item.product.precoAtacado * item.quantity;
+        body.push([
+          item.sku,
+          item.product.nomeComercial || item.product.nomeCompleto || "",
+          `${item.quantity}`,
+          formatBRL(item.product.precoAtacado),
+          formatBRL(subtotal),
+        ]);
+      }
+    }
+  }
 
   autoTable(doc, {
     startY: y,
     head: [["SKU", "Descrição", "Qtd", "Unit", "Subtotal"]],
-    body: rows,
+    body: body as unknown as (string | number)[][],
     margin: { left: margin, right: margin },
     theme: "plain",
     styles: {
@@ -158,6 +234,7 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
       4: { cellWidth: 28, halign: "right" },
     },
   });
+
 
   let yAfterTable: number = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
 
@@ -440,10 +517,18 @@ function escapeHtml(s: string | undefined | null): string {
 }
 
 function renderOrderBlockHTML(order: SavedOrder): string {
-  const itensRows = order.items
-    .map((it) => {
-      const subtotal = it.product.precoAtacado * it.quantity;
-      return `
+  const secoes = agruparItensPorSecao(order.items);
+  const itensRows = secoes
+    .map((sec) => {
+      const secCls = sec.tipo === "firme" ? "sec-firme" : "sec-prov";
+      const head = `<tr class="sec ${secCls}"><td colspan="5">${escapeHtml(sec.titulo)} · ${sec.qtd} un. · ${formatBRL(sec.subtotal)}</td></tr>`;
+      const grupos = sec.grupos
+        .map((g) => {
+          const gh = `<tr class="grp"><td colspan="5">${escapeHtml(g.colecao)} · ${g.qtd} un. · ${formatBRL(g.subtotal)}</td></tr>`;
+          const linhas = g.items
+            .map((it) => {
+              const subtotal = it.product.precoAtacado * it.quantity;
+              return `
         <tr>
           <td class="mono">${escapeHtml(it.sku)}</td>
           <td>${escapeHtml(it.product.nomeComercial || it.product.nomeCompleto || "")}</td>
@@ -451,8 +536,15 @@ function renderOrderBlockHTML(order: SavedOrder): string {
           <td class="r">${formatBRL(it.product.precoAtacado)}</td>
           <td class="r">${formatBRL(subtotal)}</td>
         </tr>`;
+            })
+            .join("");
+          return gh + linhas;
+        })
+        .join("");
+      return head + grupos;
     })
     .join("");
+
 
   const c = order.commercial;
   const linhasFin: string[] = [];
@@ -720,6 +812,10 @@ function buildPrintHTML(orders: SavedOrder[], mode: "completa" | "resumida"): st
     .cond div{display:flex;gap:4mm;padding:1px 0}
     .cond span{color:#6a6a6a;min-width:28mm}
     .obs{margin-top:5mm;border-top:1px solid #e0e0e0;padding-top:3mm}
+    .items tr.sec td{font-weight:700;font-size:10px;letter-spacing:.1em;padding:6px 8px;color:#fff;border:0}
+    .items tr.sec-firme td{background:#1a1a1a}
+    .items tr.sec-prov td{background:#b8923a}
+    .items tr.grp td{background:#f4ecd9;font-weight:600;font-size:9.5px;color:#1a1a1a;padding:4px 8px;border-bottom:1px solid #e0e0e0}
     @page{size:A4;margin:0}
     @media print{html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
   `;
