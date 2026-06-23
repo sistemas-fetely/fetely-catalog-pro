@@ -707,7 +707,7 @@ export async function exportarZIP(
   const zip = new JSZip();
   for (const pedido of pedidos) {
     if (formato === "pdf") {
-      const doc = buildPdfDoc(pedido, tipoPdf, opts);
+      const doc = await buildPdfDoc(pedido, tipoPdf, opts);
       const blob = doc.output("blob");
       zip.file(`fetely_pedido_${safeFile(pedido.id)}_${pedido.dataISO.slice(0, 10)}.pdf`, blob);
     } else {
