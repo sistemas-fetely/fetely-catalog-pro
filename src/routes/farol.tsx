@@ -14,7 +14,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChevronRight, Pause, AlertTriangle, Circle,
   Building, Truck, CheckCircle, ArrowRight, MessageCircle,
+  Copy, ExternalLink, Loader2,
 } from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { CanalDialog } from "@/components/canal/CanalDialog";
 
