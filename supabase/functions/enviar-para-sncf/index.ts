@@ -116,6 +116,65 @@ Deno.serve(async (req) => {
     }
     // ── fim branch farol ──
 
+    // ── Branch: Farol B2C (proxy leitura → SNCF) ──
+    if (body?.tipo === "farol_b2c") {
+      const jwtFarolB2c = req.headers.get("Authorization")?.substring(7).trim();
+      if (!jwtFarolB2c) return jsonResponse(401, { error: "JWT ausente" });
+
+      const { data: { user: userFarolB2c }, error: userErrB2c } =
+        await supabase.auth.getUser(jwtFarolB2c);
+      if (userErrB2c || !userFarolB2c) {
+        return jsonResponse(401, { error: "Token inválido" });
+      }
+
+      const { data: rolesB2c } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userFarolB2c.id);
+      const papeisB2c = (rolesB2c ?? []).map((r: any) => r.role as string);
+      if (!papeisB2c.some((r) => ["master", "admin", "vendedor"].includes(r))) {
+        return jsonResponse(403, { error: "Acesso restrito a usuários internos" });
+      }
+
+      const { data: senhaB2c, error: vaultErrB2c } = await supabase
+        .rpc("get_vault_secret", { p_name: "SNCF_OUTBOUND_TOKEN" });
+      if (vaultErrB2c || !senhaB2c) {
+        console.error("[enviar-para-sncf] farol_b2c: falha ao ler SNCF_OUTBOUND_TOKEN", vaultErrB2c);
+        return jsonResponse(500, { error: "Erro de configuração interna" });
+      }
+
+      const sncfB2cResp = await fetch(SNCF_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${senhaB2c}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tipo: "farol_b2c" }),
+      });
+
+      const sncfB2cBody = await sncfB2cResp.json().catch(() => ({
+        error: "Resposta sem JSON do SNCF",
+      }));
+
+      if (!sncfB2cResp.ok) {
+        console.error(
+          "[enviar-para-sncf] farol_b2c: SNCF retornou erro",
+          sncfB2cResp.status,
+          sncfB2cBody,
+        );
+        return jsonResponse(500, {
+          error: sncfB2cBody?.error ?? `SNCF retornou HTTP ${sncfB2cResp.status}`,
+        });
+      }
+
+      return jsonResponse(200, {
+        ok: true,
+        pedidos: sncfB2cBody.pedidos ?? [],
+      });
+    }
+    // ── fim branch farol_b2c ──
+
+
     // ── Branch: Canal por Pedido — proxy FOP → SNCF ──
     if (
       body?.tipo === "canal_criar" ||
