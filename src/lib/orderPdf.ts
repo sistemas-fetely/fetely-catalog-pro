@@ -1134,7 +1134,7 @@ export async function generateProvisaoPDF(provisao: ProvisaoFutura): Promise<Ord
     vendedorNome: provisao.vendedorNome,
   };
 
-  const result = generateOrderPDF(fakeOrder);
+  const result = await generateOrderPDF(fakeOrder);
   const filename = `Provisao-${provisao.id}-${(snap.razaoSocial || snap.nomeFantasia || "cliente").replace(/[^a-zA-Z0-9\-_]/g, "-").slice(0, 40)}.pdf`;
   return { ...result, filename };
 }
