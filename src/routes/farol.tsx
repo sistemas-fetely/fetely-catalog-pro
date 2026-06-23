@@ -135,7 +135,7 @@ function prazoBadgeClass(prazo: string | null): string {
 const BLOQUEIO_BADGE =
   "bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-900";
 
-function FarolPage() {
+function AbaB2B() {
   const [busca, setBusca] = useState("");
   const [filtroPrazo, setFiltroPrazo] = useState("todos");
   const [filtroBloqueio, setFiltroBloqueio] = useState("todos");
