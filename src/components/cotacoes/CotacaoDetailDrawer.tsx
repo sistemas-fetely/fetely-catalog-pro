@@ -67,9 +67,9 @@ export function CotacaoDetailDrawer({
   };
 
 
-  const handlePdf = () => {
+  const handlePdf = async () => {
     try {
-      const { blob, filename } = generateCotacaoPDF(cotacao);
+      const { blob, filename } = await generateCotacaoPDF(cotacao);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

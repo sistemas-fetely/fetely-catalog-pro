@@ -344,9 +344,9 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
           <div className="flex flex-col gap-2 pt-2 border-t border-border">
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 try {
-                  const { blob, filename } = generateProvisaoPDF(provisao);
+                  const { blob, filename } = await generateProvisaoPDF(provisao);
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
                   a.href = url;

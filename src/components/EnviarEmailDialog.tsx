@@ -142,7 +142,7 @@ export function EnviarEmailDialog({ order, open, onOpenChange }: Props) {
     setStep("enviando");
     setResultado(null);
 
-    const { base64, filename } = generateOrderPDF(order);
+    const { base64, filename } = await generateOrderPDF(order);
     const tasks: Array<Promise<EnvioResult>> = [];
 
     if (destinoFinal === "cliente" || destinoFinal === "ambos") {

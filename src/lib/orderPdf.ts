@@ -5,9 +5,53 @@ import type { Cotacao } from "@/types/cotacao";
 import type { ProvisaoFutura } from "@/types/provisao";
 import { FRETE_PERCENT } from "@/lib/commercial";
 import { classificarItem } from "@/lib/classifyItem";
+import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 
 type GrupoColecao = { colecao: string; items: CartItem[]; subtotal: number; qtd: number };
 type SecaoItens = { tipo: "firme" | "provisao"; titulo: string; grupos: GrupoColecao[]; subtotal: number; qtd: number };
+
+interface LoadedImage { data: string; w: number; h: number }
+type ThumbMap = Map<string, LoadedImage>;
+
+async function urlToDataUrl(url: string, maxSize = 200): Promise<LoadedImage | null> {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const bitmap = await createImageBitmap(blob);
+    const ratio = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * ratio);
+    const h = Math.round(bitmap.height * ratio);
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    return { data: canvas.toDataURL("image/jpeg", 0.8), w, h };
+  } catch { return null; }
+}
+
+async function loadItemThumbs(items: CartItem[]): Promise<ThumbMap> {
+  const photos = usePhotos.getState();
+  const map: ThumbMap = new Map();
+  const seen = new Map<string, string>(); // sku -> url
+  for (const it of items) {
+    const colecao = it.product.colecao || "";
+    const cor = it.product.corNome || "";
+    if (!colecao || !cor) continue;
+    const url = getProdutoPhoto(photos, colecao, cor);
+    if (url) seen.set(it.sku, url);
+  }
+  await Promise.all(
+    Array.from(seen.entries()).map(async ([sku, url]) => {
+      const img = await urlToDataUrl(url);
+      if (img) map.set(sku, img);
+    }),
+  );
+  return map;
+}
 
 // Ordem macro: Mesa Posta → Jogos Americanos → Taças → Velas
 function macroRank(p: Product): number {
@@ -96,7 +140,7 @@ export interface OrderPDFResult {
   dataUrl: string;
 }
 
-function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
+function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): void {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   const contentWidth = pageWidth - margin * 2;
@@ -184,13 +228,16 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
 
   // ─── TABELA DE ITENS (agrupada por seção → coleção) ───
   const secoes = agruparItensPorSecao(order.items);
+  const hasThumbs = !!thumbs && thumbs.size > 0;
+  const COLS = hasThumbs ? 6 : 5;
   type Row = (string | { content: string; colSpan?: number; styles?: Record<string, unknown> })[];
   const body: Row[] = [];
+  const skuByRow = new Map<number, string>();
   for (const sec of secoes) {
     body.push([
       {
         content: `${sec.titulo}  ·  ${sec.qtd} un.  ·  ${formatBRL(sec.subtotal)}`,
-        colSpan: 5,
+        colSpan: COLS,
         styles: {
           fontStyle: "bold",
           fontSize: 9,
@@ -204,7 +251,7 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
       body.push([
         {
           content: `${g.colecao}  ·  ${g.qtd} un.  ·  ${formatBRL(g.subtotal)}`,
-          colSpan: 5,
+          colSpan: COLS,
           styles: {
             fontStyle: "bold",
             fontSize: 8.5,
@@ -216,20 +263,50 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
       ]);
       for (const item of g.items) {
         const subtotal = item.product.precoAtacado * item.quantity;
-        body.push([
-          item.sku,
-          item.product.nomeComercial || item.product.nomeCompleto || "",
-          `${item.quantity}`,
-          formatBRL(item.product.precoAtacado),
-          formatBRL(subtotal),
-        ]);
+        const row: Row = hasThumbs
+          ? [
+              "",
+              item.sku,
+              item.product.nomeComercial || item.product.nomeCompleto || "",
+              `${item.quantity}`,
+              formatBRL(item.product.precoAtacado),
+              formatBRL(subtotal),
+            ]
+          : [
+              item.sku,
+              item.product.nomeComercial || item.product.nomeCompleto || "",
+              `${item.quantity}`,
+              formatBRL(item.product.precoAtacado),
+              formatBRL(subtotal),
+            ];
+        skuByRow.set(body.length, item.sku);
+        body.push(row);
       }
     }
   }
 
+  const head: Row[] = hasThumbs
+    ? [["Foto", "SKU", "Descrição", "Qtd", "Unit", "Subtotal"]]
+    : [["SKU", "Descrição", "Qtd", "Unit", "Subtotal"]];
+
+  const columnStyles: Record<number, Record<string, unknown>> = hasThumbs
+    ? {
+        0: { cellWidth: 18, minCellHeight: 18 },
+        1: { cellWidth: 26 },
+        3: { cellWidth: 12, halign: "right" },
+        4: { cellWidth: 22, halign: "right" },
+        5: { cellWidth: 26, halign: "right" },
+      }
+    : {
+        0: { cellWidth: 28 },
+        2: { cellWidth: 12, halign: "right" },
+        3: { cellWidth: 25, halign: "right" },
+        4: { cellWidth: 28, halign: "right" },
+      };
+
   autoTable(doc, {
     startY: y,
-    head: [["SKU", "Descrição", "Qtd", "Unit", "Subtotal"]],
+    head: head as unknown as (string | number)[][],
     body: body as unknown as (string | number)[][],
     margin: { left: margin, right: margin },
     theme: "plain",
@@ -239,6 +316,7 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
       textColor: COLORS.black,
       lineColor: COLORS.separator,
       lineWidth: 0.1,
+      valign: "middle",
     },
     headStyles: {
       fontStyle: "bold",
@@ -248,11 +326,25 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
       lineWidth: { bottom: 0.5 },
       lineColor: COLORS.black,
     },
-    columnStyles: {
-      0: { cellWidth: 28 },
-      2: { cellWidth: 12, halign: "right" },
-      3: { cellWidth: 25, halign: "right" },
-      4: { cellWidth: 28, halign: "right" },
+    columnStyles,
+    didDrawCell: (data) => {
+      if (!hasThumbs) return;
+      if (data.section !== "body" || data.column.index !== 0) return;
+      const sku = skuByRow.get(data.row.index);
+      if (!sku) return;
+      const img = thumbs!.get(sku);
+      if (!img) return;
+      const pad = 1;
+      const bw = data.cell.width - pad * 2;
+      const bh = data.cell.height - pad * 2;
+      const ratio = img.w / img.h;
+      let dw = bw, dh = bw / ratio;
+      if (dh > bh) { dh = bh; dw = bh * ratio; }
+      const dx = data.cell.x + (data.cell.width - dw) / 2;
+      const dy = data.cell.y + (data.cell.height - dh) / 2;
+      try {
+        doc.addImage(img.data, "JPEG", dx, dy, dw, dh, undefined, "FAST");
+      } catch { /* ignore */ }
     },
   });
 
@@ -384,9 +476,10 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
   doc.text("fetelycorp.com.br", pageWidth - margin, pageHeight - 10, { align: "right" });
 }
 
-export function generateOrderPDF(order: SavedOrder): OrderPDFResult {
+export async function generateOrderPDF(order: SavedOrder): Promise<OrderPDFResult> {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  renderOrderToDoc(doc, order);
+  const thumbs = await loadItemThumbs(order.items);
+  renderOrderToDoc(doc, order, thumbs);
   const blob = doc.output("blob");
   const dataUrl = doc.output("datauristring");
   const base64 = dataUrl.split(",")[1];
@@ -399,15 +492,16 @@ export function generateOrderPDF(order: SavedOrder): OrderPDFResult {
  * - mode "completa": cada pedido em página(s) próprias, no mesmo layout do PDF individual.
  * - mode "resumida": uma única tabela compacta listando pedido / data / cliente / itens / total.
  */
-export function generateOrdersBatchPDF(
+export async function generateOrdersBatchPDF(
   orders: SavedOrder[],
   mode: "completa" | "resumida",
-): OrderPDFResult {
+): Promise<OrderPDFResult> {
   if (mode === "completa") {
     const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const allThumbs = await Promise.all(orders.map((o) => loadItemThumbs(o.items)));
     orders.forEach((order, idx) => {
       if (idx > 0) doc.addPage();
-      renderOrderToDoc(doc, order);
+      renderOrderToDoc(doc, order, allThumbs[idx]);
     });
     const blob = doc.output("blob");
     const dataUrl = doc.output("datauristring");
@@ -906,8 +1000,8 @@ export function printOrdersBatch(
   }, 60_000);
 }
 
-export function openOrderPDFInNewTab(order: SavedOrder): void {
-  const { blob, filename } = generateOrderPDF(order);
+export async function openOrderPDFInNewTab(order: SavedOrder): Promise<void> {
+  const { blob, filename } = await generateOrderPDF(order);
   const url = URL.createObjectURL(blob);
   const newWindow = window.open(url, "_blank");
   if (!newWindow) {
@@ -925,8 +1019,8 @@ export function openOrderPDFInNewTab(order: SavedOrder): void {
  * Gera o PDF em memória, cria iframe escondido, espera load e dispara print().
  * Sem abrir aba nova nem baixar arquivo.
  */
-export function printOrderPDF(order: SavedOrder): void {
-  const { blob } = generateOrderPDF(order);
+export async function printOrderPDF(order: SavedOrder): Promise<void> {
+  const { blob } = await generateOrderPDF(order);
   const url = URL.createObjectURL(blob);
 
   // Remove iframe anterior se ainda existir (em caso de cliques múltiplos)
@@ -972,7 +1066,7 @@ export function printOrderPDF(order: SavedOrder): void {
  * Gera PDF de uma cotação. Reaproveita o gerador de pedido, mas troca o
  * cabeçalho/rodapé para refletir o status de cotação (não compromisso).
  */
-export function generateCotacaoPDF(cotacao: Cotacao): OrderPDFResult {
+export async function generateCotacaoPDF(cotacao: Cotacao): Promise<OrderPDFResult> {
   // Monta um SavedOrder fake apenas para reusar a render
   const fakeOrder: SavedOrder = {
     id: cotacao.id,
@@ -988,7 +1082,7 @@ export function generateCotacaoPDF(cotacao: Cotacao): OrderPDFResult {
     vendedorNome: cotacao.vendedorNome,
     vendedorLogin: cotacao.vendedorLogin,
   };
-  const result = generateOrderPDF(fakeOrder);
+  const result = await generateOrderPDF(fakeOrder);
   // Renomeia o arquivo final
   const filename = `Cotacao-${cotacao.id}-${(cotacao.meta.cliente || "cliente").replace(/[^a-zA-Z0-9\-_]/g, "-").slice(0, 40)}.pdf`;
   return { ...result, filename };
@@ -999,7 +1093,7 @@ export function generateCotacaoPDF(cotacao: Cotacao): OrderPDFResult {
  * o mesmo visual, mas marca claramente como rascunho de provisão (valores de
  * referência, sem compromisso fiscal).
  */
-export function generateProvisaoPDF(provisao: ProvisaoFutura): OrderPDFResult {
+export async function generateProvisaoPDF(provisao: ProvisaoFutura): Promise<OrderPDFResult> {
   const items: CartItem[] = provisao.itens.map((i) => {
     const product = {
       sku: i.sku,
@@ -1040,7 +1134,7 @@ export function generateProvisaoPDF(provisao: ProvisaoFutura): OrderPDFResult {
     vendedorNome: provisao.vendedorNome,
   };
 
-  const result = generateOrderPDF(fakeOrder);
+  const result = await generateOrderPDF(fakeOrder);
   const filename = `Provisao-${provisao.id}-${(snap.razaoSocial || snap.nomeFantasia || "cliente").replace(/[^a-zA-Z0-9\-_]/g, "-").slice(0, 40)}.pdf`;
   return { ...result, filename };
 }
