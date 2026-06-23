@@ -228,13 +228,16 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
 
   // ─── TABELA DE ITENS (agrupada por seção → coleção) ───
   const secoes = agruparItensPorSecao(order.items);
+  const hasThumbs = !!thumbs && thumbs.size > 0;
+  const COLS = hasThumbs ? 6 : 5;
   type Row = (string | { content: string; colSpan?: number; styles?: Record<string, unknown> })[];
   const body: Row[] = [];
+  const skuByRow = new Map<number, string>();
   for (const sec of secoes) {
     body.push([
       {
         content: `${sec.titulo}  ·  ${sec.qtd} un.  ·  ${formatBRL(sec.subtotal)}`,
-        colSpan: 5,
+        colSpan: COLS,
         styles: {
           fontStyle: "bold",
           fontSize: 9,
@@ -248,7 +251,7 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
       body.push([
         {
           content: `${g.colecao}  ·  ${g.qtd} un.  ·  ${formatBRL(g.subtotal)}`,
-          colSpan: 5,
+          colSpan: COLS,
           styles: {
             fontStyle: "bold",
             fontSize: 8.5,
@@ -260,20 +263,50 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
       ]);
       for (const item of g.items) {
         const subtotal = item.product.precoAtacado * item.quantity;
-        body.push([
-          item.sku,
-          item.product.nomeComercial || item.product.nomeCompleto || "",
-          `${item.quantity}`,
-          formatBRL(item.product.precoAtacado),
-          formatBRL(subtotal),
-        ]);
+        const row: Row = hasThumbs
+          ? [
+              "",
+              item.sku,
+              item.product.nomeComercial || item.product.nomeCompleto || "",
+              `${item.quantity}`,
+              formatBRL(item.product.precoAtacado),
+              formatBRL(subtotal),
+            ]
+          : [
+              item.sku,
+              item.product.nomeComercial || item.product.nomeCompleto || "",
+              `${item.quantity}`,
+              formatBRL(item.product.precoAtacado),
+              formatBRL(subtotal),
+            ];
+        skuByRow.set(body.length, item.sku);
+        body.push(row);
       }
     }
   }
 
+  const head: Row[] = hasThumbs
+    ? [["Foto", "SKU", "Descrição", "Qtd", "Unit", "Subtotal"]]
+    : [["SKU", "Descrição", "Qtd", "Unit", "Subtotal"]];
+
+  const columnStyles: Record<number, Record<string, unknown>> = hasThumbs
+    ? {
+        0: { cellWidth: 18, minCellHeight: 18 },
+        1: { cellWidth: 26 },
+        3: { cellWidth: 12, halign: "right" },
+        4: { cellWidth: 22, halign: "right" },
+        5: { cellWidth: 26, halign: "right" },
+      }
+    : {
+        0: { cellWidth: 28 },
+        2: { cellWidth: 12, halign: "right" },
+        3: { cellWidth: 25, halign: "right" },
+        4: { cellWidth: 28, halign: "right" },
+      };
+
   autoTable(doc, {
     startY: y,
-    head: [["SKU", "Descrição", "Qtd", "Unit", "Subtotal"]],
+    head: head as unknown as (string | number)[][],
     body: body as unknown as (string | number)[][],
     margin: { left: margin, right: margin },
     theme: "plain",
@@ -283,6 +316,7 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
       textColor: COLORS.black,
       lineColor: COLORS.separator,
       lineWidth: 0.1,
+      valign: "middle",
     },
     headStyles: {
       fontStyle: "bold",
@@ -292,11 +326,25 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
       lineWidth: { bottom: 0.5 },
       lineColor: COLORS.black,
     },
-    columnStyles: {
-      0: { cellWidth: 28 },
-      2: { cellWidth: 12, halign: "right" },
-      3: { cellWidth: 25, halign: "right" },
-      4: { cellWidth: 28, halign: "right" },
+    columnStyles,
+    didDrawCell: (data) => {
+      if (!hasThumbs) return;
+      if (data.section !== "body" || data.column.index !== 0) return;
+      const sku = skuByRow.get(data.row.index);
+      if (!sku) return;
+      const img = thumbs!.get(sku);
+      if (!img) return;
+      const pad = 1;
+      const bw = data.cell.width - pad * 2;
+      const bh = data.cell.height - pad * 2;
+      const ratio = img.w / img.h;
+      let dw = bw, dh = bw / ratio;
+      if (dh > bh) { dh = bh; dw = bh * ratio; }
+      const dx = data.cell.x + (data.cell.width - dw) / 2;
+      const dy = data.cell.y + (data.cell.height - dh) / 2;
+      try {
+        doc.addImage(img.data, "JPEG", dx, dy, dw, dh, undefined, "FAST");
+      } catch { /* ignore */ }
     },
   });
 
