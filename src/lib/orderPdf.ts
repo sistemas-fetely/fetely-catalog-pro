@@ -476,9 +476,10 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
   doc.text("fetelycorp.com.br", pageWidth - margin, pageHeight - 10, { align: "right" });
 }
 
-export function generateOrderPDF(order: SavedOrder): OrderPDFResult {
+export async function generateOrderPDF(order: SavedOrder): Promise<OrderPDFResult> {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  renderOrderToDoc(doc, order);
+  const thumbs = await loadItemThumbs(order.items);
+  renderOrderToDoc(doc, order, thumbs);
   const blob = doc.output("blob");
   const dataUrl = doc.output("datauristring");
   const base64 = dataUrl.split(",")[1];
@@ -491,15 +492,16 @@ export function generateOrderPDF(order: SavedOrder): OrderPDFResult {
  * - mode "completa": cada pedido em página(s) próprias, no mesmo layout do PDF individual.
  * - mode "resumida": uma única tabela compacta listando pedido / data / cliente / itens / total.
  */
-export function generateOrdersBatchPDF(
+export async function generateOrdersBatchPDF(
   orders: SavedOrder[],
   mode: "completa" | "resumida",
-): OrderPDFResult {
+): Promise<OrderPDFResult> {
   if (mode === "completa") {
     const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const allThumbs = await Promise.all(orders.map((o) => loadItemThumbs(o.items)));
     orders.forEach((order, idx) => {
       if (idx > 0) doc.addPage();
-      renderOrderToDoc(doc, order);
+      renderOrderToDoc(doc, order, allThumbs[idx]);
     });
     const blob = doc.output("blob");
     const dataUrl = doc.output("datauristring");
