@@ -6,6 +6,50 @@ import FileSaver from "file-saver";
 const { saveAs } = FileSaver;
 import type { SavedOrder, CartItem } from "@/types";
 import { FAIXAS, FRETE_PERCENT } from "@/lib/commercial";
+import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
+
+// ===== Helpers de imagem (foto do item no PDF) =====
+interface LoadedImage { data: string; w: number; h: number }
+type ThumbMap = Map<string, LoadedImage>;
+
+async function urlToDataUrlExp(url: string, maxSize = 200): Promise<LoadedImage | null> {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const bitmap = await createImageBitmap(blob);
+    const ratio = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * ratio);
+    const h = Math.round(bitmap.height * ratio);
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    return { data: canvas.toDataURL("image/jpeg", 0.8), w, h };
+  } catch { return null; }
+}
+
+async function loadThumbsForItens(itens: { sku: string; colecao: string; corNome: string; grupo: string; numeroVela?: number }[]): Promise<ThumbMap> {
+  const photos = usePhotos.getState();
+  const seen = new Map<string, string>();
+  for (const it of itens) {
+    if (!it.colecao) continue;
+    const primary = it.grupo === "Talheres" || it.numeroVela != null ? it.corNome : it.sku;
+    const url =
+      (primary && getProdutoPhoto(photos, it.colecao, primary)) ||
+      (it.corNome && getProdutoPhoto(photos, it.colecao, it.corNome)) ||
+      undefined;
+    if (url) seen.set(it.sku, url);
+  }
+  const map: ThumbMap = new Map();
+  await Promise.all(Array.from(seen.entries()).map(async ([sku, url]) => {
+    const img = await urlToDataUrlExp(url);
+    if (img) map.set(sku, img);
+  }));
+  return map;
+}
 
 // ===== Tipos =====
 export interface ItemExportavel {
