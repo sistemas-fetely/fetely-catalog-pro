@@ -647,3 +647,326 @@ function AbaB2B() {
     </div>
   );
 }
+
+// ─── Aba B2C ───
+const B2C_ESTAGIOS: Array<string | null> = [null, "pago", "em_separacao", "expedido", "em_transito", "entregue"];
+
+function AbaB2C() {
+  const [busca, setBusca] = useState("");
+  const [filtroEstagio, setFiltroEstagio] = useState<string | null>(null);
+  const [filtroPrazo, setFiltroPrazo] = useState<B2CSituacao | null>(null);
+
+  const { data: pedidos = [], isLoading } = useQuery({
+    queryKey: ["farol_b2c"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("enviar-para-sncf", {
+        body: { tipo: "farol_b2c" },
+      });
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error ?? "Erro na ponte SNCF");
+      return (data.pedidos ?? []) as B2CRow[];
+    },
+    staleTime: 60_000,
+  });
+
+  const enriquecidos = useMemo(
+    () =>
+      pedidos.map((p) => {
+        const diasDesdePago = diasUteis(p.paid_at);
+        const situacao = derivarSituacao(p.estagio_derivado, p.alerta, diasDesdePago);
+        return { ...p, diasDesdePago, situacao };
+      }),
+    [pedidos],
+  );
+
+  const resumo = useMemo(() => {
+    const r = {
+      no_prazo: { count: 0, soma: 0 },
+      atrasado: { count: 0, soma: 0 },
+      bloqueado: { count: 0, soma: 0 },
+    };
+    for (const p of enriquecidos) {
+      const v = Number(p.total ?? 0);
+      r[p.situacao].count++;
+      r[p.situacao].soma += v;
+    }
+    return r;
+  }, [enriquecidos]);
+
+  const contagemPorEstagio = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of enriquecidos) {
+      const k = p.estagio_derivado ?? "";
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return m;
+  }, [enriquecidos]);
+
+  const filtrados = useMemo(() => {
+    let arr = enriquecidos;
+    if (filtroEstagio) arr = arr.filter((p) => p.estagio_derivado === filtroEstagio);
+    if (filtroPrazo) arr = arr.filter((p) => p.situacao === filtroPrazo);
+    if (busca.trim()) {
+      const q = busca.trim().toLowerCase();
+      arr = arr.filter((p) => (p.order_name ?? "").toLowerCase().includes(q));
+    }
+    return [...arr].sort((a, b) => {
+      const aAtraso = a.situacao === "atrasado" ? 0 : 1;
+      const bAtraso = b.situacao === "atrasado" ? 0 : 1;
+      if (aAtraso !== bAtraso) return aAtraso - bAtraso;
+      return b.diasDesdePago - a.diasDesdePago;
+    });
+  }, [enriquecidos, filtroEstagio, filtroPrazo, busca]);
+
+  function togglePrazo(s: B2CSituacao) {
+    setFiltroPrazo((cur) => (cur === s ? null : s));
+  }
+  function toggleEstagio(e: string | null) {
+    if (e === null) {
+      setFiltroEstagio(null);
+      return;
+    }
+    setFiltroEstagio((cur) => (cur === e ? null : e));
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Régua de prazos */}
+      <div className="rounded-lg border bg-muted/40 p-4">
+        <div className="text-sm font-semibold mb-1">Régua de prazos B2C</div>
+        <div className="text-xs text-muted-foreground mb-3">
+          Meta = dias desde pagamento confirmado (T0)
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            "SHOPIFY",
+            "Pago · T0",
+            "Em separação · 1-2d",
+            "Expedido · 1d",
+            "Em trânsito · ~Xd CEP",
+            "✓ Entregue",
+          ].map((chip, i, arr) => (
+            <div key={chip} className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-md border bg-background px-2 py-1 text-xs gap-1">
+                {chip}
+              </span>
+              {i < arr.length - 1 && <span className="text-muted-foreground">→</span>}
+            </div>
+          ))}
+        </div>
+        <div className="text-xs text-muted-foreground mt-3">
+          prazo base ≈ 2 dias úteis preparo + trânsito por CEP
+        </div>
+        <div className="text-xs text-muted-foreground">
+          pausam o relógio: pedidos sem WNS vinculado (pago_sem_wns)
+        </div>
+      </div>
+
+      {/* Mini-pipeline clicável */}
+      <div className="flex flex-wrap gap-2">
+        {B2C_ESTAGIOS.map((e) => {
+          const ativo = filtroEstagio === e;
+          const label = e === null ? "Todos" : (B2C_ESTAGIO_LABEL[e] ?? e);
+          const count = e === null ? enriquecidos.length : (contagemPorEstagio.get(e) ?? 0);
+          return (
+            <button
+              key={e ?? "todos"}
+              onClick={() => toggleEstagio(e)}
+              className={
+                "inline-flex items-center rounded-md px-3 py-1 text-xs gap-2 transition " +
+                (ativo
+                  ? "bg-primary text-primary-foreground"
+                  : "border bg-background hover:bg-muted")
+              }
+            >
+              <span>{label}</span>
+              <span className="opacity-70">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {([
+          { key: "no_prazo" as const, titulo: "No prazo", border: "border-green-200 bg-green-50", sufixo: "" },
+          { key: "atrasado" as const, titulo: "Atrasado", border: "border-red-200 bg-red-50", sufixo: " em risco" },
+          { key: "bloqueado" as const, titulo: "Bloqueados", border: "border-amber-200 bg-amber-50", sufixo: "" },
+        ]).map(({ key, titulo, border, sufixo }) => {
+          const ativo = filtroPrazo === key;
+          return (
+            <button
+              key={key}
+              onClick={() => togglePrazo(key)}
+              className={
+                "rounded-lg border p-4 text-left transition " +
+                border +
+                (ativo ? " ring-2 ring-offset-1 ring-foreground/40" : "")
+              }
+            >
+              <div className="text-sm text-muted-foreground">{titulo}</div>
+              <div className="text-3xl font-semibold mt-1">{resumo[key].count}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {BRL.format(resumo[key].soma)}{sufixo}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Busca */}
+      <Input
+        placeholder="buscar por pedido..."
+        value={busca}
+        onChange={(e) => setBusca(e.target.value)}
+        className="max-w-xs"
+      />
+
+      {/* Tabela */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Carregando pedidos B2C...</span>
+        </div>
+      ) : filtrados.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">Nenhum pedido B2C ativo.</div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente / Pedido</TableHead>
+                <TableHead>Estágio · desde</TableHead>
+                <TableHead>Dias</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Pagamento</TableHead>
+                <TableHead>Rastreio</TableHead>
+                <TableHead>Status rastreio</TableHead>
+                <TableHead>Situação</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtrados.map((p) => {
+                const estagio = p.estagio_derivado ?? "";
+                const labelEstagio = B2C_ESTAGIO_LABEL[estagio] ?? estagio ?? "—";
+                const variantEstagio = B2C_ESTAGIO_BADGE[estagio] ?? "outline";
+                const desdeBase =
+                  estagio === "pago" || estagio === "em_separacao" ? p.paid_at : p.fulfilled_at;
+                const rastreioStatus = p.rastreio_status ?? "";
+                return (
+                  <TableRow key={p.shopify_id}>
+                    <TableCell>
+                      <div className="font-semibold">{p.order_name ?? "—"}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {[p.shipping_city, p.shipping_province].filter(Boolean).join(" · ") || "—"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={variantEstagio}>{labelEstagio}</Badge>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        desde {fmtCurta(desdeBase)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-xl font-semibold">{p.diasDesdePago}</div>
+                      <div className="text-xs text-muted-foreground">d.u. desde pgto</div>
+                    </TableCell>
+                    <TableCell>{BRL.format(Number(p.total ?? 0))}</TableCell>
+                    <TableCell>{p.payment_method ?? "—"}</TableCell>
+                    <TableCell>
+                      {p.tracking_number ? (
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs">{p.tracking_number}</span>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(p.tracking_number!)}
+                            className="text-muted-foreground hover:text-foreground"
+                            title="Copiar"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                          <a
+                            href="https://rastreamento.correios.com.br/app/index.php"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-muted-foreground hover:text-foreground"
+                            title="Abrir rastreamento"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        </div>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {p.rastreio_entregue === true ? (
+                        <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
+                          Entregue
+                        </Badge>
+                      ) : rastreioStatus ? (
+                        <span className="text-xs text-muted-foreground">
+                          {rastreioStatus.length > 30
+                            ? rastreioStatus.slice(0, 30) + "…"
+                            : rastreioStatus}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {p.situacao === "atrasado" ? (
+                        <div className="flex items-center gap-1 text-red-600 text-sm">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span>{p.diasDesdePago}d sem avanço</span>
+                        </div>
+                      ) : p.situacao === "bloqueado" ? (
+                        <div className="flex items-center gap-1 text-amber-700 text-sm">
+                          <Pause className="h-4 w-4" />
+                          <span>Sem WNS</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-green-600 text-sm">
+                          <Circle className="h-4 w-4" />
+                          <span>no prazo</span>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Wrapper com tab switcher ───
+function FarolPage() {
+  const [aba, setAba] = useState<"b2b" | "b2c">("b2b");
+  return (
+    <div className="space-y-4">
+      <div className="border-b">
+        <div className="flex gap-6">
+          {(["b2b", "b2c"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setAba(t)}
+              className={
+                "px-1 py-3 text-sm font-medium border-b-2 -mb-px transition " +
+                (aba === t
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground")
+              }
+            >
+              {t === "b2b" ? "B2B" : "B2C"}
+            </button>
+          ))}
+        </div>
+      </div>
+      {aba === "b2b" ? <AbaB2B /> : <AbaB2C />}
+    </div>
+  );
+}
+
