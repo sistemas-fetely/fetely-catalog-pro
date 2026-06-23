@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StandRouteImport } from './routes/stand'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as QualificacaoRouteImport } from './routes/qualificacao'
 import { Route as ProvisoesRouteImport } from './routes/provisoes'
@@ -22,6 +23,7 @@ import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as NewOrderRouteImport } from './routes/new-order'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ImportRouteImport } from './routes/import'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FarolRouteImport } from './routes/farol'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CotacoesRouteImport } from './routes/cotacoes'
@@ -56,6 +58,11 @@ const StandRoute = StandRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RelatoriosRoute = RelatoriosRouteImport.update({
@@ -111,6 +118,11 @@ const LoginRoute = LoginRouteImport.update({
 const ImportRoute = ImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FarolRoute = FarolRouteImport.update({
@@ -252,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/cotacoes': typeof CotacoesRoute
   '/dashboard': typeof DashboardRoute
   '/farol': typeof FarolRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
@@ -263,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/provisoes': typeof ProvisoesRoute
   '/qualificacao': typeof QualificacaoRoute
   '/relatorios': typeof RelatoriosRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
@@ -292,6 +306,7 @@ export interface FileRoutesByTo {
   '/cotacoes': typeof CotacoesRoute
   '/dashboard': typeof DashboardRoute
   '/farol': typeof FarolRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
@@ -302,6 +317,7 @@ export interface FileRoutesByTo {
   '/provisoes': typeof ProvisoesRoute
   '/qualificacao': typeof QualificacaoRoute
   '/relatorios': typeof RelatoriosRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
@@ -332,6 +348,7 @@ export interface FileRoutesById {
   '/cotacoes': typeof CotacoesRoute
   '/dashboard': typeof DashboardRoute
   '/farol': typeof FarolRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
@@ -343,6 +360,7 @@ export interface FileRoutesById {
   '/provisoes': typeof ProvisoesRoute
   '/qualificacao': typeof QualificacaoRoute
   '/relatorios': typeof RelatoriosRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/admin/cartilhas': typeof AdminCartilhasRoute
@@ -374,6 +392,7 @@ export interface FileRouteTypes {
     | '/cotacoes'
     | '/dashboard'
     | '/farol'
+    | '/forgot-password'
     | '/import'
     | '/login'
     | '/new-order'
@@ -385,6 +404,7 @@ export interface FileRouteTypes {
     | '/provisoes'
     | '/qualificacao'
     | '/relatorios'
+    | '/reset-password'
     | '/settings'
     | '/stand'
     | '/admin/cartilhas'
@@ -414,6 +434,7 @@ export interface FileRouteTypes {
     | '/cotacoes'
     | '/dashboard'
     | '/farol'
+    | '/forgot-password'
     | '/import'
     | '/login'
     | '/new-order'
@@ -424,6 +445,7 @@ export interface FileRouteTypes {
     | '/provisoes'
     | '/qualificacao'
     | '/relatorios'
+    | '/reset-password'
     | '/settings'
     | '/stand'
     | '/admin/cartilhas'
@@ -453,6 +475,7 @@ export interface FileRouteTypes {
     | '/cotacoes'
     | '/dashboard'
     | '/farol'
+    | '/forgot-password'
     | '/import'
     | '/login'
     | '/new-order'
@@ -464,6 +487,7 @@ export interface FileRouteTypes {
     | '/provisoes'
     | '/qualificacao'
     | '/relatorios'
+    | '/reset-password'
     | '/settings'
     | '/stand'
     | '/admin/cartilhas'
@@ -494,6 +518,7 @@ export interface RootRouteChildren {
   CotacoesRoute: typeof CotacoesRoute
   DashboardRoute: typeof DashboardRoute
   FarolRoute: typeof FarolRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   ImportRoute: typeof ImportRoute
   LoginRoute: typeof LoginRoute
   NewOrderRoute: typeof NewOrderRoute
@@ -505,6 +530,7 @@ export interface RootRouteChildren {
   ProvisoesRoute: typeof ProvisoesRoute
   QualificacaoRoute: typeof QualificacaoRoute
   RelatoriosRoute: typeof RelatoriosRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   StandRoute: typeof StandRouteWithChildren
   AdminCartilhasRoute: typeof AdminCartilhasRoute
@@ -530,6 +556,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/relatorios': {
@@ -607,6 +640,13 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/import'
       preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/farol': {
@@ -839,6 +879,7 @@ const rootRouteChildren: RootRouteChildren = {
   CotacoesRoute: CotacoesRoute,
   DashboardRoute: DashboardRoute,
   FarolRoute: FarolRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   ImportRoute: ImportRoute,
   LoginRoute: LoginRoute,
   NewOrderRoute: NewOrderRoute,
@@ -850,6 +891,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProvisoesRoute: ProvisoesRoute,
   QualificacaoRoute: QualificacaoRoute,
   RelatoriosRoute: RelatoriosRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   StandRoute: StandRouteWithChildren,
   AdminCartilhasRoute: AdminCartilhasRoute,
