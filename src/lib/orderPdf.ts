@@ -1000,8 +1000,8 @@ export function printOrdersBatch(
   }, 60_000);
 }
 
-export function openOrderPDFInNewTab(order: SavedOrder): void {
-  const { blob, filename } = generateOrderPDF(order);
+export async function openOrderPDFInNewTab(order: SavedOrder): Promise<void> {
+  const { blob, filename } = await generateOrderPDF(order);
   const url = URL.createObjectURL(blob);
   const newWindow = window.open(url, "_blank");
   if (!newWindow) {
@@ -1019,8 +1019,8 @@ export function openOrderPDFInNewTab(order: SavedOrder): void {
  * Gera o PDF em memória, cria iframe escondido, espera load e dispara print().
  * Sem abrir aba nova nem baixar arquivo.
  */
-export function printOrderPDF(order: SavedOrder): void {
-  const { blob } = generateOrderPDF(order);
+export async function printOrderPDF(order: SavedOrder): Promise<void> {
+  const { blob } = await generateOrderPDF(order);
   const url = URL.createObjectURL(blob);
 
   // Remove iframe anterior se ainda existir (em caso de cliques múltiplos)
