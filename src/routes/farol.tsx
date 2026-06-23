@@ -135,6 +135,73 @@ function prazoBadgeClass(prazo: string | null): string {
 const BLOQUEIO_BADGE =
   "bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-900";
 
+// ─── B2C: tipos e helpers ───
+type B2CRow = {
+  shopify_id: string;
+  order_name: string | null;
+  created_at_shopify: string | null;
+  estagio_derivado: string | null;
+  financial_status: string | null;
+  payment_method: string | null;
+  total: number | null;
+  paid_at: string | null;
+  cancelled_at: string | null;
+  fulfilled_at: string | null;
+  shipping_province: string | null;
+  shipping_city: string | null;
+  wns_pedidowns: string | null;
+  alerta: string | null;
+  tracking_number: string | null;
+  tracking_company: string | null;
+  rastreio_status: string | null;
+  rastreio_entregue: boolean | null;
+};
+
+type B2CSituacao = "no_prazo" | "atrasado" | "bloqueado";
+
+function diasUteis(dataInicio: string | null): number {
+  if (!dataInicio) return 0;
+  const inicio = new Date(dataInicio);
+  const hoje = new Date();
+  let count = 0;
+  const cur = new Date(inicio);
+  while (cur < hoje) {
+    const dow = cur.getDay();
+    if (dow !== 0 && dow !== 6) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
+function derivarSituacao(
+  estagio: string | null,
+  alerta: string | null,
+  dias: number,
+): B2CSituacao {
+  if (alerta === "pago_sem_wns") return "bloqueado";
+  if (estagio === "pago" && dias > 2) return "atrasado";
+  if (estagio === "em_separacao" && dias > 5) return "atrasado";
+  if (estagio === "expedido" && dias > 10) return "atrasado";
+  return "no_prazo";
+}
+
+const B2C_ESTAGIO_LABEL: Record<string, string> = {
+  pago: "Pago",
+  em_separacao: "Em separação",
+  expedido: "Expedido",
+  em_transito: "Em trânsito",
+  entregue: "Entregue",
+};
+
+const B2C_ESTAGIO_BADGE: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+  pago: "secondary",
+  em_separacao: "default",
+  expedido: "outline",
+  em_transito: "outline",
+  entregue: "default",
+};
+
+
 function AbaB2B() {
   const [busca, setBusca] = useState("");
   const [filtroPrazo, setFiltroPrazo] = useState("todos");
