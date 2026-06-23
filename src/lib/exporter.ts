@@ -313,11 +313,12 @@ const fmtBRL = (v: number) =>
 const safeFile = (s: string) => s.replace(/[^a-zA-Z0-9_-]/g, "_");
 
 // ===== PDF =====
-export function exportarPDF(
+export async function exportarPDF(
   pedido: PedidoExportavel,
   tipo: "cliente" | "interno",
   opts: ExportOptions = DEFAULT_OPTIONS,
-): void {
+): Promise<void> {
+  const thumbs = await loadThumbsForItens(pedido.itens);
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const GOLD: [number, number, number] = [201, 168, 76];
 
