@@ -6,6 +6,50 @@ import FileSaver from "file-saver";
 const { saveAs } = FileSaver;
 import type { SavedOrder, CartItem } from "@/types";
 import { FAIXAS, FRETE_PERCENT } from "@/lib/commercial";
+import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
+
+// ===== Helpers de imagem (foto do item no PDF) =====
+interface LoadedImage { data: string; w: number; h: number }
+type ThumbMap = Map<string, LoadedImage>;
+
+async function urlToDataUrlExp(url: string, maxSize = 200): Promise<LoadedImage | null> {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const bitmap = await createImageBitmap(blob);
+    const ratio = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * ratio);
+    const h = Math.round(bitmap.height * ratio);
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    return { data: canvas.toDataURL("image/jpeg", 0.8), w, h };
+  } catch { return null; }
+}
+
+async function loadThumbsForItens(itens: { sku: string; colecao: string; corNome: string; grupo: string; numeroVela?: number }[]): Promise<ThumbMap> {
+  const photos = usePhotos.getState();
+  const seen = new Map<string, string>();
+  for (const it of itens) {
+    if (!it.colecao) continue;
+    const primary = it.grupo === "Talheres" || it.numeroVela != null ? it.corNome : it.sku;
+    const url =
+      (primary && getProdutoPhoto(photos, it.colecao, primary)) ||
+      (it.corNome && getProdutoPhoto(photos, it.colecao, it.corNome)) ||
+      undefined;
+    if (url) seen.set(it.sku, url);
+  }
+  const map: ThumbMap = new Map();
+  await Promise.all(Array.from(seen.entries()).map(async ([sku, url]) => {
+    const img = await urlToDataUrlExp(url);
+    if (img) map.set(sku, img);
+  }));
+  return map;
+}
 
 // ===== Tipos =====
 export interface ItemExportavel {
@@ -269,11 +313,12 @@ const fmtBRL = (v: number) =>
 const safeFile = (s: string) => s.replace(/[^a-zA-Z0-9_-]/g, "_");
 
 // ===== PDF =====
-export function exportarPDF(
+export async function exportarPDF(
   pedido: PedidoExportavel,
   tipo: "cliente" | "interno",
   opts: ExportOptions = DEFAULT_OPTIONS,
-): void {
+): Promise<void> {
+  const thumbs = await loadThumbsForItens(pedido.itens);
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const GOLD: [number, number, number] = [201, 168, 76];
 
@@ -341,26 +386,37 @@ export function exportarPDF(
 
   // Itens
   const showVarejo = tipo === "interno";
-  const head = showVarejo
-    ? [["#", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
-    : [["#", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]];
+  const hasThumbs = thumbs.size > 0;
+  const head = hasThumbs
+    ? (showVarejo
+        ? [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
+        : [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]])
+    : (showVarejo
+        ? [["#", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
+        : [["#", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]]);
 
+  const skuByRowIdx = new Map<number, string>();
   const rows = pedido.itens.map((item, i) => {
     const desc = [
       item.nomeComercial,
       [item.corNome, item.tamanhoNumero].filter(Boolean).join(" · "),
       `SKU: ${item.sku}${opts.incluirEspecsTecnicas && item.ean ? `  EAN: ${item.ean}` : ""}`,
     ].filter(Boolean).join("\n");
-    const base = [
-      String(i + 1),
-      desc,
-      String(item.quantidade),
-      String(item.quantidadeCaixas),
-    ];
+    skuByRowIdx.set(i, item.sku);
+    const base: string[] = [String(i + 1)];
+    if (hasThumbs) base.push("");
+    base.push(desc, String(item.quantidade), String(item.quantidadeCaixas));
     if (showVarejo) base.push(fmtBRL(item.precoVarejoUnit));
     base.push(fmtBRL(item.precoAtacadoUnit), fmtBRL(item.subtotalBruto));
     return base;
   });
+
+  const colStylesNoThumb: Record<number, Record<string, unknown>> = showVarejo
+    ? { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 78 }, 2: { cellWidth: 12, halign: "center" }, 3: { cellWidth: 12, halign: "center" }, 4: { cellWidth: 22, halign: "right" }, 5: { cellWidth: 22, halign: "right" }, 6: { cellWidth: 26, halign: "right" } }
+    : { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 100 }, 2: { cellWidth: 14, halign: "center" }, 3: { cellWidth: 14, halign: "center" }, 4: { cellWidth: 22, halign: "right" }, 5: { cellWidth: 22, halign: "right" } };
+  const colStylesWithThumb: Record<number, Record<string, unknown>> = showVarejo
+    ? { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 18, minCellHeight: 18 }, 2: { cellWidth: 60 }, 3: { cellWidth: 12, halign: "center" }, 4: { cellWidth: 12, halign: "center" }, 5: { cellWidth: 20, halign: "right" }, 6: { cellWidth: 20, halign: "right" }, 7: { cellWidth: 24, halign: "right" } }
+    : { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 18, minCellHeight: 18 }, 2: { cellWidth: 82 }, 3: { cellWidth: 14, halign: "center" }, 4: { cellWidth: 14, halign: "center" }, 5: { cellWidth: 22, halign: "right" }, 6: { cellWidth: 22, halign: "right" } };
 
   autoTable(doc, {
     startY: (doc as any).lastAutoTable.finalY + 4,
@@ -368,26 +424,24 @@ export function exportarPDF(
     body: rows,
     headStyles: { fillColor: GOLD, textColor: [0, 0, 0], fontStyle: "bold", fontSize: 8 },
     alternateRowStyles: { fillColor: [250, 250, 250] },
-    styles: { fontSize: 8, cellPadding: 2.5, valign: "top" },
-    columnStyles: showVarejo
-      ? {
-          0: { cellWidth: 8, halign: "center" },
-          1: { cellWidth: 78 },
-          2: { cellWidth: 12, halign: "center" },
-          3: { cellWidth: 12, halign: "center" },
-          4: { cellWidth: 22, halign: "right" },
-          5: { cellWidth: 22, halign: "right" },
-          6: { cellWidth: 26, halign: "right" },
-        }
-      : {
-          0: { cellWidth: 8, halign: "center" },
-          1: { cellWidth: 100 },
-          2: { cellWidth: 14, halign: "center" },
-          3: { cellWidth: 14, halign: "center" },
-          4: { cellWidth: 22, halign: "right" },
-          5: { cellWidth: 22, halign: "right" },
-        },
+    styles: { fontSize: 8, cellPadding: 2.5, valign: "middle" },
+    columnStyles: hasThumbs ? colStylesWithThumb : colStylesNoThumb,
     margin: { left: 15, right: 15 },
+    didDrawCell: (data) => {
+      if (!hasThumbs || data.section !== "body" || data.column.index !== 1) return;
+      const sku = skuByRowIdx.get(data.row.index);
+      if (!sku) return;
+      const img = thumbs.get(sku);
+      if (!img) return;
+      const bw = data.cell.width - 2;
+      const bh = data.cell.height - 2;
+      const ratio = img.w / img.h;
+      let dw = bw, dh = bw / ratio;
+      if (dh > bh) { dh = bh; dw = bh * ratio; }
+      const dx = data.cell.x + (data.cell.width - dw) / 2;
+      const dy = data.cell.y + (data.cell.height - dh) / 2;
+      try { doc.addImage(img.data, "JPEG", dx, dy, dw, dh, undefined, "FAST"); } catch { /* ignore */ }
+    },
   });
 
   // Totais
@@ -653,7 +707,7 @@ export async function exportarZIP(
   const zip = new JSZip();
   for (const pedido of pedidos) {
     if (formato === "pdf") {
-      const doc = buildPdfDoc(pedido, tipoPdf, opts);
+      const doc = await buildPdfDoc(pedido, tipoPdf, opts);
       const blob = doc.output("blob");
       zip.file(`fetely_pedido_${safeFile(pedido.id)}_${pedido.dataISO.slice(0, 10)}.pdf`, blob);
     } else {
@@ -669,14 +723,12 @@ export async function exportarZIP(
 }
 
 // PDF builder retornando doc (para ZIP)
-function buildPdfDoc(pedido: PedidoExportavel, tipo: "cliente" | "interno", opts: ExportOptions): jsPDF {
-  // Truque: reuso exportarPDF gera download. Para ZIP precisamos do doc sem salvar.
-  // Solução simples: replicar inline seria longo — usamos um patch: salvar e capturar não dá.
-  // Em vez disso, refatoramos pequena: chamamos uma versão "build" que monta o doc.
-  return _buildPdfInternal(pedido, tipo, opts);
+async function buildPdfDoc(pedido: PedidoExportavel, tipo: "cliente" | "interno", opts: ExportOptions): Promise<jsPDF> {
+  const thumbs = await loadThumbsForItens(pedido.itens);
+  return _buildPdfInternal(pedido, tipo, opts, thumbs);
 }
 
-function _buildPdfInternal(pedido: PedidoExportavel, tipo: "cliente" | "interno", opts: ExportOptions): jsPDF {
+function _buildPdfInternal(pedido: PedidoExportavel, tipo: "cliente" | "interno", opts: ExportOptions, thumbs: ThumbMap = new Map()): jsPDF {
   // Versão idêntica a exportarPDF, sem doc.save
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const GOLD: [number, number, number] = [201, 168, 76];
@@ -711,26 +763,54 @@ function _buildPdfInternal(pedido: PedidoExportavel, tipo: "cliente" | "interno"
   });
 
   const showVarejo = tipo === "interno";
-  const head = showVarejo
-    ? [["#", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
-    : [["#", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]];
+  const hasThumbs = thumbs.size > 0;
+  const head = hasThumbs
+    ? (showVarejo
+        ? [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
+        : [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]])
+    : (showVarejo
+        ? [["#", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
+        : [["#", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]]);
+  const skuByRowIdx = new Map<number, string>();
   const rows = pedido.itens.map((item, i) => {
     const desc = [
       item.nomeComercial,
       [item.corNome, item.tamanhoNumero].filter(Boolean).join(" · "),
       `SKU: ${item.sku}${opts.incluirEspecsTecnicas && item.ean ? `  EAN: ${item.ean}` : ""}`,
     ].filter(Boolean).join("\n");
-    const base = [String(i + 1), desc, String(item.quantidade), String(item.quantidadeCaixas)];
+    skuByRowIdx.set(i, item.sku);
+    const base: string[] = [String(i + 1)];
+    if (hasThumbs) base.push("");
+    base.push(desc, String(item.quantidade), String(item.quantidadeCaixas));
     if (showVarejo) base.push(fmtBRL(item.precoVarejoUnit));
     base.push(fmtBRL(item.precoAtacadoUnit), fmtBRL(item.subtotalBruto));
     return base;
   });
+  const colStylesWithThumb: Record<number, Record<string, unknown>> = showVarejo
+    ? { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 18, minCellHeight: 18 }, 2: { cellWidth: 60 }, 3: { cellWidth: 12, halign: "center" }, 4: { cellWidth: 12, halign: "center" }, 5: { cellWidth: 20, halign: "right" }, 6: { cellWidth: 20, halign: "right" }, 7: { cellWidth: 24, halign: "right" } }
+    : { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 18, minCellHeight: 18 }, 2: { cellWidth: 82 }, 3: { cellWidth: 14, halign: "center" }, 4: { cellWidth: 14, halign: "center" }, 5: { cellWidth: 22, halign: "right" }, 6: { cellWidth: 22, halign: "right" } };
   autoTable(doc, {
     startY: (doc as any).lastAutoTable.finalY + 4, head, body: rows,
     headStyles: { fillColor: GOLD, textColor: [0,0,0], fontStyle: "bold", fontSize: 8 },
     alternateRowStyles: { fillColor: [250,250,250] },
-    styles: { fontSize: 8, cellPadding: 2.5, valign: "top" },
+    styles: { fontSize: 8, cellPadding: 2.5, valign: hasThumbs ? "middle" : "top" },
+    columnStyles: hasThumbs ? colStylesWithThumb : undefined,
     margin: { left: 15, right: 15 },
+    didDrawCell: (data) => {
+      if (!hasThumbs || data.section !== "body" || data.column.index !== 1) return;
+      const sku = skuByRowIdx.get(data.row.index);
+      if (!sku) return;
+      const img = thumbs.get(sku);
+      if (!img) return;
+      const bw = data.cell.width - 2;
+      const bh = data.cell.height - 2;
+      const ratio = img.w / img.h;
+      let dw = bw, dh = bw / ratio;
+      if (dh > bh) { dh = bh; dw = bh * ratio; }
+      const dx = data.cell.x + (data.cell.width - dw) / 2;
+      const dy = data.cell.y + (data.cell.height - dh) / 2;
+      try { doc.addImage(img.data, "JPEG", dx, dy, dw, dh, undefined, "FAST"); } catch { /* ignore */ }
+    },
   });
 
   const totaisBody: string[][] = [["Subtotal bruto (atacado)", fmtBRL(pedido.totalBrutoAtacado)]];

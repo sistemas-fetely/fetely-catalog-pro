@@ -48,8 +48,8 @@ export function ExportModal({
     setBusy(true);
     try {
       const pedidos = orders.map(buildPedidoExportavel);
-      if (formato === "pdf_cliente") exportarPDF(pedidos[0], "cliente", opts);
-      else if (formato === "pdf_interno") exportarPDF(pedidos[0], "interno", opts);
+      if (formato === "pdf_cliente") await exportarPDF(pedidos[0], "cliente", opts);
+      else if (formato === "pdf_interno") await exportarPDF(pedidos[0], "interno", opts);
       else if (formato === "csv") exportarCSV(pedidos);
       else if (formato === "json") exportarJSON(pedidos);
       else if (formato === "lote_csv_unico") {
