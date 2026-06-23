@@ -1066,7 +1066,7 @@ export async function printOrderPDF(order: SavedOrder): Promise<void> {
  * Gera PDF de uma cotação. Reaproveita o gerador de pedido, mas troca o
  * cabeçalho/rodapé para refletir o status de cotação (não compromisso).
  */
-export function generateCotacaoPDF(cotacao: Cotacao): OrderPDFResult {
+export async function generateCotacaoPDF(cotacao: Cotacao): Promise<OrderPDFResult> {
   // Monta um SavedOrder fake apenas para reusar a render
   const fakeOrder: SavedOrder = {
     id: cotacao.id,
