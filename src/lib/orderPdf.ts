@@ -1093,7 +1093,7 @@ export async function generateCotacaoPDF(cotacao: Cotacao): Promise<OrderPDFResu
  * o mesmo visual, mas marca claramente como rascunho de provisão (valores de
  * referência, sem compromisso fiscal).
  */
-export function generateProvisaoPDF(provisao: ProvisaoFutura): OrderPDFResult {
+export async function generateProvisaoPDF(provisao: ProvisaoFutura): Promise<OrderPDFResult> {
   const items: CartItem[] = provisao.itens.map((i) => {
     const product = {
       sku: i.sku,
