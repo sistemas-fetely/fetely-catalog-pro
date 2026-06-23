@@ -386,26 +386,37 @@ export async function exportarPDF(
 
   // Itens
   const showVarejo = tipo === "interno";
-  const head = showVarejo
-    ? [["#", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
-    : [["#", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]];
+  const hasThumbs = thumbs.size > 0;
+  const head = hasThumbs
+    ? (showVarejo
+        ? [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
+        : [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]])
+    : (showVarejo
+        ? [["#", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
+        : [["#", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]]);
 
+  const skuByRowIdx = new Map<number, string>();
   const rows = pedido.itens.map((item, i) => {
     const desc = [
       item.nomeComercial,
       [item.corNome, item.tamanhoNumero].filter(Boolean).join(" · "),
       `SKU: ${item.sku}${opts.incluirEspecsTecnicas && item.ean ? `  EAN: ${item.ean}` : ""}`,
     ].filter(Boolean).join("\n");
-    const base = [
-      String(i + 1),
-      desc,
-      String(item.quantidade),
-      String(item.quantidadeCaixas),
-    ];
+    skuByRowIdx.set(i, item.sku);
+    const base: string[] = [String(i + 1)];
+    if (hasThumbs) base.push("");
+    base.push(desc, String(item.quantidade), String(item.quantidadeCaixas));
     if (showVarejo) base.push(fmtBRL(item.precoVarejoUnit));
     base.push(fmtBRL(item.precoAtacadoUnit), fmtBRL(item.subtotalBruto));
     return base;
   });
+
+  const colStylesNoThumb = showVarejo
+    ? { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 78 }, 2: { cellWidth: 12, halign: "center" }, 3: { cellWidth: 12, halign: "center" }, 4: { cellWidth: 22, halign: "right" }, 5: { cellWidth: 22, halign: "right" }, 6: { cellWidth: 26, halign: "right" } }
+    : { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 100 }, 2: { cellWidth: 14, halign: "center" }, 3: { cellWidth: 14, halign: "center" }, 4: { cellWidth: 22, halign: "right" }, 5: { cellWidth: 22, halign: "right" } };
+  const colStylesWithThumb = showVarejo
+    ? { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 18, minCellHeight: 18 }, 2: { cellWidth: 60 }, 3: { cellWidth: 12, halign: "center" }, 4: { cellWidth: 12, halign: "center" }, 5: { cellWidth: 20, halign: "right" }, 6: { cellWidth: 20, halign: "right" }, 7: { cellWidth: 24, halign: "right" } }
+    : { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 18, minCellHeight: 18 }, 2: { cellWidth: 82 }, 3: { cellWidth: 14, halign: "center" }, 4: { cellWidth: 14, halign: "center" }, 5: { cellWidth: 22, halign: "right" }, 6: { cellWidth: 22, halign: "right" } };
 
   autoTable(doc, {
     startY: (doc as any).lastAutoTable.finalY + 4,
@@ -413,26 +424,24 @@ export async function exportarPDF(
     body: rows,
     headStyles: { fillColor: GOLD, textColor: [0, 0, 0], fontStyle: "bold", fontSize: 8 },
     alternateRowStyles: { fillColor: [250, 250, 250] },
-    styles: { fontSize: 8, cellPadding: 2.5, valign: "top" },
-    columnStyles: showVarejo
-      ? {
-          0: { cellWidth: 8, halign: "center" },
-          1: { cellWidth: 78 },
-          2: { cellWidth: 12, halign: "center" },
-          3: { cellWidth: 12, halign: "center" },
-          4: { cellWidth: 22, halign: "right" },
-          5: { cellWidth: 22, halign: "right" },
-          6: { cellWidth: 26, halign: "right" },
-        }
-      : {
-          0: { cellWidth: 8, halign: "center" },
-          1: { cellWidth: 100 },
-          2: { cellWidth: 14, halign: "center" },
-          3: { cellWidth: 14, halign: "center" },
-          4: { cellWidth: 22, halign: "right" },
-          5: { cellWidth: 22, halign: "right" },
-        },
+    styles: { fontSize: 8, cellPadding: 2.5, valign: "middle" },
+    columnStyles: hasThumbs ? colStylesWithThumb : colStylesNoThumb,
     margin: { left: 15, right: 15 },
+    didDrawCell: (data) => {
+      if (!hasThumbs || data.section !== "body" || data.column.index !== 1) return;
+      const sku = skuByRowIdx.get(data.row.index);
+      if (!sku) return;
+      const img = thumbs.get(sku);
+      if (!img) return;
+      const bw = data.cell.width - 2;
+      const bh = data.cell.height - 2;
+      const ratio = img.w / img.h;
+      let dw = bw, dh = bw / ratio;
+      if (dh > bh) { dh = bh; dw = bh * ratio; }
+      const dx = data.cell.x + (data.cell.width - dw) / 2;
+      const dy = data.cell.y + (data.cell.height - dh) / 2;
+      try { doc.addImage(img.data, "JPEG", dx, dy, dw, dh, undefined, "FAST"); } catch { /* ignore */ }
+    },
   });
 
   // Totais
