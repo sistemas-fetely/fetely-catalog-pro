@@ -22,6 +22,7 @@ import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as NewOrderRouteImport } from './routes/new-order'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ImportRouteImport } from './routes/import'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FarolRouteImport } from './routes/farol'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CotacoesRouteImport } from './routes/cotacoes'
@@ -111,6 +112,11 @@ const LoginRoute = LoginRouteImport.update({
 const ImportRoute = ImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FarolRoute = FarolRouteImport.update({
@@ -252,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/cotacoes': typeof CotacoesRoute
   '/dashboard': typeof DashboardRoute
   '/farol': typeof FarolRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
@@ -292,6 +299,7 @@ export interface FileRoutesByTo {
   '/cotacoes': typeof CotacoesRoute
   '/dashboard': typeof DashboardRoute
   '/farol': typeof FarolRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
@@ -332,6 +340,7 @@ export interface FileRoutesById {
   '/cotacoes': typeof CotacoesRoute
   '/dashboard': typeof DashboardRoute
   '/farol': typeof FarolRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/new-order': typeof NewOrderRoute
@@ -374,6 +383,7 @@ export interface FileRouteTypes {
     | '/cotacoes'
     | '/dashboard'
     | '/farol'
+    | '/forgot-password'
     | '/import'
     | '/login'
     | '/new-order'
@@ -414,6 +424,7 @@ export interface FileRouteTypes {
     | '/cotacoes'
     | '/dashboard'
     | '/farol'
+    | '/forgot-password'
     | '/import'
     | '/login'
     | '/new-order'
@@ -453,6 +464,7 @@ export interface FileRouteTypes {
     | '/cotacoes'
     | '/dashboard'
     | '/farol'
+    | '/forgot-password'
     | '/import'
     | '/login'
     | '/new-order'
@@ -494,6 +506,7 @@ export interface RootRouteChildren {
   CotacoesRoute: typeof CotacoesRoute
   DashboardRoute: typeof DashboardRoute
   FarolRoute: typeof FarolRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   ImportRoute: typeof ImportRoute
   LoginRoute: typeof LoginRoute
   NewOrderRoute: typeof NewOrderRoute
@@ -607,6 +620,13 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/import'
       preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/farol': {
@@ -839,6 +859,7 @@ const rootRouteChildren: RootRouteChildren = {
   CotacoesRoute: CotacoesRoute,
   DashboardRoute: DashboardRoute,
   FarolRoute: FarolRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   ImportRoute: ImportRoute,
   LoginRoute: LoginRoute,
   NewOrderRoute: NewOrderRoute,
