@@ -100,6 +100,15 @@ function LoginPage() {
             {submitting ? "Entrando..." : "Entrar"}
           </button>
 
+          <div className="text-center">
+            <Link
+              to="/forgot-password"
+              className="text-[11px] uppercase tracking-wider text-gold hover:text-gold-light transition"
+            >
+              Esqueci minha senha
+            </Link>
+          </div>
+
           <p className="text-[11px] text-text-secondary text-center">
             Acesso restrito. Solicite cadastro ao administrador.
           </p>
