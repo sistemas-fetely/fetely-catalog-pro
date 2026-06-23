@@ -411,10 +411,10 @@ export async function exportarPDF(
     return base;
   });
 
-  const colStylesNoThumb = showVarejo
+  const colStylesNoThumb: Record<number, Record<string, unknown>> = showVarejo
     ? { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 78 }, 2: { cellWidth: 12, halign: "center" }, 3: { cellWidth: 12, halign: "center" }, 4: { cellWidth: 22, halign: "right" }, 5: { cellWidth: 22, halign: "right" }, 6: { cellWidth: 26, halign: "right" } }
     : { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 100 }, 2: { cellWidth: 14, halign: "center" }, 3: { cellWidth: 14, halign: "center" }, 4: { cellWidth: 22, halign: "right" }, 5: { cellWidth: 22, halign: "right" } };
-  const colStylesWithThumb = showVarejo
+  const colStylesWithThumb: Record<number, Record<string, unknown>> = showVarejo
     ? { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 18, minCellHeight: 18 }, 2: { cellWidth: 60 }, 3: { cellWidth: 12, halign: "center" }, 4: { cellWidth: 12, halign: "center" }, 5: { cellWidth: 20, halign: "right" }, 6: { cellWidth: 20, halign: "right" }, 7: { cellWidth: 24, halign: "right" } }
     : { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 18, minCellHeight: 18 }, 2: { cellWidth: 82 }, 3: { cellWidth: 14, halign: "center" }, 4: { cellWidth: 14, halign: "center" }, 5: { cellWidth: 22, halign: "right" }, 6: { cellWidth: 22, halign: "right" } };
 
