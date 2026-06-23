@@ -1,0 +1,2 @@
+DELETE FROM public.user_roles WHERE user_id='562b2ff5-1ea5-4445-a5c3-e738f2fb1225' AND role='cliente';
+UPDATE public.profiles SET nome_completo='Thomer', empresa=NULL, cnpj_cpf=NULL WHERE id='562b2ff5-1ea5-4445-a5c3-e738f2fb1225';
