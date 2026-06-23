@@ -140,7 +140,7 @@ export interface OrderPDFResult {
   dataUrl: string;
 }
 
-function renderOrderToDoc(doc: jsPDF, order: SavedOrder): void {
+function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): void {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   const contentWidth = pageWidth - margin * 2;
