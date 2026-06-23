@@ -1082,7 +1082,7 @@ export async function generateCotacaoPDF(cotacao: Cotacao): Promise<OrderPDFResu
     vendedorNome: cotacao.vendedorNome,
     vendedorLogin: cotacao.vendedorLogin,
   };
-  const result = generateOrderPDF(fakeOrder);
+  const result = await generateOrderPDF(fakeOrder);
   // Renomeia o arquivo final
   const filename = `Cotacao-${cotacao.id}-${(cotacao.meta.cliente || "cliente").replace(/[^a-zA-Z0-9\-_]/g, "-").slice(0, 40)}.pdf`;
   return { ...result, filename };
