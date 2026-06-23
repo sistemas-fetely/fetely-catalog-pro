@@ -5,9 +5,53 @@ import type { Cotacao } from "@/types/cotacao";
 import type { ProvisaoFutura } from "@/types/provisao";
 import { FRETE_PERCENT } from "@/lib/commercial";
 import { classificarItem } from "@/lib/classifyItem";
+import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 
 type GrupoColecao = { colecao: string; items: CartItem[]; subtotal: number; qtd: number };
 type SecaoItens = { tipo: "firme" | "provisao"; titulo: string; grupos: GrupoColecao[]; subtotal: number; qtd: number };
+
+interface LoadedImage { data: string; w: number; h: number }
+type ThumbMap = Map<string, LoadedImage>;
+
+async function urlToDataUrl(url: string, maxSize = 200): Promise<LoadedImage | null> {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const bitmap = await createImageBitmap(blob);
+    const ratio = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * ratio);
+    const h = Math.round(bitmap.height * ratio);
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    return { data: canvas.toDataURL("image/jpeg", 0.8), w, h };
+  } catch { return null; }
+}
+
+async function loadItemThumbs(items: CartItem[]): Promise<ThumbMap> {
+  const photos = usePhotos.getState();
+  const map: ThumbMap = new Map();
+  const seen = new Map<string, string>(); // sku -> url
+  for (const it of items) {
+    const colecao = it.product.colecao || "";
+    const cor = it.product.corNome || "";
+    if (!colecao || !cor) continue;
+    const url = getProdutoPhoto(photos, colecao, cor);
+    if (url) seen.set(it.sku, url);
+  }
+  await Promise.all(
+    Array.from(seen.entries()).map(async ([sku, url]) => {
+      const img = await urlToDataUrl(url);
+      if (img) map.set(sku, img);
+    }),
+  );
+  return map;
+}
 
 // Ordem macro: Mesa Posta → Jogos Americanos → Taças → Velas
 function macroRank(p: Product): number {
