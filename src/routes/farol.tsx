@@ -533,11 +533,13 @@ function AbaB2B() {
               ) : (
                 filtradas.map((r) => {
                   const dvm = r.dias_vs_meta;
+                  const dvmColor =
+                    r.prazo === "atrasado" ? "text-red-500"
+                    : r.prazo === "no_prazo" ? "text-emerald-500"
+                    : "text-text-secondary";
                   const dvmNode =
                     dvm === null || dvm === undefined ? null
-                    : dvm > 0 ? <span className="text-emerald-500 text-xs ml-1">+{dvm}</span>
-                    : dvm < 0 ? <span className="text-red-500 text-xs ml-1">{dvm}</span>
-                    : <span className="text-text-secondary text-xs ml-1">0</span>;
+                    : <span className={`${dvmColor} text-xs ml-1`}>{dvm > 0 ? `+${dvm}` : dvm}</span>;
 
                   let situacao: React.ReactNode = <span className="text-text-secondary">—</span>;
                   if (r.bloqueio) {
