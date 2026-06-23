@@ -40,8 +40,16 @@ async function loadItemThumbs(items: CartItem[]): Promise<ThumbMap> {
   for (const it of items) {
     const colecao = it.product.colecao || "";
     const cor = it.product.corNome || "";
-    if (!colecao || !cor) continue;
-    const url = getProdutoPhoto(photos, colecao, cor);
+    const grupo = (it.product as { grupo?: string }).grupo || "";
+    const numeroVela = (it.product as { numeroVela?: number | null }).numeroVela;
+    if (!colecao) continue;
+    // Mesma lógica do catálogo: talheres e velas numéricas usam corNome como chave,
+    // demais produtos usam o SKU. Fallback para corNome se o SKU não tiver foto.
+    const primary = grupo === "Talheres" || numeroVela != null ? cor : it.sku;
+    const url =
+      (primary && getProdutoPhoto(photos, colecao, primary)) ||
+      (cor && getProdutoPhoto(photos, colecao, cor)) ||
+      undefined;
     if (url) seen.set(it.sku, url);
   }
   await Promise.all(
