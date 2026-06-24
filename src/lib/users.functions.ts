@@ -226,6 +226,14 @@ export const setUserAtivo = createServerFn({ method: "POST" })
       .update({ ativo: data.ativo })
       .eq("id", data.user_id);
     if (error) throw new Error(error.message);
+
+    await supabaseAdmin.rpc("log_access_event", {
+      p_user_id: data.user_id,
+      p_evento: data.ativo ? "usuario_ativado" : "usuario_desativado",
+      p_descricao: data.ativo ? "Usuário ativado" : "Usuário desativado",
+      p_metadata: {},
+    });
+
     return { ok: true };
   });
 
@@ -235,6 +243,7 @@ export const deleteAppUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => deleteSchema.parse(input))
   .handler(async ({ data, context }) => {
+
     const { userId } = context as { userId: string };
     // Need master OR admin (admin can only delete vendedores - check target roles)
     const { data: myRoles } = await supabaseAdmin
