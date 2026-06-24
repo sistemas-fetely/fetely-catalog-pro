@@ -141,8 +141,18 @@ export const createPortalAccess = createServerFn({ method: "POST" })
       }
     }
 
+    await supabaseAdmin.rpc("log_access_event", {
+      p_user_id: newUserId,
+      p_evento: createdNow ? "portal_criado" : "portal_reativado",
+      p_descricao: createdNow
+        ? `Acesso ao portal criado para ${data.nomeEmpresa}`
+        : `Acesso ao portal reaproveitado para ${data.nomeEmpresa}`,
+      p_metadata: { cliente_id: data.clienteId, email: data.email },
+    });
+
     return { userId: newUserId, email: data.email, password };
   });
+
 
 const resetSchema = z.object({
   userId: z.string().uuid(),
