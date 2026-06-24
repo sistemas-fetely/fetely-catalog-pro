@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
       .limit(1);
 
     if (orderErr || !orders?.length) {
-      resultados.push({ sncf_pedido_id: sncfId, erro: orderErr?.message ?? "Order não encontrada" });
+      resultados.push({ sncf_pedido_id: sncfId, erro: orderErr ? `DB erro: ${orderErr.message} (code: ${orderErr.code})` : "Order não encontrada" });
       continue;
     }
 
