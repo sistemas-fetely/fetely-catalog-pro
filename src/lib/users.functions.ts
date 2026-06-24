@@ -267,10 +267,18 @@ export const deleteAppUser = createServerFn({ method: "POST" })
       }
     }
 
+    await supabaseAdmin.rpc("log_access_event", {
+      p_user_id: data.user_id,
+      p_evento: "usuario_excluido",
+      p_descricao: "Usuário excluído do sistema",
+      p_metadata: {},
+    });
+
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 const setRoleSchema = z.object({
   user_id: z.string().uuid(),
