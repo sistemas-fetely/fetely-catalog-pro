@@ -133,8 +133,16 @@ export const createAppUser = createServerFn({ method: "POST" })
       .insert({ user_id: newUserId, role: data.role });
     if (roleErr) throw new Error(roleErr.message);
 
+    await supabaseAdmin.rpc("log_access_event", {
+      p_user_id: newUserId,
+      p_evento: "usuario_criado",
+      p_descricao: `Usuário ${data.role} criado: ${data.nome_completo}`,
+      p_metadata: { role: data.role, email: data.email },
+    });
+
     return { id: newUserId, login_amigavel: loginAmigavel };
   });
+
 
 const updateUserSchema = z.object({
   user_id: z.string().uuid(),
