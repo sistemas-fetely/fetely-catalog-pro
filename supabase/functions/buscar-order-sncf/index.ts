@@ -24,52 +24,36 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "sncf_pedido_ids obrigatório" }), { status: 400 });
   }
 
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  const keyDebug = `len=${serviceKey.length} inicio=${serviceKey.substring(0, 20)}`;
-
+  // Usar anon key — a RPC get_order_by_sncf_id é SECURITY DEFINER, bypassa RLS
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    serviceKey
+    Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
   const resultados: any[] = [];
 
   for (const sncfId of sncfPedidoIds) {
-    const { data: orders, error: orderErr } = await supabase
-      .from("orders")
-      .select("id, valor_bruto, valor_liquido, commercial")
-      .filter("sncf_pedido_id", "eq", sncfId)
-      .limit(1);
+    const { data, error } = await supabase.rpc("get_order_by_sncf_id", {
+      p_sncf_pedido_id: sncfId,
+    });
 
-    if (orderErr || !orders?.length) {
-      resultados.push({
-        sncf_pedido_id: sncfId,
-        key_debug: keyDebug,
-        erro: orderErr ? `DB erro: ${orderErr.message} (code: ${orderErr.code})` : "Order não encontrada",
-      });
+    if (error) {
+      resultados.push({ sncf_pedido_id: sncfId, erro: error.message });
       continue;
     }
 
-    const order = orders[0];
-
-    const { data: items, error: itemsErr } = await supabase
-      .from("order_items")
-      .select("sku, quantity, preco_unit_atacado, subtotal_bruto, product_snapshot")
-      .eq("order_id", order.id)
-      .order("posicao", { ascending: true });
-
-    if (itemsErr) {
-      resultados.push({ sncf_pedido_id: sncfId, key_debug: keyDebug, erro: itemsErr.message });
+    if (data?.erro) {
+      resultados.push({ sncf_pedido_id: sncfId, erro: data.erro });
       continue;
     }
 
     resultados.push({
       sncf_pedido_id: sncfId,
-      order_id: order.id,
-      valor_bruto: order.valor_bruto,
-      valor_liquido: order.valor_liquido,
-      commercial: order.commercial,
-      items: items ?? [],
+      order_id:       data.id,
+      valor_bruto:    data.valor_bruto,
+      valor_liquido:  data.valor_liquido,
+      commercial:     data.commercial,
+      items:          data.items ?? [],
     });
   }
 

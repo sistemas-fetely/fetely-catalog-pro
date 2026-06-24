@@ -2095,6 +2095,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_order_by_sncf_id: {
+        Args: { p_sncf_pedido_id: string }
+        Returns: Json
+      }
       get_vault_secret: { Args: { p_name: string }; Returns: string }
       has_role: {
         Args: {
