@@ -15,6 +15,8 @@ import {
   FileStack,
   History,
   Lock,
+  ShieldCheck,
+
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 import { useTemPermissao } from "@/store/permissoesStore";
@@ -55,7 +57,9 @@ function SettingsPage() {
       { label: "Tabela de Preço", description: "Auditoria de alterações de preço dos produtos", to: "/admin/precos", icon: History, tela: "cfg_produtos" },
       { label: "Usuários", description: "Gerenciar vendedores e acessos do sistema", to: "/admin/users", icon: Users, tela: "cfg_vendedores" },
       { label: "Permissões", description: "Configurar acessos por perfil, grupo e exceções individuais", to: "/admin/permissoes", icon: Lock, tela: "cfg_permissoes" },
+      { label: "Gestão de Acessos", description: "Histórico de logins e eventos de criação/alteração de acessos de usuários e clientes", to: "/admin/access-logs", icon: ShieldCheck },
     );
+
   }
 
   // Filtra pelas permissões granulares (admin sempre passa via temPermissao)

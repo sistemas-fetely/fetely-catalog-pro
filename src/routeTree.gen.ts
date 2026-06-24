@@ -48,6 +48,7 @@ import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
 import { Route as AdminPermissoesRouteImport } from './routes/admin.permissoes'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
+import { Route as AdminAccessLogsRouteImport } from './routes/admin.access-logs'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
 
 const StandRoute = StandRouteImport.update({
@@ -245,6 +246,11 @@ const AdminCartilhasRoute = AdminCartilhasRouteImport.update({
   path: '/admin/cartilhas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAccessLogsRoute = AdminAccessLogsRouteImport.update({
+  id: '/admin/access-logs',
+  path: '/admin/access-logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CatalogCategoriaCategoriaRoute =
   CatalogCategoriaCategoriaRouteImport.update({
     id: '/categoria/$categoria',
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
+  '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/permissoes': typeof AdminPermissoesRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
+  '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/permissoes': typeof AdminPermissoesRoute
@@ -363,6 +371,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
+  '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/permissoes': typeof AdminPermissoesRoute
@@ -407,6 +416,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/stand'
+    | '/admin/access-logs'
     | '/admin/cartilhas'
     | '/admin/leads'
     | '/admin/permissoes'
@@ -448,6 +458,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/stand'
+    | '/admin/access-logs'
     | '/admin/cartilhas'
     | '/admin/leads'
     | '/admin/permissoes'
@@ -490,6 +501,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/stand'
+    | '/admin/access-logs'
     | '/admin/cartilhas'
     | '/admin/leads'
     | '/admin/permissoes'
@@ -533,6 +545,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   StandRoute: typeof StandRouteWithChildren
+  AdminAccessLogsRoute: typeof AdminAccessLogsRoute
   AdminCartilhasRoute: typeof AdminCartilhasRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminPermissoesRoute: typeof AdminPermissoesRoute
@@ -817,6 +830,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCartilhasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/access-logs': {
+      id: '/admin/access-logs'
+      path: '/admin/access-logs'
+      fullPath: '/admin/access-logs'
+      preLoaderRoute: typeof AdminAccessLogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/catalog/categoria/$categoria': {
       id: '/catalog/categoria/$categoria'
       path: '/categoria/$categoria'
@@ -894,6 +914,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   StandRoute: StandRouteWithChildren,
+  AdminAccessLogsRoute: AdminAccessLogsRoute,
   AdminCartilhasRoute: AdminCartilhasRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminPermissoesRoute: AdminPermissoesRoute,

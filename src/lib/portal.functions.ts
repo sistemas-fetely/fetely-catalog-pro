@@ -141,8 +141,18 @@ export const createPortalAccess = createServerFn({ method: "POST" })
       }
     }
 
+    await supabaseAdmin.rpc("log_access_event", {
+      p_user_id: newUserId,
+      p_evento: createdNow ? "portal_criado" : "portal_reativado",
+      p_descricao: createdNow
+        ? `Acesso ao portal criado para ${data.nomeEmpresa}`
+        : `Acesso ao portal reaproveitado para ${data.nomeEmpresa}`,
+      p_metadata: { cliente_id: data.clienteId, email: data.email },
+    });
+
     return { userId: newUserId, email: data.email, password };
   });
+
 
 const resetSchema = z.object({
   userId: z.string().uuid(),
@@ -160,6 +170,14 @@ export const resetPortalPassword = createServerFn({ method: "POST" })
       password,
     });
     if (error) throw new Error(error.message);
+
+    await supabaseAdmin.rpc("log_access_event", {
+      p_user_id: data.userId,
+      p_evento: "portal_senha_resetada",
+      p_descricao: "Senha do portal redefinida pelo administrador",
+      p_metadata: {},
+    });
+
     return { password };
   });
 
@@ -186,6 +204,13 @@ export const updatePortalEmail = createServerFn({ method: "POST" })
       .update({ email: data.email })
       .eq("id", data.userId);
 
+    await supabaseAdmin.rpc("log_access_event", {
+      p_user_id: data.userId,
+      p_evento: "portal_email_atualizado",
+      p_descricao: `E-mail do portal alterado para ${data.email}`,
+      p_metadata: { novo_email: data.email },
+    });
+
     return { ok: true };
   });
 
@@ -200,11 +225,20 @@ export const disablePortalAccess = createServerFn({ method: "POST" })
     const { userId } = context as { userId: string };
     await assertAdminOrMaster(userId);
 
+    // Log ANTES de deletar (depois o profile pode não ter mais o user_id resolvível)
+    await supabaseAdmin.rpc("log_access_event", {
+      p_user_id: data.userId,
+      p_evento: "portal_desativado",
+      p_descricao: "Acesso ao portal removido",
+      p_metadata: {},
+    });
+
     // Deleta o auth user (cascade remove user_roles via FK; profile permanece para auditoria)
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 // === Self-service: cliente troca a própria senha no portal ===
 const changeOwnSchema = z.object({

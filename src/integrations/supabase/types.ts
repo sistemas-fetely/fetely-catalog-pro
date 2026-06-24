@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_logs: {
+        Row: {
+          ator_email: string | null
+          ator_id: string | null
+          cliente_id: string | null
+          created_at: string
+          descricao: string | null
+          email: string | null
+          evento: string
+          id: string
+          metadata: Json | null
+          nome: string | null
+          tipo_usuario: string | null
+          user_id: string | null
+        }
+        Insert: {
+          ator_email?: string | null
+          ator_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          email?: string | null
+          evento: string
+          id?: string
+          metadata?: Json | null
+          nome?: string | null
+          tipo_usuario?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          ator_email?: string | null
+          ator_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          email?: string | null
+          evento?: string
+          id?: string
+          metadata?: Json | null
+          nome?: string | null
+          tipo_usuario?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       cartilhas_audit: {
         Row: {
           acao: Database["public"]["Enums"]["cartilha_acao"]
@@ -2059,6 +2104,15 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_master: { Args: { _user_id: string }; Returns: boolean }
+      log_access_event: {
+        Args: {
+          p_descricao?: string
+          p_evento: string
+          p_metadata?: Json
+          p_user_id: string
+        }
+        Returns: string
+      }
       next_cotacao_id: { Args: never; Returns: string }
       next_order_id: { Args: never; Returns: string }
       record_login: { Args: never; Returns: undefined }
