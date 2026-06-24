@@ -15,6 +15,8 @@ import {
   FileStack,
   History,
   Lock,
+  ShieldCheck,
+
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 import { useTemPermissao } from "@/store/permissoesStore";
