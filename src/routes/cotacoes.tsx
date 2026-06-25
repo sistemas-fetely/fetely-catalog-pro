@@ -158,8 +158,10 @@ function CotacoesPage() {
                 <th className="text-left px-4 py-3">#</th>
                 <th className="text-left px-4 py-3">Cliente</th>
                 <th className="text-right px-4 py-3">Valor</th>
+                <th className="text-left px-4 py-3">Criada em</th>
                 <th className="text-left px-4 py-3">Válida até</th>
                 <th className="text-left px-4 py-3">Status</th>
+
               </tr>
             </thead>
             <tbody>
