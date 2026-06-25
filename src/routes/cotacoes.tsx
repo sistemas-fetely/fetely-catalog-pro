@@ -197,6 +197,9 @@ function CotacaoRow({ cotacao, onClick }: { cotacao: Cotacao; onClick: () => voi
         {formatBRL(cotacao.total)}
       </td>
       <td className="px-4 py-3 text-text-secondary text-xs">
+        {new Date(cotacao.criadoEm).toLocaleDateString("pt-BR")}
+      </td>
+      <td className="px-4 py-3 text-text-secondary text-xs">
         {new Date(cotacao.validoAte).toLocaleDateString("pt-BR")}
         {expirando && (
           <div className="text-amber-500 text-[10px] mt-0.5">
@@ -204,6 +207,7 @@ function CotacaoRow({ cotacao, onClick }: { cotacao: Cotacao; onClick: () => voi
           </div>
         )}
       </td>
+
       <td className="px-4 py-3">
         <span
           className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-wider ${STATUS_BADGE[cotacao.status]}`}
