@@ -27,7 +27,8 @@ const GRP_PREFIX = "GRP::";
 function buildTree(products: Product[]): Tree {
   const tree: Tree = {};
   for (const p of products) {
-    // só inclui produtos com preço
+    // só inclui produtos ativos e com preço
+    if (p.ativo === false) continue;
     if (!p.precoAtacado || p.precoAtacado <= 0) continue;
     if (!tree[p.categoria]) tree[p.categoria] = {};
     const colecaoFirst = COLECAO_FIRST_CATEGORIES.has(p.categoria);
