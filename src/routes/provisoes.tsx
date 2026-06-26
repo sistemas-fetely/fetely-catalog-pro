@@ -97,73 +97,117 @@ function ProvisoesPage() {
           <p className="text-text-secondary text-sm">Nenhuma provisão nesta visão.</p>
         </div>
       ) : (
-        <div className="rounded-lg gold-border bg-surface overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-[10px] uppercase tracking-wider text-text-muted">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium">#</th>
-                <th className="text-left px-4 py-3 font-medium">Cliente</th>
-                <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Vendedor</th>
-                <th className="text-center px-4 py-3 font-medium">Itens</th>
-                <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Próx. previsão</th>
-                <th className="text-right px-4 py-3 font-medium">Ref.</th>
-                <th className="text-left px-4 py-3 font-medium">Status</th>
-                <th className="w-8"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p) => (
-                <tr
-                  key={p.id}
-                  onClick={() => setOpenId(p.id)}
-                  className={`border-t border-border/50 hover:bg-surface-hover cursor-pointer transition ${
-                    p.id === highlight ? "bg-gold/5" : ""
-                  } ${p.reprovado ? "bg-stock-out/5" : ""}`}
-                >
-                  <td className="px-4 py-3 font-mono text-xs text-gold">
-                    <div className="flex items-center gap-2">
-                      {p.id}
-                      {p.reprovado && (
-                        <span
-                          title={p.reprovadoMotivo ?? ""}
-                          className="inline-flex items-center gap-1 rounded-full border border-stock-out/40 bg-stock-out/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-stock-out"
-                        >
-                          <XCircle className="h-2.5 w-2.5" /> Reprovada
-                        </span>
+        <>
+          {/* Tabela — desktop */}
+          <div className="hidden md:block rounded-lg gold-border bg-surface overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-surface-2 text-[10px] uppercase tracking-wider text-text-muted">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium">#</th>
+                  <th className="text-left px-4 py-3 font-medium">Cliente</th>
+                  <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Vendedor</th>
+                  <th className="text-center px-4 py-3 font-medium">Itens</th>
+                  <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Próx. previsão</th>
+                  <th className="text-right px-4 py-3 font-medium">Ref.</th>
+                  <th className="text-left px-4 py-3 font-medium">Status</th>
+                  <th className="w-8"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((p) => (
+                  <tr
+                    key={p.id}
+                    onClick={() => setOpenId(p.id)}
+                    className={`border-t border-border/50 hover:bg-surface-hover cursor-pointer transition ${
+                      p.id === highlight ? "bg-gold/5" : ""
+                    } ${p.reprovado ? "bg-stock-out/5" : ""}`}
+                  >
+                    <td className="px-4 py-3 font-mono text-xs text-gold">
+                      <div className="flex items-center gap-2">
+                        {p.id}
+                        {p.reprovado && (
+                          <span
+                            title={p.reprovadoMotivo ?? ""}
+                            className="inline-flex items-center gap-1 rounded-full border border-stock-out/40 bg-stock-out/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-stock-out"
+                          >
+                            <XCircle className="h-2.5 w-2.5" /> Reprovada
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-text-primary truncate max-w-[200px]">
+                        {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
+                      </div>
+                      {p.pedidoFirmeId && (
+                        <div className="text-[10px] text-text-muted">vinc. {p.pedidoFirmeId}</div>
                       )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-text-primary truncate max-w-[200px]">
+                    </td>
+                    <td className="px-4 py-3 text-text-secondary text-xs hidden lg:table-cell">
+                      {p.vendedorNome}
+                    </td>
+                    <td className="px-4 py-3 text-center">{p.itens.length}</td>
+                    <td className="px-4 py-3 text-text-secondary text-xs hidden lg:table-cell">
+                      {p.proximaPrevisao}
+                    </td>
+                    <td className="px-4 py-3 text-right text-stock-pre">
+                      {formatBRL(p.totalReferencia)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${statusBadge(p.status)}`}>
+                        {STATUS_PROVISAO_LABEL[p.status]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <ChevronRight className="h-4 w-4 text-text-muted" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Cards — mobile */}
+          <div className="md:hidden space-y-2">
+            {filtered.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setOpenId(p.id)}
+                className={`w-full text-left rounded-lg gold-border bg-surface p-3 active:bg-surface-hover transition ${
+                  p.id === highlight ? "ring-1 ring-gold" : ""
+                } ${p.reprovado ? "bg-stock-out/5" : ""}`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-mono text-[11px] text-gold truncate">{p.id}</div>
+                    <div className="text-sm text-text-primary truncate mt-0.5">
                       {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
                     </div>
-                    {p.pedidoFirmeId && (
-                      <div className="text-[10px] text-text-muted">vinc. {p.pedidoFirmeId}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-text-secondary text-xs hidden sm:table-cell">
-                    {p.vendedorNome}
-                  </td>
-                  <td className="px-4 py-3 text-center">{p.itens.length}</td>
-                  <td className="px-4 py-3 text-text-secondary text-xs hidden md:table-cell">
-                    {p.proximaPrevisao}
-                  </td>
-                  <td className="px-4 py-3 text-right text-stock-pre">
+                    <div className="text-[10px] text-text-muted mt-0.5 truncate">
+                      {p.vendedorNome} · {p.itens.length} {p.itens.length === 1 ? "item" : "itens"}
+                    </div>
+                  </div>
+                  <span className={`shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wider ${statusBadge(p.status)}`}>
+                    {STATUS_PROVISAO_LABEL[p.status]}
+                  </span>
+                </div>
+                <div className="mt-2 flex items-end justify-between gap-2">
+                  <div className="text-[10px] text-text-secondary">
+                    Próx.: <span className="text-text-primary">{p.proximaPrevisao}</span>
+                  </div>
+                  <div className="text-stock-pre font-semibold text-sm">
                     {formatBRL(p.totalReferencia)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${statusBadge(p.status)}`}>
-                      {STATUS_PROVISAO_LABEL[p.status]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <ChevronRight className="h-4 w-4 text-text-muted" />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </div>
+                {p.reprovado && (
+                  <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-stock-out/40 bg-stock-out/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-stock-out">
+                    <XCircle className="h-2.5 w-2.5" /> Reprovada
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
       {open && <ProvisaoDetail provisao={open} onClose={() => setOpenId(null)} />}

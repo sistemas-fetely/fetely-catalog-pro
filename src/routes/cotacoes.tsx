@@ -151,26 +151,75 @@ function CotacoesPage() {
         </div>
 
       ) : (
-        <div className="overflow-x-auto rounded-lg gold-border bg-surface">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 text-text-secondary text-[10px] uppercase tracking-wider">
-              <tr>
-                <th className="text-left px-4 py-3">#</th>
-                <th className="text-left px-4 py-3">Cliente</th>
-                <th className="text-right px-4 py-3">Valor</th>
-                <th className="text-left px-4 py-3">Criada em</th>
-                <th className="text-left px-4 py-3">Válida até</th>
-                <th className="text-left px-4 py-3">Status</th>
+        <>
+          {/* Tabela — desktop/tablet */}
+          <div className="hidden md:block overflow-x-auto rounded-lg gold-border bg-surface">
+            <table className="w-full text-sm">
+              <thead className="bg-surface-2 text-text-secondary text-[10px] uppercase tracking-wider">
+                <tr>
+                  <th className="text-left px-4 py-3">#</th>
+                  <th className="text-left px-4 py-3">Cliente</th>
+                  <th className="text-right px-4 py-3">Valor</th>
+                  <th className="text-left px-4 py-3">Criada em</th>
+                  <th className="text-left px-4 py-3">Válida até</th>
+                  <th className="text-left px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtradas.map((c) => (
+                  <CotacaoRow key={c.id} cotacao={c} onClick={() => setSelecionada(c.id)} />
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-              </tr>
-            </thead>
-            <tbody>
-              {filtradas.map((c) => (
-                <CotacaoRow key={c.id} cotacao={c} onClick={() => setSelecionada(c.id)} />
-              ))}
-            </tbody>
-          </table>
-        </div>
+          {/* Cards — mobile */}
+          <div className="md:hidden space-y-2">
+            {filtradas.map((c) => {
+              const dias = diasAteExpirar(c);
+              const expirando =
+                dias >= 0 && dias <= 3 && (c.status === "aberta" || c.status === "em_negociacao");
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelecionada(c.id)}
+                  className="w-full text-left rounded-lg gold-border bg-surface p-3 active:bg-surface-hover transition"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-[11px] text-gold truncate">{c.id}</div>
+                      <div className="text-sm text-text-primary truncate mt-0.5">
+                        {c.meta.cliente || "—"}
+                      </div>
+                    </div>
+                    <span
+                      className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wider ${STATUS_BADGE[c.status]}`}
+                    >
+                      <span>{STATUS_ICON[c.status]}</span>
+                      {STATUS_COTACAO_LABEL[c.status]}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-end justify-between gap-2">
+                    <div className="text-[10px] text-text-secondary leading-tight">
+                      <div>Criada: {new Date(c.criadoEm).toLocaleDateString("pt-BR")}</div>
+                      <div>
+                        Válida: {new Date(c.validoAte).toLocaleDateString("pt-BR")}
+                        {expirando && (
+                          <span className="ml-1 text-amber-500">
+                            ⚠ {dias === 0 ? "hoje" : `${dias}d`}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-gold font-semibold text-sm">
+                      {formatBRL(c.total)}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {cotacaoAberta && (
