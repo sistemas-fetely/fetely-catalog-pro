@@ -196,7 +196,7 @@ function OrdersPage() {
           </Link>
         </div>
       ) : (
-        <div className="rounded-lg gold-border bg-surface overflow-hidden">
+        <div className="hidden md:block rounded-lg gold-border bg-surface overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-surface-2 text-[10px] uppercase tracking-wider text-text-muted">
               <tr>
