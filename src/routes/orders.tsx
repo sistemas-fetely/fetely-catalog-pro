@@ -466,6 +466,123 @@ function OrdersPage() {
         </div>
       )}
 
+      {/* Cards — mobile */}
+      {hydrated && filtered.length > 0 && (
+        <div className="md:hidden space-y-2">
+          {filtered.map((o) => {
+            const qty = o.items.reduce((s, i) => s + i.quantity, 0);
+            const cliente = o.meta.clienteId
+              ? clientes.find((c) => c.id === o.meta.clienteId)
+              : null;
+            const isResponsavel =
+              !!cliente && !!currentUserId && cliente.cadastradoPorVendedorId === currentUserId;
+            const canReprovar =
+              isAdminOrMaster || o.vendedorId === currentUserId || isResponsavel;
+            const unread = o.sncfPedidoId ? (badges[o.sncfPedidoId] ?? 0) : 0;
+            return (
+              <div
+                key={o.id}
+                className={`rounded-lg gold-border bg-surface p-3 ${
+                  o.reprovado ? "bg-stock-out/5" : ""
+                }`}
+              >
+                <div className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    className="accent-gold mt-1 shrink-0"
+                    checked={selectedIds.has(o.id)}
+                    onChange={() => toggleSelected(o.id)}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-[11px] text-gold">{o.id}</span>
+                      {o.reprovado && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-stock-out/40 bg-stock-out/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-stock-out">
+                          <XCircle className="h-2.5 w-2.5" /> Reprovado
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-text-primary truncate mt-0.5">
+                      {o.meta.cliente || "—"}
+                    </div>
+                    <div className="text-[10px] text-text-muted mt-0.5">
+                      {new Date(o.createdAt).toLocaleString("pt-BR")}
+                      {isAdminOrMaster && o.vendedorNome && <> · {o.vendedorNome}</>}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-gold font-semibold text-sm">{formatBRL(o.total)}</div>
+                    <div className="text-[10px] text-text-muted">{qty} {qty === 1 ? "item" : "itens"}</div>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                  <Link
+                    to="/confirmation"
+                    search={{ id: o.id }}
+                    className="inline-flex items-center gap-1 rounded-md gold-border px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
+                  >
+                    <Eye className="h-3 w-3" /> Ver
+                  </Link>
+                  <button
+                    onClick={() => setExportOrders([o])}
+                    className="inline-flex items-center gap-1 rounded-md gold-border px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
+                  >
+                    <Download className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={() => setDuplicarTarget(o)}
+                    className="inline-flex items-center gap-1 rounded-md gold-border px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                  {o.sncfPedidoId && (
+                    <button
+                      onClick={() =>
+                        setCanalTarget({
+                          sncfPedidoId: o.sncfPedidoId!,
+                          numero: o.id.slice(0, 8).toUpperCase(),
+                          cliente: o.meta?.cliente ?? "—",
+                        })
+                      }
+                      className="relative inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-text-secondary"
+                    >
+                      <MessageCircle className="h-3 w-3" />
+                      {unread > 0 && (
+                        <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500" />
+                      )}
+                    </button>
+                  )}
+                  {canReprovar && !o.reprovado && (
+                    <button
+                      onClick={() => setReprovarTarget(o.id)}
+                      className="inline-flex items-center gap-1 rounded-md border border-stock-out/40 px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-stock-out hover:bg-stock-out/10"
+                    >
+                      <XCircle className="h-3 w-3" />
+                    </button>
+                  )}
+                  {canReprovar && o.reprovado && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await desfazerReprovacao(o.id);
+                          toast.success("Reprovação desfeita");
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : "Erro ao desfazer");
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-md border border-stock-in/40 px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-stock-in hover:bg-stock-in/10"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {reassignTarget && isAdmin && (
         <ReassignModal
           orderId={reassignTarget}
