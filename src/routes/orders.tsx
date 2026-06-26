@@ -114,18 +114,18 @@ function OrdersPage() {
   }, [history, query, vendedorFilter]);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <div className="flex items-end justify-between gap-4 mb-8 flex-wrap">
-        <div>
+    <main className="mx-auto max-w-6xl px-3 py-6 sm:px-6 sm:py-12">
+      <div className="flex items-end justify-between gap-3 mb-5 sm:mb-8 flex-wrap">
+        <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-[0.3em] text-gold">Histórico</div>
-          <h1 className="font-display text-4xl mt-1">Pedidos salvos</h1>
-          <p className="text-sm text-text-secondary mt-2">
+          <h1 className="font-display text-2xl sm:text-4xl mt-1">Pedidos salvos</h1>
+          <p className="text-xs sm:text-sm text-text-secondary mt-1 sm:mt-2">
             {history.length} pedido{history.length === 1 ? "" : "s"}
             {isAdminOrMaster ? " no sistema" : " seu"}
             {history.length === 1 ? "" : "s"}.
           </p>
         </div>
-        <div className="flex gap-2 items-center flex-wrap">
+        <div className="flex gap-2 items-center flex-wrap w-full sm:w-auto">
           {selectedIds.size > 0 && (
             <>
               <button
@@ -148,7 +148,7 @@ function OrdersPage() {
             <select
               value={vendedorFilter}
               onChange={(e) => setVendedorFilter(e.target.value)}
-              className="rounded-md gold-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gold"
+              className="rounded-md gold-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gold flex-1 sm:flex-initial min-w-0"
             >
               <option value="all">Todos os vendedores</option>
               {vendedores.map((v) => (
@@ -170,8 +170,8 @@ function OrdersPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por cliente, CNPJ ou nº pedido..."
-            className="w-72 rounded-md gold-border bg-surface px-3 py-2 text-sm placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-gold"
+            placeholder="Buscar por cliente, CNPJ ou nº..."
+            className="w-full sm:w-72 rounded-md gold-border bg-surface px-3 py-2 text-sm placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-gold"
           />
         </div>
       </div>
