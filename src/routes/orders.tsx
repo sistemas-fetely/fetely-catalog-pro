@@ -660,11 +660,13 @@ function OrdersPage() {
 function ReassignModal({
   orderId,
   users,
+  requireSenha = false,
   onClose,
   onConfirm,
 }: {
   orderId: string;
   users: any[];
+  requireSenha?: boolean;
   onClose: () => void;
   onConfirm: (novo: {
     vendedorId: string;
@@ -674,11 +676,38 @@ function ReassignModal({
   }) => void;
 }) {
   const [selected, setSelected] = useState<string>("");
+  const [senha, setSenha] = useState("");
+  const [senhaErro, setSenhaErro] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const tryActivate = useNegotiation((s) => s.tryActivate);
+
+  const handleConfirm = async () => {
+    const u = users.find((x) => x.id === selected);
+    if (!u) return;
+    if (requireSenha) {
+      setVerifying(true);
+      const r = await tryActivate(senha);
+      setVerifying(false);
+      if (!r.ok) {
+        setSenhaErro(r.erro ?? "Senha incorreta");
+        return;
+      }
+    }
+    onConfirm({
+      vendedorId: u.id,
+      vendedorNome: u.nome_completo ?? u.email,
+      vendedorLogin: u.login_amigavel ?? u.email,
+      vendedorTipo: (u.tipo_vendedor as "interno" | "representante" | null) ?? null,
+    });
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="w-full max-w-md rounded-lg border border-gold/40 bg-surface p-6 space-y-4">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.3em] text-gold">Admin</div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-gold">
+            {requireSenha ? "Master" : "Admin"}
+          </div>
           <h3 className="font-display text-lg">Reatribuir pedido</h3>
           <p className="text-xs text-text-muted font-mono mt-1">{orderId}</p>
         </div>
@@ -699,6 +728,22 @@ function ReassignModal({
             ))}
           </select>
         </label>
+        {requireSenha && (
+          <label className="block text-xs uppercase tracking-wider text-text-secondary">
+            Senha master
+            <input
+              type="password"
+              value={senha}
+              onChange={(e) => {
+                setSenha(e.target.value);
+                setSenhaErro(null);
+              }}
+              autoFocus
+              className="mt-1 w-full rounded-md gold-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gold"
+            />
+            {senhaErro && <span className="mt-1 block text-[11px] normal-case tracking-normal text-stock-out">{senhaErro}</span>}
+          </label>
+        )}
         <div className="flex gap-2 justify-end">
           <button
             onClick={onClose}
@@ -707,20 +752,11 @@ function ReassignModal({
             Cancelar
           </button>
           <button
-            disabled={!selected}
-            onClick={() => {
-              const u = users.find((x) => x.id === selected);
-              if (!u) return;
-              onConfirm({
-                vendedorId: u.id,
-                vendedorNome: u.nome_completo ?? u.email,
-                vendedorLogin: u.login_amigavel ?? u.email,
-                vendedorTipo: (u.tipo_vendedor as "interno" | "representante" | null) ?? null,
-              });
-            }}
+            disabled={!selected || verifying || (requireSenha && !senha)}
+            onClick={handleConfirm}
             className="rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Confirmar reatribuição
+            {verifying ? "Verificando..." : "Confirmar reatribuição"}
           </button>
         </div>
       </div>
