@@ -321,10 +321,10 @@ function OrdersPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-1.5 flex-wrap justify-end">
-                        {isAdmin && (
+                        {(isAdmin || isMaster) && (
                           <button
                             onClick={() => setReassignTarget(o.id)}
-                            title="Reatribuir vendedor"
+                            title={isAdmin ? "Reatribuir vendedor" : "Reatribuir vendedor (requer senha master)"}
                             className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 px-2 py-1.5 text-[10px] uppercase tracking-wider text-amber-300 hover:bg-amber-500/10"
                           >
                             <UserCog className="h-3 w-3" />
