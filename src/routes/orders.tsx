@@ -17,6 +17,7 @@ import { ReprovarDialog } from "@/components/ReprovarDialog";
 import { DuplicarPedidoModal } from "@/components/duplicar/DuplicarPedidoModal";
 import { supabase } from "@/integrations/supabase/client";
 import { CanalDialog } from "@/components/canal/CanalDialog";
+import { useNegotiation } from "@/store/negotiationStore";
 
 
 export const Route = createFileRoute("/orders")({
