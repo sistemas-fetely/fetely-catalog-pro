@@ -583,10 +583,11 @@ function OrdersPage() {
         </div>
       )}
 
-      {reassignTarget && isAdmin && (
+      {reassignTarget && (isAdmin || isMaster) && (
         <ReassignModal
           orderId={reassignTarget}
           users={(appUsers ?? []).filter((u: any) => u.ativo)}
+          requireSenha={!isAdmin}
           onClose={() => setReassignTarget(null)}
           onConfirm={(novo) => {
             reassignOrder(reassignTarget, novo);
