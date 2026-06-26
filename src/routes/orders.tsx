@@ -84,7 +84,7 @@ function OrdersPage() {
   const { data: appUsers } = useQuery({
     queryKey: ["app-users-for-reassign"],
     queryFn: () => fetchUsers(),
-    enabled: isAdmin,
+    enabled: isAdminOrMaster,
     staleTime: 60_000,
   });
 
