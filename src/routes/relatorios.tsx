@@ -2184,11 +2184,12 @@ function ProdutosRows({ items, totalRef, indent }: { items: ItemRow[]; totalRef:
 // TAB: CLIENTE  (Por cliente · Estado · Representante · Atendimento · Recompra)
 // ────────────────────────────────────────────────────────────────────────────
 
-type ClienteView = "cliente" | "estado" | "representante" | "atendimento" | "recompra";
+type ClienteView = "cliente" | "estado" | "representante" | "atendimento" | "profundidade" | "recompra";
 
-function TabCliente({ orders, ordersPrev, range }: {
+function TabCliente({ orders, ordersPrev, items, range }: {
   orders: OrderRow[];
   ordersPrev: OrderRow[];
+  items: ItemRow[];
   range: { from: Date; to: Date; label: string };
 }) {
   const [view, setView] = useState<ClienteView>("cliente");
