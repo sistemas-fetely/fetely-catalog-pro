@@ -31,7 +31,7 @@ export const Route = createFileRoute("/relatorios")({
 
 type PeriodoQuick = "hoje" | "semana" | "mes" | "trimestre" | "semestre" | "ano" | "personalizado";
 type TipoVendFiltro = "todos" | "interno" | "rep";
-type TabKey = "geral" | "produto" | "colecao" | "grupo" | "tipo" | "departamento" | "financeiro";
+type TabKey = "geral" | "produto" | "colecao" | "grupo" | "tipo" | "departamento" | "cliente" | "financeiro";
 
 interface OrderRow {
   id: string;
