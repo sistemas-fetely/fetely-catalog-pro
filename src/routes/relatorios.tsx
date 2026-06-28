@@ -847,17 +847,15 @@ function TabProduto({ orders, items, loadingItems, range }: {
       </Card>
 
       <Card title="Distribuição por grupo de produto">
-        <div className="h-[280px]">
+        <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={grupos} dataKey="valor" nameKey="nome" cx="50%" cy="50%" outerRadius={100} innerRadius={55}>
+              <Pie data={grupos} dataKey="valor" nameKey="nome" cx="50%" cy="50%"
+                outerRadius={108} innerRadius={64} paddingAngle={2} stroke="var(--surface)" strokeWidth={2}>
                 {grupos.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
               </Pie>
-              <Tooltip
-                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-                formatter={(v: number) => formatBRL(v)}
-              />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatBRL(v)} />
+              <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
             </PieChart>
           </ResponsiveContainer>
         </div>
