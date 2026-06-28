@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft, Download, Printer, FileBarChart, Boxes, Layers, Wallet, Filter,
-  Package, Tag, Building2,
+  Package, Tag, Building2, Users,
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
