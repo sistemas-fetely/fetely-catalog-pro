@@ -2248,11 +2248,12 @@ function TabCliente({ orders, ordersPrev, range }: {
       .sort((a, b) => b.liquido - a.liquido);
   }, [orders, totalFat]);
 
-  // ── Por vendedor (filtrado por tipo)
-  const aggVendedor = (tipo: "rep" | "interno") => {
+  // ── Por vendedor (todos ou filtrado por tipo)
+  const aggVendedor = (tipo: "rep" | "interno" | "todos") => {
     const m = new Map<string, { id: string; nome: string; pedidos: number; clientes: Set<string>; bruto: number; liquido: number; unidades: number }>();
-    orders.filter((o) => o.vendedor_tipo === tipo).forEach((o) => {
-      const id = o.vendedor_id || "—";
+    const base = tipo === "todos" ? orders : orders.filter((o) => o.vendedor_tipo === tipo);
+    base.forEach((o) => {
+      const id = o.vendedor_id || o.vendedor_nome || "—";
       const cur = m.get(id) ?? { id, nome: o.vendedor_nome || "—", pedidos: 0, clientes: new Set<string>(), bruto: 0, liquido: 0, unidades: 0 };
       cur.pedidos += 1;
       cur.clientes.add(o.cliente_snapshot?.cnpj || "—");
@@ -2265,8 +2266,9 @@ function TabCliente({ orders, ordersPrev, range }: {
       .map((r) => ({ id: r.id, nome: r.nome, pedidos: r.pedidos, clientes: r.clientes.size, bruto: r.bruto, liquido: r.liquido, unidades: r.unidades, ticket: r.pedidos ? r.liquido / r.pedidos : 0, pct: totalFat > 0 ? (r.liquido / totalFat) * 100 : 0 }))
       .sort((a, b) => b.liquido - a.liquido);
   };
-  const porRepresentante = useMemo(() => aggVendedor("rep"), [orders, totalFat]); // eslint-disable-line react-hooks/exhaustive-deps
+  const porRepresentante = useMemo(() => aggVendedor("todos"), [orders, totalFat]); // eslint-disable-line react-hooks/exhaustive-deps
   const porAtendimento = useMemo(() => aggVendedor("interno"), [orders, totalFat]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   // ── Recompra (cliente com 2+ pedidos no período; comparação com período anterior)
   const recompra = useMemo(() => {
@@ -2323,7 +2325,7 @@ function TabCliente({ orders, ordersPrev, range }: {
   const views: Array<{ key: ClienteView; label: string }> = [
     { key: "cliente", label: "Por Cliente" },
     { key: "estado", label: "Por Estado" },
-    { key: "representante", label: "Por Representante" },
+    { key: "representante", label: "Por Vendedor" },
     { key: "atendimento", label: "Por Atendimento" },
     { key: "recompra", label: "Recompra" },
   ];
@@ -2491,7 +2493,7 @@ function TabCliente({ orders, ordersPrev, range }: {
             const rows = view === "representante" ? porRepresentante : porAtendimento;
             const top = rows.slice(0, 10).map((r) => ({ nome: r.nome.slice(0, 22), valor: Math.round(r.liquido) }));
             return (
-              <Card title={view === "representante" ? "Top representantes" : "Top atendimento interno"}>
+              <Card title={view === "representante" ? "Top vendedores" : "Top atendimento interno"}>
                 <div className="h-[340px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={top} layout="vertical" margin={{ top: 8, right: 72, left: 8, bottom: 8 }}>
@@ -2518,7 +2520,7 @@ function TabCliente({ orders, ordersPrev, range }: {
             );
           })()}
         <Card
-          title={view === "representante" ? `Representantes (${porRepresentante.length})` : `Atendimento interno (${porAtendimento.length})`}
+          title={view === "representante" ? `Vendedores (${porRepresentante.length})` : `Atendimento interno (${porAtendimento.length})`}
           action={<ExportBtn onClick={() => exportVend(view === "representante" ? porRepresentante : porAtendimento, view)} />}
         >
           <div className="overflow-x-auto">
