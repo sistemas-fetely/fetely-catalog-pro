@@ -2248,11 +2248,12 @@ function TabCliente({ orders, ordersPrev, range }: {
       .sort((a, b) => b.liquido - a.liquido);
   }, [orders, totalFat]);
 
-  // ── Por vendedor (filtrado por tipo)
-  const aggVendedor = (tipo: "rep" | "interno") => {
+  // ── Por vendedor (todos ou filtrado por tipo)
+  const aggVendedor = (tipo: "rep" | "interno" | "todos") => {
     const m = new Map<string, { id: string; nome: string; pedidos: number; clientes: Set<string>; bruto: number; liquido: number; unidades: number }>();
-    orders.filter((o) => o.vendedor_tipo === tipo).forEach((o) => {
-      const id = o.vendedor_id || "—";
+    const base = tipo === "todos" ? orders : orders.filter((o) => o.vendedor_tipo === tipo);
+    base.forEach((o) => {
+      const id = o.vendedor_id || o.vendedor_nome || "—";
       const cur = m.get(id) ?? { id, nome: o.vendedor_nome || "—", pedidos: 0, clientes: new Set<string>(), bruto: 0, liquido: 0, unidades: 0 };
       cur.pedidos += 1;
       cur.clientes.add(o.cliente_snapshot?.cnpj || "—");
@@ -2265,8 +2266,9 @@ function TabCliente({ orders, ordersPrev, range }: {
       .map((r) => ({ id: r.id, nome: r.nome, pedidos: r.pedidos, clientes: r.clientes.size, bruto: r.bruto, liquido: r.liquido, unidades: r.unidades, ticket: r.pedidos ? r.liquido / r.pedidos : 0, pct: totalFat > 0 ? (r.liquido / totalFat) * 100 : 0 }))
       .sort((a, b) => b.liquido - a.liquido);
   };
-  const porRepresentante = useMemo(() => aggVendedor("rep"), [orders, totalFat]); // eslint-disable-line react-hooks/exhaustive-deps
+  const porRepresentante = useMemo(() => aggVendedor("todos"), [orders, totalFat]); // eslint-disable-line react-hooks/exhaustive-deps
   const porAtendimento = useMemo(() => aggVendedor("interno"), [orders, totalFat]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   // ── Recompra (cliente com 2+ pedidos no período; comparação com período anterior)
   const recompra = useMemo(() => {
