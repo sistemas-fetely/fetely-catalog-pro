@@ -915,22 +915,30 @@ function TabColecao({ items, loadingItems, range }: {
       <div className="flex justify-end"><ExportBtn onClick={exportar} /></div>
 
       <Card title="Ranking de coleções por faturamento">
-        <div className="h-[420px]">
+        <div className="h-[460px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={top15} layout="vertical" margin={{ top: 8, right: 32, left: 8, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-              <XAxis type="number" tick={{ fill: "var(--text-muted)", fontSize: 10 }}
+            <BarChart data={top15} layout="vertical" margin={{ top: 8, right: 72, left: 8, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false}
                 tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
-              <YAxis type="category" dataKey="nome" tick={{ fill: "var(--text-muted)", fontSize: 10 }} width={160} />
-              <Tooltip
-                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-                formatter={(v: number) => formatBRL(v)}
-              />
-              <Bar dataKey="valor" fill={GOLD} radius={[0, 4, 4, 0]} />
+              <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={160} />
+              <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
+                formatter={(v: number) => formatBRL(v)} />
+              <Bar dataKey="valor" fill="url(#gBarH)" radius={[0, 6, 6, 0]} maxBarSize={20}>
+                <LabelList dataKey="valor" position="right" formatter={(v: number) => fmtCompactBRL(v)}
+                  style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+              </Bar>
+              <defs>
+                <linearGradient id="gBarH" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor={GOLD} stopOpacity={0.55} />
+                  <stop offset="100%" stopColor={GOLD} stopOpacity={1} />
+                </linearGradient>
+              </defs>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </Card>
+
 
       <Card title={`Detalhe por coleção (${colecoes.length})`}>
         <div className="overflow-x-auto">
