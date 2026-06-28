@@ -2271,6 +2271,132 @@ function TabCliente({ orders, ordersPrev, items, range }: {
   const porAtendimento = useMemo(() => aggVendedor("interno"), [orders, totalFat]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
+  // ── Profundidade por vendedor (variedade, profundidade de linha, coleções, tempo)
+  const profundidade = useMemo(() => {
+    type Acc = {
+      id: string; nome: string;
+      pedidos: Set<string>; clientes: Set<string>;
+      skus: Set<string>; colecoes: Map<string, number>; grupos: Map<string, number>;
+      categorias: Set<string>; tipos: Set<string>;
+      unidades: number; liquido: number; bruto: number;
+    };
+    const m = new Map<string, Acc>();
+    // Inicializa com todos vendedores que aparecem em orders (para incluir os sem itens)
+    orders.forEach((o) => {
+      const id = o.vendedor_id || o.vendedor_nome || "—";
+      if (!m.has(id)) m.set(id, {
+        id, nome: o.vendedor_nome || "—",
+        pedidos: new Set(), clientes: new Set(),
+        skus: new Set(), colecoes: new Map(), grupos: new Map(),
+        categorias: new Set(), tipos: new Set(),
+        unidades: 0, liquido: 0, bruto: 0,
+      });
+      const cur = m.get(id)!;
+      cur.pedidos.add(o.id);
+      cur.clientes.add(o.cliente_snapshot?.cnpj || "—");
+      cur.liquido += Number(o.total || 0);
+      cur.bruto += Number(o.commercial?.bruto || o.total || 0);
+    });
+    items.forEach((it) => {
+      const id = it.orders?.vendedor_id || "—";
+      const cur = m.get(id);
+      if (!cur) return;
+      const ps = it.product_snapshot ?? {};
+      cur.skus.add(it.sku);
+      cur.unidades += Number(it.quantity || 0);
+      const col = ps.colecao || "—"; cur.colecoes.set(col, (cur.colecoes.get(col) || 0) + Number(it.quantity || 0));
+      const gr = ps.grupo || "—"; cur.grupos.set(gr, (cur.grupos.get(gr) || 0) + Number(it.quantity || 0));
+      if (ps.categoria) cur.categorias.add(ps.categoria);
+      if (ps.tipo) cur.tipos.add(ps.tipo);
+    });
+
+    // Previous period faturamento por vendedor (para crescimento)
+    const prevByVend = new Map<string, number>();
+    ordersPrev.forEach((o) => {
+      const id = o.vendedor_id || o.vendedor_nome || "—";
+      prevByVend.set(id, (prevByVend.get(id) || 0) + Number(o.total || 0));
+    });
+
+    const totalSkusUniverso = new Set(items.map((it) => it.sku)).size;
+    const totalColecoesUniverso = new Set(items.map((it) => it.product_snapshot?.colecao || "—")).size;
+
+    const rows = Array.from(m.values()).map((r) => {
+      const skus = r.skus.size;
+      const ped = r.pedidos.size;
+      const colecoes = r.colecoes.size;
+      const grupos = r.grupos.size;
+      const topColecao = Array.from(r.colecoes.entries()).sort((a, b) => b[1] - a[1])[0];
+      const topGrupo = Array.from(r.grupos.entries()).sort((a, b) => b[1] - a[1])[0];
+      const prev = prevByVend.get(r.id) || 0;
+      const crescPct = prev > 0 ? ((r.liquido - prev) / prev) * 100 : (r.liquido > 0 ? 100 : 0);
+      return {
+        id: r.id, nome: r.nome,
+        pedidos: ped, clientes: r.clientes.size, skus, colecoes, grupos,
+        categorias: r.categorias.size, tipos: r.tipos.size,
+        unidades: r.unidades, liquido: r.liquido, bruto: r.bruto,
+        ticket: ped ? r.liquido / ped : 0,
+        unidadesPorPedido: ped ? r.unidades / ped : 0,
+        profundidade: skus ? r.unidades / skus : 0, // unidades por SKU único (depth de linha)
+        variedadePct: totalSkusUniverso ? (skus / totalSkusUniverso) * 100 : 0,
+        coberturaColecoesPct: totalColecoesUniverso ? (colecoes / totalColecoesUniverso) * 100 : 0,
+        topColecao: topColecao ? topColecao[0] : "—",
+        topColecaoUn: topColecao ? topColecao[1] : 0,
+        topGrupo: topGrupo ? topGrupo[0] : "—",
+        topGrupoUn: topGrupo ? topGrupo[1] : 0,
+        prevLiquido: prev,
+        crescPct,
+      };
+    }).sort((a, b) => b.liquido - a.liquido);
+
+    return { rows, totalSkusUniverso, totalColecoesUniverso };
+  }, [orders, ordersPrev, items]);
+
+  // ── Série temporal (faturamento por dia × top 5 vendedores)
+  const serieTempo = useMemo(() => {
+    const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const days: string[] = [];
+    const cursor = new Date(range.from);
+    while (cursor < range.to) { days.push(dayKey(cursor)); cursor.setDate(cursor.getDate() + 1); }
+    const top5 = profundidade.rows.slice(0, 5).map((r) => r.nome);
+    const byDay = new Map<string, Record<string, number>>();
+    days.forEach((d) => { const o: Record<string, number> = { dia: 0 as unknown as number }; top5.forEach((n) => (o[n] = 0)); byDay.set(d, o); });
+    orders.forEach((o) => {
+      const nome = o.vendedor_nome || "—";
+      if (!top5.includes(nome)) return;
+      const d = dayKey(new Date(o.created_at));
+      const row = byDay.get(d); if (!row) return;
+      row[nome] = (row[nome] || 0) + Number(o.total || 0);
+    });
+    return {
+      top5,
+      data: days.map((d) => {
+        const row = byDay.get(d) || {};
+        const dt = new Date(d);
+        return { dia: `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}`, ...row } as Record<string, number | string>;
+      }),
+    };
+  }, [orders, range, profundidade.rows]);
+
+  // ── Insights (campeões por dimensão)
+  const insights = useMemo(() => {
+    if (!profundidade.rows.length) return [] as Array<{ titulo: string; vendedor: string; valor: string; hint: string }>;
+    const max = <K extends keyof (typeof profundidade.rows)[number]>(k: K, fmt: (v: number) => string, hint: string) => {
+      const r = [...profundidade.rows].sort((a, b) => Number(b[k]) - Number(a[k]))[0];
+      return { titulo: hint, vendedor: r.nome, valor: fmt(Number(r[k])), hint };
+    };
+    return [
+      { ...max("liquido", formatBRL, "Maior faturamento"), titulo: "Maior faturamento" },
+      { ...max("ticket", formatBRL, "Maior ticket médio"), titulo: "Maior ticket médio" },
+      { ...max("variedadePct", (v) => `${v.toFixed(1)}%`, "Maior variedade (SKUs únicos)"), titulo: "Maior variedade (SKUs únicos)" },
+      { ...max("profundidade", (v) => `${v.toFixed(1)} un/SKU`, "Maior profundidade de linha"), titulo: "Maior profundidade de linha" },
+      { ...max("colecoes", (v) => `${v} coleções`, "Mais coleções vendidas"), titulo: "Mais coleções vendidas" },
+      { ...max("clientes", (v) => `${v} clientes`, "Mais clientes ativos"), titulo: "Mais clientes ativos" },
+      { ...max("crescPct", (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`, "Maior crescimento vs período anterior"), titulo: "Maior crescimento vs anterior" },
+      { ...max("unidadesPorPedido", (v) => `${v.toFixed(1)} un/pedido`, "Maior densidade por pedido"), titulo: "Maior densidade por pedido" },
+    ];
+  }, [profundidade.rows]);
+
+
   // ── Recompra (cliente com 2+ pedidos no período; comparação com período anterior)
   const recompra = useMemo(() => {
     const prevClientes = new Set(ordersPrev.map((o) => o.cliente_snapshot?.cnpj || "—"));
