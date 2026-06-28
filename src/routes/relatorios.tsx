@@ -271,7 +271,7 @@ function RelatoriosPage() {
   });
 
   const { data: items = [], isLoading: loadingItems } = useQuery({
-    enabled: !!session && !isCliente && (tab === "produto" || tab === "colecao" || tab === "grupo" || tab === "tipo" || tab === "departamento"),
+    enabled: !!session && !isCliente && (tab === "produto" || tab === "colecao" || tab === "grupo" || tab === "tipo" || tab === "departamento" || tab === "cliente"),
     queryKey: ["rel-items", filtroKey, tab],
     queryFn: async () => {
       let q = supabase
@@ -412,7 +412,7 @@ function RelatoriosPage() {
         <TabDepartamento items={items} ordersPrev={ordersPrev} loadingItems={loadingItems} range={range} />
       )}
       {!loadingOrders && tab === "cliente" && (
-        <TabCliente orders={orders} ordersPrev={ordersPrev} range={range} />
+        <TabCliente orders={orders} ordersPrev={ordersPrev} items={items} range={range} />
       )}
       {!loadingOrders && tab === "financeiro" && (
         <TabFinanceiro orders={orders} range={range} />
@@ -2184,11 +2184,12 @@ function ProdutosRows({ items, totalRef, indent }: { items: ItemRow[]; totalRef:
 // TAB: CLIENTE  (Por cliente · Estado · Representante · Atendimento · Recompra)
 // ────────────────────────────────────────────────────────────────────────────
 
-type ClienteView = "cliente" | "estado" | "representante" | "atendimento" | "recompra";
+type ClienteView = "cliente" | "estado" | "representante" | "atendimento" | "profundidade" | "recompra";
 
-function TabCliente({ orders, ordersPrev, range }: {
+function TabCliente({ orders, ordersPrev, items, range }: {
   orders: OrderRow[];
   ordersPrev: OrderRow[];
+  items: ItemRow[];
   range: { from: Date; to: Date; label: string };
 }) {
   const [view, setView] = useState<ClienteView>("cliente");
@@ -2270,6 +2271,132 @@ function TabCliente({ orders, ordersPrev, range }: {
   const porAtendimento = useMemo(() => aggVendedor("interno"), [orders, totalFat]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
+  // ── Profundidade por vendedor (variedade, profundidade de linha, coleções, tempo)
+  const profundidade = useMemo(() => {
+    type Acc = {
+      id: string; nome: string;
+      pedidos: Set<string>; clientes: Set<string>;
+      skus: Set<string>; colecoes: Map<string, number>; grupos: Map<string, number>;
+      categorias: Set<string>; tipos: Set<string>;
+      unidades: number; liquido: number; bruto: number;
+    };
+    const m = new Map<string, Acc>();
+    // Inicializa com todos vendedores que aparecem em orders (para incluir os sem itens)
+    orders.forEach((o) => {
+      const id = o.vendedor_id || o.vendedor_nome || "—";
+      if (!m.has(id)) m.set(id, {
+        id, nome: o.vendedor_nome || "—",
+        pedidos: new Set(), clientes: new Set(),
+        skus: new Set(), colecoes: new Map(), grupos: new Map(),
+        categorias: new Set(), tipos: new Set(),
+        unidades: 0, liquido: 0, bruto: 0,
+      });
+      const cur = m.get(id)!;
+      cur.pedidos.add(o.id);
+      cur.clientes.add(o.cliente_snapshot?.cnpj || "—");
+      cur.liquido += Number(o.total || 0);
+      cur.bruto += Number(o.commercial?.bruto || o.total || 0);
+    });
+    items.forEach((it) => {
+      const id = it.orders?.vendedor_id || "—";
+      const cur = m.get(id);
+      if (!cur) return;
+      const ps = it.product_snapshot ?? {};
+      cur.skus.add(it.sku);
+      cur.unidades += Number(it.quantity || 0);
+      const col = ps.colecao || "—"; cur.colecoes.set(col, (cur.colecoes.get(col) || 0) + Number(it.quantity || 0));
+      const gr = ps.grupo || "—"; cur.grupos.set(gr, (cur.grupos.get(gr) || 0) + Number(it.quantity || 0));
+      if (ps.categoria) cur.categorias.add(ps.categoria);
+      if (ps.tipo) cur.tipos.add(ps.tipo);
+    });
+
+    // Previous period faturamento por vendedor (para crescimento)
+    const prevByVend = new Map<string, number>();
+    ordersPrev.forEach((o) => {
+      const id = o.vendedor_id || o.vendedor_nome || "—";
+      prevByVend.set(id, (prevByVend.get(id) || 0) + Number(o.total || 0));
+    });
+
+    const totalSkusUniverso = new Set(items.map((it) => it.sku)).size;
+    const totalColecoesUniverso = new Set(items.map((it) => it.product_snapshot?.colecao || "—")).size;
+
+    const rows = Array.from(m.values()).map((r) => {
+      const skus = r.skus.size;
+      const ped = r.pedidos.size;
+      const colecoes = r.colecoes.size;
+      const grupos = r.grupos.size;
+      const topColecao = Array.from(r.colecoes.entries()).sort((a, b) => b[1] - a[1])[0];
+      const topGrupo = Array.from(r.grupos.entries()).sort((a, b) => b[1] - a[1])[0];
+      const prev = prevByVend.get(r.id) || 0;
+      const crescPct = prev > 0 ? ((r.liquido - prev) / prev) * 100 : (r.liquido > 0 ? 100 : 0);
+      return {
+        id: r.id, nome: r.nome,
+        pedidos: ped, clientes: r.clientes.size, skus, colecoes, grupos,
+        categorias: r.categorias.size, tipos: r.tipos.size,
+        unidades: r.unidades, liquido: r.liquido, bruto: r.bruto,
+        ticket: ped ? r.liquido / ped : 0,
+        unidadesPorPedido: ped ? r.unidades / ped : 0,
+        profundidade: skus ? r.unidades / skus : 0, // unidades por SKU único (depth de linha)
+        variedadePct: totalSkusUniverso ? (skus / totalSkusUniverso) * 100 : 0,
+        coberturaColecoesPct: totalColecoesUniverso ? (colecoes / totalColecoesUniverso) * 100 : 0,
+        topColecao: topColecao ? topColecao[0] : "—",
+        topColecaoUn: topColecao ? topColecao[1] : 0,
+        topGrupo: topGrupo ? topGrupo[0] : "—",
+        topGrupoUn: topGrupo ? topGrupo[1] : 0,
+        prevLiquido: prev,
+        crescPct,
+      };
+    }).sort((a, b) => b.liquido - a.liquido);
+
+    return { rows, totalSkusUniverso, totalColecoesUniverso };
+  }, [orders, ordersPrev, items]);
+
+  // ── Série temporal (faturamento por dia × top 5 vendedores)
+  const serieTempo = useMemo(() => {
+    const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const days: string[] = [];
+    const cursor = new Date(range.from);
+    while (cursor < range.to) { days.push(dayKey(cursor)); cursor.setDate(cursor.getDate() + 1); }
+    const top5 = profundidade.rows.slice(0, 5).map((r) => r.nome);
+    const byDay = new Map<string, Record<string, number>>();
+    days.forEach((d) => { const o: Record<string, number> = { dia: 0 as unknown as number }; top5.forEach((n) => (o[n] = 0)); byDay.set(d, o); });
+    orders.forEach((o) => {
+      const nome = o.vendedor_nome || "—";
+      if (!top5.includes(nome)) return;
+      const d = dayKey(new Date(o.created_at));
+      const row = byDay.get(d); if (!row) return;
+      row[nome] = (row[nome] || 0) + Number(o.total || 0);
+    });
+    return {
+      top5,
+      data: days.map((d) => {
+        const row = byDay.get(d) || {};
+        const dt = new Date(d);
+        return { dia: `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}`, ...row } as Record<string, number | string>;
+      }),
+    };
+  }, [orders, range, profundidade.rows]);
+
+  // ── Insights (campeões por dimensão)
+  const insights = useMemo(() => {
+    if (!profundidade.rows.length) return [] as Array<{ titulo: string; vendedor: string; valor: string; hint: string }>;
+    const max = <K extends keyof (typeof profundidade.rows)[number]>(k: K, fmt: (v: number) => string, hint: string) => {
+      const r = [...profundidade.rows].sort((a, b) => Number(b[k]) - Number(a[k]))[0];
+      return { titulo: hint, vendedor: r.nome, valor: fmt(Number(r[k])), hint };
+    };
+    return [
+      { ...max("liquido", formatBRL, "Maior faturamento"), titulo: "Maior faturamento" },
+      { ...max("ticket", formatBRL, "Maior ticket médio"), titulo: "Maior ticket médio" },
+      { ...max("variedadePct", (v) => `${v.toFixed(1)}%`, "Maior variedade (SKUs únicos)"), titulo: "Maior variedade (SKUs únicos)" },
+      { ...max("profundidade", (v) => `${v.toFixed(1)} un/SKU`, "Maior profundidade de linha"), titulo: "Maior profundidade de linha" },
+      { ...max("colecoes", (v) => `${v} coleções`, "Mais coleções vendidas"), titulo: "Mais coleções vendidas" },
+      { ...max("clientes", (v) => `${v} clientes`, "Mais clientes ativos"), titulo: "Mais clientes ativos" },
+      { ...max("crescPct", (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`, "Maior crescimento vs período anterior"), titulo: "Maior crescimento vs anterior" },
+      { ...max("unidadesPorPedido", (v) => `${v.toFixed(1)} un/pedido`, "Maior densidade por pedido"), titulo: "Maior densidade por pedido" },
+    ];
+  }, [profundidade.rows]);
+
+
   // ── Recompra (cliente com 2+ pedidos no período; comparação com período anterior)
   const recompra = useMemo(() => {
     const prevClientes = new Set(ordersPrev.map((o) => o.cliente_snapshot?.cnpj || "—"));
@@ -2321,12 +2448,29 @@ function TabCliente({ orders, ordersPrev, range }: {
     "Tipo": c.pedidos >= 2 ? "Recompra no período" : c.existiaAntes ? "Recompra histórica" : "Novo cliente",
     "Última Compra": new Date(c.ultima).toLocaleDateString("pt-BR"),
   })));
+  const exportProfundidade = () => downloadCSV(`fetely_profundidade_vendedor_${periodSuffix(range.from)}.csv`, profundidade.rows.map((r, i) => ({
+    "#": i + 1, Vendedor: r.nome,
+    Pedidos: r.pedidos, Clientes: r.clientes, Unidades: r.unidades,
+    "SKUs únicos": r.skus, "Coleções": r.colecoes, "Grupos": r.grupos,
+    "Categorias": r.categorias, "Tipos": r.tipos,
+    "Fat. Bruto": r.bruto.toFixed(2), "Fat. Líquido": r.liquido.toFixed(2),
+    "Ticket Médio": r.ticket.toFixed(2),
+    "Unid./Pedido": r.unidadesPorPedido.toFixed(2),
+    "Profundidade (un/SKU)": r.profundidade.toFixed(2),
+    "Variedade %": r.variedadePct.toFixed(2),
+    "Cobertura Coleções %": r.coberturaColecoesPct.toFixed(2),
+    "Top Coleção": r.topColecao, "Top Coleção (un)": r.topColecaoUn,
+    "Top Grupo": r.topGrupo, "Top Grupo (un)": r.topGrupoUn,
+    "Fat. Período Anterior": r.prevLiquido.toFixed(2),
+    "Crescimento %": r.crescPct.toFixed(2),
+  })));
 
   const views: Array<{ key: ClienteView; label: string }> = [
     { key: "cliente", label: "Por Cliente" },
     { key: "estado", label: "Por Estado" },
     { key: "representante", label: "Por Vendedor" },
     { key: "atendimento", label: "Por Atendimento" },
+    { key: "profundidade", label: "Aprofundamento Vendedor" },
     { key: "recompra", label: "Recompra" },
   ];
 
@@ -2554,6 +2698,179 @@ function TabCliente({ orders, ordersPrev, range }: {
             </table>
           </div>
         </Card>
+        </>
+      )}
+
+      {view === "profundidade" && (
+        <>
+          {profundidade.rows.length === 0 ? (
+            <Card title="Aprofundamento por vendedor">
+              <p className="text-sm text-text-secondary">Sem dados de itens no período selecionado.</p>
+            </Card>
+          ) : (
+            <>
+              {/* Insights / campeões */}
+              <Card title="Insights · destaques do período">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {insights.map((it) => (
+                    <div key={it.titulo} className="rounded-lg border border-border bg-surface-2/40 p-3">
+                      <div className="text-[10px] uppercase tracking-wider text-text-muted">{it.titulo}</div>
+                      <div className="mt-1 text-sm font-medium text-text-primary truncate" title={it.vendedor}>{it.vendedor}</div>
+                      <div className="mt-0.5 text-gold text-sm">{it.valor}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 text-[11px] text-text-muted">
+                  Universo do período: {profundidade.totalSkusUniverso} SKUs únicos · {profundidade.totalColecoesUniverso} coleções ativas.
+                </div>
+              </Card>
+
+              {/* Variedade × Profundidade × Faturamento */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <Card title="Variedade de SKUs vendidos (Top 10)">
+                  <div className="h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={[...profundidade.rows].sort((a, b) => b.skus - a.skus).slice(0, 10).map((r) => ({ nome: r.nome.slice(0, 22), skus: r.skus }))}
+                        layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                        <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
+                        <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={170} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }} formatter={(v: number) => `${v} SKUs`} />
+                        <Bar dataKey="skus" fill={GOLD} radius={[0, 6, 6, 0]} maxBarSize={16}>
+                          <LabelList dataKey="skus" position="right" style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+                <Card title="Profundidade de linha (un. por SKU)">
+                  <div className="h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={[...profundidade.rows].sort((a, b) => b.profundidade - a.profundidade).slice(0, 10).map((r) => ({ nome: r.nome.slice(0, 22), prof: Number(r.profundidade.toFixed(1)) }))}
+                        layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                        <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                        <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={170} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }} formatter={(v: number) => `${v} un/SKU`} />
+                        <Bar dataKey="prof" fill="#6FB36F" radius={[0, 6, 6, 0]} maxBarSize={16}>
+                          <LabelList dataKey="prof" position="right" style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Coleções e crescimento */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <Card title="Cobertura de coleções (qtd. de coleções vendidas)">
+                  <div className="h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={[...profundidade.rows].sort((a, b) => b.colecoes - a.colecoes).slice(0, 10).map((r) => ({ nome: r.nome.slice(0, 22), col: r.colecoes }))}
+                        layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                        <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
+                        <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={170} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }} formatter={(v: number) => `${v} coleções`} />
+                        <Bar dataKey="col" fill="#C58CD8" radius={[0, 6, 6, 0]} maxBarSize={16}>
+                          <LabelList dataKey="col" position="right" style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+                <Card title="Crescimento vs período anterior (%)">
+                  <div className="h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={[...profundidade.rows].sort((a, b) => b.crescPct - a.crescPct).slice(0, 10).map((r) => ({ nome: r.nome.slice(0, 22), pct: Number(r.crescPct.toFixed(1)) }))}
+                        layout="vertical" margin={{ top: 8, right: 56, left: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                        <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                        <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={170} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }} formatter={(v: number) => `${v}%`} />
+                        <Bar dataKey="pct" radius={[0, 6, 6, 0]} maxBarSize={16}>
+                          {[...profundidade.rows].sort((a, b) => b.crescPct - a.crescPct).slice(0, 10).map((r, i) => (
+                            <Cell key={i} fill={r.crescPct >= 0 ? GOLD : "#B26464"} />
+                          ))}
+                          <LabelList dataKey="pct" position="right" formatter={(v: number) => `${v}%`} style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Série temporal Top 5 vendedores */}
+              <Card title="Vendas no tempo · Top 5 vendedores (faturamento líquido por dia)">
+                <div className="h-[340px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={serieTempo.data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
+                      <XAxis dataKey="dia" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={(v) => fmtCompactBRL(Number(v))} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatBRL(Number(v))} />
+                      <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
+                      {serieTempo.top5.map((nome, i) => (
+                        <Line key={nome} type="monotone" dataKey={nome} stroke={PIE_COLORS[i % PIE_COLORS.length]} strokeWidth={2} dot={false} />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              {/* Tabela detalhada */}
+              <Card title={`Aprofundamento por vendedor (${profundidade.rows.length})`} action={<ExportBtn onClick={exportProfundidade} />}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+                        <th className="px-2 py-2 text-left">#</th>
+                        <th className="px-2 py-2 text-left">Vendedor</th>
+                        <th className="px-2 py-2 text-right">Pedidos</th>
+                        <th className="px-2 py-2 text-right">Clientes</th>
+                        <th className="px-2 py-2 text-right">Unid.</th>
+                        <th className="px-2 py-2 text-right">SKUs</th>
+                        <th className="px-2 py-2 text-right">Coleções</th>
+                        <th className="px-2 py-2 text-right">Grupos</th>
+                        <th className="px-2 py-2 text-right">Cat.</th>
+                        <th className="px-2 py-2 text-right">Prof. (un/SKU)</th>
+                        <th className="px-2 py-2 text-right">Variedade %</th>
+                        <th className="px-2 py-2 text-right">Un/Pedido</th>
+                        <th className="px-2 py-2 text-right">Líquido</th>
+                        <th className="px-2 py-2 text-right">Ticket</th>
+                        <th className="px-2 py-2 text-left">Top coleção</th>
+                        <th className="px-2 py-2 text-right">Δ vs ant.</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {profundidade.rows.map((r, i) => (
+                        <tr key={r.id} className="hover:bg-surface-2/40">
+                          <td className="px-2 py-2 text-text-muted">{i + 1}</td>
+                          <td className="px-2 py-2 text-text-primary">{r.nome}</td>
+                          <td className="px-2 py-2 text-right">{r.pedidos}</td>
+                          <td className="px-2 py-2 text-right">{r.clientes}</td>
+                          <td className="px-2 py-2 text-right">{r.unidades.toLocaleString("pt-BR")}</td>
+                          <td className="px-2 py-2 text-right text-gold">{r.skus}</td>
+                          <td className="px-2 py-2 text-right">{r.colecoes}</td>
+                          <td className="px-2 py-2 text-right">{r.grupos}</td>
+                          <td className="px-2 py-2 text-right">{r.categorias}</td>
+                          <td className="px-2 py-2 text-right">{r.profundidade.toFixed(1)}</td>
+                          <td className="px-2 py-2 text-right">{r.variedadePct.toFixed(1)}%</td>
+                          <td className="px-2 py-2 text-right">{r.unidadesPorPedido.toFixed(1)}</td>
+                          <td className="px-2 py-2 text-right text-text-primary">{formatBRL(r.liquido)}</td>
+                          <td className="px-2 py-2 text-right">{formatBRL(r.ticket)}</td>
+                          <td className="px-2 py-2 text-text-secondary truncate max-w-[160px]" title={`${r.topColecao} (${r.topColecaoUn})`}>{r.topColecao}</td>
+                          <td className={"px-2 py-2 text-right " + (r.crescPct >= 0 ? "text-stock-in" : "text-stock-out")}>
+                            {r.crescPct >= 0 ? "+" : ""}{r.crescPct.toFixed(1)}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </>
+          )}
         </>
       )}
 
