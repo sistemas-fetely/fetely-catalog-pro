@@ -2552,6 +2552,7 @@ function TabCliente({ orders, ordersPrev, range }: {
             </table>
           </div>
         </Card>
+        </>
       )}
 
       {view === "recompra" && (
