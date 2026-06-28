@@ -158,6 +158,8 @@ function DashboardPage() {
       let q = supabase
         .from("orders")
         .select("total, total_unidades")
+        .eq("status_pedido", "confirmado")
+        .eq("reprovado", false)
         .gte("created_at", rangeAnterior.from.toISOString())
         .lt("created_at", rangeAnterior.to.toISOString());
       if (vendedorFiltro !== "todos") q = q.eq("vendedor_id", vendedorFiltro);
