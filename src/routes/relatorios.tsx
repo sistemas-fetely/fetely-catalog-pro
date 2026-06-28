@@ -287,6 +287,7 @@ function RelatoriosPage() {
     { key: "grupo", label: "Por Grupo", icon: <Package className="h-3.5 w-3.5" /> },
     { key: "tipo", label: "Por Tipo", icon: <Tag className="h-3.5 w-3.5" /> },
     { key: "departamento", label: "Por Departamento", icon: <Building2 className="h-3.5 w-3.5" /> },
+    { key: "cliente", label: "Por Cliente", icon: <Users className="h-3.5 w-3.5" /> },
     { key: "financeiro", label: "Financeiro", icon: <Wallet className="h-3.5 w-3.5" /> },
   ];
 
