@@ -2564,6 +2564,55 @@ function TabCliente({ orders, ordersPrev, range }: {
             <MiniKpi label="Novos no período" value={String(recompra.novos.length)} />
           </div>
 
+          {(() => {
+            const novos = recompra.novos.length;
+            const recorrentes = recompra.recompraHistorica.length;
+            const mix = [
+              { nome: "Novos no período", valor: novos },
+              { nome: "Recompra histórica", valor: recorrentes },
+            ].filter((x) => x.valor > 0);
+            const COLORS = [GOLD, "#5C5028"];
+            return (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <Card title="Mix novos × recorrentes">
+                  <div className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={mix} dataKey="valor" nameKey="nome" cx="50%" cy="50%"
+                          outerRadius={100} innerRadius={62} paddingAngle={2} stroke="var(--surface)" strokeWidth={2}>
+                          {mix.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => `${v} clientes`} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+                <Card title="Top 10 clientes por recompra (pedidos no período)">
+                  <div className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart layout="vertical"
+                        data={recompra.all.slice().sort((a, b) => b.pedidos - a.pedidos).slice(0, 10)
+                          .map((c) => ({ nome: c.razao.slice(0, 24), valor: c.pedidos }))}
+                        margin={{ top: 8, right: 32, left: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                        <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
+                        <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={170} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
+                          formatter={(v: number) => `${v} pedidos`} />
+                        <Bar dataKey="valor" fill={GOLD} radius={[0, 6, 6, 0]} maxBarSize={16}>
+                          <LabelList dataKey="valor" position="right" style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              </div>
+            );
+          })()}
+
+
+
           <Card title={`Recompra · Detalhe (${recompra.all.length} clientes)`} action={<ExportBtn onClick={exportRecompra} />}>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
