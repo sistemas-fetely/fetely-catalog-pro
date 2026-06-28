@@ -412,7 +412,7 @@ function RelatoriosPage() {
         <TabDepartamento items={items} ordersPrev={ordersPrev} loadingItems={loadingItems} range={range} />
       )}
       {!loadingOrders && tab === "cliente" && (
-        <TabCliente orders={orders} ordersPrev={ordersPrev} range={range} />
+        <TabCliente orders={orders} ordersPrev={ordersPrev} items={items} range={range} />
       )}
       {!loadingOrders && tab === "financeiro" && (
         <TabFinanceiro orders={orders} range={range} />
