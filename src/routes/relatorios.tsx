@@ -2415,6 +2415,44 @@ function TabCliente({ orders, ordersPrev, range }: {
       )}
 
       {view === "estado" && (
+      {view === "estado" && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <Card title="Faturamento por UF">
+              <div className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={porEstado.slice(0, 12).map((e) => ({ nome: e.uf, valor: Math.round(e.liquido) }))}
+                    margin={{ top: 24, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false}
+                      tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
+                      formatter={(v: number) => formatBRL(v)} />
+                    <Bar dataKey="valor" fill={GOLD} radius={[6, 6, 0, 0]} maxBarSize={36}>
+                      <LabelList dataKey="valor" position="top" formatter={(v: number) => fmtCompactBRL(v)}
+                        style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+            <Card title="Participação por UF">
+              <div className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={porEstado.slice(0, 8).map((e) => ({ nome: e.uf, valor: e.liquido }))}
+                      dataKey="valor" nameKey="nome" cx="50%" cy="50%"
+                      outerRadius={108} innerRadius={64} paddingAngle={2} stroke="var(--surface)" strokeWidth={2}>
+                      {porEstado.slice(0, 8).map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatBRL(v)} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          </div>
         <Card title={`Faturamento por estado (${porEstado.length})`} action={<ExportBtn onClick={exportEstado} />}>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
