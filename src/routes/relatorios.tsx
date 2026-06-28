@@ -2348,6 +2348,33 @@ function TabCliente({ orders, ordersPrev, range }: {
       </div>
 
       {view === "cliente" && (
+        <>
+          <Card title="Top 10 clientes por faturamento líquido">
+            <div className="h-[360px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={porCliente.slice(0, 10).map((c) => ({ nome: c.razao.slice(0, 28), valor: Math.round(c.liquido) }))}
+                  layout="vertical" margin={{ top: 8, right: 72, left: 8, bottom: 8 }}>
+                  <defs>
+                    <linearGradient id="gCli" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor={GOLD} stopOpacity={0.55} />
+                      <stop offset="100%" stopColor={GOLD} stopOpacity={1} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                  <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false}
+                    tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                  <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={200} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
+                    formatter={(v: number) => formatBRL(v)} />
+                  <Bar dataKey="valor" fill="url(#gCli)" radius={[0, 6, 6, 0]} maxBarSize={18}>
+                    <LabelList dataKey="valor" position="right" formatter={(v: number) => fmtCompactBRL(v)}
+                      style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
         <Card title={`Detalhe por cliente (${porCliente.length})`} action={<ExportBtn onClick={exportCliente} />}>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
