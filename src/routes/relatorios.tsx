@@ -579,24 +579,6 @@ function TabGeral({ orders, ordersPrev, range }: {
       </div>
 
       <Card title="Evolução do faturamento" action={<ExportBtn onClick={exportar} />}>
-        <div className="h-[280px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={serie} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="gFat" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={GOLD} stopOpacity={0.45} />
-                  <stop offset="100%" stopColor={GOLD} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="label" tick={{ fill: "var(--text-muted)", fontSize: 10 }} minTickGap={24} />
-              <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10 }} width={64}
-                tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))} />
-              <Tooltip
-                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-                formatter={(v: number) => [formatBRL(v), "Faturamento"]}
-              />
-      <Card title="Evolução do faturamento" action={<ExportBtn onClick={exportar} />}>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={serie} margin={{ top: 12, right: 16, left: 4, bottom: 0 }}>
