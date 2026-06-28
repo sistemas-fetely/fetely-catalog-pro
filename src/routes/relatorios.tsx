@@ -172,6 +172,24 @@ function periodSuffix(d: Date) {
 const GOLD = "#C9A84C";
 const PIE_COLORS = ["#C9A84C", "#8B7B3D", "#5C5028", "#3F371C", "#E8DBA8", "#A89048"];
 
+const TOOLTIP_STYLE = {
+  background: "var(--surface-2)",
+  border: "1px solid var(--border)",
+  borderRadius: 10,
+  fontSize: 12,
+  padding: "8px 10px",
+  boxShadow: "0 8px 24px -12px rgba(0,0,0,.45)",
+} as const;
+
+const AXIS_TICK = { fill: "var(--text-muted)", fontSize: 10 } as const;
+
+function fmtCompactBRL(v: number) {
+  const abs = Math.abs(v);
+  if (abs >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1).replace(".", ",")}M`;
+  if (abs >= 1_000) return `R$ ${(v / 1_000).toFixed(0)}k`;
+  return `R$ ${Math.round(v)}`;
+}
+
 function RelatoriosPage() {
   const session = useAuth((s) => s.session);
   const loading = useAuth((s) => s.loading);
