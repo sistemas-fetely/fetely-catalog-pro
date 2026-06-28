@@ -2415,7 +2415,6 @@ function TabCliente({ orders, ordersPrev, range }: {
       )}
 
       {view === "estado" && (
-      {view === "estado" && (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <Card title="Faturamento por UF">
