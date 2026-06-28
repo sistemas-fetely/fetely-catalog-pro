@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
-  CartesianGrid, PieChart, Pie, Cell, Legend, LineChart, Line,
+  CartesianGrid, PieChart, Pie, Cell, Legend, LineChart, Line, LabelList, ReferenceLine,
 } from "recharts";
 
 import { useAuth } from "@/store/authStore";
@@ -171,6 +171,24 @@ function periodSuffix(d: Date) {
 
 const GOLD = "#C9A84C";
 const PIE_COLORS = ["#C9A84C", "#8B7B3D", "#5C5028", "#3F371C", "#E8DBA8", "#A89048"];
+
+const TOOLTIP_STYLE = {
+  background: "var(--surface-2)",
+  border: "1px solid var(--border)",
+  borderRadius: 10,
+  fontSize: 12,
+  padding: "8px 10px",
+  boxShadow: "0 8px 24px -12px rgba(0,0,0,.45)",
+} as const;
+
+const AXIS_TICK = { fill: "var(--text-muted)", fontSize: 10 } as const;
+
+function fmtCompactBRL(v: number) {
+  const abs = Math.abs(v);
+  if (abs >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1).replace(".", ",")}M`;
+  if (abs >= 1_000) return `R$ ${(v / 1_000).toFixed(0)}k`;
+  return `R$ ${Math.round(v)}`;
+}
 
 function RelatoriosPage() {
   const session = useAuth((s) => s.session);
@@ -561,24 +579,34 @@ function TabGeral({ orders, ordersPrev, range }: {
       </div>
 
       <Card title="Evolução do faturamento" action={<ExportBtn onClick={exportar} />}>
-        <div className="h-[280px]">
+        <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={serie} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+            <AreaChart data={serie} margin={{ top: 12, right: 16, left: 4, bottom: 0 }}>
               <defs>
                 <linearGradient id="gFat" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={GOLD} stopOpacity={0.45} />
+                  <stop offset="0%" stopColor={GOLD} stopOpacity={0.35} />
                   <stop offset="100%" stopColor={GOLD} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="label" tick={{ fill: "var(--text-muted)", fontSize: 10 }} minTickGap={24} />
-              <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10 }} width={64}
+              <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
+              <XAxis dataKey="label" tick={AXIS_TICK} minTickGap={24} axisLine={false} tickLine={false} />
+              <YAxis tick={AXIS_TICK} width={56} axisLine={false} tickLine={false}
                 tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))} />
               <Tooltip
-                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                contentStyle={TOOLTIP_STYLE}
+                cursor={{ stroke: GOLD, strokeOpacity: 0.25, strokeWidth: 1 }}
                 formatter={(v: number) => [formatBRL(v), "Faturamento"]}
               />
-              <Area type="monotone" dataKey="valor" stroke={GOLD} strokeWidth={2} fill="url(#gFat)" />
+              {serie.length > 1 && (
+                <ReferenceLine
+                  y={serie.reduce((s, d) => s + d.valor, 0) / serie.length}
+                  stroke="var(--text-muted)"
+                  strokeDasharray="3 3"
+                  label={{ value: "média", position: "insideTopRight", fill: "var(--text-muted)", fontSize: 10 }}
+                />
+              )}
+              <Area type="monotone" dataKey="valor" stroke={GOLD} strokeWidth={2.5} fill="url(#gFat)"
+                activeDot={{ r: 4, fill: GOLD, stroke: "var(--surface)", strokeWidth: 2 }} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -586,34 +614,37 @@ function TabGeral({ orders, ordersPrev, range }: {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <Card title="Distribuição por faixa comercial">
-          <div className="h-[260px]">
+          <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={faixas} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="nome" tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
-                <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10 }} />
+              <BarChart data={faixas} margin={{ top: 24, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false}
+                  tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
                 <Tooltip
-                  contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                  contentStyle={TOOLTIP_STYLE}
+                  cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
                   formatter={(v: number, n: string) => n === "valor" ? [formatBRL(v), "Valor"] : [v, "Pedidos"]}
                 />
-                <Bar dataKey="valor" fill={GOLD} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="valor" fill={GOLD} radius={[6, 6, 0, 0]} maxBarSize={56}>
+                  <LabelList dataKey="valor" position="top" formatter={(v: number) => fmtCompactBRL(v)}
+                    style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
         <Card title="Formas de pagamento">
-          <div className="h-[260px]">
+          <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={pagamentos} dataKey="valor" nameKey="nome" cx="50%" cy="50%" outerRadius={90} innerRadius={50}>
+                <Pie data={pagamentos} dataKey="valor" nameKey="nome" cx="50%" cy="50%"
+                  outerRadius={92} innerRadius={58} paddingAngle={2} stroke="var(--surface)" strokeWidth={2}>
                   {pagamentos.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                 </Pie>
-                <Tooltip
-                  contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-                  formatter={(v: number) => formatBRL(v)}
-                />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatBRL(v)} />
+                <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -622,7 +653,7 @@ function TabGeral({ orders, ordersPrev, range }: {
 
       <Card title="Resumo do período">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm tabular-nums">
             <thead>
               <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
                 <th className="px-3 py-2 text-left font-medium">Métrica</th>
@@ -754,22 +785,30 @@ function TabProduto({ orders, items, loadingItems, range }: {
       </div>
 
       <Card title={`Top 20 produtos por faturamento (${orders.length} pedidos)`}>
-        <div className="h-[420px]">
+        <div className="h-[460px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={top20} layout="vertical" margin={{ top: 8, right: 32, left: 8, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-              <XAxis type="number" tick={{ fill: "var(--text-muted)", fontSize: 10 }}
+            <BarChart data={top20} layout="vertical" margin={{ top: 8, right: 72, left: 8, bottom: 8 }}>
+              <defs>
+                <linearGradient id="gBarH" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor={GOLD} stopOpacity={0.55} />
+                  <stop offset="100%" stopColor={GOLD} stopOpacity={1} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false}
                 tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
-              <YAxis type="category" dataKey="nome" tick={{ fill: "var(--text-muted)", fontSize: 10 }} width={180} />
-              <Tooltip
-                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-                formatter={(v: number) => formatBRL(v)}
-              />
-              <Bar dataKey="valor" fill={GOLD} radius={[0, 4, 4, 0]} />
+              <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={180} />
+              <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
+                formatter={(v: number) => formatBRL(v)} />
+              <Bar dataKey="valor" fill="url(#gBarH)" radius={[0, 6, 6, 0]} maxBarSize={18}>
+                <LabelList dataKey="valor" position="right" formatter={(v: number) => fmtCompactBRL(v)}
+                  style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </Card>
+
 
       <Card title={`Detalhe de produtos (${produtos.length} SKUs)`}>
         <div className="overflow-x-auto">
@@ -808,17 +847,15 @@ function TabProduto({ orders, items, loadingItems, range }: {
       </Card>
 
       <Card title="Distribuição por grupo de produto">
-        <div className="h-[280px]">
+        <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={grupos} dataKey="valor" nameKey="nome" cx="50%" cy="50%" outerRadius={100} innerRadius={55}>
+              <Pie data={grupos} dataKey="valor" nameKey="nome" cx="50%" cy="50%"
+                outerRadius={108} innerRadius={64} paddingAngle={2} stroke="var(--surface)" strokeWidth={2}>
                 {grupos.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
               </Pie>
-              <Tooltip
-                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-                formatter={(v: number) => formatBRL(v)}
-              />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatBRL(v)} />
+              <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -878,22 +915,30 @@ function TabColecao({ items, loadingItems, range }: {
       <div className="flex justify-end"><ExportBtn onClick={exportar} /></div>
 
       <Card title="Ranking de coleções por faturamento">
-        <div className="h-[420px]">
+        <div className="h-[460px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={top15} layout="vertical" margin={{ top: 8, right: 32, left: 8, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-              <XAxis type="number" tick={{ fill: "var(--text-muted)", fontSize: 10 }}
+            <BarChart data={top15} layout="vertical" margin={{ top: 8, right: 72, left: 8, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+              <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false}
                 tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
-              <YAxis type="category" dataKey="nome" tick={{ fill: "var(--text-muted)", fontSize: 10 }} width={160} />
-              <Tooltip
-                contentStyle={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-                formatter={(v: number) => formatBRL(v)}
-              />
-              <Bar dataKey="valor" fill={GOLD} radius={[0, 4, 4, 0]} />
+              <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={160} />
+              <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
+                formatter={(v: number) => formatBRL(v)} />
+              <Bar dataKey="valor" fill="url(#gBarH)" radius={[0, 6, 6, 0]} maxBarSize={20}>
+                <LabelList dataKey="valor" position="right" formatter={(v: number) => fmtCompactBRL(v)}
+                  style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+              </Bar>
+              <defs>
+                <linearGradient id="gBarH" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor={GOLD} stopOpacity={0.55} />
+                  <stop offset="100%" stopColor={GOLD} stopOpacity={1} />
+                </linearGradient>
+              </defs>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </Card>
+
 
       <Card title={`Detalhe por coleção (${colecoes.length})`}>
         <div className="overflow-x-auto">
@@ -2303,6 +2348,33 @@ function TabCliente({ orders, ordersPrev, range }: {
       </div>
 
       {view === "cliente" && (
+        <>
+          <Card title="Top 10 clientes por faturamento líquido">
+            <div className="h-[360px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={porCliente.slice(0, 10).map((c) => ({ nome: c.razao.slice(0, 28), valor: Math.round(c.liquido) }))}
+                  layout="vertical" margin={{ top: 8, right: 72, left: 8, bottom: 8 }}>
+                  <defs>
+                    <linearGradient id="gCli" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor={GOLD} stopOpacity={0.55} />
+                      <stop offset="100%" stopColor={GOLD} stopOpacity={1} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                  <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false}
+                    tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                  <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={200} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
+                    formatter={(v: number) => formatBRL(v)} />
+                  <Bar dataKey="valor" fill="url(#gCli)" radius={[0, 6, 6, 0]} maxBarSize={18}>
+                    <LabelList dataKey="valor" position="right" formatter={(v: number) => fmtCompactBRL(v)}
+                      style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
         <Card title={`Detalhe por cliente (${porCliente.length})`} action={<ExportBtn onClick={exportCliente} />}>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
@@ -2339,9 +2411,47 @@ function TabCliente({ orders, ordersPrev, range }: {
             </table>
           </div>
         </Card>
+        </>
       )}
 
       {view === "estado" && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <Card title="Faturamento por UF">
+              <div className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={porEstado.slice(0, 12).map((e) => ({ nome: e.uf, valor: Math.round(e.liquido) }))}
+                    margin={{ top: 24, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false}
+                      tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
+                      formatter={(v: number) => formatBRL(v)} />
+                    <Bar dataKey="valor" fill={GOLD} radius={[6, 6, 0, 0]} maxBarSize={36}>
+                      <LabelList dataKey="valor" position="top" formatter={(v: number) => fmtCompactBRL(v)}
+                        style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+            <Card title="Participação por UF">
+              <div className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={porEstado.slice(0, 8).map((e) => ({ nome: e.uf, valor: e.liquido }))}
+                      dataKey="valor" nameKey="nome" cx="50%" cy="50%"
+                      outerRadius={108} innerRadius={64} paddingAngle={2} stroke="var(--surface)" strokeWidth={2}>
+                      {porEstado.slice(0, 8).map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatBRL(v)} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          </div>
         <Card title={`Faturamento por estado (${porEstado.length})`} action={<ExportBtn onClick={exportEstado} />}>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
@@ -2372,9 +2482,41 @@ function TabCliente({ orders, ordersPrev, range }: {
             </table>
           </div>
         </Card>
+        </>
       )}
 
       {(view === "representante" || view === "atendimento") && (
+        <>
+          {(() => {
+            const rows = view === "representante" ? porRepresentante : porAtendimento;
+            const top = rows.slice(0, 10).map((r) => ({ nome: r.nome.slice(0, 22), valor: Math.round(r.liquido) }));
+            return (
+              <Card title={view === "representante" ? "Top representantes" : "Top atendimento interno"}>
+                <div className="h-[340px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={top} layout="vertical" margin={{ top: 8, right: 72, left: 8, bottom: 8 }}>
+                      <defs>
+                        <linearGradient id="gVend" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor={GOLD} stopOpacity={0.55} />
+                          <stop offset="100%" stopColor={GOLD} stopOpacity={1} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                      <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false}
+                        tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                      <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={180} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
+                        formatter={(v: number) => formatBRL(v)} />
+                      <Bar dataKey="valor" fill="url(#gVend)" radius={[0, 6, 6, 0]} maxBarSize={18}>
+                        <LabelList dataKey="valor" position="right" formatter={(v: number) => fmtCompactBRL(v)}
+                          style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+            );
+          })()}
         <Card
           title={view === "representante" ? `Representantes (${porRepresentante.length})` : `Atendimento interno (${porAtendimento.length})`}
           action={<ExportBtn onClick={() => exportVend(view === "representante" ? porRepresentante : porAtendimento, view)} />}
@@ -2410,6 +2552,7 @@ function TabCliente({ orders, ordersPrev, range }: {
             </table>
           </div>
         </Card>
+        </>
       )}
 
       {view === "recompra" && (
@@ -2420,6 +2563,55 @@ function TabCliente({ orders, ordersPrev, range }: {
             <MiniKpi label="Recompra histórica" value={String(recompra.recompraHistorica.length)} hint="Já compraram no período anterior" />
             <MiniKpi label="Novos no período" value={String(recompra.novos.length)} />
           </div>
+
+          {(() => {
+            const novos = recompra.novos.length;
+            const recorrentes = recompra.recompraHistorica.length;
+            const mix = [
+              { nome: "Novos no período", valor: novos },
+              { nome: "Recompra histórica", valor: recorrentes },
+            ].filter((x) => x.valor > 0);
+            const COLORS = [GOLD, "#5C5028"];
+            return (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <Card title="Mix novos × recorrentes">
+                  <div className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={mix} dataKey="valor" nameKey="nome" cx="50%" cy="50%"
+                          outerRadius={100} innerRadius={62} paddingAngle={2} stroke="var(--surface)" strokeWidth={2}>
+                          {mix.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => `${v} clientes`} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+                <Card title="Top 10 clientes por recompra (pedidos no período)">
+                  <div className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart layout="vertical"
+                        data={recompra.all.slice().sort((a, b) => b.pedidos - a.pedidos).slice(0, 10)
+                          .map((c) => ({ nome: c.razao.slice(0, 24), valor: c.pedidos }))}
+                        margin={{ top: 8, right: 32, left: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                        <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
+                        <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={170} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
+                          formatter={(v: number) => `${v} pedidos`} />
+                        <Bar dataKey="valor" fill={GOLD} radius={[0, 6, 6, 0]} maxBarSize={16}>
+                          <LabelList dataKey="valor" position="right" style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              </div>
+            );
+          })()}
+
+
 
           <Card title={`Recompra · Detalhe (${recompra.all.length} clientes)`} action={<ExportBtn onClick={exportRecompra} />}>
             <div className="overflow-x-auto">
