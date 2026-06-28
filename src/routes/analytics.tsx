@@ -111,13 +111,18 @@ function AnalyticsPage() {
       const { data, error } = await supabase
         .from("order_items")
         .select(
-          "sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_nome, cliente_snapshot, total)",
+          "sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_nome, cliente_snapshot, total, status_pedido, reprovado)",
         )
         .gte("orders.created_at", range.from.toISOString())
         .lt("orders.created_at", range.to.toISOString())
-        .eq("orders.status_pedido", "confirmado");
+        .eq("orders.status_pedido", "confirmado")
+        .eq("orders.reprovado", false);
       if (error) throw error;
-      return (data ?? []) as unknown as DashItem[];
+      // Defensive client-side filter (PostgREST embed filters can be inconsistent)
+      const rows = (data ?? []) as unknown as Array<DashItem & { orders: { status_pedido?: string; reprovado?: boolean } }>;
+      return rows.filter(
+        (r) => r.orders?.status_pedido === "confirmado" && r.orders?.reprovado !== true,
+      ) as unknown as DashItem[];
     },
   });
 
@@ -133,6 +138,7 @@ function AnalyticsPage() {
         .gte("created_at", range.from.toISOString())
         .lt("created_at", range.to.toISOString())
         .eq("status_pedido", "confirmado")
+        .eq("reprovado", false)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as OrderRow[];
