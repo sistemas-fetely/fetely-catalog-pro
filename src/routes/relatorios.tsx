@@ -2701,6 +2701,179 @@ function TabCliente({ orders, ordersPrev, items, range }: {
         </>
       )}
 
+      {view === "profundidade" && (
+        <>
+          {profundidade.rows.length === 0 ? (
+            <Card title="Aprofundamento por vendedor">
+              <p className="text-sm text-text-secondary">Sem dados de itens no período selecionado.</p>
+            </Card>
+          ) : (
+            <>
+              {/* Insights / campeões */}
+              <Card title="Insights · destaques do período">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {insights.map((it) => (
+                    <div key={it.titulo} className="rounded-lg border border-border bg-surface-2/40 p-3">
+                      <div className="text-[10px] uppercase tracking-wider text-text-muted">{it.titulo}</div>
+                      <div className="mt-1 text-sm font-medium text-text-primary truncate" title={it.vendedor}>{it.vendedor}</div>
+                      <div className="mt-0.5 text-gold text-sm">{it.valor}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 text-[11px] text-text-muted">
+                  Universo do período: {profundidade.totalSkusUniverso} SKUs únicos · {profundidade.totalColecoesUniverso} coleções ativas.
+                </div>
+              </Card>
+
+              {/* Variedade × Profundidade × Faturamento */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <Card title="Variedade de SKUs vendidos (Top 10)">
+                  <div className="h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={[...profundidade.rows].sort((a, b) => b.skus - a.skus).slice(0, 10).map((r) => ({ nome: r.nome.slice(0, 22), skus: r.skus }))}
+                        layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                        <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
+                        <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={170} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }} formatter={(v: number) => `${v} SKUs`} />
+                        <Bar dataKey="skus" fill={GOLD} radius={[0, 6, 6, 0]} maxBarSize={16}>
+                          <LabelList dataKey="skus" position="right" style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+                <Card title="Profundidade de linha (un. por SKU)">
+                  <div className="h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={[...profundidade.rows].sort((a, b) => b.profundidade - a.profundidade).slice(0, 10).map((r) => ({ nome: r.nome.slice(0, 22), prof: Number(r.profundidade.toFixed(1)) }))}
+                        layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                        <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                        <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={170} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }} formatter={(v: number) => `${v} un/SKU`} />
+                        <Bar dataKey="prof" fill="#6FB36F" radius={[0, 6, 6, 0]} maxBarSize={16}>
+                          <LabelList dataKey="prof" position="right" style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Coleções e crescimento */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <Card title="Cobertura de coleções (qtd. de coleções vendidas)">
+                  <div className="h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={[...profundidade.rows].sort((a, b) => b.colecoes - a.colecoes).slice(0, 10).map((r) => ({ nome: r.nome.slice(0, 22), col: r.colecoes }))}
+                        layout="vertical" margin={{ top: 8, right: 48, left: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                        <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
+                        <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={170} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }} formatter={(v: number) => `${v} coleções`} />
+                        <Bar dataKey="col" fill="#C58CD8" radius={[0, 6, 6, 0]} maxBarSize={16}>
+                          <LabelList dataKey="col" position="right" style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+                <Card title="Crescimento vs período anterior (%)">
+                  <div className="h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={[...profundidade.rows].sort((a, b) => b.crescPct - a.crescPct).slice(0, 10).map((r) => ({ nome: r.nome.slice(0, 22), pct: Number(r.crescPct.toFixed(1)) }))}
+                        layout="vertical" margin={{ top: 8, right: 56, left: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                        <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                        <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={170} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }} formatter={(v: number) => `${v}%`} />
+                        <Bar dataKey="pct" radius={[0, 6, 6, 0]} maxBarSize={16}>
+                          {[...profundidade.rows].sort((a, b) => b.crescPct - a.crescPct).slice(0, 10).map((r, i) => (
+                            <Cell key={i} fill={r.crescPct >= 0 ? GOLD : "#B26464"} />
+                          ))}
+                          <LabelList dataKey="pct" position="right" formatter={(v: number) => `${v}%`} style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Série temporal Top 5 vendedores */}
+              <Card title="Vendas no tempo · Top 5 vendedores (faturamento líquido por dia)">
+                <div className="h-[340px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={serieTempo.data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
+                      <XAxis dataKey="dia" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={(v) => fmtCompactBRL(Number(v))} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatBRL(Number(v))} />
+                      <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
+                      {serieTempo.top5.map((nome, i) => (
+                        <Line key={nome} type="monotone" dataKey={nome} stroke={PIE_COLORS[i % PIE_COLORS.length]} strokeWidth={2} dot={false} />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              {/* Tabela detalhada */}
+              <Card title={`Aprofundamento por vendedor (${profundidade.rows.length})`} action={<ExportBtn onClick={exportProfundidade} />}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+                        <th className="px-2 py-2 text-left">#</th>
+                        <th className="px-2 py-2 text-left">Vendedor</th>
+                        <th className="px-2 py-2 text-right">Pedidos</th>
+                        <th className="px-2 py-2 text-right">Clientes</th>
+                        <th className="px-2 py-2 text-right">Unid.</th>
+                        <th className="px-2 py-2 text-right">SKUs</th>
+                        <th className="px-2 py-2 text-right">Coleções</th>
+                        <th className="px-2 py-2 text-right">Grupos</th>
+                        <th className="px-2 py-2 text-right">Cat.</th>
+                        <th className="px-2 py-2 text-right">Prof. (un/SKU)</th>
+                        <th className="px-2 py-2 text-right">Variedade %</th>
+                        <th className="px-2 py-2 text-right">Un/Pedido</th>
+                        <th className="px-2 py-2 text-right">Líquido</th>
+                        <th className="px-2 py-2 text-right">Ticket</th>
+                        <th className="px-2 py-2 text-left">Top coleção</th>
+                        <th className="px-2 py-2 text-right">Δ vs ant.</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {profundidade.rows.map((r, i) => (
+                        <tr key={r.id} className="hover:bg-surface-2/40">
+                          <td className="px-2 py-2 text-text-muted">{i + 1}</td>
+                          <td className="px-2 py-2 text-text-primary">{r.nome}</td>
+                          <td className="px-2 py-2 text-right">{r.pedidos}</td>
+                          <td className="px-2 py-2 text-right">{r.clientes}</td>
+                          <td className="px-2 py-2 text-right">{r.unidades.toLocaleString("pt-BR")}</td>
+                          <td className="px-2 py-2 text-right text-gold">{r.skus}</td>
+                          <td className="px-2 py-2 text-right">{r.colecoes}</td>
+                          <td className="px-2 py-2 text-right">{r.grupos}</td>
+                          <td className="px-2 py-2 text-right">{r.categorias}</td>
+                          <td className="px-2 py-2 text-right">{r.profundidade.toFixed(1)}</td>
+                          <td className="px-2 py-2 text-right">{r.variedadePct.toFixed(1)}%</td>
+                          <td className="px-2 py-2 text-right">{r.unidadesPorPedido.toFixed(1)}</td>
+                          <td className="px-2 py-2 text-right text-text-primary">{formatBRL(r.liquido)}</td>
+                          <td className="px-2 py-2 text-right">{formatBRL(r.ticket)}</td>
+                          <td className="px-2 py-2 text-text-secondary truncate max-w-[160px]" title={`${r.topColecao} (${r.topColecaoUn})`}>{r.topColecao}</td>
+                          <td className={"px-2 py-2 text-right " + (r.crescPct >= 0 ? "text-stock-in" : "text-stock-out")}>
+                            {r.crescPct >= 0 ? "+" : ""}{r.crescPct.toFixed(1)}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </>
+          )}
+        </>
+      )}
+
       {view === "recompra" && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
