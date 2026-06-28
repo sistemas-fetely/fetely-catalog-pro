@@ -132,6 +132,7 @@ function AnalyticsPage() {
         )
         .gte("created_at", range.from.toISOString())
         .lt("created_at", range.to.toISOString())
+        .eq("status_pedido", "confirmado")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as OrderRow[];
