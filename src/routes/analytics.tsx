@@ -114,7 +114,8 @@ function AnalyticsPage() {
           "sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_nome, cliente_snapshot, total)",
         )
         .gte("orders.created_at", range.from.toISOString())
-        .lt("orders.created_at", range.to.toISOString());
+        .lt("orders.created_at", range.to.toISOString())
+        .eq("orders.status_pedido", "confirmado");
       if (error) throw error;
       return (data ?? []) as unknown as DashItem[];
     },
