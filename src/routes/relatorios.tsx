@@ -77,7 +77,15 @@ interface ItemRow {
     precoAtacado?: number;
   } | null;
 
-  orders: { id: string; created_at: string; vendedor_id: string; total: number };
+  orders: {
+    id: string;
+    created_at: string;
+    vendedor_id: string;
+    vendedor_tipo: string | null;
+    total: number;
+    status_pedido?: string;
+    reprovado?: boolean;
+  };
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -214,6 +222,8 @@ function RelatoriosPage() {
       )
       .gte("created_at", from.toISOString())
       .lt("created_at", to.toISOString())
+      .eq("status_pedido", "confirmado")
+      .eq("reprovado", false)
       .order("created_at", { ascending: false });
     if (vendedorFiltro !== "todos") q = q.eq("vendedor_id", vendedorFiltro);
     if (tipoFiltro !== "todos") q = q.eq("vendedor_tipo", tipoFiltro);
@@ -249,15 +259,20 @@ function RelatoriosPage() {
       let q = supabase
         .from("order_items")
         .select(
-          "sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_tipo, total)",
+          "sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_tipo, total, status_pedido, reprovado)",
         )
         .gte("orders.created_at", range.from.toISOString())
-        .lt("orders.created_at", range.to.toISOString());
+        .lt("orders.created_at", range.to.toISOString())
+        .eq("orders.status_pedido", "confirmado")
+        .eq("orders.reprovado", false);
       if (vendedorFiltro !== "todos") q = q.eq("orders.vendedor_id", vendedorFiltro);
       if (tipoFiltro !== "todos") q = q.eq("orders.vendedor_tipo", tipoFiltro);
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []) as unknown as ItemRow[];
+      const rows = (data ?? []) as unknown as ItemRow[];
+      return rows.filter(
+        (r) => r.orders?.status_pedido === "confirmado" && r.orders?.reprovado !== true,
+      );
     },
   });
 
