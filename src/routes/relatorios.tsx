@@ -393,6 +393,9 @@ function RelatoriosPage() {
       {!loadingOrders && tab === "departamento" && (
         <TabDepartamento items={items} ordersPrev={ordersPrev} loadingItems={loadingItems} range={range} />
       )}
+      {!loadingOrders && tab === "cliente" && (
+        <TabCliente orders={orders} ordersPrev={ordersPrev} range={range} />
+      )}
       {!loadingOrders && tab === "financeiro" && (
         <TabFinanceiro orders={orders} range={range} />
       )}
