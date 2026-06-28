@@ -2325,7 +2325,7 @@ function TabCliente({ orders, ordersPrev, range }: {
   const views: Array<{ key: ClienteView; label: string }> = [
     { key: "cliente", label: "Por Cliente" },
     { key: "estado", label: "Por Estado" },
-    { key: "representante", label: "Por Representante" },
+    { key: "representante", label: "Por Vendedor" },
     { key: "atendimento", label: "Por Atendimento" },
     { key: "recompra", label: "Recompra" },
   ];
