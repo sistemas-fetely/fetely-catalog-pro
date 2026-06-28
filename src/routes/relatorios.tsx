@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
-  CartesianGrid, PieChart, Pie, Cell, Legend, LineChart, Line,
+  CartesianGrid, PieChart, Pie, Cell, Legend, LineChart, Line, LabelList, ReferenceLine,
 } from "recharts";
 
 import { useAuth } from "@/store/authStore";
