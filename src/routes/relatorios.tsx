@@ -2493,7 +2493,7 @@ function TabCliente({ orders, ordersPrev, range }: {
             const rows = view === "representante" ? porRepresentante : porAtendimento;
             const top = rows.slice(0, 10).map((r) => ({ nome: r.nome.slice(0, 22), valor: Math.round(r.liquido) }));
             return (
-              <Card title={view === "representante" ? "Top representantes" : "Top atendimento interno"}>
+              <Card title={view === "representante" ? "Top vendedores" : "Top atendimento interno"}>
                 <div className="h-[340px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={top} layout="vertical" margin={{ top: 8, right: 72, left: 8, bottom: 8 }}>
