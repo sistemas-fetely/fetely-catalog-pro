@@ -2134,3 +2134,330 @@ function ProdutosRows({ items, totalRef, indent }: { items: ItemRow[]; totalRef:
     </>
   );
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// TAB: CLIENTE  (Por cliente · Estado · Representante · Atendimento · Recompra)
+// ────────────────────────────────────────────────────────────────────────────
+
+type ClienteView = "cliente" | "estado" | "representante" | "atendimento" | "recompra";
+
+function TabCliente({ orders, ordersPrev, range }: {
+  orders: OrderRow[];
+  ordersPrev: OrderRow[];
+  range: { from: Date; to: Date; label: string };
+}) {
+  const [view, setView] = useState<ClienteView>("cliente");
+
+  const totalFat = orders.reduce((s, o) => s + Number(o.total || 0), 0);
+  const fmtPct = (v: number) => `${v.toFixed(1)}%`;
+
+  // ── Agregação por cliente
+  const porCliente = useMemo(() => {
+    const m = new Map<string, {
+      key: string; razao: string; cnpj: string; cidade: string; estado: string;
+      pedidos: number; unidades: number; bruto: number; liquido: number;
+      vendedores: Set<string>; ultima: string;
+    }>();
+    orders.forEach((o) => {
+      const c = o.cliente_snapshot ?? {};
+      const cnpj = c.cnpj || "—";
+      const key = (c as { clienteId?: string }).clienteId || cnpj || c.razaoSocial || "—";
+      const cur = m.get(key) ?? {
+        key,
+        razao: c.razaoSocial || c.nomeFantasia || "—",
+        cnpj,
+        cidade: (c as { cidade?: string }).cidade || "—",
+        estado: (c as { estado?: string }).estado || "—",
+        pedidos: 0, unidades: 0, bruto: 0, liquido: 0,
+        vendedores: new Set<string>(), ultima: o.created_at,
+      };
+      cur.pedidos += 1;
+      cur.unidades += Number(o.total_unidades || 0);
+      cur.bruto += Number(o.commercial?.bruto || o.total || 0);
+      cur.liquido += Number(o.total || 0);
+      if (o.vendedor_nome) cur.vendedores.add(o.vendedor_nome);
+      if (new Date(o.created_at) > new Date(cur.ultima)) cur.ultima = o.created_at;
+      m.set(key, cur);
+    });
+    return Array.from(m.values())
+      .map((r) => ({ ...r, ticket: r.pedidos ? r.liquido / r.pedidos : 0, pct: totalFat > 0 ? (r.liquido / totalFat) * 100 : 0 }))
+      .sort((a, b) => b.liquido - a.liquido);
+  }, [orders, totalFat]);
+
+  // ── Por estado
+  const porEstado = useMemo(() => {
+    const m = new Map<string, { uf: string; pedidos: number; clientes: Set<string>; bruto: number; liquido: number; unidades: number }>();
+    orders.forEach((o) => {
+      const uf = (o.cliente_snapshot as { estado?: string } | null)?.estado || "—";
+      const cnpj = o.cliente_snapshot?.cnpj || "—";
+      const cur = m.get(uf) ?? { uf, pedidos: 0, clientes: new Set<string>(), bruto: 0, liquido: 0, unidades: 0 };
+      cur.pedidos += 1;
+      cur.clientes.add(cnpj);
+      cur.bruto += Number(o.commercial?.bruto || o.total || 0);
+      cur.liquido += Number(o.total || 0);
+      cur.unidades += Number(o.total_unidades || 0);
+      m.set(uf, cur);
+    });
+    return Array.from(m.values())
+      .map((r) => ({ uf: r.uf, pedidos: r.pedidos, clientes: r.clientes.size, bruto: r.bruto, liquido: r.liquido, unidades: r.unidades, ticket: r.pedidos ? r.liquido / r.pedidos : 0, pct: totalFat > 0 ? (r.liquido / totalFat) * 100 : 0 }))
+      .sort((a, b) => b.liquido - a.liquido);
+  }, [orders, totalFat]);
+
+  // ── Por vendedor (filtrado por tipo)
+  const aggVendedor = (tipo: "rep" | "interno") => {
+    const m = new Map<string, { id: string; nome: string; pedidos: number; clientes: Set<string>; bruto: number; liquido: number; unidades: number }>();
+    orders.filter((o) => o.vendedor_tipo === tipo).forEach((o) => {
+      const id = o.vendedor_id || "—";
+      const cur = m.get(id) ?? { id, nome: o.vendedor_nome || "—", pedidos: 0, clientes: new Set<string>(), bruto: 0, liquido: 0, unidades: 0 };
+      cur.pedidos += 1;
+      cur.clientes.add(o.cliente_snapshot?.cnpj || "—");
+      cur.bruto += Number(o.commercial?.bruto || o.total || 0);
+      cur.liquido += Number(o.total || 0);
+      cur.unidades += Number(o.total_unidades || 0);
+      m.set(id, cur);
+    });
+    return Array.from(m.values())
+      .map((r) => ({ id: r.id, nome: r.nome, pedidos: r.pedidos, clientes: r.clientes.size, bruto: r.bruto, liquido: r.liquido, unidades: r.unidades, ticket: r.pedidos ? r.liquido / r.pedidos : 0, pct: totalFat > 0 ? (r.liquido / totalFat) * 100 : 0 }))
+      .sort((a, b) => b.liquido - a.liquido);
+  };
+  const porRepresentante = useMemo(() => aggVendedor("rep"), [orders, totalFat]); // eslint-disable-line react-hooks/exhaustive-deps
+  const porAtendimento = useMemo(() => aggVendedor("interno"), [orders, totalFat]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Recompra (cliente com 2+ pedidos no período; comparação com período anterior)
+  const recompra = useMemo(() => {
+    const prevClientes = new Set(ordersPrev.map((o) => o.cliente_snapshot?.cnpj || "—"));
+    const m = new Map<string, { cnpj: string; razao: string; estado: string; pedidos: number; liquido: number; ultima: string; existiaAntes: boolean }>();
+    orders.forEach((o) => {
+      const cnpj = o.cliente_snapshot?.cnpj || "—";
+      const cur = m.get(cnpj) ?? {
+        cnpj,
+        razao: o.cliente_snapshot?.razaoSocial || o.cliente_snapshot?.nomeFantasia || "—",
+        estado: (o.cliente_snapshot as { estado?: string } | null)?.estado || "—",
+        pedidos: 0, liquido: 0, ultima: o.created_at,
+        existiaAntes: prevClientes.has(cnpj),
+      };
+      cur.pedidos += 1;
+      cur.liquido += Number(o.total || 0);
+      if (new Date(o.created_at) > new Date(cur.ultima)) cur.ultima = o.created_at;
+      m.set(cnpj, cur);
+    });
+    const all = Array.from(m.values());
+    const recompraInterna = all.filter((c) => c.pedidos >= 2);
+    const recompraHistorica = all.filter((c) => c.existiaAntes);
+    const novos = all.filter((c) => !c.existiaAntes);
+    return { all, recompraInterna, recompraHistorica, novos };
+  }, [orders, ordersPrev]);
+
+  // ── CSV exports
+  const exportCliente = () => downloadCSV(`fetely_clientes_${periodSuffix(range.from)}.csv`, porCliente.map((c, i) => ({
+    "#": i + 1, "Razão Social": c.razao, CNPJ: c.cnpj, Cidade: c.cidade, UF: c.estado,
+    Pedidos: c.pedidos, Unidades: c.unidades,
+    "Fat. Bruto": c.bruto.toFixed(2), "Fat. Líquido": c.liquido.toFixed(2),
+    "Ticket Médio": c.ticket.toFixed(2), "% Total": c.pct.toFixed(2),
+    Vendedores: Array.from(c.vendedores).join(", "),
+    "Última Compra": new Date(c.ultima).toLocaleDateString("pt-BR"),
+  })));
+  const exportEstado = () => downloadCSV(`fetely_estados_${periodSuffix(range.from)}.csv`, porEstado.map((c, i) => ({
+    "#": i + 1, UF: c.uf, Clientes: c.clientes, Pedidos: c.pedidos, Unidades: c.unidades,
+    "Fat. Bruto": c.bruto.toFixed(2), "Fat. Líquido": c.liquido.toFixed(2),
+    "Ticket Médio": c.ticket.toFixed(2), "% Total": c.pct.toFixed(2),
+  })));
+  const exportVend = (rows: typeof porRepresentante, label: string) => downloadCSV(`fetely_${label}_${periodSuffix(range.from)}.csv`, rows.map((c, i) => ({
+    "#": i + 1, Vendedor: c.nome, Clientes: c.clientes, Pedidos: c.pedidos, Unidades: c.unidades,
+    "Fat. Bruto": c.bruto.toFixed(2), "Fat. Líquido": c.liquido.toFixed(2),
+    "Ticket Médio": c.ticket.toFixed(2), "% Total": c.pct.toFixed(2),
+  })));
+  const exportRecompra = () => downloadCSV(`fetely_recompra_${periodSuffix(range.from)}.csv`, recompra.all.map((c, i) => ({
+    "#": i + 1, "Razão Social": c.razao, CNPJ: c.cnpj, UF: c.estado,
+    "Pedidos no período": c.pedidos, "Fat. Líquido": c.liquido.toFixed(2),
+    "Comprou antes": c.existiaAntes ? "Sim" : "Não",
+    "Tipo": c.pedidos >= 2 ? "Recompra no período" : c.existiaAntes ? "Recompra histórica" : "Novo cliente",
+    "Última Compra": new Date(c.ultima).toLocaleDateString("pt-BR"),
+  })));
+
+  const views: Array<{ key: ClienteView; label: string }> = [
+    { key: "cliente", label: "Por Cliente" },
+    { key: "estado", label: "Por Estado" },
+    { key: "representante", label: "Por Representante" },
+    { key: "atendimento", label: "Por Atendimento" },
+    { key: "recompra", label: "Recompra" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-2">
+        {views.map((v) => (
+          <button
+            key={v.key}
+            onClick={() => setView(v.key)}
+            className={
+              "px-3 py-1.5 text-[11px] uppercase tracking-wider rounded-md border transition " +
+              (view === v.key
+                ? "border-gold text-gold bg-gold/10"
+                : "border-border text-text-secondary hover:text-text-primary")
+            }
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {view === "cliente" && (
+        <Card title={`Detalhe por cliente (${porCliente.length})`} action={<ExportBtn onClick={exportCliente} />}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+                  <th className="px-2 py-2 text-left">#</th>
+                  <th className="px-2 py-2 text-left">Cliente</th>
+                  <th className="px-2 py-2 text-left">CNPJ</th>
+                  <th className="px-2 py-2 text-left">Cidade / UF</th>
+                  <th className="px-2 py-2 text-right">Pedidos</th>
+                  <th className="px-2 py-2 text-right">Unid.</th>
+                  <th className="px-2 py-2 text-right">Líquido</th>
+                  <th className="px-2 py-2 text-right">Ticket</th>
+                  <th className="px-2 py-2 text-right">% Total</th>
+                  <th className="px-2 py-2 text-left">Última</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {porCliente.map((c, i) => (
+                  <tr key={c.key} className="hover:bg-surface-2/40">
+                    <td className="px-2 py-2 text-text-muted">{i + 1}</td>
+                    <td className="px-2 py-2 text-text-primary">{c.razao}</td>
+                    <td className="px-2 py-2 text-text-secondary">{c.cnpj}</td>
+                    <td className="px-2 py-2 text-text-secondary">{c.cidade} / {c.estado}</td>
+                    <td className="px-2 py-2 text-right">{c.pedidos}</td>
+                    <td className="px-2 py-2 text-right">{c.unidades.toLocaleString("pt-BR")}</td>
+                    <td className="px-2 py-2 text-right text-text-primary">{formatBRL(c.liquido)}</td>
+                    <td className="px-2 py-2 text-right">{formatBRL(c.ticket)}</td>
+                    <td className="px-2 py-2 text-right text-gold">{fmtPct(c.pct)}</td>
+                    <td className="px-2 py-2 text-text-secondary">{new Date(c.ultima).toLocaleDateString("pt-BR")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {view === "estado" && (
+        <Card title={`Faturamento por estado (${porEstado.length})`} action={<ExportBtn onClick={exportEstado} />}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+                  <th className="px-2 py-2 text-left">UF</th>
+                  <th className="px-2 py-2 text-right">Clientes</th>
+                  <th className="px-2 py-2 text-right">Pedidos</th>
+                  <th className="px-2 py-2 text-right">Unid.</th>
+                  <th className="px-2 py-2 text-right">Líquido</th>
+                  <th className="px-2 py-2 text-right">Ticket</th>
+                  <th className="px-2 py-2 text-right">% Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {porEstado.map((c) => (
+                  <tr key={c.uf} className="hover:bg-surface-2/40">
+                    <td className="px-2 py-2 text-text-primary font-medium">{c.uf}</td>
+                    <td className="px-2 py-2 text-right">{c.clientes}</td>
+                    <td className="px-2 py-2 text-right">{c.pedidos}</td>
+                    <td className="px-2 py-2 text-right">{c.unidades.toLocaleString("pt-BR")}</td>
+                    <td className="px-2 py-2 text-right text-text-primary">{formatBRL(c.liquido)}</td>
+                    <td className="px-2 py-2 text-right">{formatBRL(c.ticket)}</td>
+                    <td className="px-2 py-2 text-right text-gold">{fmtPct(c.pct)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {(view === "representante" || view === "atendimento") && (
+        <Card
+          title={view === "representante" ? `Representantes (${porRepresentante.length})` : `Atendimento interno (${porAtendimento.length})`}
+          action={<ExportBtn onClick={() => exportVend(view === "representante" ? porRepresentante : porAtendimento, view)} />}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+                  <th className="px-2 py-2 text-left">#</th>
+                  <th className="px-2 py-2 text-left">Vendedor</th>
+                  <th className="px-2 py-2 text-right">Clientes</th>
+                  <th className="px-2 py-2 text-right">Pedidos</th>
+                  <th className="px-2 py-2 text-right">Unid.</th>
+                  <th className="px-2 py-2 text-right">Líquido</th>
+                  <th className="px-2 py-2 text-right">Ticket</th>
+                  <th className="px-2 py-2 text-right">% Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {(view === "representante" ? porRepresentante : porAtendimento).map((c, i) => (
+                  <tr key={c.id} className="hover:bg-surface-2/40">
+                    <td className="px-2 py-2 text-text-muted">{i + 1}</td>
+                    <td className="px-2 py-2 text-text-primary">{c.nome}</td>
+                    <td className="px-2 py-2 text-right">{c.clientes}</td>
+                    <td className="px-2 py-2 text-right">{c.pedidos}</td>
+                    <td className="px-2 py-2 text-right">{c.unidades.toLocaleString("pt-BR")}</td>
+                    <td className="px-2 py-2 text-right text-text-primary">{formatBRL(c.liquido)}</td>
+                    <td className="px-2 py-2 text-right">{formatBRL(c.ticket)}</td>
+                    <td className="px-2 py-2 text-right text-gold">{fmtPct(c.pct)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {view === "recompra" && (
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <MiniKpi label="Clientes únicos" value={String(recompra.all.length)} />
+            <MiniKpi label="Recompra no período (2+ pedidos)" value={String(recompra.recompraInterna.length)} hint={recompra.all.length ? `${((recompra.recompraInterna.length / recompra.all.length) * 100).toFixed(1)}% da base` : undefined} />
+            <MiniKpi label="Recompra histórica" value={String(recompra.recompraHistorica.length)} hint="Já compraram no período anterior" />
+            <MiniKpi label="Novos no período" value={String(recompra.novos.length)} />
+          </div>
+
+          <Card title={`Recompra · Detalhe (${recompra.all.length} clientes)`} action={<ExportBtn onClick={exportRecompra} />}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+                    <th className="px-2 py-2 text-left">Cliente</th>
+                    <th className="px-2 py-2 text-left">UF</th>
+                    <th className="px-2 py-2 text-right">Pedidos</th>
+                    <th className="px-2 py-2 text-right">Líquido</th>
+                    <th className="px-2 py-2 text-left">Tipo</th>
+                    <th className="px-2 py-2 text-left">Última</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {recompra.all
+                    .slice()
+                    .sort((a, b) => b.pedidos - a.pedidos || b.liquido - a.liquido)
+                    .map((c) => {
+                      const tipo = c.pedidos >= 2 ? "Recompra no período" : c.existiaAntes ? "Recompra histórica" : "Novo";
+                      const cor = tipo === "Recompra no período" ? "text-stock-in" : tipo === "Novo" ? "text-gold" : "text-text-secondary";
+                      return (
+                        <tr key={c.cnpj} className="hover:bg-surface-2/40">
+                          <td className="px-2 py-2 text-text-primary">{c.razao}</td>
+                          <td className="px-2 py-2 text-text-secondary">{c.estado}</td>
+                          <td className="px-2 py-2 text-right">{c.pedidos}</td>
+                          <td className="px-2 py-2 text-right text-text-primary">{formatBRL(c.liquido)}</td>
+                          <td className={"px-2 py-2 " + cor}>{tipo}</td>
+                          <td className="px-2 py-2 text-text-secondary">{new Date(c.ultima).toLocaleDateString("pt-BR")}</td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
