@@ -2520,7 +2520,7 @@ function TabCliente({ orders, ordersPrev, range }: {
             );
           })()}
         <Card
-          title={view === "representante" ? `Representantes (${porRepresentante.length})` : `Atendimento interno (${porAtendimento.length})`}
+          title={view === "representante" ? `Vendedores (${porRepresentante.length})` : `Atendimento interno (${porAtendimento.length})`}
           action={<ExportBtn onClick={() => exportVend(view === "representante" ? porRepresentante : porAtendimento, view)} />}
         >
           <div className="overflow-x-auto">
