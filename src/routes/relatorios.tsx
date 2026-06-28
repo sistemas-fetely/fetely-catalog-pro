@@ -2483,6 +2483,7 @@ function TabCliente({ orders, ordersPrev, range }: {
             </table>
           </div>
         </Card>
+        </>
       )}
 
       {(view === "representante" || view === "atendimento") && (
