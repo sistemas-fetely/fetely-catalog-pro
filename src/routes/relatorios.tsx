@@ -271,7 +271,7 @@ function RelatoriosPage() {
   });
 
   const { data: items = [], isLoading: loadingItems } = useQuery({
-    enabled: !!session && !isCliente && (tab === "produto" || tab === "colecao" || tab === "grupo" || tab === "tipo" || tab === "departamento"),
+    enabled: !!session && !isCliente && (tab === "produto" || tab === "colecao" || tab === "grupo" || tab === "tipo" || tab === "departamento" || tab === "cliente"),
     queryKey: ["rel-items", filtroKey, tab],
     queryFn: async () => {
       let q = supabase
