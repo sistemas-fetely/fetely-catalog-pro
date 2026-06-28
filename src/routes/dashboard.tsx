@@ -202,6 +202,8 @@ function DashboardPage() {
       let q = supabase
         .from("order_items")
         .select("sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_nome, cliente_snapshot, total)")
+        .eq("orders.status_pedido", "confirmado")
+        .eq("orders.reprovado", false)
         .gte("orders.created_at", range.from.toISOString())
         .lt("orders.created_at", range.to.toISOString());
       if (vendedorFiltro !== "todos") q = q.eq("orders.vendedor_id", vendedorFiltro);
