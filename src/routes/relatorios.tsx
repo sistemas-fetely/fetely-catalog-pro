@@ -2448,12 +2448,29 @@ function TabCliente({ orders, ordersPrev, items, range }: {
     "Tipo": c.pedidos >= 2 ? "Recompra no período" : c.existiaAntes ? "Recompra histórica" : "Novo cliente",
     "Última Compra": new Date(c.ultima).toLocaleDateString("pt-BR"),
   })));
+  const exportProfundidade = () => downloadCSV(`fetely_profundidade_vendedor_${periodSuffix(range.from)}.csv`, profundidade.rows.map((r, i) => ({
+    "#": i + 1, Vendedor: r.nome,
+    Pedidos: r.pedidos, Clientes: r.clientes, Unidades: r.unidades,
+    "SKUs únicos": r.skus, "Coleções": r.colecoes, "Grupos": r.grupos,
+    "Categorias": r.categorias, "Tipos": r.tipos,
+    "Fat. Bruto": r.bruto.toFixed(2), "Fat. Líquido": r.liquido.toFixed(2),
+    "Ticket Médio": r.ticket.toFixed(2),
+    "Unid./Pedido": r.unidadesPorPedido.toFixed(2),
+    "Profundidade (un/SKU)": r.profundidade.toFixed(2),
+    "Variedade %": r.variedadePct.toFixed(2),
+    "Cobertura Coleções %": r.coberturaColecoesPct.toFixed(2),
+    "Top Coleção": r.topColecao, "Top Coleção (un)": r.topColecaoUn,
+    "Top Grupo": r.topGrupo, "Top Grupo (un)": r.topGrupoUn,
+    "Fat. Período Anterior": r.prevLiquido.toFixed(2),
+    "Crescimento %": r.crescPct.toFixed(2),
+  })));
 
   const views: Array<{ key: ClienteView; label: string }> = [
     { key: "cliente", label: "Por Cliente" },
     { key: "estado", label: "Por Estado" },
     { key: "representante", label: "Por Vendedor" },
     { key: "atendimento", label: "Por Atendimento" },
+    { key: "profundidade", label: "Aprofundamento Vendedor" },
     { key: "recompra", label: "Recompra" },
   ];
 
