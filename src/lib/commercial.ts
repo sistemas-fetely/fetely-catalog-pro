@@ -265,6 +265,12 @@ export interface CalculoPedido {
   freteIsento?: boolean;
   /** true quando a isenção veio da negociação master */
   freteGratisNegociado?: boolean;
+  /** V20 — UF usada para consultar a tabela de frete por UF */
+  freteUf?: string;
+  /** V20 — origem da regra de frete aplicada */
+  freteOrigem?: FreteOrigem;
+  /** V20 — true quando a UF não estava cadastrada e usou o fallback padrão */
+  freteUsouFallback?: boolean;
 }
 
 /** Percentual padrão de frete sobre o subtotal após descontos. */
