@@ -238,6 +238,8 @@ export function proximaFaixa(faixaAtual: Faixa | null): Faixa | null {
   return sorted.find((f) => f.valorMin > faixaAtual.valorMin) ?? null;
 }
 
+export type FreteOrigem = "negociacao_master" | "premissa_cliente" | "faixa";
+
 export interface CalculoPedido {
   bruto: number;
   faixa: Faixa | null;
@@ -253,34 +255,43 @@ export interface CalculoPedido {
   bonusPixPercentEfetivo?: number;
   freteEfetivo?: "CIF" | "FOB";
   pedidoMinimoEfetivo?: number;
-  /** Valor base de frete (3,5% do subtotal após descontos) */
+  /** Valor base de frete (percentual × subtotal após descontos) */
   freteBase?: number;
   /** Valor de frete efetivamente cobrado (somado ao total quando FOB) */
   freteValor?: number;
-  /** Percentual usado para o cálculo do frete */
+  /** Percentual usado para o cálculo do frete (varia por UF — V20) */
   fretePercent?: number;
   /** true quando frete não é cobrado (CIF ou negociação grátis) */
   freteIsento?: boolean;
   /** true quando a isenção veio da negociação master */
   freteGratisNegociado?: boolean;
+  /** V20 — UF usada para consultar a tabela de frete por UF */
+  freteUf?: string;
+  /** V20 — origem da regra de frete aplicada */
+  freteOrigem?: FreteOrigem;
+  /** V20 — true quando a UF não estava cadastrada e usou o fallback padrão */
+  freteUsouFallback?: boolean;
 }
 
-/** Percentual padrão de frete sobre o subtotal após descontos. */
+/** Percentual padrão de frete sobre o subtotal após descontos. Mantido para
+ * compatibilidade com cálculos antigos; novos pedidos usam a tabela por UF. */
 export const FRETE_PERCENT = 5;
 
 import type { PremissasComerciais } from "@/types/cliente";
+import { getFretePercent } from "@/lib/freteUf";
 
 export function calcularPedido(args: {
   bruto: number;
   usarReservada?: boolean;
   descontoMasterPct?: number;
   condicao?: CondicaoPagamento | null;
-  /** V13 — premissas comerciais vigentes do cliente (já validadas como vigentes pelo caller) */
   premissas?: PremissasComerciais | null;
   /** Negociação master — força frete CIF independente da faixa */
   freteGratisOverride?: boolean;
   /** Negociação master — libera pedido abaixo do mínimo (usa faixa mais baixa) */
   ignorarPedidoMinimo?: boolean;
+  /** V20 — UF de destino para cálculo de frete FOB. Opcional: sem UF usa fallback. */
+  uf?: string | null;
 }): CalculoPedido {
   const {
     bruto,
@@ -290,6 +301,7 @@ export function calcularPedido(args: {
     premissas = null,
     freteGratisOverride = false,
     ignorarPedidoMinimo = false,
+    uf = null,
   } = args;
 
   // 1. FAIXA — premissa pode forçar faixa fixa
@@ -370,15 +382,25 @@ export function calcularPedido(args: {
     ? subtotalAposDescontos * (bonusPixPct / 100)
     : 0;
 
-  // 4. FRETE — fixo do cliente substitui a faixa
-  const freteEfetivo: "CIF" | "FOB" = freteGratisOverride
-    ? "CIF"
-    : premissas?.freteFixo && premissas.freteTipo
-      ? premissas.freteTipo
-      : faixa!.frete;
+  // 4. FRETE — precedência: negociação master → premissa do cliente → faixa
+  let freteOrigem: FreteOrigem;
+  let freteEfetivo: "CIF" | "FOB";
+  if (freteGratisOverride) {
+    freteOrigem = "negociacao_master";
+    freteEfetivo = "CIF";
+  } else if (premissas?.freteFixo && premissas.freteTipo) {
+    freteOrigem = "premissa_cliente";
+    freteEfetivo = premissas.freteTipo;
+  } else {
+    freteOrigem = "faixa";
+    freteEfetivo = faixa!.frete;
+  }
 
-  // 5. FRETE — 3,5% sobre subtotal após descontos
-  const freteBase = subtotalAposDescontos * (FRETE_PERCENT / 100);
+  // 5. FRETE — V20: percentual vem da tabela por UF quando FOB
+  const { percentual: ufPercent, origemFallback: freteUsouFallback } = getFretePercent(uf);
+  const fretePercentEfetivo = freteEfetivo === "FOB" ? ufPercent : 0;
+  const freteBase =
+    freteEfetivo === "FOB" ? Math.round(subtotalAposDescontos * (ufPercent / 100) * 100) / 100 : 0;
   const isentoPorCif = freteEfetivo === "CIF";
   const freteIsento = freteGratisOverride || isentoPorCif;
   const freteValor = freteIsento ? 0 : freteBase;
@@ -402,9 +424,12 @@ export function calcularPedido(args: {
     pedidoMinimoEfetivo,
     freteBase,
     freteValor,
-    fretePercent: FRETE_PERCENT,
+    fretePercent: fretePercentEfetivo,
     freteIsento,
     freteGratisNegociado: freteGratisOverride,
+    freteUf: uf ? uf.toUpperCase() : undefined,
+    freteOrigem,
+    freteUsouFallback: freteEfetivo === "FOB" ? freteUsouFallback : false,
   };
 }
 

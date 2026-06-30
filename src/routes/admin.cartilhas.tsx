@@ -101,9 +101,10 @@ function AdminCartilhasPage() {
         </div>
 
         <Tabs defaultValue="faixas" className="w-full">
-          <TabsList className="bg-surface border border-border">
+          <TabsList className="bg-surface border border-border flex-wrap h-auto">
             <TabsTrigger value="faixas">Níveis / Faixas</TabsTrigger>
             <TabsTrigger value="condicoes">Condições de Pagamento</TabsTrigger>
+            <TabsTrigger value="frete-uf">Frete por UF</TabsTrigger>
             <TabsTrigger value="regras">Regras Gerais</TabsTrigger>
             <TabsTrigger value="historico">Histórico</TabsTrigger>
           </TabsList>
@@ -112,6 +113,9 @@ function AdminCartilhasPage() {
           </TabsContent>
           <TabsContent value="condicoes" className="mt-4">
             <CondicoesTab meta={meta} />
+          </TabsContent>
+          <TabsContent value="frete-uf" className="mt-4">
+            <FreteUfTab meta={meta} />
           </TabsContent>
           <TabsContent value="regras" className="mt-4">
             <RegrasTab meta={meta} />
@@ -1263,6 +1267,335 @@ function SimuladorDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             <X className="h-4 w-4 mr-1" /> Fechar
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ────────────────────────── FRETE POR UF (V20) ────────────────────────── */
+
+import {
+  FRETE_UF_PADRAO,
+  UFS_BR,
+  getFretesUF,
+  getFreteFallbackPercent,
+  setFreteFallbackPercent,
+  upsertFreteUF,
+  removeFreteUF,
+  ufsSemTabela,
+  type FreteUF,
+} from "@/lib/freteUf";
+
+function FreteUfTab({ meta }: { meta: { usuarioId: string; usuarioNome: string } }) {
+  const [lista, setLista] = useState<FreteUF[]>(() => getFretesUF());
+  const [fallback, setFallback] = useState<number>(() => getFreteFallbackPercent());
+  const [busca, setBusca] = useState("");
+  const [editing, setEditing] = useState<FreteUF | null>(null);
+  const [novoOpen, setNovoOpen] = useState(false);
+  const [simOpen, setSimOpen] = useState(false);
+
+  const recarregar = () => setLista(getFretesUF());
+
+  const filtrada = useMemo(
+    () =>
+      lista
+        .slice()
+        .sort((a, b) => a.uf.localeCompare(b.uf))
+        .filter((f) => (busca ? f.uf.toUpperCase().includes(busca.toUpperCase()) : true)),
+    [lista, busca],
+  );
+
+  const semTabela = useMemo(() => ufsSemTabela(), [lista]);
+
+  const salvarFallback = () => {
+    setFreteFallbackPercent(fallback);
+    toast.success(`Fallback atualizado para ${fallback}%`);
+  };
+
+  const salvarEntry = (entry: FreteUF) => {
+    if (!UFS_BR.includes(entry.uf.toUpperCase() as (typeof UFS_BR)[number])) {
+      toast.error("UF inválida");
+      return;
+    }
+    if (entry.percentual < 0 || entry.percentual > 100) {
+      toast.error("Percentual deve estar entre 0 e 100");
+      return;
+    }
+    upsertFreteUF(entry, meta.usuarioNome);
+    recarregar();
+    setEditing(null);
+    setNovoOpen(false);
+    toast.success(`Frete ${entry.uf} salvo`);
+  };
+
+  const desativar = (uf: string) => {
+    const item = lista.find((f) => f.uf === uf);
+    if (!item) return;
+    upsertFreteUF({ ...item, ativo: !item.ativo }, meta.usuarioNome);
+    recarregar();
+  };
+
+  const restaurarPadrao = () => {
+    if (!confirm("Restaurar tabela padrão do V20? Os percentuais customizados serão perdidos.")) return;
+    for (const f of FRETE_UF_PADRAO) upsertFreteUF(f, meta.usuarioNome);
+    recarregar();
+    toast.success("Tabela restaurada");
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Cabeçalho + fallback */}
+      <div className="flex items-end justify-between gap-3 flex-wrap">
+        <div className="space-y-1">
+          <div className="text-xs uppercase tracking-[0.15em] text-text-secondary">Fallback padrão</div>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={fallback}
+              onChange={(e) => setFallback(parseFloat(e.target.value || "0"))}
+              className="w-24"
+              min={0}
+              max={100}
+              step={0.5}
+            />
+            <span className="text-sm text-text-secondary">%</span>
+            <Button size="sm" variant="outline" onClick={salvarFallback}>
+              <Save className="h-3 w-3 mr-1" /> Salvar
+            </Button>
+          </div>
+          <p className="text-[11px] text-text-muted">
+            Aplicado quando a UF do cliente não tem percentual cadastrado abaixo.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setSimOpen(true)} className="border-gold/40 text-gold hover:bg-gold/10">
+            <Calculator className="h-4 w-4 mr-1" /> Simular frete
+          </Button>
+          <Button size="sm" variant="outline" onClick={restaurarPadrao}>
+            Restaurar padrão
+          </Button>
+          <Button size="sm" onClick={() => setNovoOpen(true)} className="bg-gold text-background hover:bg-gold/90">
+            <Plus className="h-4 w-4 mr-1" /> Adicionar UF
+          </Button>
+        </div>
+      </div>
+
+      {/* Busca */}
+      <Input
+        placeholder="Buscar UF..."
+        value={busca}
+        onChange={(e) => setBusca(e.target.value)}
+        className="max-w-xs"
+      />
+
+      {/* Tabela */}
+      <div className="rounded-md border border-border bg-surface overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-surface-2 text-text-secondary uppercase text-[10px] tracking-[0.15em]">
+            <tr>
+              <th className="px-3 py-2 text-left">UF</th>
+              <th className="px-3 py-2 text-right">% sobre NF</th>
+              <th className="px-3 py-2 text-center">Status</th>
+              <th className="px-3 py-2 text-left">Atualizado</th>
+              <th className="px-3 py-2 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtrada.map((f) => (
+              <tr key={f.uf} className="border-t border-border">
+                <td className="px-3 py-2 font-display text-base text-gold">{f.uf}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{f.percentual}%</td>
+                <td className="px-3 py-2 text-center">
+                  {f.ativo ? (
+                    <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Ativo</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-text-muted">Inativo</Badge>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-text-muted text-xs">
+                  {f.atualizadoEm ? new Date(f.atualizadoEm).toLocaleDateString("pt-BR") : "—"}
+                  {f.atualizadoPor ? ` · ${f.atualizadoPor}` : ""}
+                </td>
+                <td className="px-3 py-2 text-right space-x-1">
+                  <Button size="sm" variant="ghost" onClick={() => setEditing(f)}>
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => desativar(f.uf)}>
+                    <Power className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      if (confirm(`Remover ${f.uf} da tabela?`)) {
+                        removeFreteUF(f.uf);
+                        recarregar();
+                      }
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+            {filtrada.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-3 py-6 text-center text-text-muted">
+                  Nenhuma UF cadastrada.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* UFs sem tabela */}
+      {semTabela.length > 0 && (
+        <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+          <div className="font-semibold text-amber-500 mb-1">
+            ⚠ UFs sem tabela cadastrada (usam fallback de {fallback}%):
+          </div>
+          <div className="text-text-secondary">{semTabela.join(" · ")}</div>
+        </div>
+      )}
+
+      {/* Modal editar/novo */}
+      {(editing || novoOpen) && (
+        <FreteUfModal
+          entry={editing}
+          existentes={lista.map((f) => f.uf)}
+          onClose={() => {
+            setEditing(null);
+            setNovoOpen(false);
+          }}
+          onSave={salvarEntry}
+        />
+      )}
+
+      <SimuladorFreteDialog open={simOpen} onOpenChange={setSimOpen} />
+    </div>
+  );
+}
+
+function FreteUfModal({
+  entry,
+  existentes,
+  onClose,
+  onSave,
+}: {
+  entry: FreteUF | null;
+  existentes: string[];
+  onClose: () => void;
+  onSave: (e: FreteUF) => void;
+}) {
+  const isNovo = !entry;
+  const ufsDisponiveis = UFS_BR.filter((u) => !existentes.includes(u));
+  const [uf, setUf] = useState(entry?.uf ?? ufsDisponiveis[0] ?? "SP");
+  const [percentual, setPercentual] = useState(entry?.percentual ?? 5);
+  const [ativo, setAtivo] = useState(entry?.ativo ?? true);
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{isNovo ? "Adicionar UF" : `Editar ${entry?.uf}`}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">UF *</Label>
+            {isNovo ? (
+              <select
+                value={uf}
+                onChange={(e) => setUf(e.target.value)}
+                className="w-full bg-surface border border-border rounded px-3 py-2 text-sm"
+              >
+                {ufsDisponiveis.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+            ) : (
+              <Input value={uf} disabled />
+            )}
+          </div>
+          <div>
+            <Label className="text-xs">Percentual (%) *</Label>
+            <Input
+              type="number"
+              value={percentual}
+              min={0}
+              max={100}
+              step={0.5}
+              onChange={(e) => setPercentual(parseFloat(e.target.value || "0"))}
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <Switch checked={ativo} onCheckedChange={setAtivo} />
+            Ativo
+          </label>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={() => onSave({ uf, percentual, ativo })}>
+            <Save className="h-4 w-4 mr-1" /> Salvar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SimuladorFreteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const [uf, setUf] = useState<string>("SP");
+  const [subtotal, setSubtotal] = useState<number>(6000);
+
+  const calc = useMemo(() => {
+    const calc = calcularPedido({ bruto: subtotal, uf });
+    return calc;
+  }, [uf, subtotal]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Calculator className="h-4 w-4 text-gold" /> Simular frete
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">UF</Label>
+            <select
+              value={uf}
+              onChange={(e) => setUf(e.target.value)}
+              className="w-full bg-surface border border-border rounded px-3 py-2 text-sm"
+            >
+              {UFS_BR.map((u) => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label className="text-xs">Subtotal (R$)</Label>
+            <Input
+              type="number"
+              value={subtotal}
+              onChange={(e) => setSubtotal(parseFloat(e.target.value || "0"))}
+            />
+          </div>
+          <div className="rounded-md border border-gold/30 bg-gold/5 p-3 text-xs space-y-1">
+            <div>Faixa detectada: <strong>{calc.faixa ? calc.faixa.nome : "abaixo do mínimo"}</strong></div>
+            <div>Tipo: <strong>{calc.freteEfetivo ?? "—"}</strong></div>
+            <div>Percentual UF: <strong>{calc.fretePercent ?? 0}%</strong>
+              {calc.freteUsouFallback ? <span className="text-amber-500"> (fallback)</span> : null}
+            </div>
+            <div className="border-t border-gold/20 pt-1 mt-1 font-display text-base text-gold">
+              Frete: {formatBRL(calc.freteValor ?? 0)}
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

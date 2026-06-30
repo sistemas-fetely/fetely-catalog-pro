@@ -54,10 +54,20 @@ export function CartCommercialPanel({
 
   // V13 — premissas vigentes do cliente atual (se houver)
   const clienteId = useOrder((s) => s.meta.clienteId);
+  const metaUf = useOrder((s) => s.meta.uf);
   const cliente = useClientes((s) =>
     clienteId ? s.clientes.find((c) => c.id === clienteId) ?? null : null,
   );
   const premissas = useMemo(() => getPremissasVigentes(cliente), [cliente]);
+
+  // V20 — UF de destino: endereço de entrega (se diferente) > endereço principal > meta
+  const ufDestino = useMemo<string | undefined>(() => {
+    if (cliente) {
+      if (cliente.enderecoEntregaIgual) return cliente.estado?.toUpperCase() || undefined;
+      return (cliente.entregaEstado || cliente.estado || "").toUpperCase() || undefined;
+    }
+    return metaUf ? metaUf.toUpperCase() : undefined;
+  }, [cliente, metaUf]);
 
   // Faixa atual — faixa fixa do cliente tem prioridade
   const faixa = useMemo(() => {
@@ -122,8 +132,9 @@ export function CartCommercialPanel({
         premissas,
         freteGratisOverride: ativo && freteGratis,
         ignorarPedidoMinimo: ativo,
+        uf: ufDestino,
       }),
-    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis],
+    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino],
   );
 
   const pedidoMinimo = calculo.pedidoMinimoEfetivo ?? 1500;
@@ -250,9 +261,16 @@ export function CartCommercialPanel({
                   <div className="flex items-baseline justify-between">
                     <span className="text-text-secondary">
                       Frete FOB
+                      {calculo.freteUf ? ` — ${calculo.freteUf}` : ""}
+                      {calculo.fretePercent ? ` · ${calculo.fretePercent}%` : ""}
                     </span>
                     <span className="text-text-primary">+ {formatBRL(calculo.freteValor ?? 0)}</span>
                   </div>
+                )}
+                {!calculo.freteIsento && calculo.freteUsouFallback && calculo.freteUf && (
+                  <p className="text-[10px] text-amber-500">
+                    ⚠ Percentual padrão ({calculo.fretePercent}%) — UF {calculo.freteUf} sem tabela cadastrada.
+                  </p>
                 )}
                 {calculo.freteIsento && (
                   <p className="text-[10px] text-text-muted">

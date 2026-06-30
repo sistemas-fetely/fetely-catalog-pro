@@ -132,6 +132,12 @@ export interface OrderCommercial {
   fretePercent?: number;
   /** V15 — true quando frete não foi cobrado (CIF ou negociação grátis) */
   freteIsento?: boolean;
+  /** V20 — UF usada no cálculo do frete (snapshot do momento do pedido) */
+  freteUf?: string;
+  /** V20 — origem da regra de frete aplicada */
+  freteOrigem?: "negociacao_master" | "premissa_cliente" | "faixa";
+  /** V20 — true quando a UF não tinha tabela cadastrada (usou fallback) */
+  freteUsouFallback?: boolean;
 }
 
 export type StatusPedido =
