@@ -273,11 +273,6 @@ export interface CalculoPedido {
   freteUsouFallback?: boolean;
 }
 
-/** Percentual padrão de frete sobre o subtotal após descontos. */
-export const FRETE_PERCENT = 5;
-
-import type { PremissasComerciais } from "@/types/cliente";
-
 /** Percentual padrão de frete sobre o subtotal após descontos. Mantido para
  * compatibilidade com cálculos antigos; novos pedidos usam a tabela por UF. */
 export const FRETE_PERCENT = 5;
@@ -291,14 +286,12 @@ export function calcularPedido(args: {
   descontoMasterPct?: number;
   condicao?: CondicaoPagamento | null;
   premissas?: PremissasComerciais | null;
-  freteGratisOverride?: boolean;
-  ignorarPedidoMinimo?: boolean;
-  /** V20 — UF de destino para cálculo de frete FOB. Opcional: sem UF cai no fallback. */
-  uf?: string | null;
   /** Negociação master — força frete CIF independente da faixa */
   freteGratisOverride?: boolean;
   /** Negociação master — libera pedido abaixo do mínimo (usa faixa mais baixa) */
   ignorarPedidoMinimo?: boolean;
+  /** V20 — UF de destino para cálculo de frete FOB. Opcional: sem UF usa fallback. */
+  uf?: string | null;
 }): CalculoPedido {
   const {
     bruto,
@@ -308,6 +301,7 @@ export function calcularPedido(args: {
     premissas = null,
     freteGratisOverride = false,
     ignorarPedidoMinimo = false,
+    uf = null,
   } = args;
 
   // 1. FAIXA — premissa pode forçar faixa fixa
