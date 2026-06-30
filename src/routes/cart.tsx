@@ -430,6 +430,9 @@ function CartPage() {
       freteValor: c.freteValor ?? 0,
       fretePercent: c.fretePercent,
       freteIsento: c.freteIsento ?? false,
+      freteUf: c.freteUf,
+      freteOrigem: c.freteOrigem,
+      freteUsouFallback: c.freteUsouFallback ?? false,
     };
     const metaCompleto = {
       ...meta,
