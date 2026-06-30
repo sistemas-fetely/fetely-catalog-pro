@@ -261,9 +261,16 @@ export function CartCommercialPanel({
                   <div className="flex items-baseline justify-between">
                     <span className="text-text-secondary">
                       Frete FOB
+                      {calculo.freteUf ? ` — ${calculo.freteUf}` : ""}
+                      {calculo.fretePercent ? ` · ${calculo.fretePercent}%` : ""}
                     </span>
                     <span className="text-text-primary">+ {formatBRL(calculo.freteValor ?? 0)}</span>
                   </div>
+                )}
+                {!calculo.freteIsento && calculo.freteUsouFallback && calculo.freteUf && (
+                  <p className="text-[10px] text-amber-500">
+                    ⚠ Percentual padrão ({calculo.fretePercent}%) — UF {calculo.freteUf} sem tabela cadastrada.
+                  </p>
                 )}
                 {calculo.freteIsento && (
                   <p className="text-[10px] text-text-muted">
