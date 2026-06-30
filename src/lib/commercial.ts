@@ -278,13 +278,23 @@ export const FRETE_PERCENT = 5;
 
 import type { PremissasComerciais } from "@/types/cliente";
 
+/** Percentual padrão de frete sobre o subtotal após descontos. Mantido para
+ * compatibilidade com cálculos antigos; novos pedidos usam a tabela por UF. */
+export const FRETE_PERCENT = 5;
+
+import type { PremissasComerciais } from "@/types/cliente";
+import { getFretePercent } from "@/lib/freteUf";
+
 export function calcularPedido(args: {
   bruto: number;
   usarReservada?: boolean;
   descontoMasterPct?: number;
   condicao?: CondicaoPagamento | null;
-  /** V13 — premissas comerciais vigentes do cliente (já validadas como vigentes pelo caller) */
   premissas?: PremissasComerciais | null;
+  freteGratisOverride?: boolean;
+  ignorarPedidoMinimo?: boolean;
+  /** V20 — UF de destino para cálculo de frete FOB. Opcional: sem UF cai no fallback. */
+  uf?: string | null;
   /** Negociação master — força frete CIF independente da faixa */
   freteGratisOverride?: boolean;
   /** Negociação master — libera pedido abaixo do mínimo (usa faixa mais baixa) */
