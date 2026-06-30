@@ -238,6 +238,8 @@ export function proximaFaixa(faixaAtual: Faixa | null): Faixa | null {
   return sorted.find((f) => f.valorMin > faixaAtual.valorMin) ?? null;
 }
 
+export type FreteOrigem = "negociacao_master" | "premissa_cliente" | "faixa";
+
 export interface CalculoPedido {
   bruto: number;
   faixa: Faixa | null;
@@ -253,11 +255,11 @@ export interface CalculoPedido {
   bonusPixPercentEfetivo?: number;
   freteEfetivo?: "CIF" | "FOB";
   pedidoMinimoEfetivo?: number;
-  /** Valor base de frete (3,5% do subtotal após descontos) */
+  /** Valor base de frete (percentual × subtotal após descontos) */
   freteBase?: number;
   /** Valor de frete efetivamente cobrado (somado ao total quando FOB) */
   freteValor?: number;
-  /** Percentual usado para o cálculo do frete */
+  /** Percentual usado para o cálculo do frete (varia por UF — V20) */
   fretePercent?: number;
   /** true quando frete não é cobrado (CIF ou negociação grátis) */
   freteIsento?: boolean;
