@@ -382,15 +382,25 @@ export function calcularPedido(args: {
     ? subtotalAposDescontos * (bonusPixPct / 100)
     : 0;
 
-  // 4. FRETE — fixo do cliente substitui a faixa
-  const freteEfetivo: "CIF" | "FOB" = freteGratisOverride
-    ? "CIF"
-    : premissas?.freteFixo && premissas.freteTipo
-      ? premissas.freteTipo
-      : faixa!.frete;
+  // 4. FRETE — precedência: negociação master → premissa do cliente → faixa
+  let freteOrigem: FreteOrigem;
+  let freteEfetivo: "CIF" | "FOB";
+  if (freteGratisOverride) {
+    freteOrigem = "negociacao_master";
+    freteEfetivo = "CIF";
+  } else if (premissas?.freteFixo && premissas.freteTipo) {
+    freteOrigem = "premissa_cliente";
+    freteEfetivo = premissas.freteTipo;
+  } else {
+    freteOrigem = "faixa";
+    freteEfetivo = faixa!.frete;
+  }
 
-  // 5. FRETE — 3,5% sobre subtotal após descontos
-  const freteBase = subtotalAposDescontos * (FRETE_PERCENT / 100);
+  // 5. FRETE — V20: percentual vem da tabela por UF quando FOB
+  const { percentual: ufPercent, origemFallback: freteUsouFallback } = getFretePercent(uf);
+  const fretePercentEfetivo = freteEfetivo === "FOB" ? ufPercent : 0;
+  const freteBase =
+    freteEfetivo === "FOB" ? Math.round(subtotalAposDescontos * (ufPercent / 100) * 100) / 100 : 0;
   const isentoPorCif = freteEfetivo === "CIF";
   const freteIsento = freteGratisOverride || isentoPorCif;
   const freteValor = freteIsento ? 0 : freteBase;
@@ -414,9 +424,12 @@ export function calcularPedido(args: {
     pedidoMinimoEfetivo,
     freteBase,
     freteValor,
-    fretePercent: FRETE_PERCENT,
+    fretePercent: fretePercentEfetivo,
     freteIsento,
     freteGratisNegociado: freteGratisOverride,
+    freteUf: uf ? uf.toUpperCase() : undefined,
+    freteOrigem,
+    freteUsouFallback: freteEfetivo === "FOB" ? freteUsouFallback : false,
   };
 }
 
