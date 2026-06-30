@@ -54,10 +54,20 @@ export function CartCommercialPanel({
 
   // V13 — premissas vigentes do cliente atual (se houver)
   const clienteId = useOrder((s) => s.meta.clienteId);
+  const metaUf = useOrder((s) => s.meta.uf);
   const cliente = useClientes((s) =>
     clienteId ? s.clientes.find((c) => c.id === clienteId) ?? null : null,
   );
   const premissas = useMemo(() => getPremissasVigentes(cliente), [cliente]);
+
+  // V20 — UF de destino: endereço de entrega (se diferente) > endereço principal > meta
+  const ufDestino = useMemo<string | undefined>(() => {
+    if (cliente) {
+      if (cliente.enderecoEntregaIgual) return cliente.estado?.toUpperCase() || undefined;
+      return (cliente.entregaEstado || cliente.estado || "").toUpperCase() || undefined;
+    }
+    return metaUf ? metaUf.toUpperCase() : undefined;
+  }, [cliente, metaUf]);
 
   // Faixa atual — faixa fixa do cliente tem prioridade
   const faixa = useMemo(() => {
