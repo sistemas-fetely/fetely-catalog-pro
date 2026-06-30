@@ -101,9 +101,10 @@ function AdminCartilhasPage() {
         </div>
 
         <Tabs defaultValue="faixas" className="w-full">
-          <TabsList className="bg-surface border border-border">
+          <TabsList className="bg-surface border border-border flex-wrap h-auto">
             <TabsTrigger value="faixas">Níveis / Faixas</TabsTrigger>
             <TabsTrigger value="condicoes">Condições de Pagamento</TabsTrigger>
+            <TabsTrigger value="frete-uf">Frete por UF</TabsTrigger>
             <TabsTrigger value="regras">Regras Gerais</TabsTrigger>
             <TabsTrigger value="historico">Histórico</TabsTrigger>
           </TabsList>
@@ -112,6 +113,9 @@ function AdminCartilhasPage() {
           </TabsContent>
           <TabsContent value="condicoes" className="mt-4">
             <CondicoesTab meta={meta} />
+          </TabsContent>
+          <TabsContent value="frete-uf" className="mt-4">
+            <FreteUfTab meta={meta} />
           </TabsContent>
           <TabsContent value="regras" className="mt-4">
             <RegrasTab meta={meta} />
