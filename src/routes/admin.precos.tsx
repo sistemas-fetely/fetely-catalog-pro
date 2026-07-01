@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Table as TableIcon, Pencil, Check, X, History, Download } from "lucide-react";
+import { ArrowLeft, Table as TableIcon, Pencil, Check, X, History, Download, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
@@ -61,19 +61,51 @@ function PrecosTablePage() {
   const [history, setHistory] = useState<HistRow[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
+  const [lastSync, setLastSync] = useState<Date | null>(null);
+
   const loadProducts = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("products")
       .select("id, sku, nome_comercial, colecao, cor_nome, preco_varejo, preco_atacado, ativo")
       .order("nome_comercial", { ascending: true })
-      .limit(2000);
-    if (!error && data) setRows(data as ProductRow[]);
+      .limit(5000);
+    if (!error && data) {
+      setRows(data as ProductRow[]);
+      setLastSync(new Date());
+    }
     setLoading(false);
   };
 
   useEffect(() => {
     loadProducts();
+
+    // Realtime: reflete inserts/updates/deletes na tabela products
+    const channel = supabase
+      .channel("admin-precos-products")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products" },
+        () => {
+          loadProducts();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "product_prices" },
+        () => {
+          loadProducts();
+        },
+      )
+      .subscribe();
+
+    // Auto-refresh a cada 60s como fallback
+    const interval = setInterval(loadProducts, 60_000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
   }, []);
 
   const filtered = useMemo(() => {
@@ -266,13 +298,26 @@ function PrecosTablePage() {
             Apenas ativos
           </label>
           <button
+            onClick={loadProducts}
+            disabled={loading}
+            className="ml-auto inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs uppercase tracking-wider text-text-secondary hover:bg-surface-hover hover:text-gold disabled:opacity-50"
+            title="Recarregar do cadastro de produtos"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Atualizar
+          </button>
+          <button
             onClick={exportarExcel}
-            className="ml-auto inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs uppercase tracking-wider text-text-secondary hover:bg-surface-hover hover:text-gold"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs uppercase tracking-wider text-text-secondary hover:bg-surface-hover hover:text-gold"
           >
             <Download className="h-3.5 w-3.5" /> Exportar Excel
           </button>
           <span className="text-xs text-text-secondary">
             {filtered.length} {filtered.length === 1 ? "produto" : "produtos"}
+            {lastSync && (
+              <span className="ml-2 text-text-secondary/70">
+                · sync {lastSync.toLocaleTimeString("pt-BR")}
+              </span>
+            )}
           </span>
         </div>
 
