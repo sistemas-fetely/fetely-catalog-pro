@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Table as TableIcon, Pencil, Check, X, History } from "lucide-react";
+import { ArrowLeft, Table as TableIcon, Pencil, Check, X, History, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 export const Route = createFileRoute("/admin/precos")({
   component: PrecosTablePage,
@@ -167,6 +169,61 @@ function PrecosTablePage() {
     setHistoryLoading(false);
   };
 
+  const exportarExcel = async () => {
+    try {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet("Tabela de Preço");
+
+      const headers = [
+        "SKU", "Produto", "Coleção", "Cor", "Preço Varejo", "Preço Atacado",
+        "Atacado -5%", "Atacado -10%", "Atacado -15%", "Atacado -20%", "Atacado -25%",
+      ];
+      ws.addRow(headers);
+
+      const headerRow = ws.getRow(1);
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D2D2D" } };
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+      });
+
+      filtered.forEach((r) => {
+        const baseAtacado = Number(r.preco_atacado);
+        const row = [
+          r.sku,
+          r.nome_comercial,
+          r.colecao ?? "",
+          r.cor_nome ?? "",
+          Number(r.preco_varejo),
+          baseAtacado,
+          baseAtacado * 0.95,
+          baseAtacado * 0.90,
+          baseAtacado * 0.85,
+          baseAtacado * 0.80,
+          baseAtacado * 0.75,
+        ];
+        ws.addRow(row);
+      });
+
+      ws.columns.forEach((col, idx) => {
+        if (idx >= 4) {
+          col.numFmt = "R$ #,##0.00";
+          col.width = 16;
+        } else {
+          col.width = idx === 1 ? 40 : 22;
+        }
+      });
+
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      saveAs(blob, `tabela-preco-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success("Planilha exportada com sucesso.");
+    } catch (e) {
+      toast.error("Erro ao exportar Excel.");
+      console.error(e);
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background">
       <div className="mx-auto max-w-[1600px] px-4 py-8">
@@ -208,7 +265,13 @@ function PrecosTablePage() {
             />
             Apenas ativos
           </label>
-          <span className="ml-auto text-xs text-text-secondary">
+          <button
+            onClick={exportarExcel}
+            className="ml-auto inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs uppercase tracking-wider text-text-secondary hover:bg-surface-hover hover:text-gold"
+          >
+            <Download className="h-3.5 w-3.5" /> Exportar Excel
+          </button>
+          <span className="text-xs text-text-secondary">
             {filtered.length} {filtered.length === 1 ? "produto" : "produtos"}
           </span>
         </div>
