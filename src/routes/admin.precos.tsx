@@ -265,7 +265,13 @@ function PrecosTablePage() {
             />
             Apenas ativos
           </label>
-          <span className="ml-auto text-xs text-text-secondary">
+          <button
+            onClick={exportarExcel}
+            className="ml-auto inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs uppercase tracking-wider text-text-secondary hover:bg-surface-hover hover:text-gold"
+          >
+            <Download className="h-3.5 w-3.5" /> Exportar Excel
+          </button>
+          <span className="text-xs text-text-secondary">
             {filtered.length} {filtered.length === 1 ? "produto" : "produtos"}
           </span>
         </div>
