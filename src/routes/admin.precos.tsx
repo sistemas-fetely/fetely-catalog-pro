@@ -61,19 +61,51 @@ function PrecosTablePage() {
   const [history, setHistory] = useState<HistRow[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
+  const [lastSync, setLastSync] = useState<Date | null>(null);
+
   const loadProducts = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("products")
       .select("id, sku, nome_comercial, colecao, cor_nome, preco_varejo, preco_atacado, ativo")
       .order("nome_comercial", { ascending: true })
-      .limit(2000);
-    if (!error && data) setRows(data as ProductRow[]);
+      .limit(5000);
+    if (!error && data) {
+      setRows(data as ProductRow[]);
+      setLastSync(new Date());
+    }
     setLoading(false);
   };
 
   useEffect(() => {
     loadProducts();
+
+    // Realtime: reflete inserts/updates/deletes na tabela products
+    const channel = supabase
+      .channel("admin-precos-products")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products" },
+        () => {
+          loadProducts();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "product_prices" },
+        () => {
+          loadProducts();
+        },
+      )
+      .subscribe();
+
+    // Auto-refresh a cada 60s como fallback
+    const interval = setInterval(loadProducts, 60_000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
   }, []);
 
   const filtered = useMemo(() => {
