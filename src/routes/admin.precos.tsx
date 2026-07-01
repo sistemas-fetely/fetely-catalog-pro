@@ -169,6 +169,61 @@ function PrecosTablePage() {
     setHistoryLoading(false);
   };
 
+  const exportarExcel = async () => {
+    try {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet("Tabela de Preço");
+
+      const headers = [
+        "SKU", "Produto", "Coleção", "Cor", "Preço Varejo", "Preço Atacado",
+        "Atacado -5%", "Atacado -10%", "Atacado -15%", "Atacado -20%", "Atacado -25%",
+      ];
+      ws.addRow(headers);
+
+      const headerRow = ws.getRow(1);
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D2D2D" } };
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+      });
+
+      filtered.forEach((r) => {
+        const baseAtacado = Number(r.preco_atacado);
+        const row = [
+          r.sku,
+          r.nome_comercial,
+          r.colecao ?? "",
+          r.cor_nome ?? "",
+          Number(r.preco_varejo),
+          baseAtacado,
+          baseAtacado * 0.95,
+          baseAtacado * 0.90,
+          baseAtacado * 0.85,
+          baseAtacado * 0.80,
+          baseAtacado * 0.75,
+        ];
+        ws.addRow(row);
+      });
+
+      ws.columns.forEach((col, idx) => {
+        if (idx >= 4) {
+          col.numFmt = "R$ #,##0.00";
+          col.width = 16;
+        } else {
+          col.width = idx === 1 ? 40 : 22;
+        }
+      });
+
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      saveAs(blob, `tabela-preco-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success("Planilha exportada com sucesso.");
+    } catch (e) {
+      toast.error("Erro ao exportar Excel.");
+      console.error(e);
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background">
       <div className="mx-auto max-w-[1600px] px-4 py-8">
