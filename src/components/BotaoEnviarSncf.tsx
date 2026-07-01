@@ -1,5 +1,18 @@
-import { Send, Loader2, Check, AlertTriangle, X } from "lucide-react";
+import { useState } from "react";
+import { Send, Loader2, Check, AlertTriangle, X, RotateCw } from "lucide-react";
 import { useEnviarParaSncf } from "@/hooks/useEnviarParaSncf";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useNegotiation } from "@/store/negotiationStore";
+import { toast } from "sonner";
 
 function formatData(iso: string): string {
   const d = new Date(iso);
@@ -15,6 +28,30 @@ const BASE =
 
 export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
   const { status, estagio, erro, enviadoEm, enviar, isEnviando } = useEnviarParaSncf(orderId);
+  const [reenvioOpen, setReenvioOpen] = useState(false);
+  const [senha, setSenha] = useState("");
+  const [verificando, setVerificando] = useState(false);
+  const tryActivate = useNegotiation((s) => s.tryActivate);
+
+  async function confirmarReenvio() {
+    if (!senha.trim()) {
+      toast.error("Digite a senha master.");
+      return;
+    }
+    setVerificando(true);
+    try {
+      const r = await tryActivate(senha);
+      if (!r.ok) {
+        toast.error(r.erro ?? "Senha incorreta.");
+        return;
+      }
+      setReenvioOpen(false);
+      setSenha("");
+      await enviar();
+    } finally {
+      setVerificando(false);
+    }
+  }
 
   // Envio ativo nesta sessão → spinner desabilitado (transitório, esperado).
   if (status === "pendente" && isEnviando) {
@@ -47,13 +84,43 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
     const quando = enviadoEm ? formatData(enviadoEm) : "";
     const onde = estagio ?? "";
     return (
-      <button
-        disabled
-        title={`Enviado em ${quando}${onde ? ` • em ${onde}` : ""}`}
-        className={`${BASE} border-green-500/40 text-green-500`}
-      >
-        <Check className="h-3.5 w-3.5" />
-      </button>
+      <>
+        <button
+          onClick={() => setReenvioOpen(true)}
+          title={`Enviado em ${quando}${onde ? ` • em ${onde}` : ""} — clique pra reenviar (senha master)`}
+          className={`${BASE} border-green-500/40 text-green-500 hover:bg-green-500/10 relative group`}
+        >
+          <Check className="h-3.5 w-3.5 group-hover:hidden" />
+          <RotateCw className="h-3.5 w-3.5 hidden group-hover:block" />
+        </button>
+        <Dialog open={reenvioOpen} onOpenChange={(o) => { setReenvioOpen(o); if (!o) setSenha(""); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reenviar pedido pro SNCF</DialogTitle>
+              <DialogDescription>
+                Este pedido já foi enviado em {quando}{onde ? ` (${onde})` : ""}.
+                Digite a senha master para reenviar com as mesmas configurações.
+              </DialogDescription>
+            </DialogHeader>
+            <Input
+              type="password"
+              placeholder="Senha master"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") void confirmarReenvio(); }}
+              autoFocus
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setReenvioOpen(false)} disabled={verificando}>
+                Cancelar
+              </Button>
+              <Button onClick={() => void confirmarReenvio()} disabled={verificando}>
+                {verificando ? "Verificando..." : "Reenviar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
