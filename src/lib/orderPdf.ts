@@ -92,6 +92,24 @@ function agruparItensPorSecao(items: CartItem[]): SecaoItens[] {
           const ra = macroRank(a.product);
           const rb = macroRank(b.product);
           if (ra !== rb) return ra - rb;
+          // Modelo: família > tipo > tamanho (agrupa variantes de cor do mesmo modelo)
+          const modeloA = (a.product.familia || a.product.tipo || "").toString();
+          const modeloB = (b.product.familia || b.product.tipo || "").toString();
+          const cmpModelo = modeloA.localeCompare(modeloB, "pt-BR");
+          if (cmpModelo !== 0) return cmpModelo;
+          const tamA = (a.product.tamanhoRef || a.product.tamanhoNumero || "").toString();
+          const tamB = (b.product.tamanhoRef || b.product.tamanhoNumero || "").toString();
+          const cmpTam = tamA.localeCompare(tamB, "pt-BR", { numeric: true });
+          if (cmpTam !== 0) return cmpTam;
+          // Vela numérica: dentro do mesmo modelo/cor, ordem 0→9
+          const numA = a.product.numeroVela ?? -1;
+          const numB = b.product.numeroVela ?? -1;
+          // Sequência de cor dentro do modelo
+          const corA = (a.product.corNome || "").toString();
+          const corB = (b.product.corNome || "").toString();
+          const cmpCor = corA.localeCompare(corB, "pt-BR");
+          if (cmpCor !== 0) return cmpCor;
+          if (numA !== numB) return numA - numB;
           return (a.product.nomeComercial || "").localeCompare(b.product.nomeComercial || "", "pt-BR");
         });
         const subtotal = itemsOrdenados.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0);
