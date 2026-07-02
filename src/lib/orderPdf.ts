@@ -82,6 +82,10 @@ function normalizeSortKey(value: unknown): string {
 
 function inferSequenceNumber(p: Product): number | null {
   if (typeof p.numeroVela === "number" && Number.isFinite(p.numeroVela)) return p.numeroVela;
+  const skuLastSegment = String(p.sku ?? "").match(/[.-](\d+)$/);
+  if ((p.isVelaNumerica || normalizeSortKey(p.grupo) === "vela") && skuLastSegment) {
+    return Number(skuLastSegment[1]);
+  }
   const haystack = [p.nomeComercial, p.nomeCompleto, p.tamanhoNumero, p.tamanhoRef, p.sku]
     .filter(Boolean)
     .join(" ");
@@ -94,6 +98,10 @@ function inferSequenceNumber(p: Product): number | null {
 function modelKeyForPdf(p: Product): string {
   const base = p.familia || p.tipo || p.grupo || p.nomeComercial || "";
   return normalizeSortKey(base.replace(/(?:n[º°o]?|num(?:ero)?|número)\s*[.:#-]?\s*\d+/gi, ""));
+}
+
+function isVelaNumericaForPdf(p: Product): boolean {
+  return !!p.isVelaNumerica || (normalizeSortKey(p.grupo) === "vela" && inferSequenceNumber(p) !== null);
 }
 
 function compareCartItemsForPdf(a: CartItem, b: CartItem): number {
@@ -114,6 +122,16 @@ function compareCartItemsForPdf(a: CartItem, b: CartItem): number {
   const cmpTam = tamA.localeCompare(tamB, "pt-BR", { numeric: true });
   if (cmpTam !== 0) return cmpTam;
 
+  const corA = normalizeSortKey(a.product.corNome || a.product.cor || "");
+  const corB = normalizeSortKey(b.product.corNome || b.product.cor || "");
+
+  // Velas numéricas precisam sair em sequência completa por cor:
+  // Moss Green 0–9, depois Pink Bronze 0–9, sem alternar 0/0, 1/1...
+  if (isVelaNumericaForPdf(a.product) || isVelaNumericaForPdf(b.product)) {
+    const cmpCorVela = corA.localeCompare(corB, "pt-BR", { numeric: true });
+    if (cmpCorVela !== 0) return cmpCorVela;
+  }
+
   const numA = inferSequenceNumber(a.product);
   const numB = inferSequenceNumber(b.product);
   if (numA !== null || numB !== null) {
@@ -122,8 +140,6 @@ function compareCartItemsForPdf(a: CartItem, b: CartItem): number {
     if (numA !== numB) return numA - numB;
   }
 
-  const corA = normalizeSortKey(a.product.corNome || a.product.cor || "");
-  const corB = normalizeSortKey(b.product.corNome || b.product.cor || "");
   const cmpCor = corA.localeCompare(corB, "pt-BR", { numeric: true });
   if (cmpCor !== 0) return cmpCor;
 
