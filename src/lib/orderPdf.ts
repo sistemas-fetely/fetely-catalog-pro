@@ -71,6 +71,69 @@ function macroRank(p: Product): number {
   return 5;
 }
 
+function normalizeSortKey(value: unknown): string {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function inferSequenceNumber(p: Product): number | null {
+  if (typeof p.numeroVela === "number" && Number.isFinite(p.numeroVela)) return p.numeroVela;
+  const haystack = [p.nomeComercial, p.nomeCompleto, p.tamanhoNumero, p.tamanhoRef, p.sku]
+    .filter(Boolean)
+    .join(" ");
+  const match =
+    haystack.match(/(?:n[º°o]?|num(?:ero)?|número)\s*[.:#-]?\s*(\d+)/i) ||
+    haystack.match(/[.-](\d+)\b/);
+  return match ? Number(match[1]) : null;
+}
+
+function modelKeyForPdf(p: Product): string {
+  const base = p.familia || p.tipo || p.grupo || p.nomeComercial || "";
+  return normalizeSortKey(base.replace(/(?:n[º°o]?|num(?:ero)?|número)\s*[.:#-]?\s*\d+/gi, ""));
+}
+
+function compareCartItemsForPdf(a: CartItem, b: CartItem): number {
+  const colecaoA = normalizeSortKey(a.product.colecao || "—");
+  const colecaoB = normalizeSortKey(b.product.colecao || "—");
+  const cmpColecao = colecaoA.localeCompare(colecaoB, "pt-BR", { numeric: true });
+  if (cmpColecao !== 0) return cmpColecao;
+
+  const ra = macroRank(a.product);
+  const rb = macroRank(b.product);
+  if (ra !== rb) return ra - rb;
+
+  const cmpModelo = modelKeyForPdf(a.product).localeCompare(modelKeyForPdf(b.product), "pt-BR", { numeric: true });
+  if (cmpModelo !== 0) return cmpModelo;
+
+  const tamA = normalizeSortKey(a.product.tamanhoRef || a.product.tamanhoNumero || "");
+  const tamB = normalizeSortKey(b.product.tamanhoRef || b.product.tamanhoNumero || "");
+  const cmpTam = tamA.localeCompare(tamB, "pt-BR", { numeric: true });
+  if (cmpTam !== 0) return cmpTam;
+
+  const numA = inferSequenceNumber(a.product);
+  const numB = inferSequenceNumber(b.product);
+  if (numA !== null || numB !== null) {
+    if (numA === null) return 1;
+    if (numB === null) return -1;
+    if (numA !== numB) return numA - numB;
+  }
+
+  const corA = normalizeSortKey(a.product.corNome || a.product.cor || "");
+  const corB = normalizeSortKey(b.product.corNome || b.product.cor || "");
+  const cmpCor = corA.localeCompare(corB, "pt-BR", { numeric: true });
+  if (cmpCor !== 0) return cmpCor;
+
+  return normalizeSortKey(a.product.nomeComercial || a.product.nomeCompleto || a.sku).localeCompare(
+    normalizeSortKey(b.product.nomeComercial || b.product.nomeCompleto || b.sku),
+    "pt-BR",
+    { numeric: true },
+  );
+}
+
 function agruparItensPorSecao(items: CartItem[]): SecaoItens[] {
   const firmes: CartItem[] = [];
   const prov: CartItem[] = [];
@@ -79,39 +142,17 @@ function agruparItensPorSecao(items: CartItem[]): SecaoItens[] {
     else prov.push(it);
   }
   const fazGrupos = (arr: CartItem[]): { grupos: GrupoColecao[]; subtotal: number; qtd: number } => {
-    const map = new Map<string, CartItem[]>();
+    const map = new Map<string, { colecao: string; items: CartItem[] }>();
     for (const it of arr) {
-      const k = it.product.colecao || "—";
-      const list = map.get(k) ?? [];
-      list.push(it);
-      map.set(k, list);
+      const colecao = (it.product.colecao || "—").replace(/\s+/g, " ").trim() || "—";
+      const k = normalizeSortKey(colecao);
+      const group = map.get(k) ?? { colecao, items: [] };
+      group.items.push(it);
+      map.set(k, group);
     }
-    const grupos = Array.from(map.entries())
-      .map(([colecao, items]) => {
-        const itemsOrdenados = [...items].sort((a, b) => {
-          const ra = macroRank(a.product);
-          const rb = macroRank(b.product);
-          if (ra !== rb) return ra - rb;
-          // Modelo: família > tipo > tamanho (agrupa variantes de cor do mesmo modelo)
-          const modeloA = (a.product.familia || a.product.tipo || "").toString();
-          const modeloB = (b.product.familia || b.product.tipo || "").toString();
-          const cmpModelo = modeloA.localeCompare(modeloB, "pt-BR");
-          if (cmpModelo !== 0) return cmpModelo;
-          const tamA = (a.product.tamanhoRef || a.product.tamanhoNumero || "").toString();
-          const tamB = (b.product.tamanhoRef || b.product.tamanhoNumero || "").toString();
-          const cmpTam = tamA.localeCompare(tamB, "pt-BR", { numeric: true });
-          if (cmpTam !== 0) return cmpTam;
-          // Vela numérica: dentro do mesmo modelo/cor, ordem 0→9
-          const numA = a.product.numeroVela ?? -1;
-          const numB = b.product.numeroVela ?? -1;
-          // Sequência de cor dentro do modelo
-          const corA = (a.product.corNome || "").toString();
-          const corB = (b.product.corNome || "").toString();
-          const cmpCor = corA.localeCompare(corB, "pt-BR");
-          if (cmpCor !== 0) return cmpCor;
-          if (numA !== numB) return numA - numB;
-          return (a.product.nomeComercial || "").localeCompare(b.product.nomeComercial || "", "pt-BR");
-        });
+    const grupos = Array.from(map.values())
+      .map(({ colecao, items }) => {
+        const itemsOrdenados = [...items].sort(compareCartItemsForPdf);
         const subtotal = itemsOrdenados.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0);
         const qtd = itemsOrdenados.reduce((s, i) => s + i.quantity, 0);
         const rankColecao = Math.min(...itemsOrdenados.map((i) => macroRank(i.product)));
