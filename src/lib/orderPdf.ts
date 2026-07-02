@@ -80,10 +80,15 @@ function normalizeSortKey(value: unknown): string {
     .toLowerCase();
 }
 
+function looksLikeCandleProduct(p: Product): boolean {
+  const text = normalizeSortKey([p.grupo, p.tipo, p.familia, p.nomeComercial, p.nomeCompleto].filter(Boolean).join(" "));
+  return text.includes("vela");
+}
+
 function inferSequenceNumber(p: Product): number | null {
   if (typeof p.numeroVela === "number" && Number.isFinite(p.numeroVela)) return p.numeroVela;
   const skuLastSegment = String(p.sku ?? "").match(/[.-](\d+)$/);
-  if ((p.isVelaNumerica || normalizeSortKey(p.grupo) === "vela") && skuLastSegment) {
+  if ((p.isVelaNumerica || looksLikeCandleProduct(p)) && skuLastSegment) {
     return Number(skuLastSegment[1]);
   }
   const haystack = [p.nomeComercial, p.nomeCompleto, p.tamanhoNumero, p.tamanhoRef, p.sku]
@@ -101,7 +106,7 @@ function modelKeyForPdf(p: Product): string {
 }
 
 function isVelaNumericaForPdf(p: Product): boolean {
-  return !!p.isVelaNumerica || (normalizeSortKey(p.grupo) === "vela" && inferSequenceNumber(p) !== null);
+  return !!p.isVelaNumerica || (looksLikeCandleProduct(p) && inferSequenceNumber(p) !== null);
 }
 
 function compareCartItemsForPdf(a: CartItem, b: CartItem): number {
