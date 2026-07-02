@@ -312,6 +312,76 @@ const fmtBRL = (v: number) =>
 
 const safeFile = (s: string) => s.replace(/[^a-zA-Z0-9_-]/g, "_");
 
+function normalizeExportKey(value: unknown): string {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function looksLikeCandleItem(item: ItemExportavel): boolean {
+  const text = normalizeExportKey([item.grupo, item.tipo, item.familia, item.nomeComercial].filter(Boolean).join(" "));
+  return text.includes("vela");
+}
+
+function inferItemSequence(item: ItemExportavel): number | null {
+  if (typeof item.numeroVela === "number" && Number.isFinite(item.numeroVela)) return item.numeroVela;
+  const skuLastSegment = item.sku.match(/[.-](\d+)$/);
+  if ((item.isVelaNumerica || looksLikeCandleItem(item)) && skuLastSegment) {
+    return Number(skuLastSegment[1]);
+  }
+  const haystack = [item.nomeComercial, item.tamanhoNumero, item.tamanhoRef, item.sku]
+    .filter(Boolean)
+    .join(" ");
+  const match =
+    haystack.match(/(?:n[º°o]?|num(?:ero)?|número)\s*[.:#-]?\s*(\d+)/i) ||
+    haystack.match(/[.-](\d+)\b/);
+  return match ? Number(match[1]) : null;
+}
+
+function modelKeyForItem(item: ItemExportavel): string {
+  const base = item.familia || item.tipo || item.grupo || item.nomeComercial || "";
+  return normalizeExportKey(base.replace(/(?:n[º°o]?|num(?:ero)?|número)\s*[.:#-]?\s*\d+/gi, ""));
+}
+
+function isNumericCandleItem(item: ItemExportavel): boolean {
+  return item.isVelaNumerica || (looksLikeCandleItem(item) && inferItemSequence(item) !== null);
+}
+
+function compareItensPdf(a: ItemExportavel, b: ItemExportavel): number {
+  const cmpColecao = normalizeExportKey(a.colecao).localeCompare(normalizeExportKey(b.colecao), "pt-BR", { numeric: true });
+  if (cmpColecao !== 0) return cmpColecao;
+
+  const cmpModelo = modelKeyForItem(a).localeCompare(modelKeyForItem(b), "pt-BR", { numeric: true });
+  if (cmpModelo !== 0) return cmpModelo;
+
+  const tamA = normalizeExportKey(a.tamanhoRef || a.tamanhoNumero);
+  const tamB = normalizeExportKey(b.tamanhoRef || b.tamanhoNumero);
+  const cmpTam = tamA.localeCompare(tamB, "pt-BR", { numeric: true });
+  if (cmpTam !== 0) return cmpTam;
+
+  const corA = normalizeExportKey(a.corNome);
+  const corB = normalizeExportKey(b.corNome);
+  if (isNumericCandleItem(a) || isNumericCandleItem(b)) {
+    const cmpCorVela = corA.localeCompare(corB, "pt-BR", { numeric: true });
+    if (cmpCorVela !== 0) return cmpCorVela;
+  }
+
+  const seqA = inferItemSequence(a);
+  const seqB = inferItemSequence(b);
+  if (seqA !== null || seqB !== null) {
+    if (seqA === null) return 1;
+    if (seqB === null) return -1;
+    if (seqA !== seqB) return seqA - seqB;
+  }
+
+  const cmpCor = corA.localeCompare(corB, "pt-BR", { numeric: true });
+  if (cmpCor !== 0) return cmpCor;
+  return normalizeExportKey(a.nomeComercial || a.sku).localeCompare(normalizeExportKey(b.nomeComercial || b.sku), "pt-BR", { numeric: true });
+}
+
 // ===== PDF =====
 export async function exportarPDF(
   pedido: PedidoExportavel,
@@ -396,7 +466,8 @@ export async function exportarPDF(
         : [["#", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]]);
 
   const skuByRowIdx = new Map<number, string>();
-  const rows = pedido.itens.map((item, i) => {
+  const orderedItens = [...pedido.itens].sort(compareItensPdf);
+  const rows = orderedItens.map((item, i) => {
     const desc = [
       item.nomeComercial,
       [item.corNome, item.tamanhoNumero].filter(Boolean).join(" · "),
@@ -772,7 +843,8 @@ function _buildPdfInternal(pedido: PedidoExportavel, tipo: "cliente" | "interno"
         ? [["#", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
         : [["#", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]]);
   const skuByRowIdx = new Map<number, string>();
-  const rows = pedido.itens.map((item, i) => {
+  const orderedItens = [...pedido.itens].sort(compareItensPdf);
+  const rows = orderedItens.map((item, i) => {
     const desc = [
       item.nomeComercial,
       [item.corNome, item.tamanhoNumero].filter(Boolean).join(" · "),
