@@ -159,8 +159,9 @@ function agruparItensPorSecao(items: CartItem[]): SecaoItens[] {
         return { colecao, items: itemsOrdenados, subtotal, qtd, rank: rankColecao };
       })
       .sort((a, b) => {
-        if (a.rank !== b.rank) return a.rank - b.rank;
-        return a.colecao.localeCompare(b.colecao, "pt-BR");
+        const cmpColecao = normalizeSortKey(a.colecao).localeCompare(normalizeSortKey(b.colecao), "pt-BR", { numeric: true });
+        if (cmpColecao !== 0) return cmpColecao;
+        return a.rank - b.rank;
       })
       .map(({ rank: _r, ...g }) => g);
     const subtotal = grupos.reduce((s, g) => s + g.subtotal, 0);
