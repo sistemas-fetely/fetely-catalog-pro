@@ -321,10 +321,15 @@ function normalizeExportKey(value: unknown): string {
     .toLowerCase();
 }
 
+function looksLikeCandleItem(item: ItemExportavel): boolean {
+  const text = normalizeExportKey([item.grupo, item.tipo, item.familia, item.nomeComercial].filter(Boolean).join(" "));
+  return text.includes("vela");
+}
+
 function inferItemSequence(item: ItemExportavel): number | null {
   if (typeof item.numeroVela === "number" && Number.isFinite(item.numeroVela)) return item.numeroVela;
   const skuLastSegment = item.sku.match(/[.-](\d+)$/);
-  if ((item.isVelaNumerica || normalizeExportKey(item.grupo) === "vela") && skuLastSegment) {
+  if ((item.isVelaNumerica || looksLikeCandleItem(item)) && skuLastSegment) {
     return Number(skuLastSegment[1]);
   }
   const haystack = [item.nomeComercial, item.tamanhoNumero, item.tamanhoRef, item.sku]
@@ -342,7 +347,7 @@ function modelKeyForItem(item: ItemExportavel): string {
 }
 
 function isNumericCandleItem(item: ItemExportavel): boolean {
-  return item.isVelaNumerica || (normalizeExportKey(item.grupo) === "vela" && inferItemSequence(item) !== null);
+  return item.isVelaNumerica || (looksLikeCandleItem(item) && inferItemSequence(item) !== null);
 }
 
 function compareItensPdf(a: ItemExportavel, b: ItemExportavel): number {
