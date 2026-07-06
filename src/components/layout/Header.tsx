@@ -144,6 +144,7 @@ export function Header() {
                   <span className="hidden lg:inline px-1 py-1.5">Cotações</span>
                 </Link>
               )}
+              <ReunioesNavLink pathname={pathname} navLinkClass={navLinkClass} />
               {temPermissao("clientes_lista", "ver") && (
                 <Link to="/clientes" className={navLinkClass(pathname.startsWith("/clientes"))}>
                   <Users className="h-4 w-4" />
