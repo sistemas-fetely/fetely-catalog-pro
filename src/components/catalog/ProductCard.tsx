@@ -222,42 +222,50 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
 
         {preSelecao && (() => {
           const selected = preSelecao.qty !== undefined;
-          const isInterest = preSelecao.qty === 0;
+          const isInterest = selected && preSelecao.qty === 0;
           return (
             <div className="mt-auto space-y-2 pt-2 border-t border-border/60">
               <div className="text-[10px] uppercase tracking-wider text-text-muted flex items-center justify-between">
                 <span>Caixa: {product.multiplos} un.</span>
                 {selected && (
                   <span className="inline-flex items-center gap-1 text-gold">
-                    <Check className="h-3 w-3" /> selecionado
+                    <Check className="h-3 w-3" />
+                    {isInterest ? "interesse marcado" : "selecionado"}
                   </span>
                 )}
               </div>
-              {!isInterest && (
-                <QuantityInput
-                  value={preSelecao.qty ?? 0}
-                  onChange={preSelecao.onQty}
-                  multiplos={product.multiplos}
-                  disabled={indisponivel}
-                />
-              )}
+              <QuantityInput
+                value={preSelecao.qty ?? 0}
+                onChange={preSelecao.onQty}
+                multiplos={product.multiplos}
+                disabled={indisponivel}
+              />
               {isInterest && (
-                <div className="rounded-md border border-gold/40 bg-gold/10 px-3 py-1.5 text-[11px] text-gold text-center">
+                <div className="rounded-md border border-gold/40 bg-gold/10 px-3 py-1.5 text-[10px] text-gold text-center">
                   <Heart className="inline h-3 w-3 mr-1" fill="currentColor" />
-                  Interesse marcado (qtd a definir)
+                  Quantidade a definir com o consultor
                 </div>
               )}
               <button
                 type="button"
-                onClick={preSelecao.onInteresse}
+                onClick={() => {
+                  // Se já tem qty>0, remove tudo. Senão alterna interesse (0).
+                  if (selected && (preSelecao.qty ?? 0) > 0) {
+                    preSelecao.onQty(-1);
+                  } else {
+                    preSelecao.onInteresse();
+                  }
+                }}
                 className={`w-full rounded-md py-1.5 text-[11px] uppercase tracking-wider border transition ${
-                  isInterest
+                  selected
                     ? "border-gold/50 text-gold hover:bg-gold/10"
                     : "border-border text-text-secondary hover:border-gold/40 hover:text-gold"
                 }`}
               >
-                <Heart className="inline h-3 w-3 mr-1" fill={isInterest ? "currentColor" : "none"} />
-                {isInterest ? "Remover interesse" : "Tenho interesse"}
+                <Heart className="inline h-3 w-3 mr-1" fill={selected ? "currentColor" : "none"} />
+                {selected
+                  ? (isInterest ? "Remover interesse" : "Remover seleção")
+                  : "Tenho interesse (sem qtd)"}
               </button>
             </div>
           );
