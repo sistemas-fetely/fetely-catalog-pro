@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BarChart3, ChevronDown, ClipboardList, FileClock, FileText, Handshake, KeyRound, Lock, LogOut, Menu, Moon, Radar, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
+import { BarChart3, ChevronDown, ClipboardList, FileClock, FileText, KeyRound, Lock, LogOut, Menu, Moon, Search, Settings, ShoppingBag, Sun, User } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePreSelecao, usePreSelecoesEscopo } from "@/store/preSelecaoStore";
 import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
 import { useOrder } from "@/store/orderStore";
@@ -43,6 +44,7 @@ export function Header() {
   const negociacaoAtiva = useNegotiation((s) => s.ativo);
   const temPermissao = useTemPermissao();
   const [changePwOpen, setChangePwOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -52,8 +54,10 @@ export function Header() {
   }, [theme]);
 
   const navLinkClass = (active: boolean) =>
-    `hidden md:flex items-center gap-1.5 uppercase tracking-wider text-xs transition ${
-      active ? "text-gold" : "text-text-secondary hover:text-text-primary"
+    `relative hidden md:flex items-center gap-1.5 uppercase tracking-wider text-xs transition px-3 py-1.5 ${
+      active
+        ? "text-gold after:absolute after:left-3 after:right-3 after:-bottom-[3px] after:h-0.5 after:bg-gold after:rounded-full"
+        : "text-text-secondary hover:text-text-primary"
     }`;
 
   const iconBtnClass =
@@ -109,9 +113,9 @@ export function Header() {
 
 
           {/* Brand */}
-          <Link to={isClientePortal ? "/portal" : isPublic ? "/catalog" : "/"} className="group flex items-baseline gap-2 flex-shrink min-w-0">
-            <span className="font-display text-xl sm:text-2xl tracking-[0.18em] sm:tracking-[0.2em] text-text-primary group-hover:text-gold transition truncate">
-              FETÉLY
+          <Link to={isClientePortal ? "/portal" : isPublic ? "/catalog" : "/"} className="group flex items-baseline gap-2 flex-shrink-0">
+            <span className="font-display text-xl sm:text-2xl tracking-[0.18em] sm:tracking-[0.2em] text-text-primary group-hover:text-gold transition whitespace-nowrap">
+              Fetély
             </span>
             <span className="hidden sm:inline text-[10px] uppercase tracking-[0.3em] text-gold-muted whitespace-nowrap">
               {isClientePortal ? "Portal do Cliente" : isPublic ? "Catálogo de Produtos" : "B2B Orders"}
@@ -120,53 +124,39 @@ export function Header() {
 
           {/* Primary nav (left group) — apenas usuários autenticados */}
           {isInternalUser && (
-            <nav className="hidden md:flex items-center gap-1 ml-2">
+            <nav className="hidden md:flex items-center gap-0.5 ml-4">
               {temPermissao("catalogo", "ver") && (
                 <Link to="/catalog" className={navLinkClass(pathname.startsWith("/catalog"))}>
-                  <span className="px-2 py-1.5">Catálogo</span>
+                  Catálogo
                 </Link>
               )}
-              {temPermissao("pedidos_lista", "ver") && (
-                <Link to="/orders" className={navLinkClass(pathname.startsWith("/orders"))}>
-                  <ClipboardList className="h-4 w-4" />
-                  <span className="hidden lg:inline px-1 py-1.5">Pedidos</span>
-                </Link>
+
+              {(temPermissao("pedidos_lista", "ver") ||
+                temPermissao("cotacoes_lista", "ver") ||
+                temPermissao("provisoes_lista", "ver")) && (
+                <ComercialNav
+                  pathname={pathname}
+                  temPermissao={temPermissao}
+                  activeClass={navLinkClass}
+                />
               )}
+
               {temPermissao("pedidos_lista", "ver") && (
                 <Link to="/farol" className={navLinkClass(pathname.startsWith("/farol"))}>
-                  <Radar className="h-4 w-4" />
-                  <span className="hidden lg:inline px-1 py-1.5">Farol</span>
-                </Link>
-              )}
-              {temPermissao("cotacoes_lista", "ver") && (
-                <Link to="/cotacoes" className={navLinkClass(pathname.startsWith("/cotacoes"))}>
-                  <FileText className="h-4 w-4" />
-                  <span className="hidden lg:inline px-1 py-1.5">Cotações</span>
+                  Farol
                 </Link>
               )}
               <ReunioesNavLink pathname={pathname} navLinkClass={navLinkClass} />
               {temPermissao("clientes_lista", "ver") && (
                 <Link to="/clientes" className={navLinkClass(pathname.startsWith("/clientes"))}>
-                  <Users className="h-4 w-4" />
-                  <span className="hidden lg:inline px-1 py-1.5">Clientes</span>
-                </Link>
-              )}
-              {temPermissao("provisoes_lista", "ver") && (
-                <Link to="/provisoes" className={navLinkClass(pathname.startsWith("/provisoes"))}>
-                  <FileClock className="h-4 w-4" />
-                  <span className="hidden lg:inline px-1 py-1.5">Provisões</span>
+                  Clientes
                 </Link>
               )}
             </nav>
           )}
 
-          {/* Search (center) — apenas autenticados */}
-          {isInternalUser && (
-            <div className="hidden md:flex flex-1 justify-center max-w-xl mx-auto">
-              <GlobalSearch />
-            </div>
-          )}
-          {!isInternalUser && <div className="flex-1" />}
+          <div className="flex-1" />
+
 
 
           {/* Right actions */}
@@ -184,6 +174,26 @@ export function Header() {
                 <Lock className="h-3 w-3" /> Negociação
               </Link>
             )}
+
+            <div className="hidden md:block h-6 w-px bg-border/60 mx-1" />
+
+
+            {/* Search icon — abre overlay */}
+            {isInternalUser && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setSearchOpen(true)}
+                    className={iconBtnClass}
+                    aria-label="Buscar"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Buscar (produtos, coleções)</TooltipContent>
+              </Tooltip>
+            )}
+
 
             {/* Dashboard link */}
             {isInternalUser && temPermissao("dashboard", "ver") && (
@@ -374,6 +384,16 @@ export function Header() {
 
       </header>
       <ChangePasswordDialog open={changePwOpen} onOpenChange={setChangePwOpen} />
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent className="max-w-2xl bg-surface border-border">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl text-text-primary">Buscar</DialogTitle>
+          </DialogHeader>
+          <div onClick={() => setSearchOpen(false)}>
+            <GlobalSearch />
+          </div>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   );
 }
@@ -391,13 +411,75 @@ function ReunioesNavLink({
   const novas = lista.filter((p) => p.status === "nova").length;
   return (
     <Link to="/reunioes" className={navLinkClass(pathname.startsWith("/reunioes"))}>
-      <Handshake className="h-4 w-4" />
-      <span className="hidden lg:inline px-1 py-1.5">Reuniões</span>
+      Reuniões
       {novas > 0 && (
         <span className="ml-1 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1 animate-pulse">
           {novas}
         </span>
       )}
     </Link>
+  );
+}
+
+function ComercialNav({
+  pathname,
+  temPermissao,
+  activeClass,
+}: {
+  pathname: string;
+  temPermissao: (tela: string, acao?: any) => boolean;
+  activeClass: (active: boolean) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const active =
+    pathname.startsWith("/orders") ||
+    pathname.startsWith("/cotacoes") ||
+    pathname.startsWith("/provisoes");
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger
+        asChild
+        onMouseEnter={() => setOpen(true)}
+      >
+        <button
+          className={activeClass(active) + " cursor-pointer"}
+          aria-label="Comercial"
+        >
+          Comercial
+          <ChevronDown className="h-3 w-3 opacity-70" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        className="w-48 bg-surface border border-border"
+        onMouseLeave={() => setOpen(false)}
+      >
+        {temPermissao("pedidos_lista", "ver") && (
+          <DropdownMenuItem asChild className="cursor-pointer focus:text-gold">
+            <Link to="/orders" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-wider">Pedidos</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {temPermissao("cotacoes_lista", "ver") && (
+          <DropdownMenuItem asChild className="cursor-pointer focus:text-gold">
+            <Link to="/cotacoes" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-wider">Cotações</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {temPermissao("provisoes_lista", "ver") && (
+          <DropdownMenuItem asChild className="cursor-pointer focus:text-gold">
+            <Link to="/provisoes" className="flex items-center gap-2">
+              <FileClock className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-wider">Provisões</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

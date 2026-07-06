@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   ChevronDown,
@@ -8,6 +8,8 @@ import {
   Folder,
   ShoppingBag,
   ArrowRight,
+  Search,
+  X,
 } from "lucide-react";
 import { useCatalog } from "@/store/catalogStore";
 import { useUI } from "@/store/uiStore";
@@ -20,14 +22,15 @@ type Tree = Record<string, Record<string, string[]>>;
 
 // Categorias onde a hierarquia é invertida: Coleção → Grupo (ex.: Celebrar à Mesa)
 const COLECAO_FIRST_CATEGORIES = new Set(["Celebrar à Mesa", "Acessórios de Mesa"]);
-// Grupos que devem aparecer como subdivisão expansível (em vez de listar coleções soltas)
+// Grupos que devem aparecer como subdivisão expansível
 const SUBDIVIDED_GROUPS = new Set(["Jogo Americano", "Copos e Taças", "Talheres"]);
 const GRP_PREFIX = "GRP::";
+// Rótulo do grupo virtual "Coleções" (agrupa a lista longa de coleções soltas)
+const COLECOES_KEY = "__COLECOES__";
 
 function buildTree(products: Product[], filterMode: "atacado" | "varejo" = "atacado"): Tree {
   const tree: Tree = {};
   for (const p of products) {
-    // só inclui produtos ativos e com preço
     if (p.ativo === false) continue;
     if (filterMode === "atacado") {
       if (!p.precoAtacado || p.precoAtacado <= 0) continue;
@@ -46,13 +49,18 @@ function buildTree(products: Product[], filterMode: "atacado" | "varejo" = "atac
       continue;
     }
 
-    const lvl1 = colecaoFirst ? p.colecao : p.grupo;
-    const lvl2 = colecaoFirst ? p.grupo : p.colecao;
-    if (!tree[p.categoria][lvl1]) tree[p.categoria][lvl1] = [];
     if (colecaoFirst) {
-      // coleção-first sem subdivisão: filhos não exibidos
+      // agrupa todas as coleções soltas sob "Coleções"
+      if (!tree[p.categoria][COLECOES_KEY]) tree[p.categoria][COLECOES_KEY] = [];
+      if (!tree[p.categoria][COLECOES_KEY].includes(p.colecao)) {
+        tree[p.categoria][COLECOES_KEY].push(p.colecao);
+      }
       continue;
     }
+
+    const lvl1 = p.grupo;
+    const lvl2 = p.colecao;
+    if (!tree[p.categoria][lvl1]) tree[p.categoria][lvl1] = [];
     if (!tree[p.categoria][lvl1].includes(lvl2)) {
       tree[p.categoria][lvl1].push(lvl2);
     }
@@ -69,18 +77,40 @@ function isColecaoFirst(categoria: string) {
   return COLECAO_FIRST_CATEGORIES.has(categoria);
 }
 
+/** Conta produtos por (categoria, coleção[, grupo]). */
+function countProdutos(
+  products: Product[],
+  filterMode: "atacado" | "varejo",
+  categoria: string,
+  colecao: string,
+  grupo?: string,
+): number {
+  return products.filter((p) => {
+    if (p.ativo === false) return false;
+    if (filterMode === "atacado" ? !(p.precoAtacado && p.precoAtacado > 0) : !(p.precoVarejo && p.precoVarejo > 0))
+      return false;
+    if (p.categoria !== categoria) return false;
+    if (p.colecao !== colecao) return false;
+    if (grupo && p.grupo !== grupo) return false;
+    return true;
+  }).length;
+}
+
 interface Props {
   onNavigate?: () => void;
   forceExpanded?: boolean;
-  /** Rota-base para navegação. Padrão: "/catalog". Use "/pre-selecao" no catálogo público de reuniões. */
   basePath?: "/catalog" | "/pre-selecao";
-  /** Filtro de preço para montagem da árvore. "atacado" (default B2B) ou "varejo" (pré-seleção pública). */
   filterMode?: "atacado" | "varejo";
-  /** Esconde o rodapé de carrinho (usado quando basePath != /catalog). */
   hideCart?: boolean;
 }
 
-export function CatalogSidebar({ onNavigate, forceExpanded, basePath = "/catalog", filterMode = "atacado", hideCart }: Props) {
+export function CatalogSidebar({
+  onNavigate,
+  forceExpanded,
+  basePath = "/catalog",
+  filterMode = "atacado",
+  hideCart,
+}: Props) {
   const products = useCatalog((s) => s.products);
   const tree = useMemo(() => buildTree(products, filterMode), [products, filterMode]);
   const collapsedState = useUI((s) => s.sidebarCollapsed);
@@ -94,19 +124,47 @@ export function CatalogSidebar({ onNavigate, forceExpanded, basePath = "/catalog
   const totalUnits = items.reduce((s, i) => s + i.quantity, 0);
   const isPublic = !useAuth((s) => s.session);
 
-  const search = useRouterState({ select: (r) => r.location.search as { colecao?: string; grupo?: string } });
+  const search = useRouterState({
+    select: (r) => r.location.search as { colecao?: string; grupo?: string; categoria?: string },
+  });
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const activeColecao = pathname === basePath ? search.colecao : undefined;
   const activeGrupo = pathname === basePath ? search.grupo : undefined;
+  // Detecta categoria ativa: pela URL /catalog/categoria/:categoria ou pelo search param
+  const categoriaFromPath = (() => {
+    const m = pathname.match(/\/catalog\/categoria\/([^/]+)/);
+    return m ? decodeURIComponent(m[1]) : undefined;
+  })();
+  const activeCategoria = categoriaFromPath ?? (pathname === basePath ? search.categoria : undefined);
+
   const navigate = useNavigate();
+  const [filtro, setFiltro] = useState("");
 
   const handleSelectColecao = (colecao: string, grupo?: string, categoria?: string) => {
-    const search: { colecao: string; grupo?: string; categoria?: string } = { colecao };
-    if (grupo) search.grupo = grupo;
-    if (categoria) search.categoria = categoria;
-    navigate({ to: basePath as "/catalog", search: search as never });
+    const s: { colecao: string; grupo?: string; categoria?: string } = { colecao };
+    if (grupo) s.grupo = grupo;
+    if (categoria) s.categoria = categoria;
+    navigate({ to: basePath as "/catalog", search: s as never });
     onNavigate?.();
   };
+
+  // Estatísticas da categoria ativa (para o bloco de contexto)
+  const contextoCategoria = useMemo(() => {
+    if (!activeCategoria || !tree[activeCategoria]) return null;
+    const grupos = tree[activeCategoria];
+    const colecoesSet = new Set<string>();
+    for (const lst of Object.values(grupos)) for (const c of lst) colecoesSet.add(c);
+    const produtos = products.filter(
+      (p) =>
+        p.categoria === activeCategoria &&
+        p.ativo !== false &&
+        (filterMode === "atacado" ? (p.precoAtacado ?? 0) > 0 : (p.precoVarejo ?? 0) > 0),
+    ).length;
+    return { produtos, colecoes: colecoesSet.size };
+  }, [activeCategoria, tree, products, filterMode]);
+
+  const filtroNorm = filtro.trim().toLowerCase();
+  const matchesFiltro = (s: string) => !filtroNorm || s.toLowerCase().includes(filtroNorm);
 
   return (
     <aside
@@ -114,7 +172,7 @@ export function CatalogSidebar({ onNavigate, forceExpanded, basePath = "/catalog
         collapsed ? "w-[60px]" : "w-[300px]"
       }`}
     >
-      <div className="flex items-center justify-between px-4 py-4 border-b border-gold/20 bg-gradient-to-r from-gold/5 to-transparent">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gold/20 bg-gradient-to-r from-gold/5 to-transparent">
         {!collapsed && (
           <div className="text-[11px] uppercase tracking-[0.3em] text-gold font-semibold">
             Navegar
@@ -126,23 +184,55 @@ export function CatalogSidebar({ onNavigate, forceExpanded, basePath = "/catalog
             className="ml-auto text-text-muted hover:text-gold transition"
             aria-label={collapsed ? "Expandir" : "Recolher"}
           >
-            {collapsed ? (
-              <ChevronsRight className="h-4 w-4" />
-            ) : (
-              <ChevronsLeft className="h-4 w-4" />
-            )}
+            {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
           </button>
         )}
       </div>
+
+      {!collapsed && (
+        <>
+          {/* Bloco de contexto */}
+          {contextoCategoria && activeCategoria && (
+            <div className="px-4 py-3 border-b border-border bg-surface-2/40">
+              <div className="text-[9px] uppercase tracking-[0.25em] text-gold-muted">Categoria</div>
+              <div className="font-display text-base text-text-primary mt-0.5 truncate">
+                {activeCategoria}
+              </div>
+              <div className="text-[10px] text-text-secondary mt-0.5">
+                {contextoCategoria.produtos} produtos · {contextoCategoria.colecoes} coleções
+              </div>
+            </div>
+          )}
+
+          {/* Filtro */}
+          <div className="px-3 pt-3">
+            <div className="flex items-center gap-2 rounded-md border border-border bg-background/60 px-2.5 py-1.5 focus-within:border-gold/60 transition">
+              <Search className="h-3.5 w-3.5 text-text-muted" />
+              <input
+                value={filtro}
+                onChange={(e) => setFiltro(e.target.value)}
+                placeholder="Filtrar coleção…"
+                className="bg-transparent border-0 outline-none text-xs text-text-primary placeholder:text-text-muted flex-1 min-w-0"
+              />
+              {filtro && (
+                <button
+                  onClick={() => setFiltro("")}
+                  className="text-text-muted hover:text-gold"
+                  aria-label="Limpar filtro"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       <nav className="flex-1 overflow-y-auto scrollbar-thin py-3">
         {Object.entries(tree).map(([categoria, grupos]) => (
           <div key={categoria} className="mb-4">
             {collapsed ? (
-              <div
-                className="flex justify-center py-2 text-gold/60"
-                title={categoria}
-              >
+              <div className="flex justify-center py-2 text-gold/60" title={categoria}>
                 <Folder className="h-4 w-4" />
               </div>
             ) : (
@@ -151,16 +241,22 @@ export function CatalogSidebar({ onNavigate, forceExpanded, basePath = "/catalog
                   navigate({ to: "/catalog/categoria/$categoria", params: { categoria } });
                   onNavigate?.();
                 }}
-                className="w-full text-left px-3 py-2 mb-1 text-[12px] uppercase tracking-[0.18em] text-gold hover:text-gold-light hover:bg-gold/10 flex items-center gap-2 transition font-semibold border-l-2 border-gold/40"
+                className={`w-full text-left px-3 py-2 mb-1 text-[12px] uppercase tracking-[0.18em] flex items-center gap-2 transition font-semibold border-l-2 ${
+                  activeCategoria === categoria
+                    ? "text-gold border-gold bg-gold/10"
+                    : "text-gold border-gold/40 hover:text-gold-light hover:bg-gold/10"
+                }`}
               >
                 <Folder className="h-3.5 w-3.5" /> {categoria}
               </button>
             )}
 
-
             {!collapsed &&
               Object.entries(grupos)
                 .sort(([a], [b]) => {
+                  // Coleções gerais primeiro, grupos subdivididos depois
+                  if (a === COLECOES_KEY) return -1;
+                  if (b === COLECOES_KEY) return 1;
                   const aSub = a.startsWith(GRP_PREFIX);
                   const bSub = b.startsWith(GRP_PREFIX);
                   if (aSub && !bSub) return 1;
@@ -168,15 +264,14 @@ export function CatalogSidebar({ onNavigate, forceExpanded, basePath = "/catalog
                   return a.localeCompare(b, "pt-BR");
                 })
                 .map(([lvl1, lvl2List]) => {
-                const colecaoFirst = isColecaoFirst(categoria);
-                const gkey = `${categoria}::${lvl1}`;
-                const isOpen = expandedGroups[gkey] ?? true;
+                  const colecaoFirst = isColecaoFirst(categoria);
+                  const gkey = `${categoria}::${lvl1}`;
+                  const isOpen = expandedGroups[gkey] ?? true;
 
-                // Coleção-first
-                if (colecaoFirst) {
-                  // Subdivisão por grupo (ex.: Jogo Americano, Copos e Taças)
-                  if (lvl1.startsWith(GRP_PREFIX)) {
-                    const grupoName = lvl1.slice(GRP_PREFIX.length);
+                  // Grupo virtual "Coleções" (categorias coleção-first)
+                  if (colecaoFirst && lvl1 === COLECOES_KEY) {
+                    const filtradas = lvl2List.filter(matchesFiltro);
+                    if (filtradas.length === 0 && filtroNorm) return null;
                     return (
                       <div key={gkey} className="px-2">
                         <button
@@ -188,24 +283,30 @@ export function CatalogSidebar({ onNavigate, forceExpanded, basePath = "/catalog
                           ) : (
                             <ChevronRight className="h-3 w-3 flex-shrink-0" />
                           )}
-                          <span className="uppercase tracking-wider">{grupoName}</span>
+                          <span className="uppercase tracking-wider flex-1">Coleções</span>
+                          <span className="text-[10px] text-text-muted tabular-nums">
+                            {lvl2List.length}
+                          </span>
                         </button>
                         {isOpen && (
                           <ul className="pl-5 pb-1">
-                            {lvl2List.map((col) => {
-                              const active =
-                                activeColecao === col && activeGrupo === grupoName;
+                            {filtradas.map((col) => {
+                              const active = activeColecao === col && !activeGrupo;
+                              const cnt = countProdutos(products, filterMode, categoria, col);
                               return (
                                 <li key={col}>
                                   <button
-                                    onClick={() => handleSelectColecao(col, grupoName, categoria)}
-                                    className={`block w-full text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
+                                    onClick={() => handleSelectColecao(col, undefined, categoria)}
+                                    className={`flex w-full items-center gap-2 text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
                                       active
                                         ? "border-gold bg-gold/10 text-gold"
                                         : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2/60"
                                     }`}
                                   >
-                                    {col}
+                                    <span className="flex-1 truncate">{col}</span>
+                                    <span className="text-[10px] text-text-muted tabular-nums">
+                                      {cnt}
+                                    </span>
                                   </button>
                                 </li>
                               );
@@ -216,102 +317,145 @@ export function CatalogSidebar({ onNavigate, forceExpanded, basePath = "/catalog
                     );
                   }
 
-                  // Coleção flat
-                  const active = activeColecao === lvl1 && !activeGrupo;
+                  // Subdivisão por grupo (Jogo Americano, Copos e Taças…)
+                  if (colecaoFirst && lvl1.startsWith(GRP_PREFIX)) {
+                    const grupoName = lvl1.slice(GRP_PREFIX.length);
+                    const filtradas = lvl2List.filter(matchesFiltro);
+                    if (filtradas.length === 0 && filtroNorm) return null;
+                    return (
+                      <div key={gkey} className="px-2">
+                        <button
+                          onClick={() => toggleGroup(gkey)}
+                          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs text-text-secondary hover:text-gold rounded transition"
+                        >
+                          {isOpen ? (
+                            <ChevronDown className="h-3 w-3 flex-shrink-0" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3 flex-shrink-0" />
+                          )}
+                          <span className="uppercase tracking-wider flex-1">{grupoName}</span>
+                          <span className="text-[10px] text-text-muted tabular-nums">
+                            {lvl2List.length}
+                          </span>
+                        </button>
+                        {isOpen && (
+                          <ul className="pl-5 pb-1">
+                            {filtradas.map((col) => {
+                              const active = activeColecao === col && activeGrupo === grupoName;
+                              const cnt = countProdutos(products, filterMode, categoria, col, grupoName);
+                              return (
+                                <li key={col}>
+                                  <button
+                                    onClick={() => handleSelectColecao(col, grupoName, categoria)}
+                                    className={`flex w-full items-center gap-2 text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
+                                      active
+                                        ? "border-gold bg-gold/10 text-gold"
+                                        : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2/60"
+                                    }`}
+                                  >
+                                    <span className="flex-1 truncate">{col}</span>
+                                    <span className="text-[10px] text-text-muted tabular-nums">
+                                      {cnt}
+                                    </span>
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // Fallback: grupo-first (ex.: Luz e Momento) — lista coleções sob o grupo
+                  const filtradas = lvl2List.filter(matchesFiltro);
+                  if (filtradas.length === 0 && filtroNorm) return null;
                   return (
                     <div key={gkey} className="px-2">
                       <button
-                        onClick={() => handleSelectColecao(lvl1, undefined, categoria)}
-                        className={`block w-full text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
-                          active
-                            ? "border-gold bg-gold/10 text-gold"
-                            : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2/60"
-                        }`}
+                        onClick={() => toggleGroup(gkey)}
+                        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs text-text-secondary hover:text-gold rounded transition"
                       >
-                        {lvl1}
+                        {isOpen ? (
+                          <ChevronDown className="h-3 w-3 flex-shrink-0" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3 flex-shrink-0" />
+                        )}
+                        <span className="uppercase tracking-wider flex-1">{lvl1}</span>
+                        <span className="text-[10px] text-text-muted tabular-nums">
+                          {lvl2List.length}
+                        </span>
                       </button>
+                      {isOpen && (
+                        <ul className="pl-5 pb-1">
+                          {filtradas.map((lvl2) => {
+                            const active = activeColecao === lvl2;
+                            const cnt = countProdutos(products, filterMode, categoria, lvl2);
+                            return (
+                              <li key={lvl2}>
+                                <button
+                                  onClick={() => handleSelectColecao(lvl2, undefined, categoria)}
+                                  className={`flex w-full items-center gap-2 text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
+                                    active
+                                      ? "border-gold bg-gold/10 text-gold"
+                                      : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2/60"
+                                  }`}
+                                >
+                                  <span className="flex-1 truncate">{lvl2}</span>
+                                  <span className="text-[10px] text-text-muted tabular-nums">
+                                    {cnt}
+                                  </span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
                     </div>
                   );
-                }
-
-                return (
-                  <div key={gkey} className="px-2">
-                    <button
-                      onClick={() => toggleGroup(gkey)}
-                      className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs text-text-secondary hover:text-gold rounded transition"
-                    >
-                      {isOpen ? (
-                        <ChevronDown className="h-3 w-3 flex-shrink-0" />
-                      ) : (
-                        <ChevronRight className="h-3 w-3 flex-shrink-0" />
-                      )}
-                      <span className="uppercase tracking-wider">{lvl1}</span>
-                    </button>
-                    {isOpen && (
-                      <ul className="pl-5 pb-1">
-                        {lvl2List.map((lvl2) => {
-                          const active = activeColecao === lvl2;
-                          return (
-                            <li key={lvl2}>
-                              <button
-                                onClick={() => handleSelectColecao(lvl2, undefined, categoria)}
-                                className={`block w-full text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
-                                  active
-                                    ? "border-gold bg-gold/10 text-gold"
-                                    : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2/60"
-                                }`}
-                              >
-                                {lvl2}
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </div>
-                );
-              })}
+                })}
           </div>
         ))}
       </nav>
 
-      {!isPublic && !hideCart && (!collapsed ? (
-        <div className="border-t border-border p-3 bg-surface-2/40">
-          <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted flex items-center gap-1.5">
-            <ShoppingBag className="h-3 w-3" /> Carrinho
-          </div>
-          <div className="font-display text-xl text-gold mt-1">
-            {totalUnits > 0 ? formatBRL(total) : "Vazio"}
-          </div>
-          {totalUnits > 0 && (
-            <div className="text-[11px] text-text-secondary">
-              {totalUnits} unidades · {items.length} itens
+      {!isPublic &&
+        !hideCart &&
+        (!collapsed ? (
+          <div className="border-t border-border p-3 bg-surface-2/40">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted flex items-center gap-1.5">
+              <ShoppingBag className="h-3 w-3" /> Carrinho
             </div>
-          )}
+            <div className="font-display text-xl text-gold mt-1">
+              {totalUnits > 0 ? formatBRL(total) : "Vazio"}
+            </div>
+            {totalUnits > 0 && (
+              <div className="text-[11px] text-text-secondary">
+                {totalUnits} unidades · {items.length} itens
+              </div>
+            )}
+            <Link
+              to="/cart"
+              onClick={onNavigate}
+              className="mt-3 flex items-center justify-center gap-2 w-full rounded-md bg-gold px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-background hover:bg-gold-light transition"
+            >
+              Revisar pedido <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+        ) : (
           <Link
             to="/cart"
             onClick={onNavigate}
-            className="mt-3 flex items-center justify-center gap-2 w-full rounded-md bg-gold px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-background hover:bg-gold-light transition"
+            className="border-t border-border flex flex-col items-center justify-center py-3 text-gold hover:bg-surface-2 transition relative"
+            aria-label="Carrinho"
           >
-            Revisar pedido <ArrowRight className="h-3 w-3" />
+            <ShoppingBag className="h-4 w-4" />
+            {totalUnits > 0 && (
+              <span className="absolute top-2 right-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[9px] font-bold text-background">
+                {totalUnits}
+              </span>
+            )}
           </Link>
-        </div>
-      ) : (
-        <Link
-          to="/cart"
-          onClick={onNavigate}
-          className="border-t border-border flex flex-col items-center justify-center py-3 text-gold hover:bg-surface-2 transition relative"
-          aria-label="Carrinho"
-        >
-          <ShoppingBag className="h-4 w-4" />
-          {totalUnits > 0 && (
-            <span className="absolute top-2 right-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[9px] font-bold text-background">
-              {totalUnits}
-            </span>
-          )}
-        </Link>
-      ))}
-
+        ))}
     </aside>
   );
 }
