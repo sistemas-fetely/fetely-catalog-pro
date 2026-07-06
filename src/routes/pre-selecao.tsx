@@ -18,7 +18,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { fetchCNPJ, formatCNPJ, isValidCNPJLength } from "@/lib/cnpj";
 import { toast } from "sonner";
 import { SEGMENTO_LABEL, type SegmentoCliente } from "@/types/preSelecao";
-import { buildPreSelecao, encodePreSelecao, itemFromProductQty, PUBLIC_SITE_URL } from "@/lib/preSelecao";
+import { buildPreSelecao, encodePreSelecao, itemFromProductQty, submitPreSelecaoRemote, PUBLIC_SITE_URL } from "@/lib/preSelecao";
 import { usePreSelecao } from "@/store/preSelecaoStore";
 import { formatBRL } from "@/lib/format";
 import type { Product } from "@/types";
