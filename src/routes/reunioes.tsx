@@ -271,7 +271,7 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
         naoEncontrados.push(it.sku);
         continue;
       }
-      cartItems.push({ product, quantity: it.quantidade });
+      cartItems.push({ sku: product.sku, product, quantity: it.quantidade });
     }
     if (cartItems.length === 0) {
       toast.error("Nenhum SKU da pré-seleção foi encontrado no catálogo atual");
