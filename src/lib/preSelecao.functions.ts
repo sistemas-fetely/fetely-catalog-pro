@@ -85,7 +85,7 @@ export const enviarPreSelecaoPublica = createServerFn({ method: "POST" })
       segmento: data.segmento,
       observacao: data.observacao ?? null,
       aceita_newsletter: data.aceitaNewsletter,
-      itens: data.itens,
+      itens: data.itens as unknown as import("@/integrations/supabase/types").Json,
       total_itens: data.totalItens,
       total_unidades: data.totalUnidades,
       total_varejo_ref: data.totalVarejoRef,
