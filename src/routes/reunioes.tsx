@@ -259,12 +259,14 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
   async function converterEmCotacao() {
     if (convertendo) return;
     const itensComQtd = pre.itens.filter((i) => !i.temInteresseSemQtd && i.quantidade > 0);
-    if (itensComQtd.length === 0) {
-      toast.error("Nenhum item com quantidade definida para converter");
+    const itensInteresse = pre.itens.filter((i) => i.temInteresseSemQtd || i.quantidade <= 0);
+    if (itensComQtd.length === 0 && itensInteresse.length === 0) {
+      toast.error("Pré-seleção sem itens para converter");
       return;
     }
     const cartItems: CartItem[] = [];
     const naoEncontrados: string[] = [];
+    const interesseIncluidos: string[] = [];
     for (const it of itensComQtd) {
       const product = catalogProducts.find((p) => p.sku === it.sku);
       if (!product) {
@@ -273,16 +275,34 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
       }
       cartItems.push({ sku: product.sku, product, quantity: it.quantidade });
     }
+    // Itens de interesse (sem qtd): entram como 1 un p/ validar com o cliente
+    for (const it of itensInteresse) {
+      const product = catalogProducts.find((p) => p.sku === it.sku);
+      if (!product) {
+        naoEncontrados.push(it.sku);
+        continue;
+      }
+      cartItems.push({
+        sku: product.sku,
+        product,
+        quantity: 1,
+        justificativaNegociacao: "Item marcado como interesse (sem qtd) na pré-seleção — validar quantidade com o cliente.",
+      });
+      interesseIncluidos.push(`${product.sku} · ${it.nomeComercial} (${it.corNome})`);
+    }
     if (cartItems.length === 0) {
       toast.error("Nenhum SKU da pré-seleção foi encontrado no catálogo atual");
       return;
     }
     const total = cartItems.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0);
+    const blocoInteresse = interesseIncluidos.length > 0
+      ? `\n\n⚠ Itens de INTERESSE (entraram como 1 un — confirmar quantidade com o cliente):\n- ${interesseIncluidos.join("\n- ")}`
+      : "";
     const meta: OrderMeta = {
       cliente: pre.razaoSocial || pre.nomeFantasia,
       cnpj: pre.cnpj,
       condicaoPagamento: "",
-      observacoes: `Origem: Pré-seleção #${pre.id} (${pre.contatoNome})${pre.observacao ? ` · ${pre.observacao}` : ""}`,
+      observacoes: `Origem: Pré-seleção #${pre.id} (${pre.contatoNome})${pre.observacao ? ` · ${pre.observacao}` : ""}${blocoInteresse}`,
       vendedor: profile?.nome_completo ?? profile?.email ?? "—",
       nomeFantasia: pre.nomeFantasia,
       email: pre.contatoEmail,
@@ -294,10 +314,13 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
     try {
       const cot = await criarCotacao({ items: cartItems, meta, total });
       vincularCotacao(pre.id, cot.id);
-      if (naoEncontrados.length > 0) {
-        toast.warning(`Cotação ${cot.id} criada · ${naoEncontrados.length} SKU(s) fora do catálogo foram ignorados`);
+      const partes: string[] = [`Cotação ${cot.id} criada`];
+      if (interesseIncluidos.length > 0) partes.push(`${interesseIncluidos.length} item(ns) de interesse como 1 un`);
+      if (naoEncontrados.length > 0) partes.push(`${naoEncontrados.length} SKU(s) fora do catálogo ignorados`);
+      if (interesseIncluidos.length > 0 || naoEncontrados.length > 0) {
+        toast.warning(partes.join(" · "));
       } else {
-        toast.success(`Cotação ${cot.id} criada a partir da pré-seleção`);
+        toast.success(partes[0]);
       }
       onClose();
       navigate({ to: "/cotacoes" });
@@ -308,6 +331,7 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
       setConvertendo(false);
     }
   }
+
 
 
   return (
