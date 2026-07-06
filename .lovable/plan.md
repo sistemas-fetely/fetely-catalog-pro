@@ -1,84 +1,90 @@
-# Snapshot de preço + Override por item
+# Módulo Reuniões — Catálogo de Pré-seleção
 
-## Diagnóstico — o que já funciona
+Nova feature composta por duas frentes independentes que se conectam via localStorage compartilhado + endpoint opcional.
 
-Boa parte do snapshot **já existe** no projeto:
+## Escopo em 2 partes
 
-- **`order_items`** já grava `preco_unit_atacado` (preço congelado) e `product_snapshot` (jsonb do produto inteiro) no momento do insert.
-- **`cotacoes.items`** (jsonb) já guarda o `product` completo com `precoAtacado` dentro de cada item — quando você reabre uma cotação, ela lê o preço do snapshot, não o preço vigente. O `ConverterEmPedidoModal` inclusive já carrega `precoAtacadoReferencia` para detectar reajustes.
+### 1. Rota pública `/pre-selecao` (sem login)
+Catálogo interativo mobile-first para o cliente marcar interesse antes da reunião.
 
-Ou seja: **cotações e pedidos antigos já estão protegidos** contra reajuste futuro de preços. Não precisa migração nem mudança de fluxo nesse ponto.
+- Lê `?v=<login>` para vincular ao vendedor (silencioso).
+- Sidebar/drawer com hierarquia Categoria → Coleção → Grupo (mesma taxonomia do B2B, via `PRODUCTS`).
+- Cards mostram: foto/placeholder, nome, cor, tamanho, **preço varejo**, badge de estoque, input qtd com múltiplos, botão ♡ (interesse sem qtd = quantidade 0).
+- **Nunca** exibe preço atacado, SKU interno, NCM, CEST, códigos.
+- Rodapé fixo com resumo: itens, unidades, total varejo de referência, botão "Enviar interesse".
+- Modal de dados da empresa: CNPJ (com busca via `fetchCNPJ` já existente), razão social, fantasia, contato, cargo, email, WhatsApp, cidade/UF (autopreenchidos), segmento (select), observação, checkbox newsletter.
+- Tela de confirmação com protocolo `#PSxxxx` e validade 72h.
+- Busca por nome/coleção no topo.
 
-O que falta é (a) garantir que ao **converter cotação em pedido** o snapshot da cotação prevaleça sobre o preço vigente, e (b) adicionar o **override por linha no modo negociação**.
+### 2. Painel "Reuniões" no B2B (`/reunioes`)
+Item novo no menu principal, entre Cotações e Clientes.
 
-## Escopo desta entrega
+- Tabs de status: Novas 🔴 / Visualizadas / Em contato / Convertidas / Todas.
+- KPIs: nº de novas, valor ref. potencial, taxa de conversão.
+- Tabela com colunas: #, empresa, itens/unidades, ref. varejo, status, tempo.
+- Drawer lateral com abas Empresa / Lista / Ações.
+- Ações: Converter em Cotação, Criar/Vincular Cliente, WhatsApp, Copiar lista, Descartar.
+- Botão "Gerar meu link" com copiar, WhatsApp pré-formatado, QR code (usa lib `qrcode`).
+- Isolamento por vendedor idêntico ao dos pedidos; admin/master veem tudo.
+- Badge vermelho pulsante no menu lateral quando há novas; card de destaque no dashboard.
+- Expiração automática após 72h (configurável em Regras Gerais) via checagem na abertura.
 
-### 1. Override de preço/desconto por item (modo negociação)
+## Modelo de dados & storage
 
-**Tipos** — `src/types/index.ts` (CartItem ganha):
-- `precoOverride?: number` — preço unitário manual
-- `descontoItemPct?: number` — desconto extra por linha (0–100)
-- `justificativaNegociacao?: string` — obrigatória quando qualquer override está ativo
+- `localStorage: fetely_pre_selecoes` (array `PreSelecao[]`)
+- `localStorage: fetely_pre_selecao_counter` (sequencial)
+- Novo tipo `PreSelecao` e `ItemPreSelecao` conforme spec.
+- Novo store Zustand `preSelecaoStore` seguindo o padrão dos demais stores.
+- Regra em Regras Gerais: `expiracaoPreSelecaoHoras` (default 72).
 
-**Store** — `src/store/orderStore.ts`:
-- Ações: `setItemPrecoOverride`, `setItemDesconto`, `setItemJustificativa`, `clearItemNegociacao`
-- Recalcular subtotal do item: `(precoOverride ?? precoAtacado) * qty * (1 - descontoItemPct/100)`
-- `clearNegociacao` (ao desativar modo) limpa todos os overrides
+## Conversão em cotação
+Ao clicar "Converter em Cotação":
+1. Busca `clientes` por CNPJ; se não existir, abre `ClienteFormModal` pré-preenchido.
+2. Popula `cotacaoStore` com cliente + itens (♡ recebe `quantidade = multiplos` e flag `qtdAConfirmar`).
+3. Navega para `/cotacoes` no modo edição, com badge "Qtd. a confirmar" nos itens ♡.
+4. Muda status da pré-seleção para `convertida`, grava `cotacaoGeradaId`.
 
-**UI** — `src/routes/cart.tsx`:
-- Quando `useNegotiation().ativo === true`, cada linha do carrinho mostra dois campos inline editáveis:
-  - "Preço unit." (input numérico, default = preço de tabela)
-  - "Desc. %" (input 0–100)
-- Badge "Negociado" + tooltip com diferença vs. tabela
-- Campo "Justificativa" (textarea pequena) obrigatório por item alterado — bloqueia confirmação se vazio
-- Botão "Resetar item" volta ao preço de tabela
+## Sincronização (MVP)
+O catálogo público roda em outro dispositivo/navegador — não compartilha localStorage com o painel B2B.
+- **MVP:** ao enviar, gera link `/reunioes/importar#<base64>` com o payload. O vendedor recebe por WhatsApp (ou o próprio cliente é redirecionado com essa URL que ele reenvia) e ao abrir no B2B, o sistema faz o import automático. Também exibimos a string base64 na tela de confirmação para copiar/colar manualmente como fallback.
+- **Opcional Fase 2:** endpoint TanStack `POST /api/public/pre-selecao` que grava numa tabela Lovable Cloud — deixarei um TODO documentado sem implementar agora.
 
-**Persistência** — migração adiciona a `order_items`:
-- `preco_unit_override numeric NULL`
-- `desconto_item_pct numeric NULL`
-- `justificativa_negociacao text NULL`
-- `preco_unit_efetivo numeric GENERATED` (calculado) — para queries
-
-Em cotações, os mesmos campos vão dentro do jsonb `items` (sem migração de schema).
-
-**Auditoria**:
-- `negociacaoLog` já existe; estender `NegociacaoLog` com `overridesPorItem: Array<{sku, precoTabela, precoOverride, descontoPct, justificativa}>`.
-
-### 2. Garantia de snapshot na conversão cotação → pedido
-
-`ConverterEmPedidoModal` hoje recarrega produtos vigentes. Ajustar para:
-- Usar `i.product.precoAtacado` (do snapshot da cotação) como preço base no novo pedido.
-- Mostrar aviso visual se o preço vigente diverge do snapshot, mas **não recalcular automaticamente** (regra "congelar tudo" escolhida).
-
-## Detalhes técnicos
-
-**Cálculo do subtotal por item:**
-```text
-precoEfetivo = precoOverride ?? product.precoAtacado
-subtotalItem = precoEfetivo * quantity * (1 - (descontoItemPct ?? 0) / 100)
+## Arquivos novos
+```
+src/types/preSelecao.ts
+src/store/preSelecaoStore.ts
+src/lib/preSelecao.ts               (helpers: gerar id, converter para cotação, base64)
+src/routes/pre-selecao.tsx          (catálogo público)
+src/routes/reunioes.tsx             (painel)
+src/routes/reunioes.importar.tsx    (import via hash)
+src/components/reunioes/
+  PreSelecaoDrawer.tsx
+  GerarLinkModal.tsx
+  ConverterCotacaoModal.tsx
+src/components/publico/
+  PublicCatalogHeader.tsx
+  PublicProductCard.tsx
+  PublicSummaryBar.tsx
+  DadosEmpresaModal.tsx
+  ConfirmacaoPreSelecao.tsx
 ```
 
-O `CartCommercialPanel` (faixas, frete, bonus PIX) continua usando `subtotalBruto = Σ subtotalItem` — toda a régua comercial existente passa a operar sobre o bruto já negociado, sem mudança.
+## Arquivos alterados
+- `src/components/layout/Header.tsx` + `BottomNav.tsx`: adicionar item "Reuniões" com badge.
+- `src/routes/dashboard.tsx`: card de destaque para novas pré-seleções.
+- `src/routes/__root.tsx`: garantir que `/pre-selecao` seja pública (fora de `_authenticated`, se aplicável).
+- `src/routes/settings.tsx` (Regras Gerais): campo expiração.
+- `package.json`: adicionar `qrcode` e `@types/qrcode`.
 
-**Validação na confirmação do pedido:**
-- Se houver override em alguma linha E `justificativaNegociacao` vazia → bloqueia + toast
-- Se modo negociação não estiver ativo mas houver override → limpar overrides (defensivo)
-
-**Permissão:**
-- Override só liberado quando `useNegotiation().ativo === true` (já protegido por senha master)
-
-## Arquivos afetados
-
-- `src/types/index.ts` — campos novos em CartItem
-- `src/store/orderStore.ts` — ações + recálculo
-- `src/store/negotiationStore.ts` — extensão do log
-- `src/routes/cart.tsx` — UI inline de override
-- `src/components/cart/FinalConfirmModal.tsx` — exibir resumo de negociações por item
-- `src/components/cotacoes/ConverterEmPedidoModal.tsx` — respeitar snapshot
-- `supabase/migrations/<novo>.sql` — colunas em order_items
+## Regras preservadas
+- Isolamento por vendedor idêntico ao módulo de pedidos.
+- Múltiplos e regras de estoque idênticos ao catálogo B2B.
+- Ordenação nos exports mantém a regra atual de PDF (coleção → modelo → cor → nº).
+- Nada muda em pedidos/cotações existentes; conversão apenas cria uma cotação nova.
 
 ## Fora de escopo
+- Backend real de sincronização (só MVP com base64/URL).
+- Notificações push/e-mail — só badge in-app.
+- Editar preço de varejo no catálogo público (é read-only do cadastro).
 
-- Piso por produto (`preco_minimo`) — não foi escolhido
-- UI de auditoria histórica das negociações (log já é gravado, leitura fica para depois)
-- Alteração no fluxo de cotações antigas (snapshot já funciona)
+Confirma que sigo com essa abordagem — em especial o mecanismo de sync via URL/base64 no MVP?

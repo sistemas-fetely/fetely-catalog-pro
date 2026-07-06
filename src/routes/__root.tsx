@@ -142,10 +142,11 @@ function RootComponent() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isStand = pathname === "/stand" || pathname.startsWith("/stand/");
   const isQualificacao = pathname === "/qualificacao" || pathname.startsWith("/qualificacao/");
+  const isPreSelecao = pathname === "/pre-selecao" || pathname.startsWith("/pre-selecao/");
   return (
     <QueryClientProvider client={queryClient}>
       <BootEffects />
-      {isStand ? (
+      {isStand || isPreSelecao ? (
         <Outlet />
       ) : isQualificacao ? (
         <div className="min-h-screen bg-background text-text-primary">
@@ -196,6 +197,8 @@ function BootEffects() {
         pathname === "/produto" ||
         pathname === "/stand" ||
         pathname.startsWith("/stand/") ||
+        pathname === "/pre-selecao" ||
+        pathname.startsWith("/pre-selecao/") ||
         pathname === "/qualificacao";
       if (!isPublic) {
         navigate({ to: "/login", search: { redirect: pathname } as never });

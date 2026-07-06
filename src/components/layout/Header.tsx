@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BarChart3, ChevronDown, ClipboardList, FileClock, FileText, KeyRound, Lock, LogOut, Menu, Moon, Radar, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
+import { BarChart3, ChevronDown, ClipboardList, FileClock, FileText, Handshake, KeyRound, Lock, LogOut, Menu, Moon, Radar, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
+import { usePreSelecao, usePreSelecoesEscopo } from "@/store/preSelecaoStore";
 import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
 import { useOrder } from "@/store/orderStore";
 import { useUI } from "@/store/uiStore";
@@ -143,6 +144,7 @@ export function Header() {
                   <span className="hidden lg:inline px-1 py-1.5">Cotações</span>
                 </Link>
               )}
+              <ReunioesNavLink pathname={pathname} navLinkClass={navLinkClass} />
               {temPermissao("clientes_lista", "ver") && (
                 <Link to="/clientes" className={navLinkClass(pathname.startsWith("/clientes"))}>
                   <Users className="h-4 w-4" />
@@ -373,5 +375,29 @@ export function Header() {
       </header>
       <ChangePasswordDialog open={changePwOpen} onOpenChange={setChangePwOpen} />
     </TooltipProvider>
+  );
+}
+
+function ReunioesNavLink({
+  pathname,
+  navLinkClass,
+}: {
+  pathname: string;
+  navLinkClass: (active: boolean) => string;
+}) {
+  const hydrate = usePreSelecao((s) => s.hydrate);
+  useEffect(() => { hydrate(); }, [hydrate]);
+  const lista = usePreSelecoesEscopo();
+  const novas = lista.filter((p) => p.status === "nova").length;
+  return (
+    <Link to="/reunioes" className={navLinkClass(pathname.startsWith("/reunioes"))}>
+      <Handshake className="h-4 w-4" />
+      <span className="hidden lg:inline px-1 py-1.5">Reuniões</span>
+      {novas > 0 && (
+        <span className="ml-1 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1 animate-pulse">
+          {novas}
+        </span>
+      )}
+    </Link>
   );
 }
