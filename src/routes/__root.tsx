@@ -196,6 +196,8 @@ function BootEffects() {
         pathname === "/produto" ||
         pathname === "/stand" ||
         pathname.startsWith("/stand/") ||
+        pathname === "/pre-selecao" ||
+        pathname.startsWith("/pre-selecao/") ||
         pathname === "/qualificacao";
       if (!isPublic) {
         navigate({ to: "/login", search: { redirect: pathname } as never });
