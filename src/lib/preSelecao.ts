@@ -4,6 +4,14 @@ import { EXPIRACAO_PADRAO_HORAS } from "@/types/preSelecao";
 const STORAGE_KEY = "fetely_pre_selecoes";
 const COUNTER_KEY = "fetely_pre_selecao_counter";
 
+/**
+ * URL pública oficial do catálogo — usada em todos os links compartilhados
+ * (pré-seleção, QR code, WhatsApp). Não usar `window.location.origin`
+ * porque isso gera links do preview (`id-preview--...lovable.app`) que
+ * não funcionam publicamente.
+ */
+export const PUBLIC_SITE_URL = "https://fetely-catalog-pro.lovable.app";
+
 export function loadPreSelecoes(): PreSelecao[] {
   if (typeof window === "undefined") return [];
   try {

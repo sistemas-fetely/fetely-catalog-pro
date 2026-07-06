@@ -24,12 +24,16 @@ const COLECAO_FIRST_CATEGORIES = new Set(["Celebrar à Mesa", "Acessórios de Me
 const SUBDIVIDED_GROUPS = new Set(["Jogo Americano", "Copos e Taças", "Talheres"]);
 const GRP_PREFIX = "GRP::";
 
-function buildTree(products: Product[]): Tree {
+function buildTree(products: Product[], filterMode: "atacado" | "varejo" = "atacado"): Tree {
   const tree: Tree = {};
   for (const p of products) {
     // só inclui produtos ativos e com preço
     if (p.ativo === false) continue;
-    if (!p.precoAtacado || p.precoAtacado <= 0) continue;
+    if (filterMode === "atacado") {
+      if (!p.precoAtacado || p.precoAtacado <= 0) continue;
+    } else {
+      if (!p.precoVarejo || p.precoVarejo <= 0) continue;
+    }
     if (!tree[p.categoria]) tree[p.categoria] = {};
     const colecaoFirst = COLECAO_FIRST_CATEGORIES.has(p.categoria);
 
@@ -68,11 +72,17 @@ function isColecaoFirst(categoria: string) {
 interface Props {
   onNavigate?: () => void;
   forceExpanded?: boolean;
+  /** Rota-base para navegação. Padrão: "/catalog". Use "/pre-selecao" no catálogo público de reuniões. */
+  basePath?: "/catalog" | "/pre-selecao";
+  /** Filtro de preço para montagem da árvore. "atacado" (default B2B) ou "varejo" (pré-seleção pública). */
+  filterMode?: "atacado" | "varejo";
+  /** Esconde o rodapé de carrinho (usado quando basePath != /catalog). */
+  hideCart?: boolean;
 }
 
-export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
+export function CatalogSidebar({ onNavigate, forceExpanded, basePath = "/catalog", filterMode = "atacado", hideCart }: Props) {
   const products = useCatalog((s) => s.products);
-  const tree = useMemo(() => buildTree(products), [products]);
+  const tree = useMemo(() => buildTree(products, filterMode), [products, filterMode]);
   const collapsedState = useUI((s) => s.sidebarCollapsed);
   const toggleSidebar = useUI((s) => s.toggleSidebar);
   const expandedGroups = useUI((s) => s.expandedGroups);
@@ -86,15 +96,15 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
 
   const search = useRouterState({ select: (r) => r.location.search as { colecao?: string; grupo?: string } });
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const activeColecao = pathname === "/catalog" ? search.colecao : undefined;
-  const activeGrupo = pathname === "/catalog" ? search.grupo : undefined;
+  const activeColecao = pathname === basePath ? search.colecao : undefined;
+  const activeGrupo = pathname === basePath ? search.grupo : undefined;
   const navigate = useNavigate();
 
   const handleSelectColecao = (colecao: string, grupo?: string, categoria?: string) => {
     const search: { colecao: string; grupo?: string; categoria?: string } = { colecao };
     if (grupo) search.grupo = grupo;
     if (categoria) search.categoria = categoria;
-    navigate({ to: "/catalog", search });
+    navigate({ to: basePath as "/catalog", search: search as never });
     onNavigate?.();
   };
 
@@ -265,7 +275,7 @@ export function CatalogSidebar({ onNavigate, forceExpanded }: Props) {
         ))}
       </nav>
 
-      {!isPublic && (!collapsed ? (
+      {!isPublic && !hideCart && (!collapsed ? (
         <div className="border-t border-border p-3 bg-surface-2/40">
           <div className="text-[10px] uppercase tracking-[0.2em] text-gold-muted flex items-center gap-1.5">
             <ShoppingBag className="h-3 w-3" /> Carrinho

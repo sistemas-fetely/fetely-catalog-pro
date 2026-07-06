@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { X } from "lucide-react";
+import { X, Heart, Check } from "lucide-react";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { formatBRL, isValidMultiple } from "@/lib/format";
@@ -13,9 +13,19 @@ import type { Product } from "@/types";
 
 interface ProductCardProps {
   product: Product;
+  /**
+   * Modo "pré-seleção" (catálogo público de reuniões).
+   * Quando presente, substitui o bloco de adicionar-ao-carrinho por
+   * controles de interesse + quantidade opcional.
+   */
+  preSelecao?: {
+    qty: number | undefined; // undefined = não selecionado; 0 = interesse sem qtd
+    onQty: (q: number) => void;
+    onInteresse: () => void;
+  };
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, preSelecao }: ProductCardProps) {
   const [qty, setQty] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const addItem = useOrder((s) => s.addItem);
@@ -185,7 +195,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
 
-        {!isPublic && (
+        {!isPublic && !preSelecao && (
           <div className="mt-auto space-y-2 pt-2 border-t border-border/60">
             <div className="text-[10px] uppercase tracking-wider text-text-muted">
               Caixa: {product.multiplos} un. — mínimo
@@ -209,6 +219,49 @@ export function ProductCard({ product }: ProductCardProps) {
             </button>
           </div>
         )}
+
+        {preSelecao && (() => {
+          const selected = preSelecao.qty !== undefined;
+          const isInterest = preSelecao.qty === 0;
+          return (
+            <div className="mt-auto space-y-2 pt-2 border-t border-border/60">
+              <div className="text-[10px] uppercase tracking-wider text-text-muted flex items-center justify-between">
+                <span>Caixa: {product.multiplos} un.</span>
+                {selected && (
+                  <span className="inline-flex items-center gap-1 text-gold">
+                    <Check className="h-3 w-3" /> selecionado
+                  </span>
+                )}
+              </div>
+              {!isInterest && (
+                <QuantityInput
+                  value={preSelecao.qty ?? 0}
+                  onChange={preSelecao.onQty}
+                  multiplos={product.multiplos}
+                  disabled={indisponivel}
+                />
+              )}
+              {isInterest && (
+                <div className="rounded-md border border-gold/40 bg-gold/10 px-3 py-1.5 text-[11px] text-gold text-center">
+                  <Heart className="inline h-3 w-3 mr-1" fill="currentColor" />
+                  Interesse marcado (qtd a definir)
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={preSelecao.onInteresse}
+                className={`w-full rounded-md py-1.5 text-[11px] uppercase tracking-wider border transition ${
+                  isInterest
+                    ? "border-gold/50 text-gold hover:bg-gold/10"
+                    : "border-border text-text-secondary hover:border-gold/40 hover:text-gold"
+                }`}
+              >
+                <Heart className="inline h-3 w-3 mr-1" fill={isInterest ? "currentColor" : "none"} />
+                {isInterest ? "Remover interesse" : "Tenho interesse"}
+              </button>
+            </div>
+          );
+        })()}
       </div>
     </article>
   );
