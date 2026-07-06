@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { ChevronRight, X, Menu, Heart, ArrowRight, Search } from "lucide-react";
@@ -19,6 +20,7 @@ import { fetchCNPJ, formatCNPJ, isValidCNPJLength } from "@/lib/cnpj";
 import { toast } from "sonner";
 import { SEGMENTO_LABEL, type SegmentoCliente } from "@/types/preSelecao";
 import { buildPreSelecao, encodePreSelecao, itemFromProductQty, submitPreSelecaoRemote, PUBLIC_SITE_URL } from "@/lib/preSelecao";
+import { enviarPreSelecaoPublica } from "@/lib/preSelecao.functions";
 import { usePreSelecao } from "@/store/preSelecaoStore";
 import { formatBRL } from "@/lib/format";
 import type { Product } from "@/types";
@@ -455,6 +457,7 @@ function DadosEmpresaModal({
 
   const adicionar = usePreSelecao((s) => s.adicionar);
   const hydrate = usePreSelecao((s) => s.hydrate);
+  const enviarPreSelecao = useServerFn(enviarPreSelecaoPublica);
   useEffect(() => { hydrate(); }, [hydrate]);
 
   async function buscarCnpj() {
@@ -510,11 +513,16 @@ function DadosEmpresaModal({
       });
       // 1) Envia ao backend (fonte da verdade — chega no /reunioes do vendedor).
       try {
-        await submitPreSelecaoRemote(pre);
+        await enviarPreSelecao({ data: pre });
       } catch (e) {
-        console.error("[pre-selecao] falha ao enviar remoto", e);
-        toast.error("Não foi possível enviar. Tente novamente.");
-        return;
+        console.warn("[pre-selecao] função do servidor falhou; tentando envio direto", e);
+        try {
+          await submitPreSelecaoRemote(pre);
+        } catch (fallbackError) {
+          console.error("[pre-selecao] falha ao enviar remoto", fallbackError);
+          toast.error("Não foi possível enviar. Tente novamente.");
+          return;
+        }
       }
       // 2) Guarda também localmente (fallback + link de sincronização).
       adicionar(pre);

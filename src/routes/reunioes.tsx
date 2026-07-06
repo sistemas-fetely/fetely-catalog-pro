@@ -32,7 +32,21 @@ const TABS: { key: StatusPreSelecao | "todas"; label: string }[] = [
 
 function ReunioesPage() {
   const hydrate = usePreSelecao((s) => s.hydrate);
-  useEffect(() => { hydrate(); }, [hydrate]);
+  const refresh = usePreSelecao((s) => s.refresh);
+  const session = useAuth((s) => s.session);
+  const profile = useAuth((s) => s.profile);
+  useEffect(() => { hydrate(); }, [hydrate, session?.user.id, profile?.id]);
+  useEffect(() => {
+    if (!session) return;
+    void refresh();
+    const interval = window.setInterval(() => void refresh(), 10000);
+    const onFocus = () => void refresh();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [refresh, session]);
 
   const todas = usePreSelecoesEscopo();
   const [tab, setTab] = useState<StatusPreSelecao | "todas">("nova");
