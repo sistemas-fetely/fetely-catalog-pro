@@ -427,7 +427,7 @@ function ComercialNav({
   activeClass,
 }: {
   pathname: string;
-  temPermissao: (tela: string, acao: string) => boolean;
+  temPermissao: (tela: string, acao?: any) => boolean;
   activeClass: (active: boolean) => string;
 }) {
   const [open, setOpen] = useState(false);
