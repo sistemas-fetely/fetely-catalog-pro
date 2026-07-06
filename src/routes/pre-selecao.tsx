@@ -508,6 +508,15 @@ function DadosEmpresaModal({
         aceitaNewsletter,
         itens,
       });
+      // 1) Envia ao backend (fonte da verdade — chega no /reunioes do vendedor).
+      try {
+        await submitPreSelecaoRemote(pre);
+      } catch (e) {
+        console.error("[pre-selecao] falha ao enviar remoto", e);
+        toast.error("Não foi possível enviar. Tente novamente.");
+        return;
+      }
+      // 2) Guarda também localmente (fallback + link de sincronização).
       adicionar(pre);
       onDone(pre);
     } finally { setEnviando(false); }
