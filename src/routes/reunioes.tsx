@@ -380,13 +380,11 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
           <h3 className="text-xs uppercase tracking-wider text-gold-muted">Ações</h3>
           <Button
             className="w-full bg-gold hover:bg-gold-light text-background justify-start"
-            onClick={() => {
-              // TODO Fase 2: pré-popular cotacaoStore com itens e cliente
-              toast.info("Abrindo módulo de cotação...");
-              navigate({ to: "/cotacoes" });
-            }}
+            onClick={converterEmCotacao}
+            disabled={convertendo}
           >
-            <ArrowRight className="h-4 w-4" /> Converter em Cotação
+            <ArrowRight className="h-4 w-4" />
+            {convertendo ? "Criando cotação…" : "Converter em Cotação"}
           </Button>
           <Button variant="outline" className="w-full justify-start" asChild>
             <a href={whatsappLink()} target="_blank" rel="noreferrer">
