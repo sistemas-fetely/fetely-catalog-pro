@@ -9,7 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useAuth } from "@/store/authStore";
 import { usePreSelecao, usePreSelecoesEscopo } from "@/store/preSelecaoStore";
+import { useCatalog } from "@/store/catalogStore";
+import { useCotacao } from "@/store/cotacaoStore";
 import { STATUS_PRE_LABEL, SEGMENTO_LABEL, type StatusPreSelecao, type PreSelecao } from "@/types/preSelecao";
+import type { CartItem, OrderMeta } from "@/types";
 import { formatBRL } from "@/lib/format";
 import { tempoRestante, PUBLIC_SITE_URL } from "@/lib/preSelecao";
 import { cn } from "@/lib/utils";
