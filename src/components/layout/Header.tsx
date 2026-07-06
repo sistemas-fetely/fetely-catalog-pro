@@ -420,3 +420,66 @@ function ReunioesNavLink({
     </Link>
   );
 }
+
+function ComercialNav({
+  pathname,
+  temPermissao,
+  activeClass,
+}: {
+  pathname: string;
+  temPermissao: (tela: string, acao: string) => boolean;
+  activeClass: (active: boolean) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const active =
+    pathname.startsWith("/orders") ||
+    pathname.startsWith("/cotacoes") ||
+    pathname.startsWith("/provisoes");
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger
+        asChild
+        onMouseEnter={() => setOpen(true)}
+      >
+        <button
+          className={activeClass(active) + " cursor-pointer"}
+          aria-label="Comercial"
+        >
+          Comercial
+          <ChevronDown className="h-3 w-3 opacity-70" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        className="w-48 bg-surface border border-border"
+        onMouseLeave={() => setOpen(false)}
+      >
+        {temPermissao("pedidos_lista", "ver") && (
+          <DropdownMenuItem asChild className="cursor-pointer focus:text-gold">
+            <Link to="/orders" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-wider">Pedidos</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {temPermissao("cotacoes_lista", "ver") && (
+          <DropdownMenuItem asChild className="cursor-pointer focus:text-gold">
+            <Link to="/cotacoes" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-wider">Cotações</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {temPermissao("provisoes_lista", "ver") && (
+          <DropdownMenuItem asChild className="cursor-pointer focus:text-gold">
+            <Link to="/provisoes" className="flex items-center gap-2">
+              <FileClock className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-wider">Provisões</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
