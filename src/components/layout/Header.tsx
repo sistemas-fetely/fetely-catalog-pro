@@ -44,6 +44,7 @@ export function Header() {
   const negociacaoAtiva = useNegotiation((s) => s.ativo);
   const temPermissao = useTemPermissao();
   const [changePwOpen, setChangePwOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
