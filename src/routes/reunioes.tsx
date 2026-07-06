@@ -9,7 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useAuth } from "@/store/authStore";
 import { usePreSelecao, usePreSelecoesEscopo } from "@/store/preSelecaoStore";
+import { useCatalog } from "@/store/catalogStore";
+import { useCotacao } from "@/store/cotacaoStore";
 import { STATUS_PRE_LABEL, SEGMENTO_LABEL, type StatusPreSelecao, type PreSelecao } from "@/types/preSelecao";
+import type { CartItem, OrderMeta } from "@/types";
 import { formatBRL } from "@/lib/format";
 import { tempoRestante, PUBLIC_SITE_URL } from "@/lib/preSelecao";
 import { cn } from "@/lib/utils";
@@ -223,12 +226,18 @@ function StatusPill({ status }: { status: StatusPreSelecao }) {
 function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => void }) {
   const marcarVisualizada = usePreSelecao((s) => s.marcarVisualizada);
   const atualizarStatus = usePreSelecao((s) => s.atualizarStatus);
+  const vincularCotacao = usePreSelecao((s) => s.vincularCotacao);
   const descartar = usePreSelecao((s) => s.descartar);
+  const catalogProducts = useCatalog((s) => s.products);
+  const criarCotacao = useCotacao((s) => s.criarCotacao);
+  const profile = useAuth((s) => s.profile);
+  const [convertendo, setConvertendo] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (pre.status === "nova") marcarVisualizada(pre.id);
   }, [pre.id, pre.status, marcarVisualizada]);
+
 
   function whatsappLink() {
     const num = pre.contatoWhatsapp.replace(/\D/g, "");
@@ -246,6 +255,60 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
     navigator.clipboard.writeText(texto);
     toast.success("Lista copiada");
   }
+
+  async function converterEmCotacao() {
+    if (convertendo) return;
+    const itensComQtd = pre.itens.filter((i) => !i.temInteresseSemQtd && i.quantidade > 0);
+    if (itensComQtd.length === 0) {
+      toast.error("Nenhum item com quantidade definida para converter");
+      return;
+    }
+    const cartItems: CartItem[] = [];
+    const naoEncontrados: string[] = [];
+    for (const it of itensComQtd) {
+      const product = catalogProducts.find((p) => p.sku === it.sku);
+      if (!product) {
+        naoEncontrados.push(it.sku);
+        continue;
+      }
+      cartItems.push({ sku: product.sku, product, quantity: it.quantidade });
+    }
+    if (cartItems.length === 0) {
+      toast.error("Nenhum SKU da pré-seleção foi encontrado no catálogo atual");
+      return;
+    }
+    const total = cartItems.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0);
+    const meta: OrderMeta = {
+      cliente: pre.razaoSocial || pre.nomeFantasia,
+      cnpj: pre.cnpj,
+      condicaoPagamento: "",
+      observacoes: `Origem: Pré-seleção #${pre.id} (${pre.contatoNome})${pre.observacao ? ` · ${pre.observacao}` : ""}`,
+      vendedor: profile?.nome_completo ?? profile?.email ?? "—",
+      nomeFantasia: pre.nomeFantasia,
+      email: pre.contatoEmail,
+      telefone: pre.contatoWhatsapp,
+      municipio: pre.cidadeEstado,
+      pedidoOrigem: "direto",
+    };
+    setConvertendo(true);
+    try {
+      const cot = await criarCotacao({ items: cartItems, meta, total });
+      vincularCotacao(pre.id, cot.id);
+      if (naoEncontrados.length > 0) {
+        toast.warning(`Cotação ${cot.id} criada · ${naoEncontrados.length} SKU(s) fora do catálogo foram ignorados`);
+      } else {
+        toast.success(`Cotação ${cot.id} criada a partir da pré-seleção`);
+      }
+      onClose();
+      navigate({ to: "/cotacoes" });
+    } catch (e) {
+      console.error("[reunioes] converter em cotação falhou", e);
+      toast.error(e instanceof Error ? e.message : "Não foi possível criar a cotação");
+    } finally {
+      setConvertendo(false);
+    }
+  }
+
 
   return (
     <div className="flex flex-col h-full">
@@ -317,13 +380,11 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
           <h3 className="text-xs uppercase tracking-wider text-gold-muted">Ações</h3>
           <Button
             className="w-full bg-gold hover:bg-gold-light text-background justify-start"
-            onClick={() => {
-              // TODO Fase 2: pré-popular cotacaoStore com itens e cliente
-              toast.info("Abrindo módulo de cotação...");
-              navigate({ to: "/cotacoes" });
-            }}
+            onClick={converterEmCotacao}
+            disabled={convertendo}
           >
-            <ArrowRight className="h-4 w-4" /> Converter em Cotação
+            <ArrowRight className="h-4 w-4" />
+            {convertendo ? "Criando cotação…" : "Converter em Cotação"}
           </Button>
           <Button variant="outline" className="w-full justify-start" asChild>
             <a href={whatsappLink()} target="_blank" rel="noreferrer">
