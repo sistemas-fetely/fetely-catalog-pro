@@ -1288,6 +1288,104 @@ export type Database = {
         }
         Relationships: []
       }
+      pre_selecoes: {
+        Row: {
+          aceita_newsletter: boolean
+          atribuido_para_vendedor_id: string | null
+          cidade_estado: string
+          cliente_b2b_id: string | null
+          cnpj: string
+          contato_cargo: string | null
+          contato_email: string
+          contato_nome: string
+          contato_whatsapp: string
+          cotacao_gerada_id: string | null
+          criado_em: string
+          expira_em: string
+          id: string
+          itens: Json
+          nome_fantasia: string
+          observacao: string | null
+          pedido_gerado_id: string | null
+          razao_social: string
+          segmento: string
+          status: string
+          total_itens: number
+          total_unidades: number
+          total_varejo_ref: number
+          updated_at: string
+          vendedor_login: string | null
+          vendedor_nome: string | null
+          visualizado_em: string | null
+        }
+        Insert: {
+          aceita_newsletter?: boolean
+          atribuido_para_vendedor_id?: string | null
+          cidade_estado: string
+          cliente_b2b_id?: string | null
+          cnpj: string
+          contato_cargo?: string | null
+          contato_email: string
+          contato_nome: string
+          contato_whatsapp: string
+          cotacao_gerada_id?: string | null
+          criado_em?: string
+          expira_em: string
+          id: string
+          itens?: Json
+          nome_fantasia: string
+          observacao?: string | null
+          pedido_gerado_id?: string | null
+          razao_social: string
+          segmento: string
+          status?: string
+          total_itens?: number
+          total_unidades?: number
+          total_varejo_ref?: number
+          updated_at?: string
+          vendedor_login?: string | null
+          vendedor_nome?: string | null
+          visualizado_em?: string | null
+        }
+        Update: {
+          aceita_newsletter?: boolean
+          atribuido_para_vendedor_id?: string | null
+          cidade_estado?: string
+          cliente_b2b_id?: string | null
+          cnpj?: string
+          contato_cargo?: string | null
+          contato_email?: string
+          contato_nome?: string
+          contato_whatsapp?: string
+          cotacao_gerada_id?: string | null
+          criado_em?: string
+          expira_em?: string
+          id?: string
+          itens?: Json
+          nome_fantasia?: string
+          observacao?: string | null
+          pedido_gerado_id?: string | null
+          razao_social?: string
+          segmento?: string
+          status?: string
+          total_itens?: number
+          total_unidades?: number
+          total_varejo_ref?: number
+          updated_at?: string
+          vendedor_login?: string | null
+          vendedor_nome?: string | null
+          visualizado_em?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pre_selecoes_atribuido_para_vendedor_id_fkey"
+            columns: ["atribuido_para_vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_price_history: {
         Row: {
           acao: string
