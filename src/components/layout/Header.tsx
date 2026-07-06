@@ -124,53 +124,39 @@ export function Header() {
 
           {/* Primary nav (left group) — apenas usuários autenticados */}
           {isInternalUser && (
-            <nav className="hidden md:flex items-center gap-1 ml-2">
+            <nav className="hidden md:flex items-center gap-0.5 ml-4">
               {temPermissao("catalogo", "ver") && (
                 <Link to="/catalog" className={navLinkClass(pathname.startsWith("/catalog"))}>
-                  <span className="px-2 py-1.5">Catálogo</span>
+                  Catálogo
                 </Link>
               )}
-              {temPermissao("pedidos_lista", "ver") && (
-                <Link to="/orders" className={navLinkClass(pathname.startsWith("/orders"))}>
-                  <ClipboardList className="h-4 w-4" />
-                  <span className="hidden lg:inline px-1 py-1.5">Pedidos</span>
-                </Link>
+
+              {(temPermissao("pedidos_lista", "ver") ||
+                temPermissao("cotacoes_lista", "ver") ||
+                temPermissao("provisoes_lista", "ver")) && (
+                <ComercialNav
+                  pathname={pathname}
+                  temPermissao={temPermissao}
+                  activeClass={navLinkClass}
+                />
               )}
+
               {temPermissao("pedidos_lista", "ver") && (
                 <Link to="/farol" className={navLinkClass(pathname.startsWith("/farol"))}>
-                  <Radar className="h-4 w-4" />
-                  <span className="hidden lg:inline px-1 py-1.5">Farol</span>
-                </Link>
-              )}
-              {temPermissao("cotacoes_lista", "ver") && (
-                <Link to="/cotacoes" className={navLinkClass(pathname.startsWith("/cotacoes"))}>
-                  <FileText className="h-4 w-4" />
-                  <span className="hidden lg:inline px-1 py-1.5">Cotações</span>
+                  Farol
                 </Link>
               )}
               <ReunioesNavLink pathname={pathname} navLinkClass={navLinkClass} />
               {temPermissao("clientes_lista", "ver") && (
                 <Link to="/clientes" className={navLinkClass(pathname.startsWith("/clientes"))}>
-                  <Users className="h-4 w-4" />
-                  <span className="hidden lg:inline px-1 py-1.5">Clientes</span>
-                </Link>
-              )}
-              {temPermissao("provisoes_lista", "ver") && (
-                <Link to="/provisoes" className={navLinkClass(pathname.startsWith("/provisoes"))}>
-                  <FileClock className="h-4 w-4" />
-                  <span className="hidden lg:inline px-1 py-1.5">Provisões</span>
+                  Clientes
                 </Link>
               )}
             </nav>
           )}
 
-          {/* Search (center) — apenas autenticados */}
-          {isInternalUser && (
-            <div className="hidden md:flex flex-1 justify-center max-w-xl mx-auto">
-              <GlobalSearch />
-            </div>
-          )}
-          {!isInternalUser && <div className="flex-1" />}
+          <div className="flex-1" />
+
 
 
           {/* Right actions */}
