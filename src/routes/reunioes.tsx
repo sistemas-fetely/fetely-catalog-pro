@@ -226,12 +226,18 @@ function StatusPill({ status }: { status: StatusPreSelecao }) {
 function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => void }) {
   const marcarVisualizada = usePreSelecao((s) => s.marcarVisualizada);
   const atualizarStatus = usePreSelecao((s) => s.atualizarStatus);
+  const vincularCotacao = usePreSelecao((s) => s.vincularCotacao);
   const descartar = usePreSelecao((s) => s.descartar);
+  const catalogProducts = useCatalog((s) => s.products);
+  const criarCotacao = useCotacao((s) => s.criarCotacao);
+  const profile = useAuth((s) => s.profile);
+  const [convertendo, setConvertendo] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (pre.status === "nova") marcarVisualizada(pre.id);
   }, [pre.id, pre.status, marcarVisualizada]);
+
 
   function whatsappLink() {
     const num = pre.contatoWhatsapp.replace(/\D/g, "");
