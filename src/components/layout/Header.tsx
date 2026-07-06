@@ -401,8 +401,7 @@ function ReunioesNavLink({
   const novas = lista.filter((p) => p.status === "nova").length;
   return (
     <Link to="/reunioes" className={navLinkClass(pathname.startsWith("/reunioes"))}>
-      <Handshake className="h-4 w-4" />
-      <span className="hidden lg:inline px-1 py-1.5">Reuniões</span>
+      Reuniões
       {novas > 0 && (
         <span className="ml-1 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1 animate-pulse">
           {novas}
