@@ -173,6 +173,10 @@ export function Header() {
                 </span>
                 <Lock className="h-3 w-3" /> Negociação
               </Link>
+            )}
+
+            <div className="hidden md:block h-6 w-px bg-border/60 mx-1" />
+
 
             {/* Search icon — abre overlay */}
             {isInternalUser && (
