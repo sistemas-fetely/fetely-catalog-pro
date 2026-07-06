@@ -125,7 +125,7 @@ export function CatalogSidebar({
   const isPublic = !useAuth((s) => s.session);
 
   const search = useRouterState({
-    select: (r) => r.location.search as { colecao?: string; grupo?: string; categoria?: string },
+    select: (r) => r.location.search as { colecao?: string; grupo?: string; categoria?: string; v?: string },
   });
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const activeColecao = pathname === basePath ? search.colecao : undefined;
@@ -141,9 +141,10 @@ export function CatalogSidebar({
   const [filtro, setFiltro] = useState("");
 
   const handleSelectColecao = (colecao: string, grupo?: string, categoria?: string) => {
-    const s: { colecao: string; grupo?: string; categoria?: string } = { colecao };
+    const s: { colecao: string; grupo?: string; categoria?: string; v?: string } = { colecao };
     if (grupo) s.grupo = grupo;
     if (categoria) s.categoria = categoria;
+    if (basePath === "/pre-selecao" && search.v) s.v = search.v;
     navigate({ to: basePath as "/catalog", search: s as never });
     onNavigate?.();
   };
@@ -238,7 +239,14 @@ export function CatalogSidebar({
             ) : (
               <button
                 onClick={() => {
-                  navigate({ to: "/catalog/categoria/$categoria", params: { categoria } });
+                  if (basePath === "/pre-selecao") {
+                    navigate({
+                      to: "/pre-selecao",
+                      search: { categoria, v: search.v || undefined } as never,
+                    });
+                  } else {
+                    navigate({ to: "/catalog/categoria/$categoria", params: { categoria } });
+                  }
                   onNavigate?.();
                 }}
                 className={`w-full text-left px-3 py-2 mb-1 text-[12px] uppercase tracking-[0.18em] flex items-center gap-2 transition font-semibold border-l-2 ${

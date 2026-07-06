@@ -28,10 +28,22 @@ export function savePreSelecoes(list: PreSelecao[]): void {
 }
 
 export function nextPreSelecaoId(): string {
-  if (typeof window === "undefined") return "PS0001";
-  const n = parseInt(localStorage.getItem(COUNTER_KEY) || "0", 10) + 1;
-  localStorage.setItem(COUNTER_KEY, String(n));
-  return `PS${String(n).padStart(4, "0")}`;
+  const ts = Date.now().toString(36).toUpperCase().slice(-6);
+  const random =
+    typeof crypto !== "undefined" && "getRandomValues" in crypto
+      ? Array.from(crypto.getRandomValues(new Uint8Array(2)))
+          .map((n) => n.toString(36).padStart(2, "0"))
+          .join("")
+          .toUpperCase()
+          .slice(0, 4)
+      : Math.random().toString(36).slice(2, 6).toUpperCase();
+
+  if (typeof window !== "undefined") {
+    const n = parseInt(localStorage.getItem(COUNTER_KEY) || "0", 10) + 1;
+    localStorage.setItem(COUNTER_KEY, String(n));
+  }
+
+  return `PS${ts}${random}`;
 }
 
 export function buildPreSelecao(input: Omit<PreSelecao, "id" | "criadoEm" | "expiraEm" | "status" | "totalItens" | "totalUnidades" | "totalVarejoRef">): PreSelecao {
