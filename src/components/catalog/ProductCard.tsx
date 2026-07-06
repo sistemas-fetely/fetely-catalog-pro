@@ -13,9 +13,19 @@ import type { Product } from "@/types";
 
 interface ProductCardProps {
   product: Product;
+  /**
+   * Modo "pré-seleção" (catálogo público de reuniões).
+   * Quando presente, substitui o bloco de adicionar-ao-carrinho por
+   * controles de interesse + quantidade opcional.
+   */
+  preSelecao?: {
+    qty: number | undefined; // undefined = não selecionado; 0 = interesse sem qtd
+    onQty: (q: number) => void;
+    onInteresse: () => void;
+  };
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, preSelecao }: ProductCardProps) {
   const [qty, setQty] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const addItem = useOrder((s) => s.addItem);
