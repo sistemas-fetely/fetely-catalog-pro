@@ -229,7 +229,13 @@ export async function updatePreSelecaoRemote(
   id: string,
   patch: Partial<PreSelecao>,
 ): Promise<void> {
-  const dbPatch: Record<string, unknown> = {};
+  const dbPatch: {
+    status?: string;
+    visualizado_em?: string | null;
+    cotacao_gerada_id?: string | null;
+    pedido_gerado_id?: string | null;
+    cliente_b2b_id?: string | null;
+  } = {};
   if (patch.status !== undefined) dbPatch.status = patch.status;
   if (patch.visualizadoEm !== undefined) dbPatch.visualizado_em = patch.visualizadoEm;
   if (patch.cotacaoGeradaId !== undefined) dbPatch.cotacao_gerada_id = patch.cotacaoGeradaId;
