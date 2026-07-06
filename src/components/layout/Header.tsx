@@ -384,6 +384,16 @@ export function Header() {
 
       </header>
       <ChangePasswordDialog open={changePwOpen} onOpenChange={setChangePwOpen} />
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent className="max-w-2xl bg-surface border-border">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl text-text-primary">Buscar</DialogTitle>
+          </DialogHeader>
+          <div onClick={() => setSearchOpen(false)}>
+            <GlobalSearch />
+          </div>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   );
 }
