@@ -1,5 +1,6 @@
-import type { PreSelecao, ItemPreSelecao } from "@/types/preSelecao";
+import type { PreSelecao, ItemPreSelecao, SegmentoCliente, StatusPreSelecao } from "@/types/preSelecao";
 import { EXPIRACAO_PADRAO_HORAS } from "@/types/preSelecao";
+import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "fetely_pre_selecoes";
 const COUNTER_KEY = "fetely_pre_selecao_counter";
