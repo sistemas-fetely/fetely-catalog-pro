@@ -54,8 +54,10 @@ export function Header() {
   }, [theme]);
 
   const navLinkClass = (active: boolean) =>
-    `hidden md:flex items-center gap-1.5 uppercase tracking-wider text-xs transition ${
-      active ? "text-gold" : "text-text-secondary hover:text-text-primary"
+    `relative hidden md:flex items-center gap-1.5 uppercase tracking-wider text-xs transition px-3 py-1.5 ${
+      active
+        ? "text-gold after:absolute after:left-3 after:right-3 after:-bottom-[3px] after:h-0.5 after:bg-gold after:rounded-full"
+        : "text-text-secondary hover:text-text-primary"
     }`;
 
   const iconBtnClass =
