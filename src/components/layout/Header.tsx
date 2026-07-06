@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BarChart3, Bookmark, ChevronDown, ClipboardList, FileClock, FileText, Handshake, KeyRound, Lock, LogOut, Menu, Moon, Radar, Search, Settings, ShoppingBag, Sun, User, Users } from "lucide-react";
+import { BarChart3, ChevronDown, ClipboardList, FileClock, FileText, KeyRound, Lock, LogOut, Menu, Moon, Search, Settings, ShoppingBag, Sun, User } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePreSelecao, usePreSelecoesEscopo } from "@/store/preSelecaoStore";
 import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
