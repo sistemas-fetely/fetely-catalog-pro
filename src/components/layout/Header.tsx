@@ -173,7 +173,23 @@ export function Header() {
                 </span>
                 <Lock className="h-3 w-3" /> Negociação
               </Link>
+
+            {/* Search icon — abre overlay */}
+            {isInternalUser && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setSearchOpen(true)}
+                    className={iconBtnClass}
+                    aria-label="Buscar"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Buscar (produtos, coleções)</TooltipContent>
+              </Tooltip>
             )}
+
 
             {/* Dashboard link */}
             {isInternalUser && temPermissao("dashboard", "ver") && (
