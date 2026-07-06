@@ -165,7 +165,7 @@ export function toDbRow(pre: PreSelecao) {
     segmento: pre.segmento,
     observacao: pre.observacao ?? null,
     aceita_newsletter: pre.aceitaNewsletter,
-    itens: pre.itens as unknown as object,
+    itens: pre.itens as unknown as import("@/integrations/supabase/types").Json,
     total_itens: pre.totalItens,
     total_unidades: pre.totalUnidades,
     total_varejo_ref: pre.totalVarejoRef,
