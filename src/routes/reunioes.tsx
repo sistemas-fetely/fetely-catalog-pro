@@ -11,7 +11,7 @@ import { useAuth } from "@/store/authStore";
 import { usePreSelecao, usePreSelecoesEscopo } from "@/store/preSelecaoStore";
 import { STATUS_PRE_LABEL, SEGMENTO_LABEL, type StatusPreSelecao, type PreSelecao } from "@/types/preSelecao";
 import { formatBRL } from "@/lib/format";
-import { tempoRestante } from "@/lib/preSelecao";
+import { tempoRestante, PUBLIC_SITE_URL } from "@/lib/preSelecao";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -348,8 +348,7 @@ function GerarLinkModal({ open, onOpenChange }: { open: boolean; onOpenChange: (
   const [qr, setQr] = useState<string>("");
 
   const link = useMemo(() => {
-    const base = typeof window !== "undefined" ? window.location.origin : "";
-    return login ? `${base}/pre-selecao?v=${login}` : `${base}/pre-selecao`;
+    return login ? `${PUBLIC_SITE_URL}/pre-selecao?v=${login}` : `${PUBLIC_SITE_URL}/pre-selecao`;
   }, [login]);
 
   useEffect(() => {
