@@ -1,5 +1,6 @@
-import type { PreSelecao, ItemPreSelecao } from "@/types/preSelecao";
+import type { PreSelecao, ItemPreSelecao, SegmentoCliente, StatusPreSelecao } from "@/types/preSelecao";
 import { EXPIRACAO_PADRAO_HORAS } from "@/types/preSelecao";
+import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "fetely_pre_selecoes";
 const COUNTER_KEY = "fetely_pre_selecao_counter";
@@ -112,4 +113,140 @@ export function tempoRestante(pre: PreSelecao): string {
   if (h >= 24) return `${Math.floor(h / 24)}d ${h % 24}h`;
   const m = Math.floor((ms % 3600000) / 60000);
   return `${h}h ${m}m`;
+}
+
+// ---- Supabase sync ----
+
+type DbRow = {
+  id: string;
+  criado_em: string;
+  expira_em: string;
+  vendedor_login: string | null;
+  vendedor_nome: string | null;
+  atribuido_para_vendedor_id: string | null;
+  cnpj: string;
+  razao_social: string;
+  nome_fantasia: string;
+  contato_nome: string;
+  contato_cargo: string | null;
+  contato_email: string;
+  contato_whatsapp: string;
+  cidade_estado: string;
+  segmento: string;
+  observacao: string | null;
+  aceita_newsletter: boolean;
+  itens: unknown;
+  total_itens: number;
+  total_unidades: number;
+  total_varejo_ref: number | string;
+  status: string;
+  cliente_b2b_id: string | null;
+  cotacao_gerada_id: string | null;
+  pedido_gerado_id: string | null;
+  visualizado_em: string | null;
+};
+
+export function toDbRow(pre: PreSelecao) {
+  return {
+    id: pre.id,
+    criado_em: pre.criadoEm,
+    expira_em: pre.expiraEm,
+    vendedor_login: pre.vendedorId,
+    vendedor_nome: pre.vendedorNome,
+    atribuido_para_vendedor_id: pre.atribuidoParaVendedorId ?? null,
+    cnpj: pre.cnpj,
+    razao_social: pre.razaoSocial,
+    nome_fantasia: pre.nomeFantasia,
+    contato_nome: pre.contatoNome,
+    contato_cargo: pre.contatoCargo ?? null,
+    contato_email: pre.contatoEmail,
+    contato_whatsapp: pre.contatoWhatsapp,
+    cidade_estado: pre.cidadeEstado,
+    segmento: pre.segmento,
+    observacao: pre.observacao ?? null,
+    aceita_newsletter: pre.aceitaNewsletter,
+    itens: pre.itens as unknown as import("@/integrations/supabase/types").Json,
+    total_itens: pre.totalItens,
+    total_unidades: pre.totalUnidades,
+    total_varejo_ref: pre.totalVarejoRef,
+    status: pre.status,
+    cliente_b2b_id: pre.clienteB2bId ?? null,
+    cotacao_gerada_id: pre.cotacaoGeradaId ?? null,
+    pedido_gerado_id: pre.pedidoGeradoId ?? null,
+    visualizado_em: pre.visualizadoEm ?? null,
+  };
+}
+
+export function fromDbRow(r: DbRow): PreSelecao {
+  return {
+    id: r.id,
+    criadoEm: r.criado_em,
+    expiraEm: r.expira_em,
+    vendedorId: r.vendedor_login,
+    vendedorNome: r.vendedor_nome,
+    atribuidoParaVendedorId: r.atribuido_para_vendedor_id ?? undefined,
+    cnpj: r.cnpj,
+    razaoSocial: r.razao_social,
+    nomeFantasia: r.nome_fantasia,
+    contatoNome: r.contato_nome,
+    contatoCargo: r.contato_cargo ?? undefined,
+    contatoEmail: r.contato_email,
+    contatoWhatsapp: r.contato_whatsapp,
+    cidadeEstado: r.cidade_estado,
+    segmento: r.segmento as SegmentoCliente,
+    observacao: r.observacao ?? undefined,
+    aceitaNewsletter: r.aceita_newsletter,
+    itens: (Array.isArray(r.itens) ? r.itens : []) as ItemPreSelecao[],
+    totalItens: r.total_itens,
+    totalUnidades: r.total_unidades,
+    totalVarejoRef: Number(r.total_varejo_ref) || 0,
+    status: r.status as StatusPreSelecao,
+    clienteB2bId: r.cliente_b2b_id ?? undefined,
+    cotacaoGeradaId: r.cotacao_gerada_id ?? undefined,
+    pedidoGeradoId: r.pedido_gerado_id ?? undefined,
+    visualizadoEm: r.visualizado_em ?? undefined,
+  };
+}
+
+/** Insere a pré-seleção no backend. Usado pelo catálogo público (anon). */
+export async function submitPreSelecaoRemote(pre: PreSelecao): Promise<void> {
+  const { error } = await supabase.from("pre_selecoes").insert(toDbRow(pre));
+  if (error) throw error;
+}
+
+/** Busca pré-seleções do backend (RLS filtra por vendedor/admin). */
+export async function fetchPreSelecoesRemote(): Promise<PreSelecao[]> {
+  const { data, error } = await supabase
+    .from("pre_selecoes")
+    .select("*")
+    .order("criado_em", { ascending: false });
+  if (error) throw error;
+  return (data as DbRow[]).map(fromDbRow);
+}
+
+/** Atualiza status + campos derivados no backend. */
+export async function updatePreSelecaoRemote(
+  id: string,
+  patch: Partial<PreSelecao>,
+): Promise<void> {
+  const dbPatch: {
+    status?: string;
+    visualizado_em?: string | null;
+    cotacao_gerada_id?: string | null;
+    pedido_gerado_id?: string | null;
+    cliente_b2b_id?: string | null;
+  } = {};
+  if (patch.status !== undefined) dbPatch.status = patch.status;
+  if (patch.visualizadoEm !== undefined) dbPatch.visualizado_em = patch.visualizadoEm;
+  if (patch.cotacaoGeradaId !== undefined) dbPatch.cotacao_gerada_id = patch.cotacaoGeradaId;
+  if (patch.pedidoGeradoId !== undefined) dbPatch.pedido_gerado_id = patch.pedidoGeradoId;
+  if (patch.clienteB2bId !== undefined) dbPatch.cliente_b2b_id = patch.clienteB2bId;
+  if (Object.keys(dbPatch).length === 0) return;
+  const { error } = await supabase.from("pre_selecoes").update(dbPatch).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deletePreSelecaoRemote(id: string): Promise<void> {
+  const { error } = await supabase.from("pre_selecoes").delete().eq("id", id);
+  if (error) throw error;
 }

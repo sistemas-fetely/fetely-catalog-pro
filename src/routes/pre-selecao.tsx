@@ -18,7 +18,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { fetchCNPJ, formatCNPJ, isValidCNPJLength } from "@/lib/cnpj";
 import { toast } from "sonner";
 import { SEGMENTO_LABEL, type SegmentoCliente } from "@/types/preSelecao";
-import { buildPreSelecao, encodePreSelecao, itemFromProductQty, PUBLIC_SITE_URL } from "@/lib/preSelecao";
+import { buildPreSelecao, encodePreSelecao, itemFromProductQty, submitPreSelecaoRemote, PUBLIC_SITE_URL } from "@/lib/preSelecao";
 import { usePreSelecao } from "@/store/preSelecaoStore";
 import { formatBRL } from "@/lib/format";
 import type { Product } from "@/types";
@@ -508,6 +508,15 @@ function DadosEmpresaModal({
         aceitaNewsletter,
         itens,
       });
+      // 1) Envia ao backend (fonte da verdade — chega no /reunioes do vendedor).
+      try {
+        await submitPreSelecaoRemote(pre);
+      } catch (e) {
+        console.error("[pre-selecao] falha ao enviar remoto", e);
+        toast.error("Não foi possível enviar. Tente novamente.");
+        return;
+      }
+      // 2) Guarda também localmente (fallback + link de sincronização).
       adicionar(pre);
       onDone(pre);
     } finally { setEnviando(false); }
