@@ -11,11 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StandRouteImport } from './routes/stand'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ReunioesRouteImport } from './routes/reunioes'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as QualificacaoRouteImport } from './routes/qualificacao'
 import { Route as ProvisoesRouteImport } from './routes/provisoes'
 import { Route as ProdutoRouteImport } from './routes/produto'
+import { Route as PreSelecaoRouteImport } from './routes/pre-selecao'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PhotosRouteImport } from './routes/photos'
 import { Route as PedidoOriginalRouteImport } from './routes/pedido-original'
@@ -37,6 +39,7 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as StandLeadsRouteImport } from './routes/stand.leads'
+import { Route as ReunioesImportarRouteImport } from './routes/reunioes.importar'
 import { Route as PortalProvisoesRouteImport } from './routes/portal.provisoes'
 import { Route as PortalPedidosRouteImport } from './routes/portal.pedidos'
 import { Route as PortalCotacoesRouteImport } from './routes/portal.cotacoes'
@@ -59,6 +62,11 @@ const StandRoute = StandRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReunioesRoute = ReunioesRouteImport.update({
+  id: '/reunioes',
+  path: '/reunioes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -84,6 +92,11 @@ const ProvisoesRoute = ProvisoesRouteImport.update({
 const ProdutoRoute = ProdutoRouteImport.update({
   id: '/produto',
   path: '/produto',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreSelecaoRoute = PreSelecaoRouteImport.update({
+  id: '/pre-selecao',
+  path: '/pre-selecao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalRoute = PortalRouteImport.update({
@@ -191,6 +204,11 @@ const StandLeadsRoute = StandLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => StandRoute,
 } as any)
+const ReunioesImportarRoute = ReunioesImportarRouteImport.update({
+  id: '/importar',
+  path: '/importar',
+  getParentRoute: () => ReunioesRoute,
+} as any)
 const PortalProvisoesRoute = PortalProvisoesRouteImport.update({
   id: '/provisoes',
   path: '/provisoes',
@@ -278,11 +296,13 @@ export interface FileRoutesByFullPath {
   '/pedido-original': typeof PedidoOriginalRoute
   '/photos': typeof PhotosRoute
   '/portal': typeof PortalRouteWithChildren
+  '/pre-selecao': typeof PreSelecaoRoute
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/qualificacao': typeof QualificacaoRoute
   '/relatorios': typeof RelatoriosRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reunioes': typeof ReunioesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/admin/access-logs': typeof AdminAccessLogsRoute
@@ -297,6 +317,7 @@ export interface FileRoutesByFullPath {
   '/portal/cotacoes': typeof PortalCotacoesRoute
   '/portal/pedidos': typeof PortalPedidosRoute
   '/portal/provisoes': typeof PortalProvisoesRoute
+  '/reunioes/importar': typeof ReunioesImportarRoute
   '/stand/leads': typeof StandLeadsRoute
   '/portal/': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
@@ -320,11 +341,13 @@ export interface FileRoutesByTo {
   '/orders': typeof OrdersRoute
   '/pedido-original': typeof PedidoOriginalRoute
   '/photos': typeof PhotosRoute
+  '/pre-selecao': typeof PreSelecaoRoute
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/qualificacao': typeof QualificacaoRoute
   '/relatorios': typeof RelatoriosRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reunioes': typeof ReunioesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/admin/access-logs': typeof AdminAccessLogsRoute
@@ -339,6 +362,7 @@ export interface FileRoutesByTo {
   '/portal/cotacoes': typeof PortalCotacoesRoute
   '/portal/pedidos': typeof PortalPedidosRoute
   '/portal/provisoes': typeof PortalProvisoesRoute
+  '/reunioes/importar': typeof ReunioesImportarRoute
   '/stand/leads': typeof StandLeadsRoute
   '/portal': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
@@ -364,11 +388,13 @@ export interface FileRoutesById {
   '/pedido-original': typeof PedidoOriginalRoute
   '/photos': typeof PhotosRoute
   '/portal': typeof PortalRouteWithChildren
+  '/pre-selecao': typeof PreSelecaoRoute
   '/produto': typeof ProdutoRoute
   '/provisoes': typeof ProvisoesRoute
   '/qualificacao': typeof QualificacaoRoute
   '/relatorios': typeof RelatoriosRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reunioes': typeof ReunioesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/admin/access-logs': typeof AdminAccessLogsRoute
@@ -383,6 +409,7 @@ export interface FileRoutesById {
   '/portal/cotacoes': typeof PortalCotacoesRoute
   '/portal/pedidos': typeof PortalPedidosRoute
   '/portal/provisoes': typeof PortalProvisoesRoute
+  '/reunioes/importar': typeof ReunioesImportarRoute
   '/stand/leads': typeof StandLeadsRoute
   '/portal/': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
@@ -409,11 +436,13 @@ export interface FileRouteTypes {
     | '/pedido-original'
     | '/photos'
     | '/portal'
+    | '/pre-selecao'
     | '/produto'
     | '/provisoes'
     | '/qualificacao'
     | '/relatorios'
     | '/reset-password'
+    | '/reunioes'
     | '/settings'
     | '/stand'
     | '/admin/access-logs'
@@ -428,6 +457,7 @@ export interface FileRouteTypes {
     | '/portal/cotacoes'
     | '/portal/pedidos'
     | '/portal/provisoes'
+    | '/reunioes/importar'
     | '/stand/leads'
     | '/portal/'
     | '/catalog/categoria/$categoria'
@@ -451,11 +481,13 @@ export interface FileRouteTypes {
     | '/orders'
     | '/pedido-original'
     | '/photos'
+    | '/pre-selecao'
     | '/produto'
     | '/provisoes'
     | '/qualificacao'
     | '/relatorios'
     | '/reset-password'
+    | '/reunioes'
     | '/settings'
     | '/stand'
     | '/admin/access-logs'
@@ -470,6 +502,7 @@ export interface FileRouteTypes {
     | '/portal/cotacoes'
     | '/portal/pedidos'
     | '/portal/provisoes'
+    | '/reunioes/importar'
     | '/stand/leads'
     | '/portal'
     | '/catalog/categoria/$categoria'
@@ -494,11 +527,13 @@ export interface FileRouteTypes {
     | '/pedido-original'
     | '/photos'
     | '/portal'
+    | '/pre-selecao'
     | '/produto'
     | '/provisoes'
     | '/qualificacao'
     | '/relatorios'
     | '/reset-password'
+    | '/reunioes'
     | '/settings'
     | '/stand'
     | '/admin/access-logs'
@@ -513,6 +548,7 @@ export interface FileRouteTypes {
     | '/portal/cotacoes'
     | '/portal/pedidos'
     | '/portal/provisoes'
+    | '/reunioes/importar'
     | '/stand/leads'
     | '/portal/'
     | '/catalog/categoria/$categoria'
@@ -538,11 +574,13 @@ export interface RootRouteChildren {
   PedidoOriginalRoute: typeof PedidoOriginalRoute
   PhotosRoute: typeof PhotosRoute
   PortalRoute: typeof PortalRouteWithChildren
+  PreSelecaoRoute: typeof PreSelecaoRoute
   ProdutoRoute: typeof ProdutoRoute
   ProvisoesRoute: typeof ProvisoesRoute
   QualificacaoRoute: typeof QualificacaoRoute
   RelatoriosRoute: typeof RelatoriosRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ReunioesRoute: typeof ReunioesRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   StandRoute: typeof StandRouteWithChildren
   AdminAccessLogsRoute: typeof AdminAccessLogsRoute
@@ -569,6 +607,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reunioes': {
+      id: '/reunioes'
+      path: '/reunioes'
+      fullPath: '/reunioes'
+      preLoaderRoute: typeof ReunioesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -604,6 +649,13 @@ declare module '@tanstack/react-router' {
       path: '/produto'
       fullPath: '/produto'
       preLoaderRoute: typeof ProdutoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pre-selecao': {
+      id: '/pre-selecao'
+      path: '/pre-selecao'
+      fullPath: '/pre-selecao'
+      preLoaderRoute: typeof PreSelecaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal': {
@@ -753,6 +805,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StandLeadsRouteImport
       parentRoute: typeof StandRoute
     }
+    '/reunioes/importar': {
+      id: '/reunioes/importar'
+      path: '/importar'
+      fullPath: '/reunioes/importar'
+      preLoaderRoute: typeof ReunioesImportarRouteImport
+      parentRoute: typeof ReunioesRoute
+    }
     '/portal/provisoes': {
       id: '/portal/provisoes'
       path: '/provisoes'
@@ -877,6 +936,18 @@ const PortalRouteChildren: PortalRouteChildren = {
 const PortalRouteWithChildren =
   PortalRoute._addFileChildren(PortalRouteChildren)
 
+interface ReunioesRouteChildren {
+  ReunioesImportarRoute: typeof ReunioesImportarRoute
+}
+
+const ReunioesRouteChildren: ReunioesRouteChildren = {
+  ReunioesImportarRoute: ReunioesImportarRoute,
+}
+
+const ReunioesRouteWithChildren = ReunioesRoute._addFileChildren(
+  ReunioesRouteChildren,
+)
+
 interface StandRouteChildren {
   StandLeadsRoute: typeof StandLeadsRoute
 }
@@ -907,11 +978,13 @@ const rootRouteChildren: RootRouteChildren = {
   PedidoOriginalRoute: PedidoOriginalRoute,
   PhotosRoute: PhotosRoute,
   PortalRoute: PortalRouteWithChildren,
+  PreSelecaoRoute: PreSelecaoRoute,
   ProdutoRoute: ProdutoRoute,
   ProvisoesRoute: ProvisoesRoute,
   QualificacaoRoute: QualificacaoRoute,
   RelatoriosRoute: RelatoriosRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ReunioesRoute: ReunioesRouteWithChildren,
   SettingsRoute: SettingsRoute,
   StandRoute: StandRouteWithChildren,
   AdminAccessLogsRoute: AdminAccessLogsRoute,
