@@ -256,6 +256,60 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
     toast.success("Lista copiada");
   }
 
+  async function converterEmCotacao() {
+    if (convertendo) return;
+    const itensComQtd = pre.itens.filter((i) => !i.temInteresseSemQtd && i.quantidade > 0);
+    if (itensComQtd.length === 0) {
+      toast.error("Nenhum item com quantidade definida para converter");
+      return;
+    }
+    const cartItems: CartItem[] = [];
+    const naoEncontrados: string[] = [];
+    for (const it of itensComQtd) {
+      const product = catalogProducts.find((p) => p.sku === it.sku);
+      if (!product) {
+        naoEncontrados.push(it.sku);
+        continue;
+      }
+      cartItems.push({ product, quantity: it.quantidade });
+    }
+    if (cartItems.length === 0) {
+      toast.error("Nenhum SKU da pré-seleção foi encontrado no catálogo atual");
+      return;
+    }
+    const total = cartItems.reduce((s, i) => s + i.product.precoAtacado * i.quantity, 0);
+    const meta: OrderMeta = {
+      cliente: pre.razaoSocial || pre.nomeFantasia,
+      cnpj: pre.cnpj,
+      condicaoPagamento: "",
+      observacoes: `Origem: Pré-seleção #${pre.id} (${pre.contatoNome})${pre.observacao ? ` · ${pre.observacao}` : ""}`,
+      vendedor: profile?.nome_completo ?? profile?.email ?? "—",
+      nomeFantasia: pre.nomeFantasia,
+      email: pre.contatoEmail,
+      telefone: pre.contatoWhatsapp,
+      municipio: pre.cidadeEstado,
+      pedidoOrigem: "direto",
+    };
+    setConvertendo(true);
+    try {
+      const cot = await criarCotacao({ items: cartItems, meta, total });
+      vincularCotacao(pre.id, cot.id);
+      if (naoEncontrados.length > 0) {
+        toast.warning(`Cotação ${cot.id} criada · ${naoEncontrados.length} SKU(s) fora do catálogo foram ignorados`);
+      } else {
+        toast.success(`Cotação ${cot.id} criada a partir da pré-seleção`);
+      }
+      onClose();
+      navigate({ to: "/cotacoes" });
+    } catch (e) {
+      console.error("[reunioes] converter em cotação falhou", e);
+      toast.error(e instanceof Error ? e.message : "Não foi possível criar a cotação");
+    } finally {
+      setConvertendo(false);
+    }
+  }
+
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-start justify-between p-4 border-b border-border">
