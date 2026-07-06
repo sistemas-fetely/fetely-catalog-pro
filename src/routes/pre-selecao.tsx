@@ -313,7 +313,7 @@ function EmptyStatePublic({ vendedor }: { vendedor: string }) {
   const setCategoria = (c: string | undefined) =>
     navigate({
       to: "/pre-selecao",
-      search: (prev) => ({ ...prev, categoria: c || undefined, grupo: undefined, colecao: undefined }),
+      search: (prev: Record<string, unknown>) => ({ ...prev, categoria: c || undefined, grupo: undefined, colecao: undefined }),
     });
 
   if (!categoria) {
