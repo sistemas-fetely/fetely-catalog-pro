@@ -394,10 +394,34 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
               </li>
             ))}
           </ul>
-          <div className="mt-2 flex justify-between text-sm">
-            <span className="text-text-secondary">Total ref. varejo</span>
-            <span className="font-semibold text-gold">{formatBRL(pre.totalVarejoRef)}</span>
-          </div>
+          {(() => {
+            let atacado = 0;
+            let unidades = 0;
+            let semCatalogo = 0;
+            for (const i of pre.itens) {
+              const p = catalogProducts.find((cp) => cp.sku === i.sku);
+              if (!p) { semCatalogo += 1; continue; }
+              const qtd = i.temInteresseSemQtd || i.quantidade <= 0 ? 1 : i.quantidade;
+              atacado += p.precoAtacado * qtd;
+              unidades += qtd;
+            }
+            return (
+              <div className="mt-2 space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Total ref. varejo (wishlist)</span>
+                  <span className="text-text-secondary">{formatBRL(pre.totalVarejoRef)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Total atacado (cotação)</span>
+                  <span className="font-semibold text-gold">{formatBRL(atacado)}</span>
+                </div>
+                <div className="text-xs text-text-secondary">
+                  {unidades} un · itens de interesse contam como 1 un
+                  {semCatalogo > 0 && ` · ${semCatalogo} SKU(s) fora do catálogo`}
+                </div>
+              </div>
+            );
+          })()}
         </section>
 
         <section className="space-y-2">
