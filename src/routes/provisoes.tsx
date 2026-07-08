@@ -106,6 +106,8 @@ function ProvisoesPage() {
                   <th className="text-left px-4 py-3 font-medium">#</th>
                   <th className="text-left px-4 py-3 font-medium">Cliente</th>
                   <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Vendedor</th>
+                  <th className="text-left px-4 py-3 font-medium hidden xl:table-cell">Criada em</th>
+                  <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Origem</th>
                   <th className="text-center px-4 py-3 font-medium">Itens</th>
                   <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Próx. previsão</th>
                   <th className="text-right px-4 py-3 font-medium">Ref.</th>
