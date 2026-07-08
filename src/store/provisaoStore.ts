@@ -53,6 +53,7 @@ function rowToProvisao(row: Record<string, unknown>, itens: ItemProvisao[]): Pro
     clienteId: row.cliente_id as string,
     clienteSnapshot: row.cliente_snapshot as ClienteSnapshot,
     pedidoFirmeId: (row.pedido_firme_id as string | null) ?? undefined,
+    cotacaoOrigemId: (row.cotacao_origem_id as string | null) ?? undefined,
     pedidoConvertidoId: (row.pedido_convertido_id as string | null) ?? undefined,
     status: row.status as StatusProvisao,
     itens,
