@@ -204,6 +204,7 @@ export const useProvisao = create<ProvisaoState>()(
           clienteId: input.clienteId,
           clienteSnapshot: input.clienteSnapshot,
           pedidoFirmeId: input.pedidoFirmeId,
+          cotacaoOrigemId: input.cotacaoOrigemId,
           status: "aguardando_estoque",
           itens: input.itens,
           datasPrevisao,
