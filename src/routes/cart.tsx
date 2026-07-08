@@ -597,7 +597,25 @@ function CartPage() {
         </Link>
       </div>
 
-      {meta.provisaoOrigemId && (
+      {editandoProvisaoId && (
+        <div className="mb-4 rounded-md border border-gold/40 bg-gold/10 px-3 py-2.5 sm:px-4 sm:py-3 text-xs text-gold flex items-center justify-between gap-3">
+          <span>✏️ Editando a Provisão <strong>{editandoProvisaoId}</strong>. Ajuste itens/quantidades e clique em <strong>Salvar alterações</strong>.</span>
+          <button
+            onClick={() => {
+              if (confirm("Descartar edição e limpar o carrinho?")) {
+                clearCart();
+                resetNegotiation();
+                navigate({ to: "/provisoes" });
+              }
+            }}
+            className="shrink-0 text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-out"
+          >
+            Cancelar edição
+          </button>
+        </div>
+      )}
+
+      {meta.provisaoOrigemId && !editandoProvisaoId && (
         <div className="mb-4 rounded-md border border-stock-pre/40 bg-stock-pre/10 px-3 py-2.5 sm:px-4 sm:py-3 text-xs text-stock-pre">
           ⚡ Estes itens vieram da Provisão <strong>{meta.provisaoOrigemId}</strong>. Verifique quantidades e condições antes de confirmar.
         </div>
