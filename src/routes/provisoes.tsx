@@ -106,6 +106,8 @@ function ProvisoesPage() {
                   <th className="text-left px-4 py-3 font-medium">#</th>
                   <th className="text-left px-4 py-3 font-medium">Cliente</th>
                   <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Vendedor</th>
+                  <th className="text-left px-4 py-3 font-medium hidden xl:table-cell">Criada em</th>
+                  <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Origem</th>
                   <th className="text-center px-4 py-3 font-medium">Itens</th>
                   <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Próx. previsão</th>
                   <th className="text-right px-4 py-3 font-medium">Ref.</th>
@@ -139,12 +141,25 @@ function ProvisoesPage() {
                       <div className="text-text-primary truncate max-w-[200px]">
                         {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
                       </div>
-                      {p.pedidoFirmeId && (
-                        <div className="text-[10px] text-text-muted">vinc. {p.pedidoFirmeId}</div>
-                      )}
                     </td>
                     <td className="px-4 py-3 text-text-secondary text-xs hidden lg:table-cell">
                       {p.vendedorNome}
+                    </td>
+                    <td className="px-4 py-3 text-text-secondary text-xs hidden xl:table-cell whitespace-nowrap">
+                      {new Date(p.criadoEm).toLocaleDateString("pt-BR")}
+                    </td>
+                    <td className="px-4 py-3 text-xs hidden lg:table-cell">
+                      {p.cotacaoOrigemId ? (
+                        <span className="inline-flex items-center rounded-full border border-gold/30 bg-gold/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-gold">
+                          Cot. {p.cotacaoOrigemId}
+                        </span>
+                      ) : p.pedidoFirmeId ? (
+                        <span className="inline-flex items-center rounded-full border border-stock-in/30 bg-stock-in/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-stock-in">
+                          Ped. {p.pedidoFirmeId}
+                        </span>
+                      ) : (
+                        <span className="text-text-muted">Direta</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center">{p.itens.length}</td>
                     <td className="px-4 py-3 text-text-secondary text-xs hidden lg:table-cell">
@@ -184,7 +199,16 @@ function ProvisoesPage() {
                       {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
                     </div>
                     <div className="text-[10px] text-text-muted mt-0.5 truncate">
-                      {p.vendedorNome} · {p.itens.length} {p.itens.length === 1 ? "item" : "itens"}
+                      {p.vendedorNome} · {p.itens.length} {p.itens.length === 1 ? "item" : "itens"} · {new Date(p.criadoEm).toLocaleDateString("pt-BR")}
+                    </div>
+                    <div className="text-[10px] mt-0.5">
+                      {p.cotacaoOrigemId ? (
+                        <span className="text-gold">Origem: Cot. {p.cotacaoOrigemId}</span>
+                      ) : p.pedidoFirmeId ? (
+                        <span className="text-stock-in">Origem: Ped. {p.pedidoFirmeId}</span>
+                      ) : (
+                        <span className="text-text-muted">Origem: Direta</span>
+                      )}
                     </div>
                   </div>
                   <span className={`shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wider ${statusBadge(p.status)}`}>
@@ -363,6 +387,8 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
             <Info label="Próx. previsão" value={provisao.proximaPrevisao} />
             <Info label="Criada em" value={new Date(provisao.criadoEm).toLocaleString("pt-BR")} />
             {provisao.pedidoFirmeId && <Info label="Pedido firme vinc." value={provisao.pedidoFirmeId} />}
+            {provisao.cotacaoOrigemId && <Info label="Gerada da cotação" value={provisao.cotacaoOrigemId} />}
+            {!provisao.pedidoFirmeId && !provisao.cotacaoOrigemId && <Info label="Origem" value="Direta (sem pedido/cotação)" />}
             {provisao.pedidoConvertidoId && <Info label="Convertida em" value={provisao.pedidoConvertidoId} />}
           </div>
 

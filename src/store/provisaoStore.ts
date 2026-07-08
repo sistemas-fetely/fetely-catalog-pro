@@ -23,6 +23,7 @@ interface CreateProvisaoInput {
   clienteSnapshot: ClienteSnapshot;
   itens: ItemProvisao[];
   pedidoFirmeId?: string;
+  cotacaoOrigemId?: string;
   observacoes?: string;
 }
 
@@ -52,6 +53,7 @@ function rowToProvisao(row: Record<string, unknown>, itens: ItemProvisao[]): Pro
     clienteId: row.cliente_id as string,
     clienteSnapshot: row.cliente_snapshot as ClienteSnapshot,
     pedidoFirmeId: (row.pedido_firme_id as string | null) ?? undefined,
+    cotacaoOrigemId: (row.cotacao_origem_id as string | null) ?? undefined,
     pedidoConvertidoId: (row.pedido_convertido_id as string | null) ?? undefined,
     status: row.status as StatusProvisao,
     itens,
@@ -91,6 +93,7 @@ export function provisaoToRow(p: ProvisaoFutura): Record<string, unknown> {
     cliente_id: p.clienteId,
     cliente_snapshot: p.clienteSnapshot,
     pedido_firme_id: p.pedidoFirmeId ?? null,
+    cotacao_origem_id: p.cotacaoOrigemId ?? null,
     pedido_convertido_id: p.pedidoConvertidoId ?? null,
     status: p.status,
     datas_previsao: p.datasPrevisao,
@@ -201,6 +204,7 @@ export const useProvisao = create<ProvisaoState>()(
           clienteId: input.clienteId,
           clienteSnapshot: input.clienteSnapshot,
           pedidoFirmeId: input.pedidoFirmeId,
+          cotacaoOrigemId: input.cotacaoOrigemId,
           status: "aguardando_estoque",
           itens: input.itens,
           datasPrevisao,
