@@ -98,6 +98,7 @@ function CartPage() {
   const updateProvisaoStatus = useProvisao((s) => s.updateStatus);
   const criarCotacao = useCotacao((s) => s.criarCotacao);
   const atualizarCotacao = useCotacao((s) => s.atualizarCotacao);
+  const atualizarProvisao = useProvisao((s) => s.atualizarProvisao);
   const navigate = useNavigate();
 
   const [commercial, setCommercial] = useState<CommercialState | null>(null);
@@ -536,6 +537,33 @@ function CartPage() {
     }
   };
 
+  // V22 — Salvar alterações de uma provisão em modo edição
+  const editandoProvisaoId = (meta as OrderMeta & { provisaoEditandoId?: string }).provisaoEditandoId;
+  const handleSalvarEdicaoProvisao = async () => {
+    if (!editandoProvisaoId || salvandoPedido) return;
+    if (items.length === 0) {
+      toast.error("A provisão precisa ter pelo menos um item");
+      return;
+    }
+    setSalvandoPedido(true);
+    try {
+      const itensPatch = items.map(toItemProvisao);
+      const upd = await atualizarProvisao(editandoProvisaoId, {
+        itens: itensPatch,
+        observacoes: meta.observacoes || undefined,
+      });
+      toast.success(`Provisão ${upd.id} atualizada`);
+      clearCart();
+      resetNegotiation();
+      navigate({ to: "/provisoes", search: { highlight: upd.id } as never });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Não foi possível salvar a provisão";
+      toast.error(msg, { duration: 6000 });
+    } finally {
+      setSalvandoPedido(false);
+    }
+  };
+
   if (items.length === 0) {
     return (
       <main className="mx-auto max-w-3xl px-6 py-24 text-center">
@@ -569,7 +597,25 @@ function CartPage() {
         </Link>
       </div>
 
-      {meta.provisaoOrigemId && (
+      {editandoProvisaoId && (
+        <div className="mb-4 rounded-md border border-gold/40 bg-gold/10 px-3 py-2.5 sm:px-4 sm:py-3 text-xs text-gold flex items-center justify-between gap-3">
+          <span>✏️ Editando a Provisão <strong>{editandoProvisaoId}</strong>. Ajuste itens/quantidades e clique em <strong>Salvar alterações</strong>.</span>
+          <button
+            onClick={() => {
+              if (confirm("Descartar edição e limpar o carrinho?")) {
+                clearCart();
+                resetNegotiation();
+                navigate({ to: "/provisoes" });
+              }
+            }}
+            className="shrink-0 text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-out"
+          >
+            Cancelar edição
+          </button>
+        </div>
+      )}
+
+      {meta.provisaoOrigemId && !editandoProvisaoId && (
         <div className="mb-4 rounded-md border border-stock-pre/40 bg-stock-pre/10 px-3 py-2.5 sm:px-4 sm:py-3 text-xs text-stock-pre">
           ⚡ Estes itens vieram da Provisão <strong>{meta.provisaoOrigemId}</strong>. Verifique quantidades e condições antes de confirmar.
         </div>
@@ -871,7 +917,32 @@ function CartPage() {
           </div>
 
           <div className="rounded-lg gold-border bg-surface p-4 sm:p-5">
-            {apenasProvisao ? (
+            {editandoProvisaoId ? (
+              <>
+                <p className="mb-3 text-xs text-gold">
+                  Editando provisão {editandoProvisaoId}. Salvar sobrescreve os itens atuais.
+                </p>
+                <button
+                  onClick={handleSalvarEdicaoProvisao}
+                  disabled={!meta.clienteId || salvandoPedido || items.length === 0}
+                  className="w-full rounded-md bg-gold py-3 text-xs font-semibold uppercase tracking-[0.18em] text-background hover:bg-gold-light disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {salvandoPedido ? "Salvando..." : "Salvar alterações da provisão"}
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Descartar alterações?")) {
+                      clearCart();
+                      resetNegotiation();
+                      navigate({ to: "/provisoes" });
+                    }
+                  }}
+                  className="mt-2 w-full text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-out"
+                >
+                  Cancelar edição
+                </button>
+              </>
+            ) : apenasProvisao ? (
               <>
                 <p className="mb-3 text-xs text-stock-pre">
                   Todos os itens são de previsão. Salve como provisão futura.
@@ -963,7 +1034,15 @@ function CartPage() {
               )}
             </div>
           </div>
-          {apenasProvisao ? (
+          {editandoProvisaoId ? (
+            <button
+              onClick={handleSalvarEdicaoProvisao}
+              disabled={!meta.clienteId || salvandoPedido || items.length === 0}
+              className="shrink-0 rounded-md bg-gold px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-background disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {salvandoPedido ? "Salvando..." : "Salvar provisão"}
+            </button>
+          ) : apenasProvisao ? (
             <button
               onClick={handleSaveOnlyProvisao}
               disabled={!meta.clienteId || salvandoPedido}

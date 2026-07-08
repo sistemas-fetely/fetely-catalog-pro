@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight, XCircle, Trash2, RotateCcw, FileDown } from "lucide-react";
+import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight, XCircle, Trash2, RotateCcw, FileDown, Edit } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 import { useProvisao, useVisibleProvisoes, useCanReprovarProvisao } from "@/store/provisaoStore";
 import { useAuth } from "@/store/authStore";
@@ -283,6 +283,36 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
     navigate({ to: "/cart" });
   };
 
+  const handleEditar = () => {
+    const entries = itemsComStatus
+      .map((i) => (i.produtoAtual ? { product: i.produtoAtual, quantity: i.quantidade } : null))
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+    if (entries.length === 0) {
+      toast.error("Nenhum item desta provisão consta no catálogo atual.");
+      return;
+    }
+    const store = useOrder.getState();
+    store.clearCart();
+    store.addBulk(entries);
+    store.setMeta({
+      clienteId: provisao.clienteId,
+      cliente: provisao.clienteSnapshot.razaoSocial,
+      nomeFantasia: provisao.clienteSnapshot.nomeFantasia,
+      cnpj: provisao.clienteSnapshot.cnpj,
+      email: provisao.clienteSnapshot.contatoEmail,
+      telefone: provisao.clienteSnapshot.contatoTelefone,
+      municipio: provisao.clienteSnapshot.cidade,
+      uf: provisao.clienteSnapshot.estado,
+      clienteSnapshot: provisao.clienteSnapshot,
+      observacoes: provisao.observacoes ?? "",
+      provisaoEditandoId: provisao.id,
+      provisaoOrigemId: undefined,
+    });
+    toast.message(`Editando provisão ${provisao.id}`);
+    navigate({ to: "/cart" });
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-end bg-background/80 backdrop-blur-sm">
       <div className="w-full max-w-2xl bg-surface border-l gold-border overflow-y-auto">
@@ -424,6 +454,14 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
                 }`}
               >
                 <Package className="h-4 w-4" /> Converter em pedido
+              </button>
+            )}
+            {provisao.status !== "convertido_em_pedido" && provisao.status !== "cancelado" && (
+              <button
+                onClick={handleEditar}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-gold/40 text-gold py-2.5 text-xs uppercase tracking-wider hover:bg-gold/10"
+              >
+                <Edit className="h-4 w-4" /> Editar itens da provisão
               </button>
             )}
             {provisao.status !== "cancelado" && provisao.status !== "convertido_em_pedido" && (
