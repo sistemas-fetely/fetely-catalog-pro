@@ -283,6 +283,36 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
     navigate({ to: "/cart" });
   };
 
+  const handleEditar = () => {
+    const entries = itemsComStatus
+      .map((i) => (i.produtoAtual ? { product: i.produtoAtual, quantity: i.quantidade } : null))
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+    if (entries.length === 0) {
+      toast.error("Nenhum item desta provisão consta no catálogo atual.");
+      return;
+    }
+    const store = useOrder.getState();
+    store.clearCart();
+    store.addBulk(entries);
+    store.setMeta({
+      clienteId: provisao.clienteId,
+      cliente: provisao.clienteSnapshot.razaoSocial,
+      nomeFantasia: provisao.clienteSnapshot.nomeFantasia,
+      cnpj: provisao.clienteSnapshot.cnpj,
+      email: provisao.clienteSnapshot.contatoEmail,
+      telefone: provisao.clienteSnapshot.contatoTelefone,
+      municipio: provisao.clienteSnapshot.cidade,
+      uf: provisao.clienteSnapshot.estado,
+      clienteSnapshot: provisao.clienteSnapshot,
+      observacoes: provisao.observacoes ?? "",
+      provisaoEditandoId: provisao.id,
+      provisaoOrigemId: undefined,
+    });
+    toast.message(`Editando provisão ${provisao.id}`);
+    navigate({ to: "/cart" });
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-end bg-background/80 backdrop-blur-sm">
       <div className="w-full max-w-2xl bg-surface border-l gold-border overflow-y-auto">
