@@ -77,6 +77,7 @@ export function ConverterEmPedidoModal({
           clienteSnapshot: cotacao.meta.clienteSnapshot,
           itens: itensProvisao.map(toItemProvisao),
           observacoes: cotacao.meta.observacoes || undefined,
+          cotacaoOrigemId: cotacao.id,
         });
         provisaoId = prov.id;
       }
