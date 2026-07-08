@@ -1034,7 +1034,15 @@ function CartPage() {
               )}
             </div>
           </div>
-          {apenasProvisao ? (
+          {editandoProvisaoId ? (
+            <button
+              onClick={handleSalvarEdicaoProvisao}
+              disabled={!meta.clienteId || salvandoPedido || items.length === 0}
+              className="shrink-0 rounded-md bg-gold px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-background disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {salvandoPedido ? "Salvando..." : "Salvar provisão"}
+            </button>
+          ) : apenasProvisao ? (
             <button
               onClick={handleSaveOnlyProvisao}
               disabled={!meta.clienteId || salvandoPedido}
