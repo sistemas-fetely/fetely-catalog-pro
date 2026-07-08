@@ -199,7 +199,16 @@ function ProvisoesPage() {
                       {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
                     </div>
                     <div className="text-[10px] text-text-muted mt-0.5 truncate">
-                      {p.vendedorNome} · {p.itens.length} {p.itens.length === 1 ? "item" : "itens"}
+                      {p.vendedorNome} · {p.itens.length} {p.itens.length === 1 ? "item" : "itens"} · {new Date(p.criadoEm).toLocaleDateString("pt-BR")}
+                    </div>
+                    <div className="text-[10px] mt-0.5">
+                      {p.cotacaoOrigemId ? (
+                        <span className="text-gold">Origem: Cot. {p.cotacaoOrigemId}</span>
+                      ) : p.pedidoFirmeId ? (
+                        <span className="text-stock-in">Origem: Ped. {p.pedidoFirmeId}</span>
+                      ) : (
+                        <span className="text-text-muted">Origem: Direta</span>
+                      )}
                     </div>
                   </div>
                   <span className={`shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wider ${statusBadge(p.status)}`}>
