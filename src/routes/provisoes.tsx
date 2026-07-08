@@ -387,6 +387,8 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
             <Info label="Próx. previsão" value={provisao.proximaPrevisao} />
             <Info label="Criada em" value={new Date(provisao.criadoEm).toLocaleString("pt-BR")} />
             {provisao.pedidoFirmeId && <Info label="Pedido firme vinc." value={provisao.pedidoFirmeId} />}
+            {provisao.cotacaoOrigemId && <Info label="Gerada da cotação" value={provisao.cotacaoOrigemId} />}
+            {!provisao.pedidoFirmeId && !provisao.cotacaoOrigemId && <Info label="Origem" value="Direta (sem pedido/cotação)" />}
             {provisao.pedidoConvertidoId && <Info label="Convertida em" value={provisao.pedidoConvertidoId} />}
           </div>
 
