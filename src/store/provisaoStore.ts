@@ -286,6 +286,61 @@ export const useProvisao = create<ProvisaoState>()(
             if (error) console.error("[provisaoStore] setObservacoes falhou:", error, id);
           });
       },
+      atualizarProvisao: async (id, patch) => {
+        const atual = get().provisoes.find((p) => p.id === id);
+        if (!atual) throw new Error("Provisão não encontrada");
+        if (atual.status === "convertido_em_pedido") {
+          throw new Error("Provisão já convertida em pedido não pode ser editada");
+        }
+        if (patch.itens.length === 0) {
+          throw new Error("A provisão precisa ter pelo menos um item");
+        }
+        const datasSet = new Set(patch.itens.map((i) => i.previsaoData));
+        const datasPrevisao = Array.from(datasSet).sort(compararPrevisao);
+        const totalReferencia = patch.itens.reduce(
+          (s, i) => s + i.precoAtacadoReferencia * i.quantidade,
+          0,
+        );
+        const atualizadoEm = new Date().toISOString();
+        const atualizada: ProvisaoFutura = {
+          ...atual,
+          itens: patch.itens,
+          datasPrevisao,
+          proximaPrevisao: datasPrevisao[0] ?? "—",
+          observacoes: patch.observacoes ?? atual.observacoes,
+          totalReferencia,
+          atualizadoEm,
+        };
+        try {
+          const { error: errP } = await supabase
+            .from("provisoes")
+            .update({
+              datas_previsao: datasPrevisao,
+              proxima_previsao: atualizada.proximaPrevisao,
+              observacoes: atualizada.observacoes ?? null,
+              total_referencia: totalReferencia,
+              atualizado_em: atualizadoEm,
+            } as never)
+            .eq("id", id);
+          if (errP) throw errP;
+          const { error: errDel } = await supabase
+            .from("provisao_itens")
+            .delete()
+            .eq("provisao_id", id);
+          if (errDel) throw errDel;
+          const { error: errI } = await supabase
+            .from("provisao_itens")
+            .insert(provisaoItensToRows(atualizada) as never);
+          if (errI) throw errI;
+        } catch (err) {
+          console.error("[provisaoStore] atualizarProvisao falhou:", err, id);
+          throw err instanceof Error ? err : new Error(String(err));
+        }
+        set((s) => ({
+          provisoes: s.provisoes.map((p) => (p.id === id ? atualizada : p)),
+        }));
+        return atualizada;
+      },
       cancelar: (id) => {
         const atualizadoEm = new Date().toISOString();
         set((s) => ({
