@@ -456,6 +456,14 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
                 <Package className="h-4 w-4" /> Converter em pedido
               </button>
             )}
+            {provisao.status !== "convertido_em_pedido" && provisao.status !== "cancelado" && (
+              <button
+                onClick={handleEditar}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-gold/40 text-gold py-2.5 text-xs uppercase tracking-wider hover:bg-gold/10"
+              >
+                <Edit className="h-4 w-4" /> Editar itens da provisão
+              </button>
+            )}
             {provisao.status !== "cancelado" && provisao.status !== "convertido_em_pedido" && (
               <button
                 onClick={() => {
