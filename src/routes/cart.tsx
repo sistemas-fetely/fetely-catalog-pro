@@ -537,6 +537,33 @@ function CartPage() {
     }
   };
 
+  // V22 — Salvar alterações de uma provisão em modo edição
+  const editandoProvisaoId = (meta as OrderMeta & { provisaoEditandoId?: string }).provisaoEditandoId;
+  const handleSalvarEdicaoProvisao = async () => {
+    if (!editandoProvisaoId || salvandoPedido) return;
+    if (items.length === 0) {
+      toast.error("A provisão precisa ter pelo menos um item");
+      return;
+    }
+    setSalvandoPedido(true);
+    try {
+      const itensPatch = items.map(toItemProvisao);
+      const upd = await atualizarProvisao(editandoProvisaoId, {
+        itens: itensPatch,
+        observacoes: meta.observacoes || undefined,
+      });
+      toast.success(`Provisão ${upd.id} atualizada`);
+      clearCart();
+      resetNegotiation();
+      navigate({ to: "/provisoes", search: { highlight: upd.id } as never });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Não foi possível salvar a provisão";
+      toast.error(msg, { duration: 6000 });
+    } finally {
+      setSalvandoPedido(false);
+    }
+  };
+
   if (items.length === 0) {
     return (
       <main className="mx-auto max-w-3xl px-6 py-24 text-center">
