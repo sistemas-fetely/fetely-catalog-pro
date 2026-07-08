@@ -27,6 +27,7 @@ export interface ProvisaoFutura {
   clienteId: string;
   clienteSnapshot: ClienteSnapshot;
   pedidoFirmeId?: string;
+  cotacaoOrigemId?: string;
   pedidoConvertidoId?: string;
   status: StatusProvisao;
   itens: ItemProvisao[];
