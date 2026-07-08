@@ -93,6 +93,7 @@ export function provisaoToRow(p: ProvisaoFutura): Record<string, unknown> {
     cliente_id: p.clienteId,
     cliente_snapshot: p.clienteSnapshot,
     pedido_firme_id: p.pedidoFirmeId ?? null,
+    cotacao_origem_id: p.cotacaoOrigemId ?? null,
     pedido_convertido_id: p.pedidoConvertidoId ?? null,
     status: p.status,
     datas_previsao: p.datasPrevisao,
