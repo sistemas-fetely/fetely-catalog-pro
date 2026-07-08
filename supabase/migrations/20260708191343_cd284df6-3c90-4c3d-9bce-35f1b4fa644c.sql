@@ -1,0 +1,2 @@
+ALTER TABLE public.provisoes ADD COLUMN IF NOT EXISTS cotacao_origem_id text REFERENCES public.cotacoes(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_provisoes_cotacao_origem_id ON public.provisoes(cotacao_origem_id);

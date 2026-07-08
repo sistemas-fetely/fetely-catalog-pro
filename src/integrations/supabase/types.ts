@@ -1970,6 +1970,7 @@ export type Database = {
           atualizado_em: string
           cliente_id: string
           cliente_snapshot: Json
+          cotacao_origem_id: string | null
           criado_em: string
           datas_previsao: Json
           id: string
@@ -1991,6 +1992,7 @@ export type Database = {
           atualizado_em?: string
           cliente_id: string
           cliente_snapshot: Json
+          cotacao_origem_id?: string | null
           criado_em?: string
           datas_previsao?: Json
           id: string
@@ -2012,6 +2014,7 @@ export type Database = {
           atualizado_em?: string
           cliente_id?: string
           cliente_snapshot?: Json
+          cotacao_origem_id?: string | null
           criado_em?: string
           datas_previsao?: Json
           id?: string
@@ -2035,6 +2038,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provisoes_cotacao_origem_id_fkey"
+            columns: ["cotacao_origem_id"]
+            isOneToOne: false
+            referencedRelation: "cotacoes"
             referencedColumns: ["id"]
           },
           {
