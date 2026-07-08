@@ -141,12 +141,25 @@ function ProvisoesPage() {
                       <div className="text-text-primary truncate max-w-[200px]">
                         {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
                       </div>
-                      {p.pedidoFirmeId && (
-                        <div className="text-[10px] text-text-muted">vinc. {p.pedidoFirmeId}</div>
-                      )}
                     </td>
                     <td className="px-4 py-3 text-text-secondary text-xs hidden lg:table-cell">
                       {p.vendedorNome}
+                    </td>
+                    <td className="px-4 py-3 text-text-secondary text-xs hidden xl:table-cell whitespace-nowrap">
+                      {new Date(p.criadoEm).toLocaleDateString("pt-BR")}
+                    </td>
+                    <td className="px-4 py-3 text-xs hidden lg:table-cell">
+                      {p.cotacaoOrigemId ? (
+                        <span className="inline-flex items-center rounded-full border border-gold/30 bg-gold/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-gold">
+                          Cot. {p.cotacaoOrigemId}
+                        </span>
+                      ) : p.pedidoFirmeId ? (
+                        <span className="inline-flex items-center rounded-full border border-stock-in/30 bg-stock-in/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-stock-in">
+                          Ped. {p.pedidoFirmeId}
+                        </span>
+                      ) : (
+                        <span className="text-text-muted">Direta</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center">{p.itens.length}</td>
                     <td className="px-4 py-3 text-text-secondary text-xs hidden lg:table-cell">
