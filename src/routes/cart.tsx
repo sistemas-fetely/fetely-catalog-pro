@@ -917,7 +917,32 @@ function CartPage() {
           </div>
 
           <div className="rounded-lg gold-border bg-surface p-4 sm:p-5">
-            {apenasProvisao ? (
+            {editandoProvisaoId ? (
+              <>
+                <p className="mb-3 text-xs text-gold">
+                  Editando provisão {editandoProvisaoId}. Salvar sobrescreve os itens atuais.
+                </p>
+                <button
+                  onClick={handleSalvarEdicaoProvisao}
+                  disabled={!meta.clienteId || salvandoPedido || items.length === 0}
+                  className="w-full rounded-md bg-gold py-3 text-xs font-semibold uppercase tracking-[0.18em] text-background hover:bg-gold-light disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {salvandoPedido ? "Salvando..." : "Salvar alterações da provisão"}
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Descartar alterações?")) {
+                      clearCart();
+                      resetNegotiation();
+                      navigate({ to: "/provisoes" });
+                    }
+                  }}
+                  className="mt-2 w-full text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-out"
+                >
+                  Cancelar edição
+                </button>
+              </>
+            ) : apenasProvisao ? (
               <>
                 <p className="mb-3 text-xs text-stock-pre">
                   Todos os itens são de previsão. Salve como provisão futura.
