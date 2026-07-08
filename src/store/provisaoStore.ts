@@ -35,6 +35,7 @@ interface ProvisaoState {
   createProvisao: (input: CreateProvisaoInput) => Promise<ProvisaoFutura>;
   updateStatus: (id: string, status: StatusProvisao, extra?: Partial<ProvisaoFutura>) => void;
   setObservacoes: (id: string, txt: string) => void;
+  atualizarProvisao: (id: string, patch: { itens: ItemProvisao[]; observacoes?: string }) => Promise<ProvisaoFutura>;
   cancelar: (id: string) => void;
   deleteProvisao: (id: string) => Promise<void>;
   reprovarProvisao: (id: string, motivo: string) => Promise<void>;
