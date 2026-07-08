@@ -98,6 +98,7 @@ function CartPage() {
   const updateProvisaoStatus = useProvisao((s) => s.updateStatus);
   const criarCotacao = useCotacao((s) => s.criarCotacao);
   const atualizarCotacao = useCotacao((s) => s.atualizarCotacao);
+  const atualizarProvisao = useProvisao((s) => s.atualizarProvisao);
   const navigate = useNavigate();
 
   const [commercial, setCommercial] = useState<CommercialState | null>(null);
