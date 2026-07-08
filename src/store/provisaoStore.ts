@@ -23,6 +23,7 @@ interface CreateProvisaoInput {
   clienteSnapshot: ClienteSnapshot;
   itens: ItemProvisao[];
   pedidoFirmeId?: string;
+  cotacaoOrigemId?: string;
   observacoes?: string;
 }
 
