@@ -495,7 +495,7 @@ function DadosEmpresaModal({
         const p = produtos.find((x) => x.sku === sku)!;
         return itemFromProductQty(p, q);
       });
-      const pre = buildPreSelecao({
+      const pre = await buildPreSelecao({
         vendedorId: vendedor,
         vendedorNome: null,
         cnpj: formatCNPJ(cnpj),
@@ -511,6 +511,7 @@ function DadosEmpresaModal({
         aceitaNewsletter,
         itens,
       });
+
       // 1) Envia ao backend (fonte da verdade — chega no /reunioes do vendedor).
       try {
         await enviarPreSelecao({ data: pre });
