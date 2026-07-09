@@ -439,7 +439,7 @@ function DadosEmpresaModal({
   cart: CartMap;
   produtos: Product[];
   vendedor: string | null;
-  onDone: (pre: ReturnType<typeof buildPreSelecao>) => void;
+  onDone: (pre: Awaited<ReturnType<typeof buildPreSelecao>>) => void;
 }) {
   const [cnpj, setCnpj] = useState("");
   const [razaoSocial, setRazaoSocial] = useState("");
