@@ -27,7 +27,15 @@ export function savePreSelecoes(list: PreSelecao[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 }
 
-export function nextPreSelecaoId(): string {
+export async function nextPreSelecaoId(): Promise<string> {
+  // Tenta obter código sequencial (PS0001, PS0002...) do backend.
+  try {
+    const { data, error } = await supabase.rpc("next_pre_selecao_id");
+    if (!error && typeof data === "string" && data.length > 0) return data;
+  } catch (e) {
+    console.warn("[preSelecao] next_pre_selecao_id RPC falhou, usando fallback", e);
+  }
+  // Fallback local (offline / erro RPC) — mantém formato PS + timestamp curto.
   const ts = Date.now().toString(36).toUpperCase().slice(-6);
   const random =
     typeof crypto !== "undefined" && "getRandomValues" in crypto
@@ -37,14 +45,13 @@ export function nextPreSelecaoId(): string {
           .toUpperCase()
           .slice(0, 4)
       : Math.random().toString(36).slice(2, 6).toUpperCase();
-
   if (typeof window !== "undefined") {
     const n = parseInt(localStorage.getItem(COUNTER_KEY) || "0", 10) + 1;
     localStorage.setItem(COUNTER_KEY, String(n));
   }
-
   return `PS${ts}${random}`;
 }
+
 
 export function buildPreSelecao(input: Omit<PreSelecao, "id" | "criadoEm" | "expiraEm" | "status" | "totalItens" | "totalUnidades" | "totalVarejoRef">): PreSelecao {
   const now = new Date();
