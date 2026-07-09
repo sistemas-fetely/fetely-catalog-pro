@@ -53,7 +53,7 @@ export async function nextPreSelecaoId(): Promise<string> {
 }
 
 
-export function buildPreSelecao(input: Omit<PreSelecao, "id" | "criadoEm" | "expiraEm" | "status" | "totalItens" | "totalUnidades" | "totalVarejoRef">): PreSelecao {
+export async function buildPreSelecao(input: Omit<PreSelecao, "id" | "criadoEm" | "expiraEm" | "status" | "totalItens" | "totalUnidades" | "totalVarejoRef">): Promise<PreSelecao> {
   const now = new Date();
   const expira = new Date(now.getTime() + EXPIRACAO_PADRAO_HORAS * 3600 * 1000);
   const totalItens = input.itens.length;
@@ -61,7 +61,7 @@ export function buildPreSelecao(input: Omit<PreSelecao, "id" | "criadoEm" | "exp
   const totalVarejoRef = input.itens.reduce((s, i) => s + i.subtotalVarejo, 0);
   return {
     ...input,
-    id: nextPreSelecaoId(),
+    id: await nextPreSelecaoId(),
     criadoEm: now.toISOString(),
     expiraEm: expira.toISOString(),
     status: "nova",
@@ -70,6 +70,7 @@ export function buildPreSelecao(input: Omit<PreSelecao, "id" | "criadoEm" | "exp
     totalVarejoRef,
   };
 }
+
 
 // ---- base64 sync (URL-safe) ----
 export function encodePreSelecao(pre: PreSelecao): string {
