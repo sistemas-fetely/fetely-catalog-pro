@@ -136,11 +136,13 @@ function ReunioesPage() {
             <tr>
               <th className="text-left px-3 py-2">#</th>
               <th className="text-left px-3 py-2">Empresa</th>
+              <th className="text-left px-3 py-2">Vendedor</th>
               <th className="text-left px-3 py-2">Itens</th>
               <th className="text-left px-3 py-2">Ref. Varejo</th>
               <th className="text-left px-3 py-2">Status</th>
               <th className="text-left px-3 py-2">Expira em</th>
               <th></th>
+
             </tr>
           </thead>
           <tbody>
