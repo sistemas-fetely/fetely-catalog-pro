@@ -369,7 +369,7 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
             <Row k="Contato" v={`${pre.contatoNome}${pre.contatoCargo ? ` (${pre.contatoCargo})` : ""}`} />
             <Row k="WhatsApp" v={pre.contatoWhatsapp} />
             <Row k="E-mail" v={pre.contatoEmail} />
-            <Row k="Vendedor" v={pre.vendedorId ?? "—"} />
+            <Row k="Vendedor" v={pre.vendedorNome || pre.vendedorId || "— (link sem vendedor)"} />
             <Row k="Expira" v={tempoRestante(pre)} />
           </dl>
           {pre.observacao && (
