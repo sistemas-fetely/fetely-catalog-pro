@@ -136,17 +136,19 @@ function ReunioesPage() {
             <tr>
               <th className="text-left px-3 py-2">#</th>
               <th className="text-left px-3 py-2">Empresa</th>
+              <th className="text-left px-3 py-2">Vendedor</th>
               <th className="text-left px-3 py-2">Itens</th>
               <th className="text-left px-3 py-2">Ref. Varejo</th>
               <th className="text-left px-3 py-2">Status</th>
               <th className="text-left px-3 py-2">Expira em</th>
               <th></th>
+
             </tr>
           </thead>
           <tbody>
             {filtradas.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-12 text-text-secondary text-sm">
+                <td colSpan={8} className="text-center py-12 text-text-secondary text-sm">
                   Nenhuma pré-seleção nesta aba.
                 </td>
               </tr>
@@ -162,6 +164,15 @@ function ReunioesPage() {
                     <div className="font-medium">{p.nomeFantasia}</div>
                     <div className="text-xs text-text-secondary">{p.cidadeEstado} · {SEGMENTO_LABEL[p.segmento]}</div>
                   </td>
+                  <td className="px-3 py-3 text-xs">
+                    {p.vendedorNome || p.vendedorId ? (
+                      <span className="text-text-primary uppercase tracking-wider">
+                        {p.vendedorNome || p.vendedorId}
+                      </span>
+                    ) : (
+                      <span className="text-text-muted italic">sem vendedor</span>
+                    )}
+                  </td>
                   <td className="px-3 py-3">
                     {p.totalItens} · {p.totalUnidades} un
                   </td>
@@ -176,6 +187,7 @@ function ReunioesPage() {
                 </tr>
               ))
             )}
+
           </tbody>
         </table>
       </div>
@@ -357,7 +369,7 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
             <Row k="Contato" v={`${pre.contatoNome}${pre.contatoCargo ? ` (${pre.contatoCargo})` : ""}`} />
             <Row k="WhatsApp" v={pre.contatoWhatsapp} />
             <Row k="E-mail" v={pre.contatoEmail} />
-            <Row k="Vendedor" v={pre.vendedorId ?? "—"} />
+            <Row k="Vendedor" v={pre.vendedorNome || pre.vendedorId || "— (link sem vendedor)"} />
             <Row k="Expira" v={tempoRestante(pre)} />
           </dl>
           {pre.observacao && (

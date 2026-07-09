@@ -2227,6 +2227,7 @@ export type Database = {
       }
       next_cotacao_id: { Args: never; Returns: string }
       next_order_id: { Args: never; Returns: string }
+      next_pre_selecao_id: { Args: never; Returns: string }
       record_login: { Args: never; Returns: undefined }
     }
     Enums: {
