@@ -148,7 +148,7 @@ function ReunioesPage() {
           <tbody>
             {filtradas.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-12 text-text-secondary text-sm">
+                <td colSpan={8} className="text-center py-12 text-text-secondary text-sm">
                   Nenhuma pré-seleção nesta aba.
                 </td>
               </tr>
@@ -164,6 +164,15 @@ function ReunioesPage() {
                     <div className="font-medium">{p.nomeFantasia}</div>
                     <div className="text-xs text-text-secondary">{p.cidadeEstado} · {SEGMENTO_LABEL[p.segmento]}</div>
                   </td>
+                  <td className="px-3 py-3 text-xs">
+                    {p.vendedorNome || p.vendedorId ? (
+                      <span className="text-text-primary uppercase tracking-wider">
+                        {p.vendedorNome || p.vendedorId}
+                      </span>
+                    ) : (
+                      <span className="text-text-muted italic">sem vendedor</span>
+                    )}
+                  </td>
                   <td className="px-3 py-3">
                     {p.totalItens} · {p.totalUnidades} un
                   </td>
@@ -178,6 +187,7 @@ function ReunioesPage() {
                 </tr>
               ))
             )}
+
           </tbody>
         </table>
       </div>
