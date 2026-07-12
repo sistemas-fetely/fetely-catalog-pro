@@ -2194,6 +2194,16 @@ function TabCliente({ orders, ordersPrev, items, range }: {
   range: { from: Date; to: Date; label: string };
 }) {
   const [view, setView] = useState<ClienteView>("cliente");
+  const clientesCadastro = useClientes((s) => s.clientes);
+  const clienteByKey = useMemo(() => {
+    const m = new Map<string, typeof clientesCadastro[number]>();
+    clientesCadastro.forEach((c) => {
+      if (c.id) m.set(c.id, c);
+      const digits = (c.cnpj || "").replace(/\D/g, "");
+      if (digits) m.set(digits, c);
+    });
+    return m;
+  }, [clientesCadastro]);
 
   const totalFat = orders.reduce((s, o) => s + Number(o.total || 0), 0);
   const fmtPct = (v: number) => `${v.toFixed(1)}%`;
