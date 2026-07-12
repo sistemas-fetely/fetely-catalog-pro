@@ -14,6 +14,7 @@ import {
 import { useAuth } from "@/store/authStore";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
+import { useClientes } from "@/store/clienteStore";
 
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
