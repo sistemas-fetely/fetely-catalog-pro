@@ -14,6 +14,7 @@ import {
 import { useAuth } from "@/store/authStore";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
+import { useClientes } from "@/store/clienteStore";
 
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
@@ -2193,6 +2194,16 @@ function TabCliente({ orders, ordersPrev, items, range }: {
   range: { from: Date; to: Date; label: string };
 }) {
   const [view, setView] = useState<ClienteView>("cliente");
+  const clientesCadastro = useClientes((s) => s.clientes);
+  const clienteByKey = useMemo(() => {
+    const m = new Map<string, typeof clientesCadastro[number]>();
+    clientesCadastro.forEach((c) => {
+      if (c.id) m.set(c.id, c);
+      const digits = (c.cnpj || "").replace(/\D/g, "");
+      if (digits) m.set(digits, c);
+    });
+    return m;
+  }, [clientesCadastro]);
 
   const totalFat = orders.reduce((s, o) => s + Number(o.total || 0), 0);
   const fmtPct = (v: number) => `${v.toFixed(1)}%`;
@@ -2423,14 +2434,25 @@ function TabCliente({ orders, ordersPrev, items, range }: {
   }, [orders, ordersPrev]);
 
   // ── CSV exports
-  const exportCliente = () => downloadCSV(`fetely_clientes_${periodSuffix(range.from)}.csv`, porCliente.map((c, i) => ({
-    "#": i + 1, "Razão Social": c.razao, CNPJ: c.cnpj, Cidade: c.cidade, UF: c.estado,
-    Pedidos: c.pedidos, Unidades: c.unidades,
-    "Fat. Bruto": c.bruto.toFixed(2), "Fat. Líquido": c.liquido.toFixed(2),
-    "Ticket Médio": c.ticket.toFixed(2), "% Total": c.pct.toFixed(2),
-    Vendedores: Array.from(c.vendedores).join(", "),
-    "Última Compra": new Date(c.ultima).toLocaleDateString("pt-BR"),
-  })));
+  const exportCliente = () => downloadCSV(`fetely_clientes_${periodSuffix(range.from)}.csv`, porCliente.map((c, i) => {
+    const cad = clienteByKey.get(c.key) || clienteByKey.get((c.cnpj || "").replace(/\D/g, ""));
+    return {
+      "#": i + 1, "Razão Social": c.razao, CNPJ: c.cnpj,
+      "Nome Fantasia": cad?.nomeFantasia || "",
+      Cidade: c.cidade, UF: c.estado,
+      "Contato": cad?.contatoNome || "",
+      "Email": cad?.contatoEmail || "",
+      "Telefone": cad?.contatoTelefone || "",
+      "WhatsApp": cad?.contatoWhatsapp || "",
+      "Email Financeiro": cad?.financeiroEmail || "",
+      "Telefone Financeiro": cad?.financeiroTelefone || "",
+      Pedidos: c.pedidos, Unidades: c.unidades,
+      "Fat. Bruto": c.bruto.toFixed(2), "Fat. Líquido": c.liquido.toFixed(2),
+      "Ticket Médio": c.ticket.toFixed(2), "% Total": c.pct.toFixed(2),
+      Vendedores: Array.from(c.vendedores).join(", "),
+      "Última Compra": new Date(c.ultima).toLocaleDateString("pt-BR"),
+    };
+  }));
   const exportEstado = () => downloadCSV(`fetely_estados_${periodSuffix(range.from)}.csv`, porEstado.map((c, i) => ({
     "#": i + 1, UF: c.uf, Clientes: c.clientes, Pedidos: c.pedidos, Unidades: c.unidades,
     "Fat. Bruto": c.bruto.toFixed(2), "Fat. Líquido": c.liquido.toFixed(2),
