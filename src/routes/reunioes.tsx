@@ -91,18 +91,63 @@ function ReunioesPage() {
     return { novas, valorPotencial, taxa: Math.round((convertidas / total) * 100) };
   }, [todas]);
 
+  const sessoesKpis = useMemo(() => {
+    let abandonoForm = 0;
+    let ativos = 0;
+    let acessos = 0;
+    for (const s of sessoes) {
+      if (s.estado_derivado === "formulario_abandonado") abandonoForm++;
+      else if (s.estado_derivado === "formulario_aberto" || s.estado_derivado === "montando") ativos++;
+      else if (s.estado_derivado === "acessou" || s.estado_derivado === "montagem_abandonada") acessos++;
+    }
+    return { abandonoForm, ativos, acessos };
+  }, [sessoes]);
+
   const counts = useMemo(() => {
     const c: Record<string, number> = { todas: todas.length };
     for (const p of todas) c[p.status] = (c[p.status] || 0) + 1;
     return c;
   }, [todas]);
 
+  const sessoesFiltradas = useMemo(() => {
+    let out = sessoes;
+    if (sessaoTab !== "todas") {
+      const map: Record<typeof sessaoTab, EstadoSessao | null> = {
+        todas: null,
+        abandonado: "formulario_abandonado",
+        aberto: "formulario_aberto",
+        montando: "montando",
+        acessou: "acessou",
+      };
+      const alvo = map[sessaoTab];
+      if (alvo) out = out.filter((s) => s.estado_derivado === alvo);
+    }
+    const q = busca.trim().toLowerCase();
+    if (q) {
+      out = out.filter((s) =>
+        `${s.nome ?? ""} ${s.whatsapp ?? ""} ${s.razao_social ?? ""} ${s.cnpj ?? ""}`.toLowerCase().includes(q),
+      );
+    }
+    return out;
+  }, [sessoes, sessaoTab, busca]);
+
+  const sessoesCounts = useMemo(() => {
+    const c = { todas: sessoes.length, abandonado: 0, aberto: 0, montando: 0, acessou: 0 };
+    for (const s of sessoes) {
+      if (s.estado_derivado === "formulario_abandonado") c.abandonado++;
+      else if (s.estado_derivado === "formulario_aberto") c.aberto++;
+      else if (s.estado_derivado === "montando") c.montando++;
+      else if (s.estado_derivado === "acessou" || s.estado_derivado === "montagem_abandonada") c.acessou++;
+    }
+    return c;
+  }, [sessoes]);
+
   return (
     <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-6">
       <div className="flex flex-col md:flex-row md:items-center gap-3 mb-6">
         <div>
           <h1 className="font-display text-3xl">Reuniões</h1>
-          <p className="text-sm text-text-secondary">Pré-seleções recebidas do catálogo público</p>
+          <p className="text-sm text-text-secondary">Jornada dos clientes no catálogo público</p>
         </div>
         <div className="md:ml-auto flex gap-2">
           <Button variant="outline" onClick={() => setLinkModalOpen(true)}>
@@ -112,35 +157,112 @@ function ReunioesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+      {/* Alerta crítico: formulários abandonados */}
+      {sessoesKpis.abandonoForm > 0 && (
+        <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-red-500">
+              {sessoesKpis.abandonoForm} formulário{sessoesKpis.abandonoForm > 1 ? "s" : ""} abandonado{sessoesKpis.abandonoForm > 1 ? "s" : ""}
+            </div>
+            <div className="text-xs text-text-secondary">
+              Cliente abriu o formulário, preencheu algo, mas não enviou. Recupere pelo WhatsApp.
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-red-500/40 text-red-500 hover:bg-red-500/10"
+            onClick={() => { setPanel("sessoes"); setSessaoTab("abandonado"); }}
+          >
+            Ver abandonos
+          </Button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         <KpiCard label="Novas" value={String(kpis.novas)} accent={kpis.novas > 0} />
+        <KpiCard label="Form. abandonado" value={String(sessoesKpis.abandonoForm)} danger={sessoesKpis.abandonoForm > 0} />
+        <KpiCard label="Em andamento" value={String(sessoesKpis.ativos)} />
         <KpiCard label="Valor ref. potencial" value={formatBRL(kpis.valorPotencial)} />
         <KpiCard label="Taxa de conversão" value={`${kpis.taxa}%`} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border transition",
-              tab === t.key
-                ? "bg-gold text-background border-gold"
-                : "border-border text-text-secondary hover:border-gold/40 hover:text-gold",
-            )}
-          >
-            {t.label} {counts[t.key] > 0 && <span className="opacity-70">({counts[t.key]})</span>}
-            {t.key === "nova" && counts["nova"] > 0 && <span className="inline-block ml-1 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />}
-          </button>
-        ))}
-        <Input
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar empresa, CNPJ..."
-          className="ml-auto max-w-xs h-9"
-        />
+      {/* Switch entre pré-seleções (enviadas) e sessões (jornada) */}
+      <div className="flex items-center gap-1 mb-4 border-b border-border">
+        <PanelTab active={panel === "presel"} onClick={() => setPanel("presel")} icon={<CheckCircle2 className="h-3.5 w-3.5" />}>
+          Pré-seleções enviadas ({todas.length})
+        </PanelTab>
+        <PanelTab active={panel === "sessoes"} onClick={() => setPanel("sessoes")} icon={<Activity className="h-3.5 w-3.5" />} highlight={sessoesKpis.abandonoForm > 0}>
+          Em andamento ({sessoes.length})
+          {sessoesKpis.abandonoForm > 0 && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />}
+        </PanelTab>
       </div>
+
+      {panel === "presel" ? (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border transition",
+                tab === t.key
+                  ? "bg-gold text-background border-gold"
+                  : "border-border text-text-secondary hover:border-gold/40 hover:text-gold",
+              )}
+            >
+              {t.label} {counts[t.key] > 0 && <span className="opacity-70">({counts[t.key]})</span>}
+              {t.key === "nova" && counts["nova"] > 0 && <span className="inline-block ml-1 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />}
+            </button>
+          ))}
+          <Input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar empresa, CNPJ..."
+            className="ml-auto max-w-xs h-9"
+          />
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {([
+            { key: "todas", label: "Todas" },
+            { key: "abandonado", label: "Formulário abandonado", danger: true },
+            { key: "aberto", label: "Preenchendo" },
+            { key: "montando", label: "Montando" },
+            { key: "acessou", label: "Só acessou" },
+          ] as const).map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setSessaoTab(t.key)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border transition",
+                sessaoTab === t.key
+                  ? t.danger
+                    ? "bg-red-500 text-white border-red-500"
+                    : "bg-gold text-background border-gold"
+                  : t.danger && sessoesCounts.abandonado > 0
+                  ? "border-red-500/40 text-red-500 hover:bg-red-500/10"
+                  : "border-border text-text-secondary hover:border-gold/40 hover:text-gold",
+              )}
+            >
+              {t.label} <span className="opacity-70">({sessoesCounts[t.key]})</span>
+            </button>
+          ))}
+          <Input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar nome, WhatsApp, CNPJ..."
+            className="ml-auto max-w-xs h-9"
+          />
+        </div>
+      )}
+
+      {panel === "sessoes" && (
+        <SessoesTable rows={sessoesFiltradas} vendedorNome={profile?.nome_completo ?? ""} />
+      )}
+
+      {panel === "presel" && (
 
       <div className="rounded-lg border border-border overflow-hidden">
         <table className="w-full text-sm">
