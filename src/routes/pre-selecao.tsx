@@ -9,7 +9,11 @@ import {
   ensureLinkInstance,
   upsertSessao,
   emitEvento,
+  loadGateIdentidade,
+  saveGateIdentidade,
 } from "@/lib/tracking";
+import { getFeatureFlags } from "@/lib/featureFlags";
+import { GateEntradaDialog } from "@/components/catalog/GateEntradaDialog";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
@@ -66,6 +70,11 @@ function PreSelecaoPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
 
+  // --- Gate de entrada (Fatia 2) ---------------------------------------
+  const flags = useMemo(() => getFeatureFlags(), []);
+  const [gateOpen, setGateOpen] = useState(false);
+  const [gateChecked, setGateChecked] = useState(false); // evita flicker antes de resolver LS
+
   // --- Rastreamento de jornada (Fatia 1) -------------------------------
   const sessionIdRef = useRef<string | null>(null);
   const montagemEmitidaRef = useRef(false);
@@ -87,16 +96,40 @@ function PreSelecaoPage() {
       sessionIdRef.current = sid;
       const link = await ensureLinkInstance(v || undefined);
       if (cancel) return;
+      const gateSaved = loadGateIdentidade();
       await upsertSessao(sid, {
         link_instance_id: link.id,
         user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 400) : null,
+        ...(gateSaved
+          ? { nome: gateSaved.nome, whatsapp: gateSaved.whatsapp, identificado_gate: true }
+          : {}),
       });
       await emitEvento(sid, "portal_acessado", { valor_parcial: 0, itens_parcial: 0 });
+      if (cancel) return;
+      // Gate leve: abre se flag ativa e ainda não identificamos.
+      if (flags.GATE_ENTRADA_ATIVO && !gateSaved) {
+        setGateOpen(true);
+      }
+      setGateChecked(true);
     })();
     return () => {
       cancel = true;
     };
-  }, [v]);
+  }, [v, flags.GATE_ENTRADA_ATIVO]);
+
+  async function handleGateSubmit(value: { nome: string; whatsapp: string }) {
+    saveGateIdentidade(value);
+    const sid = sessionIdRef.current;
+    if (sid) {
+      await upsertSessao(sid, {
+        nome: value.nome,
+        whatsapp: value.whatsapp,
+        identificado_gate: true,
+      });
+    }
+    setGateOpen(false);
+  }
+
 
 
 
@@ -210,6 +243,7 @@ function PreSelecaoPage() {
 
   return (
     <div className="min-h-screen bg-background text-text-primary flex flex-col">
+      <GateEntradaDialog open={gateOpen} vendedor={v || undefined} onSubmit={handleGateSubmit} />
       {/* Header público */}
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto max-w-[1400px] px-4 md:px-6 h-16 flex items-center gap-3">
