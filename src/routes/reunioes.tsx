@@ -325,6 +325,9 @@ function ReunioesPage() {
           </tbody>
         </table>
       </div>
+      )}
+
+
 
       <Sheet open={!!selecionada} onOpenChange={(v) => !v && setSelecionada(null)}>
         <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto p-0">
