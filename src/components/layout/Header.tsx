@@ -12,6 +12,7 @@ import { useTemPermissao } from "@/store/permissoesStore";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
+import { MobileNavPanel } from "@/components/layout/MobileNavPanel";
 import {
   DropdownMenu,
   DropdownMenuContent,
