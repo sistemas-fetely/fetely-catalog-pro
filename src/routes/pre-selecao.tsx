@@ -620,7 +620,7 @@ function DadosEmpresaModal({
         const p = produtos.find((x) => x.sku === sku)!;
         return itemFromProductQty(p, q);
       });
-      const pre = await buildPreSelecao({
+      const preBase = await buildPreSelecao({
         vendedorId: vendedor,
         vendedorNome: null,
         cnpj: formatCNPJ(cnpj),
@@ -636,6 +636,8 @@ function DadosEmpresaModal({
         aceitaNewsletter,
         itens,
       });
+      const sid = sessionIdRef.current || undefined;
+      const pre = { ...preBase, sessaoId: sid };
 
       // 1) Envia ao backend (fonte da verdade — chega no /reunioes do vendedor).
       try {
@@ -650,11 +652,25 @@ function DadosEmpresaModal({
           return;
         }
       }
-      // 2) Guarda também localmente (fallback + link de sincronização).
+      // 2) Marca a jornada como enviada + evento final.
+      if (sid) {
+        void emitEvento(sid, "pre_selecao_enviada", {
+          valor_parcial: pre.totalVarejoRef,
+          itens_parcial: pre.totalItens,
+        });
+        void upsertSessao(sid, {
+          estado_atual: "enviada",
+          cnpj: pre.cnpj,
+          razao_social: pre.razaoSocial,
+          segmento: pre.segmento,
+        });
+      }
+      // 3) Guarda também localmente (fallback + link de sincronização).
       adicionar(pre);
       onDone(pre);
     } finally { setEnviando(false); }
   }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
