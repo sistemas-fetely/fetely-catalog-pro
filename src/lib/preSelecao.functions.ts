@@ -61,6 +61,7 @@ const preSelecaoSchema = z.object({
   pedidoGeradoId: z.string().max(80).optional(),
   atribuidoParaVendedorId: z.string().uuid().optional(),
   visualizadoEm: z.string().datetime().optional(),
+  sessaoId: z.string().uuid().optional(),
 });
 
 export const enviarPreSelecaoPublica = createServerFn({ method: "POST" })
