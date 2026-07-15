@@ -623,6 +623,33 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          descricao: string | null
+          enabled: boolean
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          descricao?: string | null
+          enabled?: boolean
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          descricao?: string | null
+          enabled?: boolean
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       grupos_clientes: {
         Row: {
           ativo: boolean
@@ -2372,6 +2399,19 @@ export type Database = {
       }
     }
     Views: {
+      gate_ab_metrics: {
+        Row: {
+          conv_total: number | null
+          enviaram: number | null
+          montaram: number | null
+          sessoes: number | null
+          taxa_envio: number | null
+          taxa_montagem: number | null
+          valor_enviado: number | null
+          variante: string | null
+        }
+        Relationships: []
+      }
       sessao_catalogo_estado: {
         Row: {
           campos_preenchidos: Json | null
@@ -2457,6 +2497,14 @@ export type Database = {
       }
     }
     Functions: {
+      claim_pre_selecao: {
+        Args: { p_id: string }
+        Returns: {
+          atribuido: boolean
+          atribuido_para_vendedor_id: string
+          id: string
+        }[]
+      }
       ensure_link_instance_for_login: {
         Args: { p_login: string }
         Returns: {
