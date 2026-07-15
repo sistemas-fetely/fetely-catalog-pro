@@ -2539,6 +2539,20 @@ export type Database = {
       next_cotacao_id: { Args: never; Returns: string }
       next_order_id: { Args: never; Returns: string }
       next_pre_selecao_id: { Args: never; Returns: string }
+      public_emit_evento_catalogo: {
+        Args: {
+          p_campos_preenchidos?: Json
+          p_itens_parcial?: number
+          p_sessao_id: string
+          p_tipo: string
+          p_valor_parcial?: number
+        }
+        Returns: undefined
+      }
+      public_upsert_sessao_catalogo: {
+        Args: { p_id: string; p_patch?: Json }
+        Returns: undefined
+      }
       record_login: { Args: never; Returns: undefined }
     }
     Enums: {

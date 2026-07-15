@@ -125,13 +125,13 @@ export interface SessaoPatch {
 export async function upsertSessao(sessionId: string, patch: SessaoPatch): Promise<void> {
   try {
     const row = {
-      id: sessionId,
       ultimo_evento: new Date().toISOString(),
       ...patch,
     };
-    const { error } = await supabase
-      .from("sessao_catalogo")
-      .upsert(row as never, { onConflict: "id" });
+    const { error } = await supabase.rpc("public_upsert_sessao_catalogo" as never, {
+      p_id: sessionId,
+      p_patch: row,
+    } as never);
     if (error) throw error;
   } catch (e) {
     console.warn("[tracking] upsertSessao falhou", e);
@@ -150,13 +150,13 @@ export async function emitEvento(
   snap: EventoSnapshot = {},
 ): Promise<void> {
   try {
-    const { error } = await supabase.from("evento_catalogo").insert({
-      sessao_id: sessionId,
-      tipo,
-      valor_parcial: snap.valor_parcial ?? null,
-      itens_parcial: snap.itens_parcial ?? null,
-      campos_preenchidos: (snap.campos_preenchidos as never) ?? null,
-    });
+    const { error } = await supabase.rpc("public_emit_evento_catalogo" as never, {
+      p_sessao_id: sessionId,
+      p_tipo: tipo,
+      p_valor_parcial: snap.valor_parcial ?? null,
+      p_itens_parcial: snap.itens_parcial ?? null,
+      p_campos_preenchidos: snap.campos_preenchidos ?? null,
+    } as never);
     if (error) throw error;
   } catch (e) {
     console.warn("[tracking] emitEvento falhou", e);
