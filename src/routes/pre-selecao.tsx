@@ -271,6 +271,16 @@ function PreSelecaoPage() {
         </div>
       </div>
 
+      <WishlistSheet
+        open={wishlistOpen}
+        onOpenChange={setWishlistOpen}
+        cart={cart}
+        produtos={products}
+        onQty={setQty}
+        onRemove={(sku) => setCart((prev) => { const n = { ...prev }; delete n[sku]; return n; })}
+        onEnviar={() => { setWishlistOpen(false); setModalOpen(true); }}
+      />
+
       <DadosEmpresaModal
         open={modalOpen}
         onOpenChange={setModalOpen}
