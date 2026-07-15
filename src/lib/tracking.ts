@@ -128,14 +128,10 @@ export async function upsertSessao(sessionId: string, patch: SessaoPatch): Promi
       ultimo_evento: new Date().toISOString(),
       ...patch,
     };
-    const rpc = supabase.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ error: unknown }>;
-    const { error } = await rpc("public_upsert_sessao_catalogo", {
+    const { error } = await supabase.rpc("public_upsert_sessao_catalogo" as never, {
       p_id: sessionId,
       p_patch: row,
-    });
+    } as never);
     if (error) throw error;
   } catch (e) {
     console.warn("[tracking] upsertSessao falhou", e);
@@ -154,17 +150,13 @@ export async function emitEvento(
   snap: EventoSnapshot = {},
 ): Promise<void> {
   try {
-    const rpc = supabase.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ error: unknown }>;
-    const { error } = await rpc("public_emit_evento_catalogo", {
+    const { error } = await supabase.rpc("public_emit_evento_catalogo" as never, {
       p_sessao_id: sessionId,
       p_tipo: tipo,
       p_valor_parcial: snap.valor_parcial ?? null,
       p_itens_parcial: snap.itens_parcial ?? null,
       p_campos_preenchidos: snap.campos_preenchidos ?? null,
-    });
+    } as never);
     if (error) throw error;
   } catch (e) {
     console.warn("[tracking] emitEvento falhou", e);
