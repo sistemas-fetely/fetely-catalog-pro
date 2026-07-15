@@ -136,13 +136,15 @@ export interface SessaoPatch {
   ultimo_form_open?: string | null;
   campos_preenchidos?: Record<string, unknown> | null;
   user_agent?: string | null;
+  device_id?: string | null;
 }
 
-/** Cria ou atualiza a sessão (upsert por id). */
+/** Cria ou atualiza a sessão (upsert por id). Injeta device_id automaticamente. */
 export async function upsertSessao(sessionId: string, patch: SessaoPatch): Promise<void> {
   try {
     const row = {
       ultimo_evento: new Date().toISOString(),
+      device_id: patch.device_id ?? getOrCreateDeviceId(),
       ...patch,
     };
     const { error } = await supabase.rpc("public_upsert_sessao_catalogo" as never, {
@@ -154,6 +156,7 @@ export async function upsertSessao(sessionId: string, patch: SessaoPatch): Promi
     console.warn("[tracking] upsertSessao falhou", e);
   }
 }
+
 
 export interface EventoSnapshot {
   valor_parcial?: number;
