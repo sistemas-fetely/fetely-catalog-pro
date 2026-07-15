@@ -252,7 +252,7 @@ function ReunioesPage() {
           Pré-seleções enviadas ({todas.length})
         </PanelTab>
         <PanelTab active={panel === "sessoes"} onClick={() => setPanel("sessoes")} icon={<Activity className="h-3.5 w-3.5" />} highlight={sessoesKpis.abandonoForm > 0}>
-          Em andamento ({sessoes.length})
+          Em andamento ({sessoesGrupos.length})
           {sessoesKpis.abandonoForm > 0 && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />}
         </PanelTab>
       </div>
