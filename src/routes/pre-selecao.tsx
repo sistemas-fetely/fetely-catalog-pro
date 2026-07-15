@@ -70,6 +70,11 @@ function PreSelecaoPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
 
+  // --- Gate de entrada (Fatia 2) ---------------------------------------
+  const flags = useMemo(() => getFeatureFlags(), []);
+  const [gateOpen, setGateOpen] = useState(false);
+  const [gateChecked, setGateChecked] = useState(false); // evita flicker antes de resolver LS
+
   // --- Rastreamento de jornada (Fatia 1) -------------------------------
   const sessionIdRef = useRef<string | null>(null);
   const montagemEmitidaRef = useRef(false);
