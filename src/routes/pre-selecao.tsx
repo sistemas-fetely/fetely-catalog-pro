@@ -96,16 +96,40 @@ function PreSelecaoPage() {
       sessionIdRef.current = sid;
       const link = await ensureLinkInstance(v || undefined);
       if (cancel) return;
+      const gateSaved = loadGateIdentidade();
       await upsertSessao(sid, {
         link_instance_id: link.id,
         user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 400) : null,
+        ...(gateSaved
+          ? { nome: gateSaved.nome, whatsapp: gateSaved.whatsapp, identificado_gate: true }
+          : {}),
       });
       await emitEvento(sid, "portal_acessado", { valor_parcial: 0, itens_parcial: 0 });
+      if (cancel) return;
+      // Gate leve: abre se flag ativa e ainda não identificamos.
+      if (flags.GATE_ENTRADA_ATIVO && !gateSaved) {
+        setGateOpen(true);
+      }
+      setGateChecked(true);
     })();
     return () => {
       cancel = true;
     };
-  }, [v]);
+  }, [v, flags.GATE_ENTRADA_ATIVO]);
+
+  async function handleGateSubmit(value: { nome: string; whatsapp: string }) {
+    saveGateIdentidade(value);
+    const sid = sessionIdRef.current;
+    if (sid) {
+      await upsertSessao(sid, {
+        nome: value.nome,
+        whatsapp: value.whatsapp,
+        identificado_gate: true,
+      });
+    }
+    setGateOpen(false);
+  }
+
 
 
 
