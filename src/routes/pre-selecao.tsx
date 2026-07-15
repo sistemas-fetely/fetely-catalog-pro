@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { ChevronRight, X, Menu, Heart, ArrowRight, Search } from "lucide-react";
+import { ChevronRight, X, Menu, Heart, ArrowRight, Search, Trash2, Minus, Plus } from "lucide-react";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
