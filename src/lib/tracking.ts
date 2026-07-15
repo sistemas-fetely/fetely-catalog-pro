@@ -9,8 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 const COOKIE_NAME = "fetely_session_id";
 const LS_SESSION = "fetely_session_id";
+const DEVICE_COOKIE = "fetely_device_id";
+const LS_DEVICE = "fetely_device_id";
 const LS_GATE = "fetely_gate_identidade"; // { nome, whatsapp } — reidentificação
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 ano
+
 
 export type EventoTipo =
   | "portal_acessado"
