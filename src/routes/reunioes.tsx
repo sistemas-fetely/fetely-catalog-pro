@@ -112,15 +112,14 @@ function ReunioesPage() {
   const sessoesFiltradas = useMemo(() => {
     let out = sessoes;
     if (sessaoTab !== "todas") {
-      const map: Record<typeof sessaoTab, EstadoSessao | null> = {
-        todas: null,
+      const map: Record<Exclude<typeof sessaoTab, "todas">, EstadoSessao> = {
         abandonado: "formulario_abandonado",
         aberto: "formulario_aberto",
         montando: "montando",
         acessou: "acessou",
       };
       const alvo = map[sessaoTab];
-      if (alvo) out = out.filter((s) => s.estado_derivado === alvo);
+      out = out.filter((s) => s.estado_derivado === alvo);
     }
     const q = busca.trim().toLowerCase();
     if (q) {
