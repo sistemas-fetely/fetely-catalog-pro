@@ -243,6 +243,10 @@ function PreSelecaoPage() {
 
   return (
     <div className="min-h-screen bg-background text-text-primary flex flex-col">
+      <GateEntradaDialog open={gateOpen} vendedor={v || undefined} onSubmit={handleGateSubmit} />
+      {/* Blur do conteúdo enquanto o gate está aberto (evita "espiar" o catálogo) */}
+      <div className={cn("contents", gateOpen && "pointer-events-none select-none")} aria-hidden={gateOpen}>
+      {!gateChecked && flags.GATE_ENTRADA_ATIVO ? null : null}
       {/* Header público */}
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto max-w-[1400px] px-4 md:px-6 h-16 flex items-center gap-3">
