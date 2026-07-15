@@ -885,7 +885,9 @@ function WishlistSheet({
                   <div className="font-display text-lg mb-2 pb-1 border-b border-border/60">{c.colecao}</div>
                   <ul className="space-y-2">
                     {c.itens.map(({ p, qty }) => {
-                      const img = getProdutoPhoto(photos, p.colecao, p.corNome);
+                      const img =
+                        getProdutoPhoto(photos, p.colecao, p.corNome) ??
+                        getColecaoPhoto(photos, p.colecao, (p as unknown as { categoria?: string }).categoria);
                       const sub = qty * (p.precoAtacado || 0);
                       return (
                         <li key={p.sku} className="flex gap-3 items-start rounded-md bg-surface-2/50 p-2">
