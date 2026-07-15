@@ -23,6 +23,8 @@ import type { CartItem, OrderCommercial, OrderMeta } from "@/types";
 import type { Cliente, ClienteSnapshot } from "@/types/cliente";
 import type { ItemProvisao } from "@/types/provisao";
 import { getPremissasVigentes } from "@/lib/premissas";
+import { usePhotos, getProdutoPhoto, getColecaoPhoto } from "@/store/photoStore";
+import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
