@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Link as LinkIcon, MessageCircle, Copy, QrCode, Trash2, CheckCircle2, Eye, ArrowRight, X } from "lucide-react";
+import { Link as LinkIcon, MessageCircle, Copy, QrCode, Trash2, CheckCircle2, Eye, ArrowRight, X, AlertTriangle, Clock, Activity } from "lucide-react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { formatBRL } from "@/lib/format";
 import { tempoRestante, PUBLIC_SITE_URL } from "@/lib/preSelecao";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useSessoesCatalogo, ESTADO_SESSAO_LABEL, type SessaoRow, type EstadoSessao } from "@/lib/sessoesCatalogo";
 
 export const Route = createFileRoute("/reunioes")({
   head: () => ({
