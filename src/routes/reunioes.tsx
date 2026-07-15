@@ -39,12 +39,19 @@ function ReunioesPage() {
   const refresh = usePreSelecao((s) => s.refresh);
   const session = useAuth((s) => s.session);
   const profile = useAuth((s) => s.profile);
+  const [sessoesTick, setSessoesTick] = useState(0);
   useEffect(() => { hydrate(); }, [hydrate, session?.user.id, profile?.id]);
   useEffect(() => {
     if (!session) return;
     void refresh();
-    const interval = window.setInterval(() => void refresh(), 10000);
-    const onFocus = () => void refresh();
+    const interval = window.setInterval(() => {
+      void refresh();
+      setSessoesTick((t) => t + 1);
+    }, 10000);
+    const onFocus = () => {
+      void refresh();
+      setSessoesTick((t) => t + 1);
+    };
     window.addEventListener("focus", onFocus);
     return () => {
       window.clearInterval(interval);
@@ -52,8 +59,12 @@ function ReunioesPage() {
     };
   }, [refresh, session]);
 
+  const { rows: sessoes } = useSessoesCatalogo(sessoesTick);
+
   const todas = usePreSelecoesEscopo();
+  const [panel, setPanel] = useState<"presel" | "sessoes">("presel");
   const [tab, setTab] = useState<StatusPreSelecao | "todas">("nova");
+  const [sessaoTab, setSessaoTab] = useState<"todas" | "abandonado" | "aberto" | "montando" | "acessou">("todas");
   const [busca, setBusca] = useState("");
   const [selecionada, setSelecionada] = useState<PreSelecao | null>(null);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
