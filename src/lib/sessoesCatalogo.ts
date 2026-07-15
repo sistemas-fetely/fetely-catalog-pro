@@ -36,9 +36,11 @@ export interface SessaoRow {
   origem_tipo_snapshot: string | null;
   origem_id_snapshot: string | null;
   user_agent: string | null;
+  device_id: string | null;
   created_at: string;
   updated_at: string;
   estado_derivado: EstadoSessao;
+
 }
 
 export const ESTADO_SESSAO_LABEL: Record<EstadoSessao, string> = {
