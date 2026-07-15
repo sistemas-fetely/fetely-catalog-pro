@@ -237,10 +237,10 @@ function ReunioesPage() {
               className={cn(
                 "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border transition",
                 sessaoTab === t.key
-                  ? t.danger
+                  ? "danger" in t
                     ? "bg-red-500 text-white border-red-500"
                     : "bg-gold text-background border-gold"
-                  : t.danger && sessoesCounts.abandonado > 0
+                  : "danger" in t && sessoesCounts.abandonado > 0
                   ? "border-red-500/40 text-red-500 hover:bg-red-500/10"
                   : "border-border text-text-secondary hover:border-gold/40 hover:text-gold",
               )}
