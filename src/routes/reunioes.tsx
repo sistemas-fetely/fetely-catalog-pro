@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Link as LinkIcon, MessageCircle, Copy, QrCode, Trash2, CheckCircle2, Eye, ArrowRight, X, AlertTriangle, Clock, Activity, MessageSquareText, Check } from "lucide-react";
+import { Link as LinkIcon, MessageCircle, Copy, QrCode, Trash2, CheckCircle2, Eye, ArrowRight, X, AlertTriangle, Clock, Activity, MessageSquareText, Check, ChevronDown, ChevronRight, Users } from "lucide-react";
+
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,53 @@ const TABS: { key: StatusPreSelecao | "todas"; label: string }[] = [
   { key: "convertida", label: "Convertidas" },
   { key: "todas", label: "Todas" },
 ];
+
+/** Grupo consolidado de sessões da mesma pessoa/dispositivo. */
+interface SessaoGrupo {
+  key: string;
+  latest: SessaoRow;
+  historico: SessaoRow[]; // ordenado desc por ultimo_evento (inclui a latest)
+  acessos: number;
+  primeiroAcesso: string | null;
+}
+
+/** Agrupa por telefone (WhatsApp) OU (nome normalizado + device_id) OU device_id sozinho. */
+function agruparSessoes(rows: SessaoRow[]): SessaoGrupo[] {
+  const normNome = (s: string | null) => (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  const digits = (s: string | null) => (s ?? "").replace(/\D/g, "");
+  const keyOf = (s: SessaoRow): string => {
+    const wa = digits(s.whatsapp);
+    if (wa.length >= 10) return `wa:${wa}`;
+    const nm = normNome(s.nome);
+    const dv = (s.device_id ?? "").trim();
+    if (nm && dv) return `nd:${nm}|${dv}`;
+    if (dv) return `d:${dv}`;
+    return `s:${s.id}`;
+  };
+  const map = new Map<string, SessaoRow[]>();
+  for (const r of rows) {
+    const k = keyOf(r);
+    const arr = map.get(k);
+    if (arr) arr.push(r);
+    else map.set(k, [r]);
+  }
+  const grupos: SessaoGrupo[] = [];
+  for (const [key, arr] of map) {
+    const historico = [...arr].sort((a, b) =>
+      (b.ultimo_evento ?? b.created_at) < (a.ultimo_evento ?? a.created_at) ? -1 : 1,
+    );
+    const latest = historico[0];
+    const primeiro = arr.reduce<string | null>((min, r) => {
+      const t = r.primeiro_acesso ?? r.created_at;
+      if (!min || t < min) return t;
+      return min;
+    }, null);
+    grupos.push({ key, latest, historico, acessos: arr.length, primeiroAcesso: primeiro });
+  }
+  grupos.sort((a, b) => (b.latest.ultimo_evento ?? "") < (a.latest.ultimo_evento ?? "") ? -1 : 1);
+  return grupos;
+}
+
 
 function ReunioesPage() {
   const hydrate = usePreSelecao((s) => s.hydrate);
@@ -91,17 +139,20 @@ function ReunioesPage() {
     return { novas, valorPotencial, taxa: Math.round((convertidas / total) * 100) };
   }, [todas]);
 
+  const sessoesGrupos = useMemo(() => agruparSessoes(sessoes), [sessoes]);
+
   const sessoesKpis = useMemo(() => {
     let abandonoForm = 0;
     let ativos = 0;
     let acessos = 0;
-    for (const s of sessoes) {
-      if (s.estado_derivado === "formulario_abandonado") abandonoForm++;
-      else if (s.estado_derivado === "formulario_aberto" || s.estado_derivado === "montando") ativos++;
-      else if (s.estado_derivado === "acessou" || s.estado_derivado === "montagem_abandonada") acessos++;
+    for (const g of sessoesGrupos) {
+      const e = g.latest.estado_derivado;
+      if (e === "formulario_abandonado") abandonoForm++;
+      else if (e === "formulario_aberto" || e === "montando") ativos++;
+      else if (e === "acessou" || e === "montagem_abandonada") acessos++;
     }
     return { abandonoForm, ativos, acessos };
-  }, [sessoes]);
+  }, [sessoesGrupos]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { todas: todas.length };
@@ -110,7 +161,7 @@ function ReunioesPage() {
   }, [todas]);
 
   const sessoesFiltradas = useMemo(() => {
-    let out = sessoes;
+    let out = sessoesGrupos;
     if (sessaoTab !== "todas") {
       const map: Record<Exclude<typeof sessaoTab, "todas">, EstadoSessao> = {
         abandonado: "formulario_abandonado",
@@ -119,27 +170,35 @@ function ReunioesPage() {
         acessou: "acessou",
       };
       const alvo = map[sessaoTab];
-      out = out.filter((s) => s.estado_derivado === alvo);
+      out = out.filter((g) =>
+        sessaoTab === "acessou"
+          ? g.latest.estado_derivado === "acessou" || g.latest.estado_derivado === "montagem_abandonada"
+          : g.latest.estado_derivado === alvo,
+      );
     }
     const q = busca.trim().toLowerCase();
     if (q) {
-      out = out.filter((s) =>
-        `${s.nome ?? ""} ${s.whatsapp ?? ""} ${s.razao_social ?? ""} ${s.cnpj ?? ""}`.toLowerCase().includes(q),
+      out = out.filter((g) =>
+        g.historico.some((s) =>
+          `${s.nome ?? ""} ${s.whatsapp ?? ""} ${s.razao_social ?? ""} ${s.cnpj ?? ""}`.toLowerCase().includes(q),
+        ),
       );
     }
     return out;
-  }, [sessoes, sessaoTab, busca]);
+  }, [sessoesGrupos, sessaoTab, busca]);
 
   const sessoesCounts = useMemo(() => {
-    const c = { todas: sessoes.length, abandonado: 0, aberto: 0, montando: 0, acessou: 0 };
-    for (const s of sessoes) {
-      if (s.estado_derivado === "formulario_abandonado") c.abandonado++;
-      else if (s.estado_derivado === "formulario_aberto") c.aberto++;
-      else if (s.estado_derivado === "montando") c.montando++;
-      else if (s.estado_derivado === "acessou" || s.estado_derivado === "montagem_abandonada") c.acessou++;
+    const c = { todas: sessoesGrupos.length, abandonado: 0, aberto: 0, montando: 0, acessou: 0 };
+    for (const g of sessoesGrupos) {
+      const e = g.latest.estado_derivado;
+      if (e === "formulario_abandonado") c.abandonado++;
+      else if (e === "formulario_aberto") c.aberto++;
+      else if (e === "montando") c.montando++;
+      else if (e === "acessou" || e === "montagem_abandonada") c.acessou++;
     }
     return c;
-  }, [sessoes]);
+  }, [sessoesGrupos]);
+
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-6">
@@ -193,7 +252,7 @@ function ReunioesPage() {
           Pré-seleções enviadas ({todas.length})
         </PanelTab>
         <PanelTab active={panel === "sessoes"} onClick={() => setPanel("sessoes")} icon={<Activity className="h-3.5 w-3.5" />} highlight={sessoesKpis.abandonoForm > 0}>
-          Em andamento ({sessoes.length})
+          Em andamento ({sessoesGrupos.length})
           {sessoesKpis.abandonoForm > 0 && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />}
         </PanelTab>
       </div>
@@ -386,14 +445,16 @@ function PanelTab({
   );
 }
 
-function SessoesTable({ rows, vendedorNome }: { rows: SessaoRow[]; vendedorNome: string }) {
+function SessoesTable({ rows, vendedorNome }: { rows: SessaoGrupo[]; vendedorNome: string }) {
   return (
     <div className="rounded-lg border border-border overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-surface-2 text-xs uppercase tracking-wider text-text-secondary">
           <tr>
+            <th className="w-8 px-2 py-2"></th>
             <th className="text-left px-3 py-2">Cliente</th>
             <th className="text-left px-3 py-2">WhatsApp</th>
+            <th className="text-left px-3 py-2">Acessos</th>
             <th className="text-left px-3 py-2">Itens</th>
             <th className="text-left px-3 py-2">Valor (atacado)</th>
             <th className="text-left px-3 py-2">Estado</th>
@@ -404,12 +465,12 @@ function SessoesTable({ rows, vendedorNome }: { rows: SessaoRow[]; vendedorNome:
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={7} className="text-center py-12 text-text-secondary text-sm">
+              <td colSpan={9} className="text-center py-12 text-text-secondary text-sm">
                 Nenhuma sessão nesta aba.
               </td>
             </tr>
           ) : (
-            rows.map((s) => <SessaoRowView key={s.id} s={s} vendedorNome={vendedorNome} />)
+            rows.map((g) => <SessaoRowView key={g.key} grupo={g} vendedorNome={vendedorNome} />)
           )}
         </tbody>
       </table>
@@ -417,12 +478,15 @@ function SessoesTable({ rows, vendedorNome }: { rows: SessaoRow[]; vendedorNome:
   );
 }
 
-function SessaoRowView({ s, vendedorNome }: { s: SessaoRow; vendedorNome: string }) {
+function SessaoRowView({ grupo, vendedorNome }: { grupo: SessaoGrupo; vendedorNome: string }) {
+  const s = grupo.latest;
   const abandonado = s.estado_derivado === "formulario_abandonado";
   const nome = s.nome ?? s.razao_social ?? "— (não identificado)";
   const ultimo = s.ultimo_evento ? new Date(s.ultimo_evento) : null;
   const rel = ultimo ? relativeTime(ultimo) : "—";
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [aberto, setAberto] = useState(false);
+  const temHistorico = grupo.acessos > 1;
 
   const digits = (s.whatsapp ?? "").replace(/\D/g, "");
 
@@ -441,60 +505,112 @@ function SessaoRowView({ s, vendedorNome }: { s: SessaoRow; vendedorNome: string
   }
 
   return (
-    <tr className={cn("border-t border-border", abandonado && "bg-red-500/5")}>
-      <td className="px-3 py-3">
-        <div className="font-medium">{nome}</div>
-        <div className="text-xs text-text-secondary">
-          {s.identificado_gate ? "identificado no gate" : "anônimo"}
-          {s.cnpj && ` · ${s.cnpj}`}
-        </div>
-      </td>
-      <td className="px-3 py-3 text-xs">{s.whatsapp || <span className="text-text-muted italic">—</span>}</td>
-      <td className="px-3 py-3 text-xs">{s.qtd_itens ?? 0}</td>
-      <td className="px-3 py-3 text-xs text-gold">{formatBRL(Number(s.valor_wishlist ?? 0))}</td>
-      <td className="px-3 py-3">
-        <EstadoPill estado={s.estado_derivado} />
-      </td>
-      <td className="px-3 py-3 text-xs text-text-secondary inline-flex items-center gap-1">
-        <Clock className="h-3 w-3" /> {rel}
-      </td>
-      <td className="px-3 py-3">
-        {s.whatsapp && (
-          <div className="inline-flex items-center gap-1.5">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setTemplatesOpen(true)}
-              title="Mensagens sugeridas para esta etapa"
+    <>
+      <tr className={cn("border-t border-border", abandonado && "bg-red-500/5")}>
+        <td className="px-2 py-3 align-top">
+          {temHistorico ? (
+            <button
+              type="button"
+              onClick={() => setAberto((v) => !v)}
+              className="p-1 rounded hover:bg-surface-2 text-text-secondary"
+              aria-label={aberto ? "Recolher histórico" : "Expandir histórico"}
             >
-              <MessageSquareText className="h-3.5 w-3.5" />
-              Mensagens
-            </Button>
-            <Button
-              size="sm"
-              variant={abandonado ? "default" : "outline"}
-              className={cn(abandonado && "bg-red-500 hover:bg-red-600 text-white")}
-              onClick={recuperar}
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-              {abandonado ? "Recuperar" : "WhatsApp"}
-            </Button>
+              {aberto ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+          ) : null}
+        </td>
+        <td className="px-3 py-3">
+          <div className="font-medium">{nome}</div>
+          <div className="text-xs text-text-secondary">
+            {s.identificado_gate ? "identificado no gate" : "anônimo"}
+            {s.cnpj && ` · ${s.cnpj}`}
           </div>
-        )}
-        <MensagensSugeridasDialog
-          open={templatesOpen}
-          onOpenChange={setTemplatesOpen}
-          estado={s.estado_derivado}
-          nomeCliente={s.nome ?? null}
-          whatsappDigits={digits}
-          vendedorNome={vendedorNome}
-          qtdItens={s.qtd_itens ?? 0}
-          valor={Number(s.valor_wishlist ?? 0)}
-        />
-      </td>
-    </tr>
+        </td>
+        <td className="px-3 py-3 text-xs">{s.whatsapp || <span className="text-text-muted italic">—</span>}</td>
+        <td className="px-3 py-3 text-xs">
+          <span className={cn(
+            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border",
+            grupo.acessos > 1 ? "border-gold/40 text-gold bg-gold/5" : "border-border text-text-secondary",
+          )}>
+            <Users className="h-3 w-3" /> {grupo.acessos}
+          </span>
+        </td>
+        <td className="px-3 py-3 text-xs">{s.qtd_itens ?? 0}</td>
+        <td className="px-3 py-3 text-xs text-gold">{formatBRL(Number(s.valor_wishlist ?? 0))}</td>
+        <td className="px-3 py-3">
+          <EstadoPill estado={s.estado_derivado} />
+        </td>
+        <td className="px-3 py-3 text-xs text-text-secondary">
+          <div className="inline-flex items-center gap-1">
+            <Clock className="h-3 w-3" /> {rel}
+          </div>
+        </td>
+        <td className="px-3 py-3">
+          {s.whatsapp && (
+            <div className="inline-flex items-center gap-1.5">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setTemplatesOpen(true)}
+                title="Mensagens sugeridas para esta etapa"
+              >
+                <MessageSquareText className="h-3.5 w-3.5" />
+                Mensagens
+              </Button>
+              <Button
+                size="sm"
+                variant={abandonado ? "default" : "outline"}
+                className={cn(abandonado && "bg-red-500 hover:bg-red-600 text-white")}
+                onClick={recuperar}
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                {abandonado ? "Recuperar" : "WhatsApp"}
+              </Button>
+            </div>
+          )}
+          <MensagensSugeridasDialog
+            open={templatesOpen}
+            onOpenChange={setTemplatesOpen}
+            estado={s.estado_derivado}
+            nomeCliente={s.nome ?? null}
+            whatsappDigits={digits}
+            vendedorNome={vendedorNome}
+            qtdItens={s.qtd_itens ?? 0}
+            valor={Number(s.valor_wishlist ?? 0)}
+          />
+        </td>
+      </tr>
+      {aberto && temHistorico && (
+        <tr className="border-t border-border bg-surface-2/40">
+          <td colSpan={9} className="px-4 py-3">
+            <div className="text-[10px] uppercase tracking-wider text-text-secondary mb-2">
+              Histórico de acessos ({grupo.acessos})
+            </div>
+            <ul className="space-y-1.5">
+              {grupo.historico.map((h) => (
+                <li key={h.id} className="flex items-center gap-3 text-xs">
+                  <Clock className="h-3 w-3 text-text-muted shrink-0" />
+                  <span className="text-text-secondary w-32 shrink-0">
+                    {h.ultimo_evento ? new Date(h.ultimo_evento).toLocaleString("pt-BR") : "—"}
+                  </span>
+                  <EstadoPill estado={h.estado_derivado} />
+                  <span className="text-text-muted">
+                    {h.qtd_itens ?? 0} {(h.qtd_itens ?? 0) === 1 ? "item" : "itens"}
+                    {Number(h.valor_wishlist ?? 0) > 0 && ` · ${formatBRL(Number(h.valor_wishlist))}`}
+                  </span>
+                  {!h.identificado_gate && (
+                    <span className="text-[10px] text-text-muted italic">anônimo</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
+
 
 function EstadoPill({ estado }: { estado: EstadoSessao }) {
   const cls: Record<EstadoSessao, string> = {

@@ -9,8 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 const COOKIE_NAME = "fetely_session_id";
 const LS_SESSION = "fetely_session_id";
+const DEVICE_COOKIE = "fetely_device_id";
+const LS_DEVICE = "fetely_device_id";
 const LS_GATE = "fetely_gate_identidade"; // { nome, whatsapp } — reidentificação
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 ano
+
 
 export type EventoTipo =
   | "portal_acessado"
@@ -60,6 +63,20 @@ export function getOrCreateSessionId(): string {
   writeCookie(COOKIE_NAME, id);
   return id;
 }
+
+/** ID persistente do dispositivo — sobrevive a novas sessões (troca de aba, novo link, etc.). */
+export function getOrCreateDeviceId(): string {
+  if (typeof window === "undefined") return uuid();
+  let id = readCookie(DEVICE_COOKIE);
+  if (!id) id = localStorage.getItem(LS_DEVICE);
+  if (!id) {
+    id = uuid();
+    localStorage.setItem(LS_DEVICE, id);
+  }
+  writeCookie(DEVICE_COOKIE, id);
+  return id;
+}
+
 
 export function loadGateIdentidade(): GateIdentidade | null {
   if (typeof window === "undefined") return null;
@@ -119,13 +136,15 @@ export interface SessaoPatch {
   ultimo_form_open?: string | null;
   campos_preenchidos?: Record<string, unknown> | null;
   user_agent?: string | null;
+  device_id?: string | null;
 }
 
-/** Cria ou atualiza a sessão (upsert por id). */
+/** Cria ou atualiza a sessão (upsert por id). Injeta device_id automaticamente. */
 export async function upsertSessao(sessionId: string, patch: SessaoPatch): Promise<void> {
   try {
     const row = {
       ultimo_evento: new Date().toISOString(),
+      device_id: patch.device_id ?? getOrCreateDeviceId(),
       ...patch,
     };
     const { error } = await supabase.rpc("public_upsert_sessao_catalogo" as never, {
@@ -137,6 +156,7 @@ export async function upsertSessao(sessionId: string, patch: SessaoPatch): Promi
     console.warn("[tracking] upsertSessao falhou", e);
   }
 }
+
 
 export interface EventoSnapshot {
   valor_parcial?: number;

@@ -2301,6 +2301,7 @@ export type Database = {
           campos_preenchidos: Json | null
           cnpj: string | null
           created_at: string
+          device_id: string | null
           estado_atual: string
           id: string
           identificado_gate: boolean
@@ -2324,6 +2325,7 @@ export type Database = {
           campos_preenchidos?: Json | null
           cnpj?: string | null
           created_at?: string
+          device_id?: string | null
           estado_atual?: string
           id: string
           identificado_gate?: boolean
@@ -2347,6 +2349,7 @@ export type Database = {
           campos_preenchidos?: Json | null
           cnpj?: string | null
           created_at?: string
+          device_id?: string | null
           estado_atual?: string
           id?: string
           identificado_gate?: boolean
@@ -2417,6 +2420,7 @@ export type Database = {
           campos_preenchidos: Json | null
           cnpj: string | null
           created_at: string | null
+          device_id: string | null
           estado_atual: string | null
           estado_derivado: string | null
           id: string | null
@@ -2441,6 +2445,7 @@ export type Database = {
           campos_preenchidos?: Json | null
           cnpj?: string | null
           created_at?: string | null
+          device_id?: string | null
           estado_atual?: string | null
           estado_derivado?: never
           id?: string | null
@@ -2465,6 +2470,7 @@ export type Database = {
           campos_preenchidos?: Json | null
           cnpj?: string | null
           created_at?: string | null
+          device_id?: string | null
           estado_atual?: string | null
           estado_derivado?: never
           id?: string | null
