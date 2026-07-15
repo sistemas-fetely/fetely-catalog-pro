@@ -250,9 +250,17 @@ function PreSelecaoPage() {
               )}
             </div>
             <div className="text-xs text-text-secondary">
-              Valor de referência (varejo): <span className="text-gold font-medium">{formatBRL(resumo.varejo)}</span>
+              Valor estimado (atacado): <span className="text-gold font-medium">{formatBRL(resumo.atacado)}</span>
             </div>
           </div>
+          <Button
+            variant="outline"
+            disabled={!canSubmit}
+            onClick={() => setWishlistOpen(true)}
+            className="shrink-0 gold-border text-gold hover:bg-gold/10"
+          >
+            Ver lista
+          </Button>
           <Button
             disabled={!canSubmit}
             onClick={() => setModalOpen(true)}
