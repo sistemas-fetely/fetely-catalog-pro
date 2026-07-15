@@ -1,9 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { ChevronRight, X, Menu, Heart, ArrowRight, Search, Trash2, Minus, Plus } from "lucide-react";
+import {
+  getOrCreateSessionId,
+  ensureLinkInstance,
+  upsertSessao,
+  emitEvento,
+} from "@/lib/tracking";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
