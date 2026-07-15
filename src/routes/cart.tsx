@@ -71,6 +71,7 @@ function toItemProvisao(i: CartItem): ItemProvisao {
 
 function CartPage() {
   const items = useOrder((s) => s.items);
+  const photos = usePhotos();
   const meta = useOrder((s) => s.meta);
   const setMeta = useOrder((s) => s.setMeta);
   const updateQty = useOrder((s) => s.updateQty);
