@@ -27,11 +27,11 @@ interface AbRow {
 }
 
 function GateAbPage() {
+  const roles = useAuth((s) => s.roles);
+  const isAdmin = roles.includes("admin") || roles.includes("master");
   return (
     <div className="mx-auto max-w-[1200px] px-4 md:px-6 py-6">
-      <Can permission="admin.gate_ab" fallback={<div className="text-text-secondary">Sem permissão.</div>}>
-        <GateAbContent />
-      </Can>
+      {isAdmin ? <GateAbContent /> : <div className="text-text-secondary">Sem permissão.</div>}
     </div>
   );
 }
