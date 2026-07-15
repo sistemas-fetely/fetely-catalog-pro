@@ -58,6 +58,7 @@ function PreSelecaoPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmado, setConfirmado] = useState<{ id: string; link: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [wishlistOpen, setWishlistOpen] = useState(false);
 
   // Garante hidratação do catálogo (mesmo padrão do /catalog público).
   useEffect(() => {
