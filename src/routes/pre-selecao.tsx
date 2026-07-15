@@ -886,6 +886,7 @@ function WishlistSheet({
                   <ul className="space-y-2">
                     {c.itens.map(({ p, qty }) => {
                       const img =
+                        getProdutoPhoto(photos, p.colecao, p.sku) ??
                         getProdutoPhoto(photos, p.colecao, p.corNome) ??
                         getColecaoPhoto(photos, p.colecao, (p as unknown as { categoria?: string }).categoria);
                       const sub = qty * (p.precoAtacado || 0);
