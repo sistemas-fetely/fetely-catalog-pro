@@ -35,6 +35,53 @@ const TABS: { key: StatusPreSelecao | "todas"; label: string }[] = [
   { key: "todas", label: "Todas" },
 ];
 
+/** Grupo consolidado de sessões da mesma pessoa/dispositivo. */
+interface SessaoGrupo {
+  key: string;
+  latest: SessaoRow;
+  historico: SessaoRow[]; // ordenado desc por ultimo_evento (inclui a latest)
+  acessos: number;
+  primeiroAcesso: string | null;
+}
+
+/** Agrupa por telefone (WhatsApp) OU (nome normalizado + device_id) OU device_id sozinho. */
+function agruparSessoes(rows: SessaoRow[]): SessaoGrupo[] {
+  const normNome = (s: string | null) => (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  const digits = (s: string | null) => (s ?? "").replace(/\D/g, "");
+  const keyOf = (s: SessaoRow): string => {
+    const wa = digits(s.whatsapp);
+    if (wa.length >= 10) return `wa:${wa}`;
+    const nm = normNome(s.nome);
+    const dv = (s.device_id ?? "").trim();
+    if (nm && dv) return `nd:${nm}|${dv}`;
+    if (dv) return `d:${dv}`;
+    return `s:${s.id}`;
+  };
+  const map = new Map<string, SessaoRow[]>();
+  for (const r of rows) {
+    const k = keyOf(r);
+    const arr = map.get(k);
+    if (arr) arr.push(r);
+    else map.set(k, [r]);
+  }
+  const grupos: SessaoGrupo[] = [];
+  for (const [key, arr] of map) {
+    const historico = [...arr].sort((a, b) =>
+      (b.ultimo_evento ?? b.created_at) < (a.ultimo_evento ?? a.created_at) ? -1 : 1,
+    );
+    const latest = historico[0];
+    const primeiro = arr.reduce<string | null>((min, r) => {
+      const t = r.primeiro_acesso ?? r.created_at;
+      if (!min || t < min) return t;
+      return min;
+    }, null);
+    grupos.push({ key, latest, historico, acessos: arr.length, primeiroAcesso: primeiro });
+  }
+  grupos.sort((a, b) => (b.latest.ultimo_evento ?? "") < (a.latest.ultimo_evento ?? "") ? -1 : 1);
+  return grupos;
+}
+
+
 function ReunioesPage() {
   const hydrate = usePreSelecao((s) => s.hydrate);
   const refresh = usePreSelecao((s) => s.refresh);
