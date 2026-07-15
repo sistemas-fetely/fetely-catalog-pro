@@ -139,17 +139,20 @@ function ReunioesPage() {
     return { novas, valorPotencial, taxa: Math.round((convertidas / total) * 100) };
   }, [todas]);
 
+  const sessoesGrupos = useMemo(() => agruparSessoes(sessoes), [sessoes]);
+
   const sessoesKpis = useMemo(() => {
     let abandonoForm = 0;
     let ativos = 0;
     let acessos = 0;
-    for (const s of sessoes) {
-      if (s.estado_derivado === "formulario_abandonado") abandonoForm++;
-      else if (s.estado_derivado === "formulario_aberto" || s.estado_derivado === "montando") ativos++;
-      else if (s.estado_derivado === "acessou" || s.estado_derivado === "montagem_abandonada") acessos++;
+    for (const g of sessoesGrupos) {
+      const e = g.latest.estado_derivado;
+      if (e === "formulario_abandonado") abandonoForm++;
+      else if (e === "formulario_aberto" || e === "montando") ativos++;
+      else if (e === "acessou" || e === "montagem_abandonada") acessos++;
     }
     return { abandonoForm, ativos, acessos };
-  }, [sessoes]);
+  }, [sessoesGrupos]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { todas: todas.length };
@@ -158,7 +161,7 @@ function ReunioesPage() {
   }, [todas]);
 
   const sessoesFiltradas = useMemo(() => {
-    let out = sessoes;
+    let out = sessoesGrupos;
     if (sessaoTab !== "todas") {
       const map: Record<Exclude<typeof sessaoTab, "todas">, EstadoSessao> = {
         abandonado: "formulario_abandonado",
@@ -167,27 +170,35 @@ function ReunioesPage() {
         acessou: "acessou",
       };
       const alvo = map[sessaoTab];
-      out = out.filter((s) => s.estado_derivado === alvo);
+      out = out.filter((g) =>
+        sessaoTab === "acessou"
+          ? g.latest.estado_derivado === "acessou" || g.latest.estado_derivado === "montagem_abandonada"
+          : g.latest.estado_derivado === alvo,
+      );
     }
     const q = busca.trim().toLowerCase();
     if (q) {
-      out = out.filter((s) =>
-        `${s.nome ?? ""} ${s.whatsapp ?? ""} ${s.razao_social ?? ""} ${s.cnpj ?? ""}`.toLowerCase().includes(q),
+      out = out.filter((g) =>
+        g.historico.some((s) =>
+          `${s.nome ?? ""} ${s.whatsapp ?? ""} ${s.razao_social ?? ""} ${s.cnpj ?? ""}`.toLowerCase().includes(q),
+        ),
       );
     }
     return out;
-  }, [sessoes, sessaoTab, busca]);
+  }, [sessoesGrupos, sessaoTab, busca]);
 
   const sessoesCounts = useMemo(() => {
-    const c = { todas: sessoes.length, abandonado: 0, aberto: 0, montando: 0, acessou: 0 };
-    for (const s of sessoes) {
-      if (s.estado_derivado === "formulario_abandonado") c.abandonado++;
-      else if (s.estado_derivado === "formulario_aberto") c.aberto++;
-      else if (s.estado_derivado === "montando") c.montando++;
-      else if (s.estado_derivado === "acessou" || s.estado_derivado === "montagem_abandonada") c.acessou++;
+    const c = { todas: sessoesGrupos.length, abandonado: 0, aberto: 0, montando: 0, acessou: 0 };
+    for (const g of sessoesGrupos) {
+      const e = g.latest.estado_derivado;
+      if (e === "formulario_abandonado") c.abandonado++;
+      else if (e === "formulario_aberto") c.aberto++;
+      else if (e === "montando") c.montando++;
+      else if (e === "acessou" || e === "montagem_abandonada") c.acessou++;
     }
     return c;
-  }, [sessoes]);
+  }, [sessoesGrupos]);
+
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-6">
