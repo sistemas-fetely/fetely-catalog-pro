@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { ChevronRight, X, Menu, Heart, ArrowRight, Search } from "lucide-react";
+import { ChevronRight, X, Menu, Heart, ArrowRight, Search, Trash2, Minus, Plus } from "lucide-react";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
@@ -58,6 +58,7 @@ function PreSelecaoPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmado, setConfirmado] = useState<{ id: string; link: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [wishlistOpen, setWishlistOpen] = useState(false);
 
   // Garante hidratação do catálogo (mesmo padrão do /catalog público).
   useEffect(() => {
@@ -103,7 +104,7 @@ function PreSelecaoPage() {
   const resumo = useMemo(() => {
     const skus = Object.keys(cart);
     let unidades = 0;
-    let varejo = 0;
+    let atacado = 0;
     let interessesSemQtd = 0;
     for (const sku of skus) {
       const p = products.find((x) => x.sku === sku);
@@ -111,9 +112,9 @@ function PreSelecaoPage() {
       const q = cart[sku];
       if (q === 0) interessesSemQtd++;
       unidades += q;
-      varejo += q * p.precoVarejo;
+      atacado += q * (p.precoAtacado || 0);
     }
-    return { totalItens: skus.length, unidades, varejo, interessesSemQtd };
+    return { totalItens: skus.length, unidades, atacado, interessesSemQtd };
   }, [cart, products]);
 
   const setQty = (sku: string, q: number) =>
@@ -249,9 +250,17 @@ function PreSelecaoPage() {
               )}
             </div>
             <div className="text-xs text-text-secondary">
-              Valor de referência (varejo): <span className="text-gold font-medium">{formatBRL(resumo.varejo)}</span>
+              Valor estimado (atacado): <span className="text-gold font-medium">{formatBRL(resumo.atacado)}</span>
             </div>
           </div>
+          <Button
+            variant="outline"
+            disabled={!canSubmit}
+            onClick={() => setWishlistOpen(true)}
+            className="shrink-0 gold-border text-gold hover:bg-gold/10"
+          >
+            Ver lista
+          </Button>
           <Button
             disabled={!canSubmit}
             onClick={() => setModalOpen(true)}
@@ -261,6 +270,16 @@ function PreSelecaoPage() {
           </Button>
         </div>
       </div>
+
+      <WishlistSheet
+        open={wishlistOpen}
+        onOpenChange={setWishlistOpen}
+        cart={cart}
+        produtos={products}
+        onQty={setQty}
+        onRemove={(sku) => setCart((prev) => { const n = { ...prev }; delete n[sku]; return n; })}
+        onEnviar={() => { setWishlistOpen(false); setModalOpen(true); }}
+      />
 
       <DadosEmpresaModal
         open={modalOpen}
@@ -612,5 +631,187 @@ function ConfirmacaoDialog({ id, link, onClose }: { id: string; link: string; on
         <div className="text-xs text-text-secondary pt-2">Fetély — Celebre o que importa. 🌟</div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function WishlistSheet({
+  open,
+  onOpenChange,
+  cart,
+  produtos,
+  onQty,
+  onRemove,
+  onEnviar,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  cart: CartMap;
+  produtos: Product[];
+  onQty: (sku: string, q: number) => void;
+  onRemove: (sku: string) => void;
+  onEnviar: () => void;
+}) {
+  const photos = usePhotos();
+
+  const grupos = useMemo(() => {
+    type Item = { p: Product; qty: number };
+    const skus = Object.keys(cart);
+    const itens: Item[] = [];
+    for (const sku of skus) {
+      const p = produtos.find((x) => x.sku === sku);
+      if (!p) continue;
+      itens.push({ p, qty: cart[sku] });
+    }
+    // groupBy categoria → coleção
+    const map = new Map<string, Map<string, Item[]>>();
+    for (const it of itens) {
+      const cat = it.p.categoria || "—";
+      const col = it.p.colecao || "—";
+      if (!map.has(cat)) map.set(cat, new Map());
+      const inner = map.get(cat)!;
+      if (!inner.has(col)) inner.set(col, []);
+      inner.get(col)!.push(it);
+    }
+    const numero = (p: Product): number => {
+      if (typeof p.numeroVela === "number") return p.numeroVela;
+      const n = parseInt((p.tamanhoNumero || "").replace(/\D/g, ""), 10);
+      return Number.isFinite(n) ? n : 9999;
+    };
+    const sortItens = (arr: Item[]) =>
+      arr.sort((a, b) => {
+        const na = numero(a.p);
+        const nb = numero(b.p);
+        if (na !== nb) return na - nb;
+        return (a.p.corNome || "").localeCompare(b.p.corNome || "", "pt-BR");
+      });
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b, "pt-BR"))
+      .map(([cat, inner]) => ({
+        categoria: cat,
+        colecoes: Array.from(inner.entries())
+          .sort(([a], [b]) => a.localeCompare(b, "pt-BR"))
+          .map(([col, arr]) => ({ colecao: col, itens: sortItens(arr) })),
+      }));
+  }, [cart, produtos]);
+
+  const total = useMemo(() => {
+    let unid = 0;
+    let atacado = 0;
+    for (const sku of Object.keys(cart)) {
+      const p = produtos.find((x) => x.sku === sku);
+      if (!p) continue;
+      const q = cart[sku];
+      unid += q;
+      atacado += q * (p.precoAtacado || 0);
+    }
+    return { unid, atacado };
+  }, [cart, produtos]);
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
+        <div className="px-5 py-4 border-b border-border">
+          <div className="text-[10px] uppercase tracking-[0.3em] text-gold-muted">Lista de desejos</div>
+          <div className="font-display text-2xl mt-1">Sua seleção</div>
+          <div className="text-xs text-text-secondary mt-1">
+            {Object.keys(cart).length} {Object.keys(cart).length === 1 ? "item" : "itens"} · {total.unid} un.
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+          {grupos.length === 0 && (
+            <div className="text-center text-sm text-text-muted py-16">Nenhum item selecionado ainda.</div>
+          )}
+          {grupos.map((g) => (
+            <div key={g.categoria}>
+              <div className="text-[10px] uppercase tracking-[0.3em] text-gold mb-2">{g.categoria}</div>
+              {g.colecoes.map((c) => (
+                <div key={c.colecao} className="mb-5">
+                  <div className="font-display text-lg mb-2 pb-1 border-b border-border/60">{c.colecao}</div>
+                  <ul className="space-y-2">
+                    {c.itens.map(({ p, qty }) => {
+                      const img = getProdutoPhoto(photos, p.colecao, p.corNome);
+                      const sub = qty * (p.precoAtacado || 0);
+                      return (
+                        <li key={p.sku} className="flex gap-3 items-start rounded-md bg-surface-2/50 p-2">
+                          <div className="w-16 h-16 shrink-0 rounded overflow-hidden bg-surface">
+                            {img ? (
+                              <img src={img} alt={p.nomeComercial} className="w-full h-full object-cover" />
+                            ) : (
+                              <PhotoPlaceholder colecao={p.colecao} className="w-full h-full" showIcon={false} />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">{p.nomeComercial}</div>
+                            <div className="text-[11px] text-text-muted">
+                              {[p.tamanhoNumero, p.corNome].filter(Boolean).join(" · ")}
+                            </div>
+                            <div className="flex items-center justify-between mt-1.5 gap-2">
+                              {qty > 0 ? (
+                                <div className="inline-flex items-center rounded border border-border">
+                                  <button
+                                    className="px-2 py-1 text-text-secondary hover:text-gold"
+                                    onClick={() => onQty(p.sku, Math.max(0, qty - (p.multiplos || 1)))}
+                                    aria-label="Diminuir"
+                                  >
+                                    <Minus className="h-3.5 w-3.5" />
+                                  </button>
+                                  <span className="px-2 text-sm min-w-[2.5rem] text-center">{qty}</span>
+                                  <button
+                                    className="px-2 py-1 text-text-secondary hover:text-gold"
+                                    onClick={() => onQty(p.sku, qty + (p.multiplos || 1))}
+                                    aria-label="Aumentar"
+                                  >
+                                    <Plus className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] uppercase tracking-wider text-gold-muted">
+                                  <Heart className="inline h-3 w-3 mr-1" /> Interesse
+                                </span>
+                              )}
+                              <div className="text-right">
+                                <div className="text-[10px] uppercase tracking-wider text-text-muted">Atacado</div>
+                                <div className="text-sm text-gold font-medium">
+                                  {qty > 0 ? formatBRL(sub) : formatBRL(p.precoAtacado || 0)}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => onRemove(p.sku)}
+                                className="p-1 text-text-muted hover:text-destructive"
+                                aria-label="Remover"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-gold/40 px-5 py-3 bg-background/95">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-text-secondary">Total estimado (atacado)</span>
+            <span className="text-lg text-gold font-display">{formatBRL(total.atacado)}</span>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+              Continuar navegando
+            </Button>
+            <Button
+              onClick={onEnviar}
+              disabled={Object.keys(cart).length === 0}
+              className="flex-1 bg-gold hover:bg-gold-light text-background"
+            >
+              Enviar interesse <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
