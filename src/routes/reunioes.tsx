@@ -344,15 +344,164 @@ function ReunioesPage() {
   );
 }
 
-function KpiCard({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function KpiCard({ label, value, accent, danger }: { label: string; value: string; accent?: boolean; danger?: boolean }) {
   return (
-    <Card>
+    <Card className={cn(danger && "border-red-500/40 bg-red-500/5")}>
       <CardContent className="p-4">
-        <div className="text-[10px] uppercase tracking-widest text-text-secondary">{label}</div>
-        <div className={cn("mt-1 font-display text-2xl", accent && "text-red-500")}>{value}</div>
+        <div className={cn("text-[10px] uppercase tracking-widest", danger ? "text-red-500" : "text-text-secondary")}>{label}</div>
+        <div className={cn("mt-1 font-display text-2xl", (accent || danger) && "text-red-500")}>{value}</div>
       </CardContent>
     </Card>
   );
+}
+
+function PanelTab({
+  active,
+  onClick,
+  icon,
+  highlight,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon?: React.ReactNode;
+  highlight?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-3 py-2 text-sm inline-flex items-center gap-1.5 border-b-2 -mb-px transition",
+        active
+          ? highlight
+            ? "border-red-500 text-red-500"
+            : "border-gold text-gold"
+          : "border-transparent text-text-secondary hover:text-text-primary",
+      )}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
+function SessoesTable({ rows, vendedorNome }: { rows: SessaoRow[]; vendedorNome: string }) {
+  return (
+    <div className="rounded-lg border border-border overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="bg-surface-2 text-xs uppercase tracking-wider text-text-secondary">
+          <tr>
+            <th className="text-left px-3 py-2">Cliente</th>
+            <th className="text-left px-3 py-2">WhatsApp</th>
+            <th className="text-left px-3 py-2">Itens</th>
+            <th className="text-left px-3 py-2">Valor (atacado)</th>
+            <th className="text-left px-3 py-2">Estado</th>
+            <th className="text-left px-3 py-2">Último evento</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={7} className="text-center py-12 text-text-secondary text-sm">
+                Nenhuma sessão nesta aba.
+              </td>
+            </tr>
+          ) : (
+            rows.map((s) => <SessaoRowView key={s.id} s={s} vendedorNome={vendedorNome} />)
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SessaoRowView({ s, vendedorNome }: { s: SessaoRow; vendedorNome: string }) {
+  const abandonado = s.estado_derivado === "formulario_abandonado";
+  const nome = s.nome ?? s.razao_social ?? "— (não identificado)";
+  const ultimo = s.ultimo_evento ? new Date(s.ultimo_evento) : null;
+  const rel = ultimo ? relativeTime(ultimo) : "—";
+
+  function recuperar() {
+    const digits = (s.whatsapp ?? "").replace(/\D/g, "");
+    if (!digits) {
+      toast.error("Sessão sem WhatsApp — cliente não completou o gate.");
+      return;
+    }
+    const nomeMsg = s.nome ? `, ${s.nome}` : "";
+    const assinatura = vendedorNome ? ` — ${vendedorNome}` : "";
+    const msg = abandonado
+      ? `Olá${nomeMsg}! Vi que você começou a preencher o formulário do nosso catálogo mas talvez tenha ficado alguma dúvida. Posso te ajudar a finalizar?${assinatura}`
+      : `Olá${nomeMsg}! Vi que você está montando sua lista no nosso catálogo. Precisa de ajuda com algum produto?${assinatura}`;
+    const url = `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank", "noreferrer");
+  }
+
+  return (
+    <tr className={cn("border-t border-border", abandonado && "bg-red-500/5")}>
+      <td className="px-3 py-3">
+        <div className="font-medium">{nome}</div>
+        <div className="text-xs text-text-secondary">
+          {s.identificado_gate ? "identificado no gate" : "anônimo"}
+          {s.cnpj && ` · ${s.cnpj}`}
+        </div>
+      </td>
+      <td className="px-3 py-3 text-xs">{s.whatsapp || <span className="text-text-muted italic">—</span>}</td>
+      <td className="px-3 py-3 text-xs">{s.qtd_itens ?? 0}</td>
+      <td className="px-3 py-3 text-xs text-gold">{formatBRL(Number(s.valor_wishlist ?? 0))}</td>
+      <td className="px-3 py-3">
+        <EstadoPill estado={s.estado_derivado} />
+      </td>
+      <td className="px-3 py-3 text-xs text-text-secondary inline-flex items-center gap-1">
+        <Clock className="h-3 w-3" /> {rel}
+      </td>
+      <td className="px-3 py-3">
+        {s.whatsapp && (
+          <Button
+            size="sm"
+            variant={abandonado ? "default" : "outline"}
+            className={cn(abandonado && "bg-red-500 hover:bg-red-600 text-white")}
+            onClick={recuperar}
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            {abandonado ? "Recuperar" : "WhatsApp"}
+          </Button>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+function EstadoPill({ estado }: { estado: EstadoSessao }) {
+  const cls: Record<EstadoSessao, string> = {
+    acessou: "bg-muted text-text-muted border-border",
+    montando: "bg-blue-500/15 text-blue-500 border-blue-500/30",
+    montagem_abandonada: "bg-amber-500/15 text-amber-500 border-amber-500/30",
+    formulario_aberto: "bg-purple-500/15 text-purple-500 border-purple-500/30",
+    formulario_abandonado: "bg-red-500/15 text-red-500 border-red-500/30",
+    enviada: "bg-green-500/15 text-green-600 border-green-500/30",
+    em_contato: "bg-blue-500/15 text-blue-500 border-blue-500/30",
+    convertida: "bg-green-500/15 text-green-600 border-green-500/30",
+    expirada: "bg-muted text-text-muted border-border",
+    descartada: "bg-muted text-text-muted border-border",
+  };
+  return (
+    <span className={cn("inline-flex px-2 py-0.5 text-[10px] uppercase tracking-wider rounded-full border", cls[estado])}>
+      {ESTADO_SESSAO_LABEL[estado]}
+    </span>
+  );
+}
+
+function relativeTime(d: Date): string {
+  const diff = Date.now() - d.getTime();
+  const min = Math.round(diff / 60000);
+  if (min < 1) return "agora";
+  if (min < 60) return `há ${min} min`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `há ${h} h`;
+  const dias = Math.round(h / 24);
+  return `há ${dias} d`;
 }
 
 function StatusPill({ status }: { status: StatusPreSelecao }) {
