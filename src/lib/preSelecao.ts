@@ -194,6 +194,7 @@ export function toDbRow(pre: PreSelecao) {
     cotacao_gerada_id: pre.cotacaoGeradaId ?? null,
     pedido_gerado_id: pre.pedidoGeradoId ?? null,
     visualizado_em: pre.visualizadoEm ?? null,
+    sessao_id: pre.sessaoId ?? null,
   };
 }
 
