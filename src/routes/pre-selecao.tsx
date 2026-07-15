@@ -9,7 +9,11 @@ import {
   ensureLinkInstance,
   upsertSessao,
   emitEvento,
+  loadGateIdentidade,
+  saveGateIdentidade,
 } from "@/lib/tracking";
+import { getFeatureFlags } from "@/lib/featureFlags";
+import { GateEntradaDialog } from "@/components/catalog/GateEntradaDialog";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
