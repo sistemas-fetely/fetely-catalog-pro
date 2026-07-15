@@ -360,13 +360,16 @@ function PreSelecaoPage() {
         cart={cart}
         produtos={products}
         vendedor={v || null}
+        sessionIdRef={sessionIdRef}
         onDone={(pre) => {
           setModalOpen(false);
           const link = `${PUBLIC_SITE_URL}/reunioes/importar#${encodePreSelecao(pre)}`;
           setConfirmado({ id: pre.id, link });
           setCart({});
+          formularioEmitidaRef.current = false;
         }}
       />
+
 
       {confirmado && (
         <ConfirmacaoDialog id={confirmado.id} link={confirmado.link} onClose={() => setConfirmado(null)} />
