@@ -8,6 +8,7 @@ import {
   updatePreSelecaoRemote,
   deletePreSelecaoRemote,
 } from "@/lib/preSelecao";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/store/authStore";
 
 interface PreSelecaoState {
