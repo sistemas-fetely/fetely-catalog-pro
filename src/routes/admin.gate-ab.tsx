@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AlertTriangle, ToggleLeft, ToggleRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Can } from "@/components/security/Can";
+import { useAuth } from "@/store/authStore";
 import { supabase } from "@/integrations/supabase/client";
 import { useFeatureFlags, updateFeatureFlag } from "@/lib/featureFlags";
 import { formatBRL } from "@/lib/format";
