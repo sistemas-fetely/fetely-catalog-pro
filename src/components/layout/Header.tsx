@@ -107,7 +107,8 @@ export function Header() {
                 <Menu className="h-5 w-5" />
               </button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-[280px] bg-surface border-r border-border">
+            <SheetContent side="left" className="p-0 w-[300px] bg-surface border-r border-border overflow-y-auto">
+              {isInternalUser && <MobileNavPanel onNavigate={() => setMobileOpen(false)} />}
               <CatalogSidebar forceExpanded onNavigate={() => setMobileOpen(false)} />
             </SheetContent>
           </Sheet>
