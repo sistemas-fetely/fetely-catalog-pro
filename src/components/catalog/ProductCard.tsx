@@ -148,16 +148,31 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
         </div>
 
         {isPublic ? (
-          <div>
-            <div className="text-[9px] uppercase tracking-[0.18em] text-gold-muted">
-              Preço sugerido
+          <div className="flex items-end justify-between gap-2">
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.18em] text-gold-muted">
+                Preço sugerido
+              </div>
+              <span className="text-xl font-semibold text-gold leading-none">
+                {indisponivel ? "—" : formatBRL(product.precoVarejo)}
+              </span>
+              {!indisponivel && showUnitPrice && product.precoVarejo > 0 && (
+                <div className="mt-1 text-[10px] text-text-muted">
+                  {formatBRL(product.precoVarejo / product.qtdKit)} / un. ({product.qtdKit} un. por kit)
+                </div>
+              )}
             </div>
-            <span className="text-xl font-semibold text-gold leading-none">
-              {indisponivel ? "—" : formatBRL(product.precoVarejo)}
-            </span>
-            {!indisponivel && showUnitPrice && product.precoVarejo > 0 && (
-              <div className="mt-1 text-[10px] text-text-muted">
-                {formatBRL(product.precoVarejo / product.qtdKit)} / un. ({product.qtdKit} un. por kit)
+            {!indisponivel && product.precoAtacado > 0 && (
+              <div className="text-right">
+                <div className="text-[9px] uppercase tracking-[0.18em] text-text-muted">Atacado</div>
+                <span className="text-sm text-text-secondary leading-none">
+                  {formatBRL(product.precoAtacado)}
+                </span>
+                {showUnitPrice && (
+                  <div className="mt-1 text-[10px] text-text-muted">
+                    {formatBRL(product.precoAtacado / product.qtdKit)} / un.
+                  </div>
+                )}
               </div>
             )}
           </div>
