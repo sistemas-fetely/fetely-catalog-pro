@@ -64,6 +64,20 @@ export function getOrCreateSessionId(): string {
   return id;
 }
 
+/** ID persistente do dispositivo — sobrevive a novas sessões (troca de aba, novo link, etc.). */
+export function getOrCreateDeviceId(): string {
+  if (typeof window === "undefined") return uuid();
+  let id = readCookie(DEVICE_COOKIE);
+  if (!id) id = localStorage.getItem(LS_DEVICE);
+  if (!id) {
+    id = uuid();
+    localStorage.setItem(LS_DEVICE, id);
+  }
+  writeCookie(DEVICE_COOKIE, id);
+  return id;
+}
+
+
 export function loadGateIdentidade(): GateIdentidade | null {
   if (typeof window === "undefined") return null;
   try {
