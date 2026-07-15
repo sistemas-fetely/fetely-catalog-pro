@@ -81,6 +81,7 @@ export interface PreSelecao {
   pedidoGeradoId?: string;
   atribuidoParaVendedorId?: string;
   visualizadoEm?: string;
+  sessaoId?: string;
 }
 
 export const EXPIRACAO_PADRAO_HORAS = 72;

@@ -61,6 +61,7 @@ const preSelecaoSchema = z.object({
   pedidoGeradoId: z.string().max(80).optional(),
   atribuidoParaVendedorId: z.string().uuid().optional(),
   visualizadoEm: z.string().datetime().optional(),
+  sessaoId: z.string().uuid().optional(),
 });
 
 export const enviarPreSelecaoPublica = createServerFn({ method: "POST" })
@@ -94,6 +95,7 @@ export const enviarPreSelecaoPublica = createServerFn({ method: "POST" })
       cotacao_gerada_id: data.cotacaoGeradaId ?? null,
       pedido_gerado_id: data.pedidoGeradoId ?? null,
       visualizado_em: data.visualizadoEm ?? null,
+      sessao_id: data.sessaoId ?? null,
     });
 
     if (error) throw new Error(error.message);

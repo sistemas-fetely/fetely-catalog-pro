@@ -497,6 +497,51 @@ export type Database = {
         }
         Relationships: []
       }
+      evento_catalogo: {
+        Row: {
+          campos_preenchidos: Json | null
+          criado_em: string
+          id: string
+          itens_parcial: number | null
+          sessao_id: string
+          tipo: string
+          valor_parcial: number | null
+        }
+        Insert: {
+          campos_preenchidos?: Json | null
+          criado_em?: string
+          id?: string
+          itens_parcial?: number | null
+          sessao_id: string
+          tipo: string
+          valor_parcial?: number | null
+        }
+        Update: {
+          campos_preenchidos?: Json | null
+          criado_em?: string
+          id?: string
+          itens_parcial?: number | null
+          sessao_id?: string
+          tipo?: string
+          valor_parcial?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evento_catalogo_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessao_catalogo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evento_catalogo_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessao_catalogo_estado"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       faixas: {
         Row: {
           ativa: boolean
@@ -817,6 +862,36 @@ export type Database = {
             | Database["public"]["Enums"]["lead_volume_estimado"]
             | null
           whatsapp?: string
+        }
+        Relationships: []
+      }
+      link_instance: {
+        Row: {
+          criado_em: string
+          id: string
+          lead_contato_id: string | null
+          origem_id: string | null
+          origem_login: string | null
+          origem_tipo: string
+          token: string
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          lead_contato_id?: string | null
+          origem_id?: string | null
+          origem_login?: string | null
+          origem_tipo?: string
+          token: string
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          lead_contato_id?: string | null
+          origem_id?: string | null
+          origem_login?: string | null
+          origem_tipo?: string
+          token?: string
         }
         Relationships: []
       }
@@ -1309,6 +1384,7 @@ export type Database = {
           pedido_gerado_id: string | null
           razao_social: string
           segmento: string
+          sessao_id: string | null
           status: string
           total_itens: number
           total_unidades: number
@@ -1338,6 +1414,7 @@ export type Database = {
           pedido_gerado_id?: string | null
           razao_social: string
           segmento: string
+          sessao_id?: string | null
           status?: string
           total_itens?: number
           total_unidades?: number
@@ -1367,6 +1444,7 @@ export type Database = {
           pedido_gerado_id?: string | null
           razao_social?: string
           segmento?: string
+          sessao_id?: string | null
           status?: string
           total_itens?: number
           total_unidades?: number
@@ -1382,6 +1460,20 @@ export type Database = {
             columns: ["atribuido_para_vendedor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pre_selecoes_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessao_catalogo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pre_selecoes_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessao_catalogo_estado"
             referencedColumns: ["id"]
           },
         ]
@@ -2177,6 +2269,86 @@ export type Database = {
           },
         ]
       }
+      sessao_catalogo: {
+        Row: {
+          campos_preenchidos: Json | null
+          cnpj: string | null
+          created_at: string
+          estado_atual: string
+          id: string
+          identificado_gate: boolean
+          link_instance_id: string | null
+          nome: string | null
+          origem_id_snapshot: string | null
+          origem_tipo_snapshot: string | null
+          primeiro_acesso: string
+          qtd_itens: number
+          razao_social: string | null
+          segmento: string | null
+          ultimo_evento: string
+          ultimo_form_open: string | null
+          updated_at: string
+          user_agent: string | null
+          valor_wishlist: number
+          vendedor_responsavel: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          campos_preenchidos?: Json | null
+          cnpj?: string | null
+          created_at?: string
+          estado_atual?: string
+          id: string
+          identificado_gate?: boolean
+          link_instance_id?: string | null
+          nome?: string | null
+          origem_id_snapshot?: string | null
+          origem_tipo_snapshot?: string | null
+          primeiro_acesso?: string
+          qtd_itens?: number
+          razao_social?: string | null
+          segmento?: string | null
+          ultimo_evento?: string
+          ultimo_form_open?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          valor_wishlist?: number
+          vendedor_responsavel?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          campos_preenchidos?: Json | null
+          cnpj?: string | null
+          created_at?: string
+          estado_atual?: string
+          id?: string
+          identificado_gate?: boolean
+          link_instance_id?: string | null
+          nome?: string | null
+          origem_id_snapshot?: string | null
+          origem_tipo_snapshot?: string | null
+          primeiro_acesso?: string
+          qtd_itens?: number
+          razao_social?: string | null
+          segmento?: string | null
+          ultimo_evento?: string
+          ultimo_form_open?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          valor_wishlist?: number
+          vendedor_responsavel?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessao_catalogo_link_instance_id_fkey"
+            columns: ["link_instance_id"]
+            isOneToOne: false
+            referencedRelation: "link_instance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2200,9 +2372,100 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      sessao_catalogo_estado: {
+        Row: {
+          campos_preenchidos: Json | null
+          cnpj: string | null
+          created_at: string | null
+          estado_atual: string | null
+          estado_derivado: string | null
+          id: string | null
+          identificado_gate: boolean | null
+          link_instance_id: string | null
+          nome: string | null
+          origem_id_snapshot: string | null
+          origem_tipo_snapshot: string | null
+          primeiro_acesso: string | null
+          qtd_itens: number | null
+          razao_social: string | null
+          segmento: string | null
+          ultimo_evento: string | null
+          ultimo_form_open: string | null
+          updated_at: string | null
+          user_agent: string | null
+          valor_wishlist: number | null
+          vendedor_responsavel: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          campos_preenchidos?: Json | null
+          cnpj?: string | null
+          created_at?: string | null
+          estado_atual?: string | null
+          estado_derivado?: never
+          id?: string | null
+          identificado_gate?: boolean | null
+          link_instance_id?: string | null
+          nome?: string | null
+          origem_id_snapshot?: string | null
+          origem_tipo_snapshot?: string | null
+          primeiro_acesso?: string | null
+          qtd_itens?: number | null
+          razao_social?: string | null
+          segmento?: string | null
+          ultimo_evento?: string | null
+          ultimo_form_open?: string | null
+          updated_at?: string | null
+          user_agent?: string | null
+          valor_wishlist?: number | null
+          vendedor_responsavel?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          campos_preenchidos?: Json | null
+          cnpj?: string | null
+          created_at?: string | null
+          estado_atual?: string | null
+          estado_derivado?: never
+          id?: string | null
+          identificado_gate?: boolean | null
+          link_instance_id?: string | null
+          nome?: string | null
+          origem_id_snapshot?: string | null
+          origem_tipo_snapshot?: string | null
+          primeiro_acesso?: string | null
+          qtd_itens?: number | null
+          razao_social?: string | null
+          segmento?: string | null
+          ultimo_evento?: string | null
+          ultimo_form_open?: string | null
+          updated_at?: string | null
+          user_agent?: string | null
+          valor_wishlist?: number | null
+          vendedor_responsavel?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessao_catalogo_link_instance_id_fkey"
+            columns: ["link_instance_id"]
+            isOneToOne: false
+            referencedRelation: "link_instance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      ensure_link_instance_for_login: {
+        Args: { p_login: string }
+        Returns: {
+          id: string
+          origem_id: string
+          origem_tipo: string
+          token: string
+        }[]
+      }
       get_order_by_sncf_id: {
         Args: { p_sncf_pedido_id: string }
         Returns: Json

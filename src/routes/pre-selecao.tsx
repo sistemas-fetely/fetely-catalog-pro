@@ -1,9 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { ChevronRight, X, Menu, Heart, ArrowRight, Search, Trash2, Minus, Plus } from "lucide-react";
+import {
+  getOrCreateSessionId,
+  ensureLinkInstance,
+  upsertSessao,
+  emitEvento,
+} from "@/lib/tracking";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
@@ -60,12 +66,39 @@ function PreSelecaoPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
 
+  // --- Rastreamento de jornada (Fatia 1) -------------------------------
+  const sessionIdRef = useRef<string | null>(null);
+  const montagemEmitidaRef = useRef(false);
+  const formularioEmitidaRef = useRef(false);
+
   // Garante hidratação do catálogo (mesmo padrão do /catalog público).
   useEffect(() => {
     if (!useCatalog.getState().hidratado) {
       useCatalog.getState().hydrate();
     }
   }, []);
+
+  // Bootstrap da sessão: cria/reutiliza session_id, resolve link_instance
+  // via ?v=<login> (RPC), grava sessão e emite portal_acessado.
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      const sid = getOrCreateSessionId();
+      sessionIdRef.current = sid;
+      const link = await ensureLinkInstance(v || undefined);
+      if (cancel) return;
+      await upsertSessao(sid, {
+        link_instance_id: link.id,
+        user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 400) : null,
+      });
+      await emitEvento(sid, "portal_acessado", { valor_parcial: 0, itens_parcial: 0 });
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, [v]);
+
+
 
   const colecaoProducts = useMemo(() => {
     if (!colecao) return [] as Product[];
@@ -116,6 +149,46 @@ function PreSelecaoPage() {
     }
     return { totalItens: skus.length, unidades, atacado, interessesSemQtd };
   }, [cart, products]);
+
+  // Emite "montagem_iniciada" no 1º item + mantém valor/qtd sincronizados (debounced).
+  useEffect(() => {
+    const sid = sessionIdRef.current;
+    if (!sid) return;
+    if (resumo.totalItens === 0) return;
+    if (!montagemEmitidaRef.current) {
+      montagemEmitidaRef.current = true;
+      void emitEvento(sid, "montagem_iniciada", {
+        valor_parcial: resumo.atacado,
+        itens_parcial: resumo.totalItens,
+      });
+    }
+    const t = setTimeout(() => {
+      void upsertSessao(sid, {
+        valor_wishlist: resumo.atacado,
+        qtd_itens: resumo.totalItens,
+        estado_atual: "montando",
+      });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [resumo.atacado, resumo.totalItens]);
+
+  // Emite "formulario_aberto" quando o modal abre (1x por sessão de abertura).
+  useEffect(() => {
+    const sid = sessionIdRef.current;
+    if (!sid || !modalOpen) return;
+    if (formularioEmitidaRef.current) return;
+    formularioEmitidaRef.current = true;
+    const now = new Date().toISOString();
+    void emitEvento(sid, "formulario_aberto", {
+      valor_parcial: resumo.atacado,
+      itens_parcial: resumo.totalItens,
+    });
+    void upsertSessao(sid, {
+      estado_atual: "formulario_aberto",
+      ultimo_form_open: now,
+    });
+  }, [modalOpen, resumo.atacado, resumo.totalItens]);
+
 
   const setQty = (sku: string, q: number) =>
     setCart((prev) => {
@@ -287,13 +360,16 @@ function PreSelecaoPage() {
         cart={cart}
         produtos={products}
         vendedor={v || null}
+        sessionIdRef={sessionIdRef}
         onDone={(pre) => {
           setModalOpen(false);
           const link = `${PUBLIC_SITE_URL}/reunioes/importar#${encodePreSelecao(pre)}`;
           setConfirmado({ id: pre.id, link });
           setCart({});
+          formularioEmitidaRef.current = false;
         }}
       />
+
 
       {confirmado && (
         <ConfirmacaoDialog id={confirmado.id} link={confirmado.link} onClose={() => setConfirmado(null)} />
@@ -451,6 +527,7 @@ function DadosEmpresaModal({
   cart,
   produtos,
   vendedor,
+  sessionIdRef,
   onDone,
 }: {
   open: boolean;
@@ -458,6 +535,7 @@ function DadosEmpresaModal({
   cart: CartMap;
   produtos: Product[];
   vendedor: string | null;
+  sessionIdRef: React.MutableRefObject<string | null>;
   onDone: (pre: Awaited<ReturnType<typeof buildPreSelecao>>) => void;
 }) {
   const [cnpj, setCnpj] = useState("");
@@ -478,6 +556,34 @@ function DadosEmpresaModal({
   const hydrate = usePreSelecao((s) => s.hydrate);
   const enviarPreSelecao = useServerFn(enviarPreSelecaoPublica);
   useEffect(() => { hydrate(); }, [hydrate]);
+
+  // Autosave do formulário: enquanto o modal está aberto, snapshot dos
+  // campos preenchidos a cada 30s (para detectar onde a pessoa travou).
+  useEffect(() => {
+    if (!open) return;
+    const sid = sessionIdRef.current;
+    if (!sid) return;
+    const snapshot = () => {
+      const campos = {
+        cnpj: !!cnpj.trim(),
+        razaoSocial: !!razaoSocial.trim(),
+        nomeFantasia: !!nomeFantasia.trim(),
+        contatoNome: !!contatoNome.trim(),
+        contatoCargo: !!contatoCargo.trim(),
+        contatoEmail: !!contatoEmail.trim(),
+        contatoWhatsapp: !!contatoWhatsapp.trim(),
+        cidadeEstado: !!cidadeEstado.trim(),
+        segmento: !!segmento,
+        observacao: !!observacao.trim(),
+      };
+      void emitEvento(sid, "formulario_autosave", { campos_preenchidos: campos });
+      void upsertSessao(sid, { campos_preenchidos: campos });
+    };
+    const id = setInterval(snapshot, 30_000);
+    return () => clearInterval(id);
+  }, [open, sessionIdRef, cnpj, razaoSocial, nomeFantasia, contatoNome, contatoCargo, contatoEmail, contatoWhatsapp, cidadeEstado, segmento, observacao]);
+
+
 
   async function buscarCnpj() {
     if (!isValidCNPJLength(cnpj)) { toast.error("Informe um CNPJ válido"); return; }
@@ -514,7 +620,7 @@ function DadosEmpresaModal({
         const p = produtos.find((x) => x.sku === sku)!;
         return itemFromProductQty(p, q);
       });
-      const pre = await buildPreSelecao({
+      const preBase = await buildPreSelecao({
         vendedorId: vendedor,
         vendedorNome: null,
         cnpj: formatCNPJ(cnpj),
@@ -530,6 +636,8 @@ function DadosEmpresaModal({
         aceitaNewsletter,
         itens,
       });
+      const sid = sessionIdRef.current || undefined;
+      const pre = { ...preBase, sessaoId: sid };
 
       // 1) Envia ao backend (fonte da verdade — chega no /reunioes do vendedor).
       try {
@@ -544,11 +652,25 @@ function DadosEmpresaModal({
           return;
         }
       }
-      // 2) Guarda também localmente (fallback + link de sincronização).
+      // 2) Marca a jornada como enviada + evento final.
+      if (sid) {
+        void emitEvento(sid, "pre_selecao_enviada", {
+          valor_parcial: pre.totalVarejoRef,
+          itens_parcial: pre.totalItens,
+        });
+        void upsertSessao(sid, {
+          estado_atual: "enviada",
+          cnpj: pre.cnpj,
+          razao_social: pre.razaoSocial,
+          segmento: pre.segmento,
+        });
+      }
+      // 3) Guarda também localmente (fallback + link de sincronização).
       adicionar(pre);
       onDone(pre);
     } finally { setEnviando(false); }
   }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
