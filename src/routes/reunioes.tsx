@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Link as LinkIcon, MessageCircle, Copy, QrCode, Trash2, CheckCircle2, Eye, ArrowRight, X } from "lucide-react";
+import { Link as LinkIcon, MessageCircle, Copy, QrCode, Trash2, CheckCircle2, Eye, ArrowRight, X, AlertTriangle, Clock, Activity } from "lucide-react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { formatBRL } from "@/lib/format";
 import { tempoRestante, PUBLIC_SITE_URL } from "@/lib/preSelecao";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useSessoesCatalogo, ESTADO_SESSAO_LABEL, type SessaoRow, type EstadoSessao } from "@/lib/sessoesCatalogo";
 
 export const Route = createFileRoute("/reunioes")({
   head: () => ({
@@ -38,12 +39,19 @@ function ReunioesPage() {
   const refresh = usePreSelecao((s) => s.refresh);
   const session = useAuth((s) => s.session);
   const profile = useAuth((s) => s.profile);
+  const [sessoesTick, setSessoesTick] = useState(0);
   useEffect(() => { hydrate(); }, [hydrate, session?.user.id, profile?.id]);
   useEffect(() => {
     if (!session) return;
     void refresh();
-    const interval = window.setInterval(() => void refresh(), 10000);
-    const onFocus = () => void refresh();
+    const interval = window.setInterval(() => {
+      void refresh();
+      setSessoesTick((t) => t + 1);
+    }, 10000);
+    const onFocus = () => {
+      void refresh();
+      setSessoesTick((t) => t + 1);
+    };
     window.addEventListener("focus", onFocus);
     return () => {
       window.clearInterval(interval);
@@ -51,8 +59,12 @@ function ReunioesPage() {
     };
   }, [refresh, session]);
 
+  const { rows: sessoes } = useSessoesCatalogo(sessoesTick);
+
   const todas = usePreSelecoesEscopo();
+  const [panel, setPanel] = useState<"presel" | "sessoes">("presel");
   const [tab, setTab] = useState<StatusPreSelecao | "todas">("nova");
+  const [sessaoTab, setSessaoTab] = useState<"todas" | "abandonado" | "aberto" | "montando" | "acessou">("todas");
   const [busca, setBusca] = useState("");
   const [selecionada, setSelecionada] = useState<PreSelecao | null>(null);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
@@ -79,18 +91,62 @@ function ReunioesPage() {
     return { novas, valorPotencial, taxa: Math.round((convertidas / total) * 100) };
   }, [todas]);
 
+  const sessoesKpis = useMemo(() => {
+    let abandonoForm = 0;
+    let ativos = 0;
+    let acessos = 0;
+    for (const s of sessoes) {
+      if (s.estado_derivado === "formulario_abandonado") abandonoForm++;
+      else if (s.estado_derivado === "formulario_aberto" || s.estado_derivado === "montando") ativos++;
+      else if (s.estado_derivado === "acessou" || s.estado_derivado === "montagem_abandonada") acessos++;
+    }
+    return { abandonoForm, ativos, acessos };
+  }, [sessoes]);
+
   const counts = useMemo(() => {
     const c: Record<string, number> = { todas: todas.length };
     for (const p of todas) c[p.status] = (c[p.status] || 0) + 1;
     return c;
   }, [todas]);
 
+  const sessoesFiltradas = useMemo(() => {
+    let out = sessoes;
+    if (sessaoTab !== "todas") {
+      const map: Record<Exclude<typeof sessaoTab, "todas">, EstadoSessao> = {
+        abandonado: "formulario_abandonado",
+        aberto: "formulario_aberto",
+        montando: "montando",
+        acessou: "acessou",
+      };
+      const alvo = map[sessaoTab];
+      out = out.filter((s) => s.estado_derivado === alvo);
+    }
+    const q = busca.trim().toLowerCase();
+    if (q) {
+      out = out.filter((s) =>
+        `${s.nome ?? ""} ${s.whatsapp ?? ""} ${s.razao_social ?? ""} ${s.cnpj ?? ""}`.toLowerCase().includes(q),
+      );
+    }
+    return out;
+  }, [sessoes, sessaoTab, busca]);
+
+  const sessoesCounts = useMemo(() => {
+    const c = { todas: sessoes.length, abandonado: 0, aberto: 0, montando: 0, acessou: 0 };
+    for (const s of sessoes) {
+      if (s.estado_derivado === "formulario_abandonado") c.abandonado++;
+      else if (s.estado_derivado === "formulario_aberto") c.aberto++;
+      else if (s.estado_derivado === "montando") c.montando++;
+      else if (s.estado_derivado === "acessou" || s.estado_derivado === "montagem_abandonada") c.acessou++;
+    }
+    return c;
+  }, [sessoes]);
+
   return (
     <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-6">
       <div className="flex flex-col md:flex-row md:items-center gap-3 mb-6">
         <div>
           <h1 className="font-display text-3xl">Reuniões</h1>
-          <p className="text-sm text-text-secondary">Pré-seleções recebidas do catálogo público</p>
+          <p className="text-sm text-text-secondary">Jornada dos clientes no catálogo público</p>
         </div>
         <div className="md:ml-auto flex gap-2">
           <Button variant="outline" onClick={() => setLinkModalOpen(true)}>
@@ -100,35 +156,112 @@ function ReunioesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+      {/* Alerta crítico: formulários abandonados */}
+      {sessoesKpis.abandonoForm > 0 && (
+        <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-red-500">
+              {sessoesKpis.abandonoForm} formulário{sessoesKpis.abandonoForm > 1 ? "s" : ""} abandonado{sessoesKpis.abandonoForm > 1 ? "s" : ""}
+            </div>
+            <div className="text-xs text-text-secondary">
+              Cliente abriu o formulário, preencheu algo, mas não enviou. Recupere pelo WhatsApp.
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-red-500/40 text-red-500 hover:bg-red-500/10"
+            onClick={() => { setPanel("sessoes"); setSessaoTab("abandonado"); }}
+          >
+            Ver abandonos
+          </Button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         <KpiCard label="Novas" value={String(kpis.novas)} accent={kpis.novas > 0} />
+        <KpiCard label="Form. abandonado" value={String(sessoesKpis.abandonoForm)} danger={sessoesKpis.abandonoForm > 0} />
+        <KpiCard label="Em andamento" value={String(sessoesKpis.ativos)} />
         <KpiCard label="Valor ref. potencial" value={formatBRL(kpis.valorPotencial)} />
         <KpiCard label="Taxa de conversão" value={`${kpis.taxa}%`} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border transition",
-              tab === t.key
-                ? "bg-gold text-background border-gold"
-                : "border-border text-text-secondary hover:border-gold/40 hover:text-gold",
-            )}
-          >
-            {t.label} {counts[t.key] > 0 && <span className="opacity-70">({counts[t.key]})</span>}
-            {t.key === "nova" && counts["nova"] > 0 && <span className="inline-block ml-1 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />}
-          </button>
-        ))}
-        <Input
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar empresa, CNPJ..."
-          className="ml-auto max-w-xs h-9"
-        />
+      {/* Switch entre pré-seleções (enviadas) e sessões (jornada) */}
+      <div className="flex items-center gap-1 mb-4 border-b border-border">
+        <PanelTab active={panel === "presel"} onClick={() => setPanel("presel")} icon={<CheckCircle2 className="h-3.5 w-3.5" />}>
+          Pré-seleções enviadas ({todas.length})
+        </PanelTab>
+        <PanelTab active={panel === "sessoes"} onClick={() => setPanel("sessoes")} icon={<Activity className="h-3.5 w-3.5" />} highlight={sessoesKpis.abandonoForm > 0}>
+          Em andamento ({sessoes.length})
+          {sessoesKpis.abandonoForm > 0 && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />}
+        </PanelTab>
       </div>
+
+      {panel === "presel" ? (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border transition",
+                tab === t.key
+                  ? "bg-gold text-background border-gold"
+                  : "border-border text-text-secondary hover:border-gold/40 hover:text-gold",
+              )}
+            >
+              {t.label} {counts[t.key] > 0 && <span className="opacity-70">({counts[t.key]})</span>}
+              {t.key === "nova" && counts["nova"] > 0 && <span className="inline-block ml-1 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />}
+            </button>
+          ))}
+          <Input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar empresa, CNPJ..."
+            className="ml-auto max-w-xs h-9"
+          />
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {([
+            { key: "todas", label: "Todas" },
+            { key: "abandonado", label: "Formulário abandonado", danger: true },
+            { key: "aberto", label: "Preenchendo" },
+            { key: "montando", label: "Montando" },
+            { key: "acessou", label: "Só acessou" },
+          ] as const).map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setSessaoTab(t.key)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border transition",
+                sessaoTab === t.key
+                  ? "danger" in t
+                    ? "bg-red-500 text-white border-red-500"
+                    : "bg-gold text-background border-gold"
+                  : "danger" in t && sessoesCounts.abandonado > 0
+                  ? "border-red-500/40 text-red-500 hover:bg-red-500/10"
+                  : "border-border text-text-secondary hover:border-gold/40 hover:text-gold",
+              )}
+            >
+              {t.label} <span className="opacity-70">({sessoesCounts[t.key]})</span>
+            </button>
+          ))}
+          <Input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar nome, WhatsApp, CNPJ..."
+            className="ml-auto max-w-xs h-9"
+          />
+        </div>
+      )}
+
+      {panel === "sessoes" && (
+        <SessoesTable rows={sessoesFiltradas} vendedorNome={profile?.nome_completo ?? ""} />
+      )}
+
+      {panel === "presel" && (
 
       <div className="rounded-lg border border-border overflow-hidden">
         <table className="w-full text-sm">
@@ -191,6 +324,9 @@ function ReunioesPage() {
           </tbody>
         </table>
       </div>
+      )}
+
+
 
       <Sheet open={!!selecionada} onOpenChange={(v) => !v && setSelecionada(null)}>
         <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto p-0">
@@ -208,15 +344,164 @@ function ReunioesPage() {
   );
 }
 
-function KpiCard({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function KpiCard({ label, value, accent, danger }: { label: string; value: string; accent?: boolean; danger?: boolean }) {
   return (
-    <Card>
+    <Card className={cn(danger && "border-red-500/40 bg-red-500/5")}>
       <CardContent className="p-4">
-        <div className="text-[10px] uppercase tracking-widest text-text-secondary">{label}</div>
-        <div className={cn("mt-1 font-display text-2xl", accent && "text-red-500")}>{value}</div>
+        <div className={cn("text-[10px] uppercase tracking-widest", danger ? "text-red-500" : "text-text-secondary")}>{label}</div>
+        <div className={cn("mt-1 font-display text-2xl", (accent || danger) && "text-red-500")}>{value}</div>
       </CardContent>
     </Card>
   );
+}
+
+function PanelTab({
+  active,
+  onClick,
+  icon,
+  highlight,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon?: React.ReactNode;
+  highlight?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-3 py-2 text-sm inline-flex items-center gap-1.5 border-b-2 -mb-px transition",
+        active
+          ? highlight
+            ? "border-red-500 text-red-500"
+            : "border-gold text-gold"
+          : "border-transparent text-text-secondary hover:text-text-primary",
+      )}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
+function SessoesTable({ rows, vendedorNome }: { rows: SessaoRow[]; vendedorNome: string }) {
+  return (
+    <div className="rounded-lg border border-border overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="bg-surface-2 text-xs uppercase tracking-wider text-text-secondary">
+          <tr>
+            <th className="text-left px-3 py-2">Cliente</th>
+            <th className="text-left px-3 py-2">WhatsApp</th>
+            <th className="text-left px-3 py-2">Itens</th>
+            <th className="text-left px-3 py-2">Valor (atacado)</th>
+            <th className="text-left px-3 py-2">Estado</th>
+            <th className="text-left px-3 py-2">Último evento</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={7} className="text-center py-12 text-text-secondary text-sm">
+                Nenhuma sessão nesta aba.
+              </td>
+            </tr>
+          ) : (
+            rows.map((s) => <SessaoRowView key={s.id} s={s} vendedorNome={vendedorNome} />)
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SessaoRowView({ s, vendedorNome }: { s: SessaoRow; vendedorNome: string }) {
+  const abandonado = s.estado_derivado === "formulario_abandonado";
+  const nome = s.nome ?? s.razao_social ?? "— (não identificado)";
+  const ultimo = s.ultimo_evento ? new Date(s.ultimo_evento) : null;
+  const rel = ultimo ? relativeTime(ultimo) : "—";
+
+  function recuperar() {
+    const digits = (s.whatsapp ?? "").replace(/\D/g, "");
+    if (!digits) {
+      toast.error("Sessão sem WhatsApp — cliente não completou o gate.");
+      return;
+    }
+    const nomeMsg = s.nome ? `, ${s.nome}` : "";
+    const assinatura = vendedorNome ? ` — ${vendedorNome}` : "";
+    const msg = abandonado
+      ? `Olá${nomeMsg}! Vi que você começou a preencher o formulário do nosso catálogo mas talvez tenha ficado alguma dúvida. Posso te ajudar a finalizar?${assinatura}`
+      : `Olá${nomeMsg}! Vi que você está montando sua lista no nosso catálogo. Precisa de ajuda com algum produto?${assinatura}`;
+    const url = `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank", "noreferrer");
+  }
+
+  return (
+    <tr className={cn("border-t border-border", abandonado && "bg-red-500/5")}>
+      <td className="px-3 py-3">
+        <div className="font-medium">{nome}</div>
+        <div className="text-xs text-text-secondary">
+          {s.identificado_gate ? "identificado no gate" : "anônimo"}
+          {s.cnpj && ` · ${s.cnpj}`}
+        </div>
+      </td>
+      <td className="px-3 py-3 text-xs">{s.whatsapp || <span className="text-text-muted italic">—</span>}</td>
+      <td className="px-3 py-3 text-xs">{s.qtd_itens ?? 0}</td>
+      <td className="px-3 py-3 text-xs text-gold">{formatBRL(Number(s.valor_wishlist ?? 0))}</td>
+      <td className="px-3 py-3">
+        <EstadoPill estado={s.estado_derivado} />
+      </td>
+      <td className="px-3 py-3 text-xs text-text-secondary inline-flex items-center gap-1">
+        <Clock className="h-3 w-3" /> {rel}
+      </td>
+      <td className="px-3 py-3">
+        {s.whatsapp && (
+          <Button
+            size="sm"
+            variant={abandonado ? "default" : "outline"}
+            className={cn(abandonado && "bg-red-500 hover:bg-red-600 text-white")}
+            onClick={recuperar}
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            {abandonado ? "Recuperar" : "WhatsApp"}
+          </Button>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+function EstadoPill({ estado }: { estado: EstadoSessao }) {
+  const cls: Record<EstadoSessao, string> = {
+    acessou: "bg-muted text-text-muted border-border",
+    montando: "bg-blue-500/15 text-blue-500 border-blue-500/30",
+    montagem_abandonada: "bg-amber-500/15 text-amber-500 border-amber-500/30",
+    formulario_aberto: "bg-purple-500/15 text-purple-500 border-purple-500/30",
+    formulario_abandonado: "bg-red-500/15 text-red-500 border-red-500/30",
+    enviada: "bg-green-500/15 text-green-600 border-green-500/30",
+    em_contato: "bg-blue-500/15 text-blue-500 border-blue-500/30",
+    convertida: "bg-green-500/15 text-green-600 border-green-500/30",
+    expirada: "bg-muted text-text-muted border-border",
+    descartada: "bg-muted text-text-muted border-border",
+  };
+  return (
+    <span className={cn("inline-flex px-2 py-0.5 text-[10px] uppercase tracking-wider rounded-full border", cls[estado])}>
+      {ESTADO_SESSAO_LABEL[estado]}
+    </span>
+  );
+}
+
+function relativeTime(d: Date): string {
+  const diff = Date.now() - d.getTime();
+  const min = Math.round(diff / 60000);
+  if (min < 1) return "agora";
+  if (min < 60) return `há ${min} min`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `há ${h} h`;
+  const dias = Math.round(h / 24);
+  return `há ${dias} d`;
 }
 
 function StatusPill({ status }: { status: StatusPreSelecao }) {
