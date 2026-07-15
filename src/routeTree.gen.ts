@@ -50,6 +50,7 @@ import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
 import { Route as AdminPermissoesRouteImport } from './routes/admin.permissoes'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
+import { Route as AdminGateAbRouteImport } from './routes/admin.gate-ab'
 import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
 import { Route as AdminAccessLogsRouteImport } from './routes/admin.access-logs'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
@@ -259,6 +260,11 @@ const AdminLeadsRoute = AdminLeadsRouteImport.update({
   path: '/admin/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminGateAbRoute = AdminGateAbRouteImport.update({
+  id: '/admin/gate-ab',
+  path: '/admin/gate-ab',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCartilhasRoute = AdminCartilhasRouteImport.update({
   id: '/admin/cartilhas',
   path: '/admin/cartilhas',
@@ -307,6 +313,7 @@ export interface FileRoutesByFullPath {
   '/stand': typeof StandRouteWithChildren
   '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
+  '/admin/gate-ab': typeof AdminGateAbRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/permissoes': typeof AdminPermissoesRoute
   '/admin/precos': typeof AdminPrecosRoute
@@ -352,6 +359,7 @@ export interface FileRoutesByTo {
   '/stand': typeof StandRouteWithChildren
   '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
+  '/admin/gate-ab': typeof AdminGateAbRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/permissoes': typeof AdminPermissoesRoute
   '/admin/precos': typeof AdminPrecosRoute
@@ -399,6 +407,7 @@ export interface FileRoutesById {
   '/stand': typeof StandRouteWithChildren
   '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
+  '/admin/gate-ab': typeof AdminGateAbRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/permissoes': typeof AdminPermissoesRoute
   '/admin/precos': typeof AdminPrecosRoute
@@ -447,6 +456,7 @@ export interface FileRouteTypes {
     | '/stand'
     | '/admin/access-logs'
     | '/admin/cartilhas'
+    | '/admin/gate-ab'
     | '/admin/leads'
     | '/admin/permissoes'
     | '/admin/precos'
@@ -492,6 +502,7 @@ export interface FileRouteTypes {
     | '/stand'
     | '/admin/access-logs'
     | '/admin/cartilhas'
+    | '/admin/gate-ab'
     | '/admin/leads'
     | '/admin/permissoes'
     | '/admin/precos'
@@ -538,6 +549,7 @@ export interface FileRouteTypes {
     | '/stand'
     | '/admin/access-logs'
     | '/admin/cartilhas'
+    | '/admin/gate-ab'
     | '/admin/leads'
     | '/admin/permissoes'
     | '/admin/precos'
@@ -585,6 +597,7 @@ export interface RootRouteChildren {
   StandRoute: typeof StandRouteWithChildren
   AdminAccessLogsRoute: typeof AdminAccessLogsRoute
   AdminCartilhasRoute: typeof AdminCartilhasRoute
+  AdminGateAbRoute: typeof AdminGateAbRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminPermissoesRoute: typeof AdminPermissoesRoute
   AdminPrecosRoute: typeof AdminPrecosRoute
@@ -882,6 +895,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/gate-ab': {
+      id: '/admin/gate-ab'
+      path: '/admin/gate-ab'
+      fullPath: '/admin/gate-ab'
+      preLoaderRoute: typeof AdminGateAbRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/cartilhas': {
       id: '/admin/cartilhas'
       path: '/admin/cartilhas'
@@ -989,6 +1009,7 @@ const rootRouteChildren: RootRouteChildren = {
   StandRoute: StandRouteWithChildren,
   AdminAccessLogsRoute: AdminAccessLogsRoute,
   AdminCartilhasRoute: AdminCartilhasRoute,
+  AdminGateAbRoute: AdminGateAbRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminPermissoesRoute: AdminPermissoesRoute,
   AdminPrecosRoute: AdminPrecosRoute,
