@@ -422,9 +422,11 @@ function SessaoRowView({ s, vendedorNome }: { s: SessaoRow; vendedorNome: string
   const nome = s.nome ?? s.razao_social ?? "— (não identificado)";
   const ultimo = s.ultimo_evento ? new Date(s.ultimo_evento) : null;
   const rel = ultimo ? relativeTime(ultimo) : "—";
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+
+  const digits = (s.whatsapp ?? "").replace(/\D/g, "");
 
   function recuperar() {
-    const digits = (s.whatsapp ?? "").replace(/\D/g, "");
     if (!digits) {
       toast.error("Sessão sem WhatsApp — cliente não completou o gate.");
       return;
@@ -458,16 +460,37 @@ function SessaoRowView({ s, vendedorNome }: { s: SessaoRow; vendedorNome: string
       </td>
       <td className="px-3 py-3">
         {s.whatsapp && (
-          <Button
-            size="sm"
-            variant={abandonado ? "default" : "outline"}
-            className={cn(abandonado && "bg-red-500 hover:bg-red-600 text-white")}
-            onClick={recuperar}
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-            {abandonado ? "Recuperar" : "WhatsApp"}
-          </Button>
+          <div className="inline-flex items-center gap-1.5">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setTemplatesOpen(true)}
+              title="Mensagens sugeridas para esta etapa"
+            >
+              <MessageSquareText className="h-3.5 w-3.5" />
+              Mensagens
+            </Button>
+            <Button
+              size="sm"
+              variant={abandonado ? "default" : "outline"}
+              className={cn(abandonado && "bg-red-500 hover:bg-red-600 text-white")}
+              onClick={recuperar}
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              {abandonado ? "Recuperar" : "WhatsApp"}
+            </Button>
+          </div>
         )}
+        <MensagensSugeridasDialog
+          open={templatesOpen}
+          onOpenChange={setTemplatesOpen}
+          estado={s.estado_derivado}
+          nomeCliente={s.nome ?? null}
+          whatsappDigits={digits}
+          vendedorNome={vendedorNome}
+          qtdItens={s.qtd_itens ?? 0}
+          valor={Number(s.valor_wishlist ?? 0)}
+        />
       </td>
     </tr>
   );
