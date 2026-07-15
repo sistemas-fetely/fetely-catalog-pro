@@ -104,7 +104,7 @@ function PreSelecaoPage() {
   const resumo = useMemo(() => {
     const skus = Object.keys(cart);
     let unidades = 0;
-    let varejo = 0;
+    let atacado = 0;
     let interessesSemQtd = 0;
     for (const sku of skus) {
       const p = products.find((x) => x.sku === sku);
@@ -112,9 +112,9 @@ function PreSelecaoPage() {
       const q = cart[sku];
       if (q === 0) interessesSemQtd++;
       unidades += q;
-      varejo += q * p.precoVarejo;
+      atacado += q * (p.precoAtacado || 0);
     }
-    return { totalItens: skus.length, unidades, varejo, interessesSemQtd };
+    return { totalItens: skus.length, unidades, atacado, interessesSemQtd };
   }, [cart, products]);
 
   const setQty = (sku: string, q: number) =>
