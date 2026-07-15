@@ -66,12 +66,39 @@ function PreSelecaoPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
 
+  // --- Rastreamento de jornada (Fatia 1) -------------------------------
+  const sessionIdRef = useRef<string | null>(null);
+  const montagemEmitidaRef = useRef(false);
+  const formularioEmitidaRef = useRef(false);
+
   // Garante hidratação do catálogo (mesmo padrão do /catalog público).
   useEffect(() => {
     if (!useCatalog.getState().hidratado) {
       useCatalog.getState().hydrate();
     }
   }, []);
+
+  // Bootstrap da sessão: cria/reutiliza session_id, resolve link_instance
+  // via ?v=<login> (RPC), grava sessão e emite portal_acessado.
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      const sid = getOrCreateSessionId();
+      sessionIdRef.current = sid;
+      const link = await ensureLinkInstance(v || undefined);
+      if (cancel) return;
+      await upsertSessao(sid, {
+        link_instance_id: link.id,
+        user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 400) : null,
+      });
+      await emitEvento(sid, "portal_acessado", { valor_parcial: 0, itens_parcial: 0 });
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, [v]);
+
+
 
   const colecaoProducts = useMemo(() => {
     if (!colecao) return [] as Product[];
