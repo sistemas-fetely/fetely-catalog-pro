@@ -834,3 +834,208 @@ function GerarLinkModal({ open, onOpenChange }: { open: boolean; onOpenChange: (
     </Dialog>
   );
 }
+
+// ============================================================
+// Mensagens sugeridas por etapa do lead
+// ============================================================
+
+interface TemplateMsg {
+  titulo: string;
+  texto: string;
+}
+
+function buildTemplates(params: {
+  estado: EstadoSessao;
+  nomeCliente: string | null;
+  vendedorNome: string;
+  qtdItens: number;
+  valor: number;
+}): TemplateMsg[] {
+  const { estado, nomeCliente, vendedorNome, qtdItens, valor } = params;
+  const saudacao = nomeCliente ? `Olá, ${nomeCliente}!` : "Olá!";
+  const assin = vendedorNome ? `\n\n— ${vendedorNome} · Fetély` : "\n\n— Fetély";
+  const catalogoUrl = PUBLIC_SITE_URL;
+  const resumoLista = qtdItens > 0
+    ? `Vi que você já montou uma lista com ${qtdItens} ${qtdItens === 1 ? "item" : "itens"} (${formatBRL(valor)} no atacado).`
+    : "";
+
+  switch (estado) {
+    case "acessou":
+    case "montagem_abandonada":
+      return [
+        {
+          titulo: "Boas-vindas — apresentar coleções",
+          texto: `${saudacao} Que bom te ver no nosso catálogo Fetély. Estou à disposição para te apresentar as coleções e tirar qualquer dúvida sobre os produtos. Posso te sugerir alguma linha específica?${assin}`,
+        },
+        {
+          titulo: "Convite para explorar com apoio",
+          texto: `${saudacao} Notei sua visita ao catálogo Fetély. Se quiser, posso te enviar as coleções destaque do momento ou te ajudar a montar uma seleção personalizada para o seu público. É só me dizer o segmento da sua loja.${assin}`,
+        },
+        {
+          titulo: "Curiosidade genuína",
+          texto: `${saudacao} Aqui é da Fetély. Vi que você deu uma olhada no nosso catálogo — posso te ajudar em algo? Se quiser, te mando também o link direto: ${catalogoUrl}${assin}`,
+        },
+      ];
+
+    case "montando":
+      return [
+        {
+          titulo: "Oferecer ajuda com a lista",
+          texto: `${saudacao} ${resumoLista} Se precisar, posso te ajudar a finalizar a seleção, sugerir combinações ou tirar dúvidas sobre disponibilidade e prazo.${assin}`,
+        },
+        {
+          titulo: "Sugestão de combinação",
+          texto: `${saudacao} Vi que você está montando sua lista de desejos. Posso te sugerir peças que combinam com o que você já selecionou e costumam ter ótima saída no varejo — quer que eu envie?${assin}`,
+        },
+        {
+          titulo: "Fechar a lista com condição especial",
+          texto: `${saudacao} ${resumoLista} Quando fechar a seleção, me avisa por aqui que já preparo sua cotação com as melhores condições comerciais.${assin}`,
+        },
+      ];
+
+    case "formulario_aberto":
+      return [
+        {
+          titulo: "Ajuda para preencher dados",
+          texto: `${saudacao} Vi que você chegou no formulário de envio da sua lista. Precisa de algum apoio para preencher os dados da sua empresa? Estou por aqui.${assin}`,
+        },
+        {
+          titulo: "Segurança dos dados",
+          texto: `${saudacao} Só reforçando: seus dados são usados apenas para gerar sua cotação — nada de spam. Qualquer dúvida, é só me chamar.${assin}`,
+        },
+        {
+          titulo: "Confirmação rápida",
+          texto: `${saudacao} Quando finalizar o envio da lista, me avisa que já dou continuidade por aqui e te retorno com sua cotação personalizada.${assin}`,
+        },
+      ];
+
+    case "formulario_abandonado":
+      return [
+        {
+          titulo: "Recuperar formulário abandonado",
+          texto: `${saudacao} Vi que você começou a enviar sua lista de desejos mas talvez algo tenha acontecido. Posso te ajudar a finalizar por aqui mesmo? ${resumoLista}${assin}`,
+        },
+        {
+          titulo: "Tirar dúvida específica",
+          texto: `${saudacao} Notei que você parou no meio do formulário — ficou alguma dúvida sobre CNPJ, condição de pagamento ou prazo? Me conta que resolvemos rapidinho.${assin}`,
+        },
+        {
+          titulo: "Reabrir com link direto",
+          texto: `${saudacao} Deixei sua seleção salva. Se quiser retomar de onde parou, é só reabrir o catálogo: ${catalogoUrl}. Qualquer coisa, estou por aqui.${assin}`,
+        },
+      ];
+
+    case "enviada":
+      return [
+        {
+          titulo: "Confirmação de recebimento",
+          texto: `${saudacao} Recebemos sua lista aqui na Fetély. Já estou preparando sua cotação personalizada e te retorno em breve com condições e prazo.${assin}`,
+        },
+        {
+          titulo: "Prévia de próximos passos",
+          texto: `${saudacao} Obrigado pelo envio da lista! Em até 1 dia útil te mando a cotação com preço final, prazo de produção e opções de pagamento.${assin}`,
+        },
+      ];
+
+    default:
+      return [
+        {
+          titulo: "Mensagem genérica",
+          texto: `${saudacao} Como posso te ajudar hoje?${assin}`,
+        },
+      ];
+  }
+}
+
+function MensagensSugeridasDialog({
+  open,
+  onOpenChange,
+  estado,
+  nomeCliente,
+  whatsappDigits,
+  vendedorNome,
+  qtdItens,
+  valor,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  estado: EstadoSessao;
+  nomeCliente: string | null;
+  whatsappDigits: string;
+  vendedorNome: string;
+  qtdItens: number;
+  valor: number;
+}) {
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const templates = useMemo(
+    () => buildTemplates({ estado, nomeCliente, vendedorNome, qtdItens, valor }),
+    [estado, nomeCliente, vendedorNome, qtdItens, valor],
+  );
+
+  async function copiar(idx: number, texto: string) {
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiedIdx(idx);
+      toast.success("Mensagem copiada");
+      setTimeout(() => setCopiedIdx((v) => (v === idx ? null : v)), 1800);
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  }
+
+  function enviar(texto: string) {
+    if (!whatsappDigits) {
+      toast.error("Sessão sem WhatsApp");
+      return;
+    }
+    const url = `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(texto)}`;
+    window.open(url, "_blank", "noreferrer");
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <MessageSquareText className="h-4 w-4 text-gold" />
+            Mensagens sugeridas
+          </DialogTitle>
+          <DialogDescription>
+            Sugestões prontas para a etapa <b>{ESTADO_SESSAO_LABEL[estado]}</b>. Escolha uma,
+            copie e envie pelo WhatsApp — ou dispare direto daqui.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+          {templates.map((t, idx) => (
+            <div key={idx} className="rounded-lg border border-border bg-surface-2/40 p-3">
+              <div className="text-[11px] uppercase tracking-wider text-gold mb-1.5">
+                {t.titulo}
+              </div>
+              <div className="whitespace-pre-wrap text-sm text-text-primary leading-relaxed">
+                {t.texto}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copiar(idx, t.texto)}
+                >
+                  {copiedIdx === idx ? (
+                    <><Check className="h-3.5 w-3.5" /> Copiado</>
+                  ) : (
+                    <><Copy className="h-3.5 w-3.5" /> Copiar</>
+                  )}
+                </Button>
+                {whatsappDigits && (
+                  <Button size="sm" onClick={() => enviar(t.texto)}>
+                    <MessageCircle className="h-3.5 w-3.5" /> Enviar no WhatsApp
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
