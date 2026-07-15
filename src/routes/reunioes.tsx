@@ -655,6 +655,7 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
             <Row k="WhatsApp" v={pre.contatoWhatsapp} />
             <Row k="E-mail" v={pre.contatoEmail} />
             <Row k="Vendedor" v={pre.vendedorNome || pre.vendedorId || "— (link sem vendedor)"} />
+            <Row k="Atribuído a" v={pre.atribuidoParaVendedorId ? "vendedor logado (travado)" : "— (livre no pool)"} />
             <Row k="Expira" v={tempoRestante(pre)} />
           </dl>
           {pre.observacao && (

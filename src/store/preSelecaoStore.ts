@@ -8,6 +8,7 @@ import {
   updatePreSelecaoRemote,
   deletePreSelecaoRemote,
 } from "@/lib/preSelecao";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/store/authStore";
 
 interface PreSelecaoState {
@@ -86,9 +87,18 @@ export const usePreSelecao = create<PreSelecaoState>()((set, get) => ({
 
   marcarVisualizada: (id) => {
     const now = new Date().toISOString();
+    const uid = useAuth.getState().session?.user.id ?? null;
+    const target = get().todas.find((p) => p.id === id);
+    const precisaClaim = !!uid && !!target && !target.atribuidoParaVendedorId;
+
     const todas = get().todas.map((p) =>
       p.id === id && p.status === "nova"
-        ? { ...p, status: "visualizada" as const, visualizadoEm: now }
+        ? {
+            ...p,
+            status: "visualizada" as const,
+            visualizadoEm: now,
+            atribuidoParaVendedorId: p.atribuidoParaVendedorId ?? uid ?? undefined,
+          }
         : p,
     );
     set({ todas });
@@ -96,6 +106,14 @@ export const usePreSelecao = create<PreSelecaoState>()((set, get) => ({
     void updatePreSelecaoRemote(id, { status: "visualizada", visualizadoEm: now }).catch(
       (e) => console.warn("[preSelecao] update remoto falhou", e),
     );
+    // Atribuição atômica no backend (não sobrescreve se já tem dono).
+    if (precisaClaim) {
+      void supabase
+        .rpc("claim_pre_selecao", { p_id: id })
+        .then(({ error }) => {
+          if (error) console.warn("[preSelecao] claim falhou", error);
+        });
+    }
   },
 
   descartar: (id) => get().atualizarStatus(id, "descartada"),

@@ -12,7 +12,7 @@ import {
   loadGateIdentidade,
   saveGateIdentidade,
 } from "@/lib/tracking";
-import { getFeatureFlags } from "@/lib/featureFlags";
+import { useFeatureFlags } from "@/lib/featureFlags";
 import { GateEntradaDialog } from "@/components/catalog/GateEntradaDialog";
 import { CatalogSidebar } from "@/components/layout/CatalogSidebar";
 import { ProductCard } from "@/components/catalog/ProductCard";
@@ -71,7 +71,7 @@ function PreSelecaoPage() {
   const [wishlistOpen, setWishlistOpen] = useState(false);
 
   // --- Gate de entrada (Fatia 2) ---------------------------------------
-  const flags = useMemo(() => getFeatureFlags(), []);
+  const { flags } = useFeatureFlags();
   const [gateOpen, setGateOpen] = useState(false);
   const [gateChecked, setGateChecked] = useState(false); // evita flicker antes de resolver LS
 
