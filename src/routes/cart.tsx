@@ -660,23 +660,43 @@ function CartPage() {
                     const precoEfetivo = effectiveUnitPrice(item);
                     const subtotal = effectiveItemSubtotal(item);
                     const negociado = hasItemOverride(item);
+                    const img =
+                      getProdutoPhoto(photos, item.product.colecao, item.product.sku) ??
+                      getProdutoPhoto(photos, item.product.colecao, item.product.corNome) ??
+                      getColecaoPhoto(photos, item.product.colecao, item.product.categoria);
                     return (
                       <li
                         key={item.sku}
-                        className={`flex flex-col sm:grid sm:grid-cols-[1fr_140px_140px_40px] sm:items-center gap-3 sm:gap-4 px-3 py-3 sm:px-5 sm:py-4 border-t border-border/50 first:border-t-0 ${negociado ? "bg-gold/[0.03]" : ""}`}
+                        className={`flex flex-col sm:grid sm:grid-cols-[64px_1fr_140px_140px_40px] sm:items-center gap-3 sm:gap-4 px-3 py-3 sm:px-5 sm:py-4 border-t border-border/50 first:border-t-0 ${negociado ? "bg-gold/[0.03]" : ""}`}
                       >
+                        <div className="hidden sm:block w-16 h-16 rounded overflow-hidden bg-surface-2 shrink-0">
+                          {img ? (
+                            <img src={img} alt={item.product.nomeComercial} className="w-full h-full object-cover" />
+                          ) : (
+                            <PhotoPlaceholder colecao={item.product.colecao} className="w-full h-full" showIcon={false} />
+                          )}
+                        </div>
                         <div className="min-w-0 flex items-start justify-between gap-2 sm:block">
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm text-text-primary line-clamp-2 sm:truncate flex items-center gap-2">
-                              {item.product.nomeComercial}
-                              {negociado && (
-                                <span className="shrink-0 rounded-sm border border-gold/50 bg-gold/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-gold">
-                                  Negociado
-                                </span>
+                          <div className="min-w-0 flex-1 flex gap-3 sm:block">
+                            <div className="sm:hidden w-14 h-14 rounded overflow-hidden bg-surface-2 shrink-0">
+                              {img ? (
+                                <img src={img} alt={item.product.nomeComercial} className="w-full h-full object-cover" />
+                              ) : (
+                                <PhotoPlaceholder colecao={item.product.colecao} className="w-full h-full" showIcon={false} />
                               )}
                             </div>
-                            <div className="text-[10px] font-mono text-text-muted mt-0.5">
-                              {item.product.sku} · Caixa {item.product.multiplos}
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm text-text-primary line-clamp-2 sm:truncate flex items-center gap-2">
+                                {item.product.nomeComercial}
+                                {negociado && (
+                                  <span className="shrink-0 rounded-sm border border-gold/50 bg-gold/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-gold">
+                                    Negociado
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[10px] font-mono text-text-muted mt-0.5">
+                                {item.product.sku} · Caixa {item.product.multiplos}
+                              </div>
                             </div>
                           </div>
                           <button
