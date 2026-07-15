@@ -150,6 +150,46 @@ function PreSelecaoPage() {
     return { totalItens: skus.length, unidades, atacado, interessesSemQtd };
   }, [cart, products]);
 
+  // Emite "montagem_iniciada" no 1º item + mantém valor/qtd sincronizados (debounced).
+  useEffect(() => {
+    const sid = sessionIdRef.current;
+    if (!sid) return;
+    if (resumo.totalItens === 0) return;
+    if (!montagemEmitidaRef.current) {
+      montagemEmitidaRef.current = true;
+      void emitEvento(sid, "montagem_iniciada", {
+        valor_parcial: resumo.atacado,
+        itens_parcial: resumo.totalItens,
+      });
+    }
+    const t = setTimeout(() => {
+      void upsertSessao(sid, {
+        valor_wishlist: resumo.atacado,
+        qtd_itens: resumo.totalItens,
+        estado_atual: "montando",
+      });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [resumo.atacado, resumo.totalItens]);
+
+  // Emite "formulario_aberto" quando o modal abre (1x por sessão de abertura).
+  useEffect(() => {
+    const sid = sessionIdRef.current;
+    if (!sid || !modalOpen) return;
+    if (formularioEmitidaRef.current) return;
+    formularioEmitidaRef.current = true;
+    const now = new Date().toISOString();
+    void emitEvento(sid, "formulario_aberto", {
+      valor_parcial: resumo.atacado,
+      itens_parcial: resumo.totalItens,
+    });
+    void upsertSessao(sid, {
+      estado_atual: "formulario_aberto",
+      ultimo_form_open: now,
+    });
+  }, [modalOpen, resumo.atacado, resumo.totalItens]);
+
+
   const setQty = (sku: string, q: number) =>
     setCart((prev) => {
       const next = { ...prev };
