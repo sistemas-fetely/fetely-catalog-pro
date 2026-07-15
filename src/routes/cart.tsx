@@ -741,7 +741,7 @@ function CartPage() {
                           </button>
                         </div>
                         {negotiationAtivo && (
-                          <div className="sm:col-span-4 rounded-md border border-gold/30 bg-gold/[0.04] p-2.5 mt-1 grid grid-cols-1 sm:grid-cols-[140px_110px_1fr_auto] gap-2 items-start">
+                          <div className="sm:col-span-5 rounded-md border border-gold/30 bg-gold/[0.04] p-2.5 mt-1 grid grid-cols-1 sm:grid-cols-[140px_110px_1fr_auto] gap-2 items-start">
                             <label className="block">
                               <div className="text-[9px] uppercase tracking-wider text-gold/80 mb-0.5">
                                 Preço unit.
