@@ -527,6 +527,7 @@ function DadosEmpresaModal({
   cart,
   produtos,
   vendedor,
+  sessionIdRef,
   onDone,
 }: {
   open: boolean;
@@ -534,6 +535,7 @@ function DadosEmpresaModal({
   cart: CartMap;
   produtos: Product[];
   vendedor: string | null;
+  sessionIdRef: React.MutableRefObject<string | null>;
   onDone: (pre: Awaited<ReturnType<typeof buildPreSelecao>>) => void;
 }) {
   const [cnpj, setCnpj] = useState("");
@@ -554,6 +556,34 @@ function DadosEmpresaModal({
   const hydrate = usePreSelecao((s) => s.hydrate);
   const enviarPreSelecao = useServerFn(enviarPreSelecaoPublica);
   useEffect(() => { hydrate(); }, [hydrate]);
+
+  // Autosave do formulário: enquanto o modal está aberto, snapshot dos
+  // campos preenchidos a cada 30s (para detectar onde a pessoa travou).
+  useEffect(() => {
+    if (!open) return;
+    const sid = sessionIdRef.current;
+    if (!sid) return;
+    const snapshot = () => {
+      const campos = {
+        cnpj: !!cnpj.trim(),
+        razaoSocial: !!razaoSocial.trim(),
+        nomeFantasia: !!nomeFantasia.trim(),
+        contatoNome: !!contatoNome.trim(),
+        contatoCargo: !!contatoCargo.trim(),
+        contatoEmail: !!contatoEmail.trim(),
+        contatoWhatsapp: !!contatoWhatsapp.trim(),
+        cidadeEstado: !!cidadeEstado.trim(),
+        segmento: !!segmento,
+        observacao: !!observacao.trim(),
+      };
+      void emitEvento(sid, "formulario_autosave", { campos_preenchidos: campos });
+      void upsertSessao(sid, { campos_preenchidos: campos });
+    };
+    const id = setInterval(snapshot, 30_000);
+    return () => clearInterval(id);
+  }, [open, sessionIdRef, cnpj, razaoSocial, nomeFantasia, contatoNome, contatoCargo, contatoEmail, contatoWhatsapp, cidadeEstado, segmento, observacao]);
+
+
 
   async function buscarCnpj() {
     if (!isValidCNPJLength(cnpj)) { toast.error("Informe um CNPJ válido"); return; }
