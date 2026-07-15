@@ -445,14 +445,16 @@ function PanelTab({
   );
 }
 
-function SessoesTable({ rows, vendedorNome }: { rows: SessaoRow[]; vendedorNome: string }) {
+function SessoesTable({ rows, vendedorNome }: { rows: SessaoGrupo[]; vendedorNome: string }) {
   return (
     <div className="rounded-lg border border-border overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-surface-2 text-xs uppercase tracking-wider text-text-secondary">
           <tr>
+            <th className="w-8 px-2 py-2"></th>
             <th className="text-left px-3 py-2">Cliente</th>
             <th className="text-left px-3 py-2">WhatsApp</th>
+            <th className="text-left px-3 py-2">Acessos</th>
             <th className="text-left px-3 py-2">Itens</th>
             <th className="text-left px-3 py-2">Valor (atacado)</th>
             <th className="text-left px-3 py-2">Estado</th>
@@ -463,12 +465,12 @@ function SessoesTable({ rows, vendedorNome }: { rows: SessaoRow[]; vendedorNome:
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={7} className="text-center py-12 text-text-secondary text-sm">
+              <td colSpan={9} className="text-center py-12 text-text-secondary text-sm">
                 Nenhuma sessão nesta aba.
               </td>
             </tr>
           ) : (
-            rows.map((s) => <SessaoRowView key={s.id} s={s} vendedorNome={vendedorNome} />)
+            rows.map((g) => <SessaoRowView key={g.key} grupo={g} vendedorNome={vendedorNome} />)
           )}
         </tbody>
       </table>
@@ -476,12 +478,15 @@ function SessoesTable({ rows, vendedorNome }: { rows: SessaoRow[]; vendedorNome:
   );
 }
 
-function SessaoRowView({ s, vendedorNome }: { s: SessaoRow; vendedorNome: string }) {
+function SessaoRowView({ grupo, vendedorNome }: { grupo: SessaoGrupo; vendedorNome: string }) {
+  const s = grupo.latest;
   const abandonado = s.estado_derivado === "formulario_abandonado";
   const nome = s.nome ?? s.razao_social ?? "— (não identificado)";
   const ultimo = s.ultimo_evento ? new Date(s.ultimo_evento) : null;
   const rel = ultimo ? relativeTime(ultimo) : "—";
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [aberto, setAberto] = useState(false);
+  const temHistorico = grupo.acessos > 1;
 
   const digits = (s.whatsapp ?? "").replace(/\D/g, "");
 
@@ -500,60 +505,112 @@ function SessaoRowView({ s, vendedorNome }: { s: SessaoRow; vendedorNome: string
   }
 
   return (
-    <tr className={cn("border-t border-border", abandonado && "bg-red-500/5")}>
-      <td className="px-3 py-3">
-        <div className="font-medium">{nome}</div>
-        <div className="text-xs text-text-secondary">
-          {s.identificado_gate ? "identificado no gate" : "anônimo"}
-          {s.cnpj && ` · ${s.cnpj}`}
-        </div>
-      </td>
-      <td className="px-3 py-3 text-xs">{s.whatsapp || <span className="text-text-muted italic">—</span>}</td>
-      <td className="px-3 py-3 text-xs">{s.qtd_itens ?? 0}</td>
-      <td className="px-3 py-3 text-xs text-gold">{formatBRL(Number(s.valor_wishlist ?? 0))}</td>
-      <td className="px-3 py-3">
-        <EstadoPill estado={s.estado_derivado} />
-      </td>
-      <td className="px-3 py-3 text-xs text-text-secondary inline-flex items-center gap-1">
-        <Clock className="h-3 w-3" /> {rel}
-      </td>
-      <td className="px-3 py-3">
-        {s.whatsapp && (
-          <div className="inline-flex items-center gap-1.5">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setTemplatesOpen(true)}
-              title="Mensagens sugeridas para esta etapa"
+    <>
+      <tr className={cn("border-t border-border", abandonado && "bg-red-500/5")}>
+        <td className="px-2 py-3 align-top">
+          {temHistorico ? (
+            <button
+              type="button"
+              onClick={() => setAberto((v) => !v)}
+              className="p-1 rounded hover:bg-surface-2 text-text-secondary"
+              aria-label={aberto ? "Recolher histórico" : "Expandir histórico"}
             >
-              <MessageSquareText className="h-3.5 w-3.5" />
-              Mensagens
-            </Button>
-            <Button
-              size="sm"
-              variant={abandonado ? "default" : "outline"}
-              className={cn(abandonado && "bg-red-500 hover:bg-red-600 text-white")}
-              onClick={recuperar}
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-              {abandonado ? "Recuperar" : "WhatsApp"}
-            </Button>
+              {aberto ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+          ) : null}
+        </td>
+        <td className="px-3 py-3">
+          <div className="font-medium">{nome}</div>
+          <div className="text-xs text-text-secondary">
+            {s.identificado_gate ? "identificado no gate" : "anônimo"}
+            {s.cnpj && ` · ${s.cnpj}`}
           </div>
-        )}
-        <MensagensSugeridasDialog
-          open={templatesOpen}
-          onOpenChange={setTemplatesOpen}
-          estado={s.estado_derivado}
-          nomeCliente={s.nome ?? null}
-          whatsappDigits={digits}
-          vendedorNome={vendedorNome}
-          qtdItens={s.qtd_itens ?? 0}
-          valor={Number(s.valor_wishlist ?? 0)}
-        />
-      </td>
-    </tr>
+        </td>
+        <td className="px-3 py-3 text-xs">{s.whatsapp || <span className="text-text-muted italic">—</span>}</td>
+        <td className="px-3 py-3 text-xs">
+          <span className={cn(
+            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border",
+            grupo.acessos > 1 ? "border-gold/40 text-gold bg-gold/5" : "border-border text-text-secondary",
+          )}>
+            <Users className="h-3 w-3" /> {grupo.acessos}
+          </span>
+        </td>
+        <td className="px-3 py-3 text-xs">{s.qtd_itens ?? 0}</td>
+        <td className="px-3 py-3 text-xs text-gold">{formatBRL(Number(s.valor_wishlist ?? 0))}</td>
+        <td className="px-3 py-3">
+          <EstadoPill estado={s.estado_derivado} />
+        </td>
+        <td className="px-3 py-3 text-xs text-text-secondary">
+          <div className="inline-flex items-center gap-1">
+            <Clock className="h-3 w-3" /> {rel}
+          </div>
+        </td>
+        <td className="px-3 py-3">
+          {s.whatsapp && (
+            <div className="inline-flex items-center gap-1.5">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setTemplatesOpen(true)}
+                title="Mensagens sugeridas para esta etapa"
+              >
+                <MessageSquareText className="h-3.5 w-3.5" />
+                Mensagens
+              </Button>
+              <Button
+                size="sm"
+                variant={abandonado ? "default" : "outline"}
+                className={cn(abandonado && "bg-red-500 hover:bg-red-600 text-white")}
+                onClick={recuperar}
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                {abandonado ? "Recuperar" : "WhatsApp"}
+              </Button>
+            </div>
+          )}
+          <MensagensSugeridasDialog
+            open={templatesOpen}
+            onOpenChange={setTemplatesOpen}
+            estado={s.estado_derivado}
+            nomeCliente={s.nome ?? null}
+            whatsappDigits={digits}
+            vendedorNome={vendedorNome}
+            qtdItens={s.qtd_itens ?? 0}
+            valor={Number(s.valor_wishlist ?? 0)}
+          />
+        </td>
+      </tr>
+      {aberto && temHistorico && (
+        <tr className="border-t border-border bg-surface-2/40">
+          <td colSpan={9} className="px-4 py-3">
+            <div className="text-[10px] uppercase tracking-wider text-text-secondary mb-2">
+              Histórico de acessos ({grupo.acessos})
+            </div>
+            <ul className="space-y-1.5">
+              {grupo.historico.map((h) => (
+                <li key={h.id} className="flex items-center gap-3 text-xs">
+                  <Clock className="h-3 w-3 text-text-muted shrink-0" />
+                  <span className="text-text-secondary w-32 shrink-0">
+                    {h.ultimo_evento ? new Date(h.ultimo_evento).toLocaleString("pt-BR") : "—"}
+                  </span>
+                  <EstadoPill estado={h.estado_derivado} />
+                  <span className="text-text-muted">
+                    {h.qtd_itens ?? 0} {(h.qtd_itens ?? 0) === 1 ? "item" : "itens"}
+                    {Number(h.valor_wishlist ?? 0) > 0 && ` · ${formatBRL(Number(h.valor_wishlist))}`}
+                  </span>
+                  {!h.identificado_gate && (
+                    <span className="text-[10px] text-text-muted italic">anônimo</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
+
 
 function EstadoPill({ estado }: { estado: EstadoSessao }) {
   const cls: Record<EstadoSessao, string> = {
