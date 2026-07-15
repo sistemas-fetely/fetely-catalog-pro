@@ -95,6 +95,7 @@ export const enviarPreSelecaoPublica = createServerFn({ method: "POST" })
       cotacao_gerada_id: data.cotacaoGeradaId ?? null,
       pedido_gerado_id: data.pedidoGeradoId ?? null,
       visualizado_em: data.visualizadoEm ?? null,
+      sessao_id: data.sessaoId ?? null,
     });
 
     if (error) throw new Error(error.message);
