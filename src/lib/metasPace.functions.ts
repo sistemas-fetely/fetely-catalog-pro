@@ -81,15 +81,9 @@ export const getMetasPaceData = createServerFn({ method: "GET" })
       if (tv === "interno") internosMap.set(p.id, p);
     }
 
-    // Confere quem tem role vendedor
-    const { data: rolesVend } = await supabase
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "vendedor");
-    const vendedorIds = new Set((rolesVend ?? []).map((r: any) => r.user_id));
-    const vendedoresInternos = Array.from(internosMap.values()).filter((p) =>
-      vendedorIds.has(p.id),
-    );
+    // Considera vendedores internos ativos (independente de role explícito),
+    // pois admins/masters também operam como vendedores internos no painel.
+    const vendedoresInternos = Array.from(internosMap.values());
 
     // Metas individuais
     const { data: metasInd } = await supabase
