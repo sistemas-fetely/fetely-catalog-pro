@@ -317,6 +317,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/reunioes': typeof ReunioesRouteWithChildren
   '/settings': typeof SettingsRoute
+  '/metas-pace': typeof MetasPaceRoute
   '/stand': typeof StandRouteWithChildren
   '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
