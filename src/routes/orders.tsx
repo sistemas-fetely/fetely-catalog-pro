@@ -527,16 +527,19 @@ function OrdersPage() {
                   </Link>
                   <button
                     onClick={() => setExportOrders([o])}
+                    title="Exportar pedido"
                     className="inline-flex items-center gap-1 rounded-md gold-border px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
                   >
                     <Download className="h-3 w-3" />
                   </button>
                   <button
                     onClick={() => setDuplicarTarget(o)}
+                    title="Duplicar pedido"
                     className="inline-flex items-center gap-1 rounded-md gold-border px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
                   >
                     <Copy className="h-3 w-3" />
                   </button>
+                  <BotaoEnviarSncf orderId={o.id} />
                   {o.sncfPedidoId && (
                     <button
                       onClick={() =>
@@ -546,6 +549,7 @@ function OrdersPage() {
                           cliente: o.meta?.cliente ?? "—",
                         })
                       }
+                      title="Canal com SOPS"
                       className="relative inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-text-secondary"
                     >
                       <MessageCircle className="h-3 w-3" />
@@ -554,9 +558,49 @@ function OrdersPage() {
                       )}
                     </button>
                   )}
+                  {(isAdmin || isMaster) && (
+                    <button
+                      onClick={() => setReassignTarget(o.id)}
+                      title={isAdmin ? "Reatribuir vendedor" : "Reatribuir vendedor (requer senha master)"}
+                      className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-amber-300 hover:bg-amber-500/10"
+                    >
+                      <UserCog className="h-3 w-3" />
+                    </button>
+                  )}
+                  {canReprovar && !o.reprovado && (
+                    <button
+                      onClick={async () => {
+                        if (
+                          !confirm(
+                            `Enviar o pedido ${o.id} para cotação? Ele será removido dos pedidos firmes e uma nova cotação editável será criada.`,
+                          )
+                        )
+                          return;
+                        try {
+                          const cot = await criarCotacao({
+                            items: o.items,
+                            meta: o.meta,
+                            total: o.total,
+                            commercial: o.commercial,
+                          });
+                          await deleteOrder(o.id);
+                          toast.success(`Pedido ${o.id} enviado para cotação ${cot.id}`);
+                        } catch (err) {
+                          toast.error(
+                            err instanceof Error ? err.message : "Erro ao enviar para cotação",
+                          );
+                        }
+                      }}
+                      title="Enviar para cotação (editar novamente)"
+                      className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-amber-300 hover:bg-amber-500/10"
+                    >
+                      <FileEdit className="h-3 w-3" />
+                    </button>
+                  )}
                   {canReprovar && !o.reprovado && (
                     <button
                       onClick={() => setReprovarTarget(o.id)}
+                      title="Reprovar pedido"
                       className="inline-flex items-center gap-1 rounded-md border border-stock-out/40 px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-stock-out hover:bg-stock-out/10"
                     >
                       <XCircle className="h-3 w-3" />
@@ -572,9 +616,27 @@ function OrdersPage() {
                           toast.error(err instanceof Error ? err.message : "Erro ao desfazer");
                         }
                       }}
+                      title="Desfazer reprovação"
                       className="inline-flex items-center gap-1 rounded-md border border-stock-in/40 px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-stock-in hover:bg-stock-in/10"
                     >
                       <RotateCcw className="h-3 w-3" />
+                    </button>
+                  )}
+                  {isMaster && (
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Deletar definitivamente o pedido ${o.id}? Esta ação não pode ser desfeita.`)) return;
+                        try {
+                          await deleteOrder(o.id);
+                          toast.success("Pedido deletado");
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : "Erro ao deletar");
+                        }
+                      }}
+                      title="Deletar pedido (master)"
+                      className="inline-flex items-center gap-1 rounded-md border border-stock-out/50 px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-stock-out hover:bg-stock-out/15"
+                    >
+                      <Trash2 className="h-3 w-3" />
                     </button>
                   )}
                 </div>
