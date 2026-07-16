@@ -37,6 +37,10 @@ function OrdersPage() {
   const isMaster = useAuth((s) => s.roles.includes("master"));
   const isAdminOrMaster = useAuth((s) => s.roles.includes("admin") || s.roles.includes("master"));
   const currentUserId = useAuth((s) => s.user?.id);
+  const isVendedorInterno = useAuth(
+    (s) => s.roles.includes("vendedor") && (s.profile?.tipo_vendedor ?? "interno") === "interno",
+  );
+  const podeVerMetasPace = isAdminOrMaster || isVendedorInterno;
   const clientes = useClientes((s) => s.clientes);
   const reassignOrder = useOrder((s) => s.reassignOrder);
   const deleteOrder = useOrder((s) => s.deleteOrder);
