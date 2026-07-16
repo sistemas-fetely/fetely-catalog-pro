@@ -127,6 +127,8 @@ function OrdersPage() {
           </p>
         </div>
         <div className="flex gap-2 items-center flex-wrap w-full sm:w-auto">
+          <MetasPaceButton />
+
           {selectedIds.size > 0 && (
             <>
               <button
