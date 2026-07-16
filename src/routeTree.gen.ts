@@ -23,6 +23,7 @@ import { Route as PhotosRouteImport } from './routes/photos'
 import { Route as PedidoOriginalRouteImport } from './routes/pedido-original'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as NewOrderRouteImport } from './routes/new-order'
+import { Route as MetasPaceRouteImport } from './routes/metas-pace'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -123,6 +124,11 @@ const OrdersRoute = OrdersRouteImport.update({
 const NewOrderRoute = NewOrderRouteImport.update({
   id: '/new-order',
   path: '/new-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetasPaceRoute = MetasPaceRouteImport.update({
+  id: '/metas-pace',
+  path: '/metas-pace',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -297,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
+  '/metas-pace': typeof MetasPaceRoute
   '/new-order': typeof NewOrderRoute
   '/orders': typeof OrdersRoute
   '/pedido-original': typeof PedidoOriginalRoute
@@ -344,6 +351,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
+  '/metas-pace': typeof MetasPaceRoute
   '/new-order': typeof NewOrderRoute
   '/orders': typeof OrdersRoute
   '/pedido-original': typeof PedidoOriginalRoute
@@ -391,6 +399,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
+  '/metas-pace': typeof MetasPaceRoute
   '/new-order': typeof NewOrderRoute
   '/orders': typeof OrdersRoute
   '/pedido-original': typeof PedidoOriginalRoute
@@ -440,6 +449,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/import'
     | '/login'
+    | '/metas-pace'
     | '/new-order'
     | '/orders'
     | '/pedido-original'
@@ -487,6 +497,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/import'
     | '/login'
+    | '/metas-pace'
     | '/new-order'
     | '/orders'
     | '/pedido-original'
@@ -533,6 +544,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/import'
     | '/login'
+    | '/metas-pace'
     | '/new-order'
     | '/orders'
     | '/pedido-original'
@@ -581,6 +593,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ImportRoute: typeof ImportRoute
   LoginRoute: typeof LoginRoute
+  MetasPaceRoute: typeof MetasPaceRoute
   NewOrderRoute: typeof NewOrderRoute
   OrdersRoute: typeof OrdersRoute
   PedidoOriginalRoute: typeof PedidoOriginalRoute
@@ -704,6 +717,13 @@ declare module '@tanstack/react-router' {
       path: '/new-order'
       fullPath: '/new-order'
       preLoaderRoute: typeof NewOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/metas-pace': {
+      id: '/metas-pace'
+      path: '/metas-pace'
+      fullPath: '/metas-pace'
+      preLoaderRoute: typeof MetasPaceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -993,6 +1013,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   ImportRoute: ImportRoute,
   LoginRoute: LoginRoute,
+  MetasPaceRoute: MetasPaceRoute,
   NewOrderRoute: NewOrderRoute,
   OrdersRoute: OrdersRoute,
   PedidoOriginalRoute: PedidoOriginalRoute,
