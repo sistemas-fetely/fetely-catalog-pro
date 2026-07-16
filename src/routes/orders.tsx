@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Download, Eye, Package, Printer, Trash2, UserCog, XCircle, RotateCcw, FileEdit, Copy, MessageCircle } from "lucide-react";
+import { Download, Eye, Package, Printer, Trash2, UserCog, XCircle, RotateCcw, FileEdit, Copy, MessageCircle, Target } from "lucide-react";
 import { printOrdersBatch } from "@/lib/orderPdf";
 import { BotaoEnviarSncf } from "@/components/BotaoEnviarSncf";
 import { formatBRL } from "@/lib/format";
