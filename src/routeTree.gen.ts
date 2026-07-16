@@ -463,7 +463,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/reunioes'
     | '/settings'
-    | '/metas-pace'
     | '/stand'
     | '/admin/access-logs'
     | '/admin/cartilhas'
