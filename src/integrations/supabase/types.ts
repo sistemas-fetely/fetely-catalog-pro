@@ -922,6 +922,77 @@ export type Database = {
         }
         Relationships: []
       }
+      meta_mensal: {
+        Row: {
+          ano: number
+          atualizado_em: string
+          atualizado_por: string | null
+          created_at: string
+          id: string
+          mes: number
+          meta_global: number
+        }
+        Insert: {
+          ano: number
+          atualizado_em?: string
+          atualizado_por?: string | null
+          created_at?: string
+          id?: string
+          mes: number
+          meta_global?: number
+        }
+        Update: {
+          ano?: number
+          atualizado_em?: string
+          atualizado_por?: string | null
+          created_at?: string
+          id?: string
+          mes?: number
+          meta_global?: number
+        }
+        Relationships: []
+      }
+      meta_vendedor: {
+        Row: {
+          ano: number
+          atualizado_em: string
+          atualizado_por: string | null
+          created_at: string
+          id: string
+          mes: number
+          meta: number
+          vendedor_id: string
+        }
+        Insert: {
+          ano: number
+          atualizado_em?: string
+          atualizado_por?: string | null
+          created_at?: string
+          id?: string
+          mes: number
+          meta?: number
+          vendedor_id: string
+        }
+        Update: {
+          ano?: number
+          atualizado_em?: string
+          atualizado_por?: string | null
+          created_at?: string
+          id?: string
+          mes?: number
+          meta?: number
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_vendedor_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modelos_pedido: {
         Row: {
           atualizado_em: string
@@ -2533,6 +2604,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_master: { Args: { _user_id: string }; Returns: boolean }
+      is_vendedor_interno: { Args: { _user_id: string }; Returns: boolean }
       log_access_event: {
         Args: {
           p_descricao?: string
