@@ -4,11 +4,7 @@ import { z } from "zod";
 
 const STATUS_FATURADOS = ["confirmado"];
 
-async function assertPodeVer(context: {
-  supabase: ReturnType<typeof requireSupabaseAuth extends never ? never : any>;
-  userId: string;
-}) {
-  // admin/master OU vendedor interno
+async function assertPodeVer(context: { supabase: any; userId: string }) {
   const { data: adminMaster } = await context.supabase.rpc("is_admin_or_master", {
     _user_id: context.userId,
   });
@@ -20,10 +16,7 @@ async function assertPodeVer(context: {
   return { isAdmin: false };
 }
 
-async function assertAdmin(context: {
-  supabase: any;
-  userId: string;
-}) {
+async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data: adminMaster } = await context.supabase.rpc("is_admin_or_master", {
     _user_id: context.userId,
   });
