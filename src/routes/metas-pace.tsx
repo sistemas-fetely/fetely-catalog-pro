@@ -338,7 +338,10 @@ function MetasPaceView({
               </tr>
             </thead>
             <tbody>
-              {data.vendedores.map((v) => {
+              {[...data.vendedores]
+                .filter((v) => v.realizado > 0)
+                .sort((a, b) => b.realizado - a.realizado)
+                .map((v) => {
                 const p = calcularPace({
                   meta: v.meta,
                   realizado: v.realizado,
