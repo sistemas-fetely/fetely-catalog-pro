@@ -127,7 +127,17 @@ function OrdersPage() {
           </p>
         </div>
         <div className="flex gap-2 items-center flex-wrap w-full sm:w-auto">
-          <MetasPaceButton />
+          {(isAdminOrMaster ||
+            (useAuth.getState().roles.includes("vendedor") &&
+              (useAuth.getState().profile?.tipo_vendedor ?? "interno") === "interno")) && (
+            <Link
+              to="/metas-pace"
+              className="inline-flex items-center gap-1.5 rounded-md border border-gold/50 bg-gold/10 px-3 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/20"
+              title="Metas & Pace do mês"
+            >
+              <Target className="h-3.5 w-3.5" /> Metas &amp; Pace
+            </Link>
+          )}
 
           {selectedIds.size > 0 && (
             <>
