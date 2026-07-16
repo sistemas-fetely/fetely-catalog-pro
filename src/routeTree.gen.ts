@@ -66,11 +66,6 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MetasPaceRoute = MetasPaceRouteImport.update({
-  id: '/metas-pace',
-  path: '/metas-pace',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ReunioesRoute = ReunioesRouteImport.update({
   id: '/reunioes',
   path: '/reunioes',
