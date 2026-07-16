@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StandRouteImport } from './routes/stand'
 import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as MetasPaceRouteImport } from './routes/metas-pace'
 import { Route as ReunioesRouteImport } from './routes/reunioes'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
@@ -65,6 +64,11 @@ const StandRoute = StandRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetasPaceRoute = MetasPaceRouteImport.update({
+  id: '/metas-pace',
+  path: '/metas-pace',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReunioesRoute = ReunioesRouteImport.update({
