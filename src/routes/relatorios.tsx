@@ -2260,6 +2260,54 @@ function TabCliente({ orders, ordersPrev, items, range }: {
       .sort((a, b) => b.liquido - a.liquido);
   }, [orders, totalFat]);
 
+  // ── Por cidade (com quebra por cliente)
+  const porCidade = useMemo(() => {
+    type Cli = { key: string; razao: string; cnpj: string; pedidos: number; unidades: number; liquido: number; ultima: string };
+    const m = new Map<string, {
+      key: string; cidade: string; uf: string;
+      pedidos: number; unidades: number; bruto: number; liquido: number;
+      clientes: Map<string, Cli>;
+    }>();
+    orders.forEach((o) => {
+      const c = o.cliente_snapshot ?? {};
+      const cidade = (c as { cidade?: string }).cidade || "—";
+      const uf = (c as { estado?: string }).estado || "—";
+      const key = `${cidade}||${uf}`;
+      const cnpj = c.cnpj || "—";
+      const cliKey = (c as { clienteId?: string }).clienteId || cnpj || c.razaoSocial || "—";
+      const cur = m.get(key) ?? {
+        key, cidade, uf,
+        pedidos: 0, unidades: 0, bruto: 0, liquido: 0,
+        clientes: new Map<string, Cli>(),
+      };
+      cur.pedidos += 1;
+      cur.unidades += Number(o.total_unidades || 0);
+      cur.bruto += Number(o.commercial?.bruto || o.total || 0);
+      cur.liquido += Number(o.total || 0);
+      const cli = cur.clientes.get(cliKey) ?? {
+        key: cliKey,
+        razao: c.razaoSocial || c.nomeFantasia || "—",
+        cnpj, pedidos: 0, unidades: 0, liquido: 0, ultima: o.created_at,
+      };
+      cli.pedidos += 1;
+      cli.unidades += Number(o.total_unidades || 0);
+      cli.liquido += Number(o.total || 0);
+      if (new Date(o.created_at) > new Date(cli.ultima)) cli.ultima = o.created_at;
+      cur.clientes.set(cliKey, cli);
+      m.set(key, cur);
+    });
+    return Array.from(m.values())
+      .map((r) => ({
+        ...r,
+        clientesQtd: r.clientes.size,
+        clientesArr: Array.from(r.clientes.values()).sort((a, b) => b.liquido - a.liquido),
+        ticket: r.pedidos ? r.liquido / r.pedidos : 0,
+        pct: totalFat > 0 ? (r.liquido / totalFat) * 100 : 0,
+      }))
+      .sort((a, b) => b.liquido - a.liquido);
+  }, [orders, totalFat]);
+
+
   // ── Por vendedor (todos ou filtrado por tipo)
   const aggVendedor = (tipo: "rep" | "interno" | "todos") => {
     const m = new Map<string, { id: string; nome: string; pedidos: number; clientes: Set<string>; bruto: number; liquido: number; unidades: number }>();
