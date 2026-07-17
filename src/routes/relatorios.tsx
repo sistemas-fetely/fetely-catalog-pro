@@ -2535,8 +2535,26 @@ function TabCliente({ orders, ordersPrev, items, range }: {
     "Crescimento %": r.crescPct.toFixed(2),
   })));
 
+  const exportCidade = () => downloadCSV(`fetely_cidades_${periodSuffix(range.from)}.csv`, porCidade.flatMap((c, i) => {
+    const header = {
+      "#": i + 1, Cidade: c.cidade, UF: c.uf, Cliente: "(TOTAL CIDADE)", CNPJ: "",
+      Clientes: c.clientesQtd, Pedidos: c.pedidos, Unidades: c.unidades,
+      "Fat. Bruto": c.bruto.toFixed(2), "Fat. Líquido": c.liquido.toFixed(2),
+      "Ticket Médio": c.ticket.toFixed(2), "% Total": c.pct.toFixed(2), "Última Compra": "",
+    };
+    const rows = c.clientesArr.map((cli) => ({
+      "#": "", Cidade: c.cidade, UF: c.uf, Cliente: cli.razao, CNPJ: cli.cnpj,
+      Clientes: "", Pedidos: cli.pedidos, Unidades: cli.unidades,
+      "Fat. Bruto": "", "Fat. Líquido": cli.liquido.toFixed(2),
+      "Ticket Médio": "", "% Total": "",
+      "Última Compra": new Date(cli.ultima).toLocaleDateString("pt-BR"),
+    }));
+    return [header, ...rows];
+  }));
+
   const views: Array<{ key: ClienteView; label: string }> = [
     { key: "cliente", label: "Por Cliente" },
+    { key: "cidade", label: "Por Cidade" },
     { key: "estado", label: "Por Estado" },
     { key: "representante", label: "Por Vendedor" },
     { key: "atendimento", label: "Por Atendimento" },
