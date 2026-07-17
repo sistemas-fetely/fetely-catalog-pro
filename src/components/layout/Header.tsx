@@ -143,11 +143,6 @@ export function Header() {
                 />
               )}
 
-              {temPermissao("pedidos_lista", "ver") && (
-                <Link to="/farol" className={navLinkClass(pathname.startsWith("/farol"))}>
-                  Farol
-                </Link>
-              )}
               <ReunioesNavLink pathname={pathname} navLinkClass={navLinkClass} />
               {temPermissao("clientes_lista", "ver") && (
                 <Link to="/clientes" className={navLinkClass(pathname.startsWith("/clientes"))}>

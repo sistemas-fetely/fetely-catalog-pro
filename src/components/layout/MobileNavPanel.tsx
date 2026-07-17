@@ -59,7 +59,6 @@ export function MobileNavPanel({ onNavigate }: { onNavigate?: () => void }) {
   ];
 
   const operacional: Item[] = [
-    { to: "/farol", label: "Farol", Icon: Radio, tela: "pedidos_lista" },
     { to: "/reunioes", label: "Reuniões", Icon: CalendarDays, badge: reunioesNovas },
     { to: "/clientes", label: "Clientes", Icon: Users, tela: "clientes_lista" },
     { to: "/dashboard", label: "Dashboard", Icon: BarChart3, tela: "dashboard" },
