@@ -2185,7 +2185,7 @@ function ProdutosRows({ items, totalRef, indent }: { items: ItemRow[]; totalRef:
 // TAB: CLIENTE  (Por cliente · Estado · Representante · Atendimento · Recompra)
 // ────────────────────────────────────────────────────────────────────────────
 
-type ClienteView = "cliente" | "estado" | "representante" | "atendimento" | "profundidade" | "recompra";
+type ClienteView = "cliente" | "cidade" | "estado" | "representante" | "atendimento" | "profundidade" | "recompra";
 
 function TabCliente({ orders, ordersPrev, items, range }: {
   orders: OrderRow[];
@@ -2259,6 +2259,54 @@ function TabCliente({ orders, ordersPrev, items, range }: {
       .map((r) => ({ uf: r.uf, pedidos: r.pedidos, clientes: r.clientes.size, bruto: r.bruto, liquido: r.liquido, unidades: r.unidades, ticket: r.pedidos ? r.liquido / r.pedidos : 0, pct: totalFat > 0 ? (r.liquido / totalFat) * 100 : 0 }))
       .sort((a, b) => b.liquido - a.liquido);
   }, [orders, totalFat]);
+
+  // ── Por cidade (com quebra por cliente)
+  const porCidade = useMemo(() => {
+    type Cli = { key: string; razao: string; cnpj: string; pedidos: number; unidades: number; liquido: number; ultima: string };
+    const m = new Map<string, {
+      key: string; cidade: string; uf: string;
+      pedidos: number; unidades: number; bruto: number; liquido: number;
+      clientes: Map<string, Cli>;
+    }>();
+    orders.forEach((o) => {
+      const c = o.cliente_snapshot ?? {};
+      const cidade = (c as { cidade?: string }).cidade || "—";
+      const uf = (c as { estado?: string }).estado || "—";
+      const key = `${cidade}||${uf}`;
+      const cnpj = c.cnpj || "—";
+      const cliKey = (c as { clienteId?: string }).clienteId || cnpj || c.razaoSocial || "—";
+      const cur = m.get(key) ?? {
+        key, cidade, uf,
+        pedidos: 0, unidades: 0, bruto: 0, liquido: 0,
+        clientes: new Map<string, Cli>(),
+      };
+      cur.pedidos += 1;
+      cur.unidades += Number(o.total_unidades || 0);
+      cur.bruto += Number(o.commercial?.bruto || o.total || 0);
+      cur.liquido += Number(o.total || 0);
+      const cli = cur.clientes.get(cliKey) ?? {
+        key: cliKey,
+        razao: c.razaoSocial || c.nomeFantasia || "—",
+        cnpj, pedidos: 0, unidades: 0, liquido: 0, ultima: o.created_at,
+      };
+      cli.pedidos += 1;
+      cli.unidades += Number(o.total_unidades || 0);
+      cli.liquido += Number(o.total || 0);
+      if (new Date(o.created_at) > new Date(cli.ultima)) cli.ultima = o.created_at;
+      cur.clientes.set(cliKey, cli);
+      m.set(key, cur);
+    });
+    return Array.from(m.values())
+      .map((r) => ({
+        ...r,
+        clientesQtd: r.clientes.size,
+        clientesArr: Array.from(r.clientes.values()).sort((a, b) => b.liquido - a.liquido),
+        ticket: r.pedidos ? r.liquido / r.pedidos : 0,
+        pct: totalFat > 0 ? (r.liquido / totalFat) * 100 : 0,
+      }))
+      .sort((a, b) => b.liquido - a.liquido);
+  }, [orders, totalFat]);
+
 
   // ── Por vendedor (todos ou filtrado por tipo)
   const aggVendedor = (tipo: "rep" | "interno" | "todos") => {
@@ -2487,8 +2535,26 @@ function TabCliente({ orders, ordersPrev, items, range }: {
     "Crescimento %": r.crescPct.toFixed(2),
   })));
 
+  const exportCidade = () => downloadCSV(`fetely_cidades_${periodSuffix(range.from)}.csv`, porCidade.flatMap((c, i) => {
+    const header = {
+      "#": i + 1, Cidade: c.cidade, UF: c.uf, Cliente: "(TOTAL CIDADE)", CNPJ: "",
+      Clientes: c.clientesQtd, Pedidos: c.pedidos, Unidades: c.unidades,
+      "Fat. Bruto": c.bruto.toFixed(2), "Fat. Líquido": c.liquido.toFixed(2),
+      "Ticket Médio": c.ticket.toFixed(2), "% Total": c.pct.toFixed(2), "Última Compra": "",
+    };
+    const rows = c.clientesArr.map((cli) => ({
+      "#": "", Cidade: c.cidade, UF: c.uf, Cliente: cli.razao, CNPJ: cli.cnpj,
+      Clientes: "", Pedidos: cli.pedidos, Unidades: cli.unidades,
+      "Fat. Bruto": "", "Fat. Líquido": cli.liquido.toFixed(2),
+      "Ticket Médio": "", "% Total": "",
+      "Última Compra": new Date(cli.ultima).toLocaleDateString("pt-BR"),
+    }));
+    return [header, ...rows];
+  }));
+
   const views: Array<{ key: ClienteView; label: string }> = [
     { key: "cliente", label: "Por Cliente" },
+    { key: "cidade", label: "Por Cidade" },
     { key: "estado", label: "Por Estado" },
     { key: "representante", label: "Por Vendedor" },
     { key: "atendimento", label: "Por Atendimento" },
@@ -2579,6 +2645,34 @@ function TabCliente({ orders, ordersPrev, items, range }: {
             </table>
           </div>
         </Card>
+        </>
+      )}
+
+      {view === "cidade" && (
+        <>
+          <Card title="Top 10 cidades por faturamento líquido">
+            <div className="h-[360px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={porCidade.slice(0, 10).map((c) => ({ nome: `${c.cidade}/${c.uf}`.slice(0, 28), valor: Math.round(c.liquido) }))}
+                  layout="vertical" margin={{ top: 8, right: 72, left: 8, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                  <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false}
+                    tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                  <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={200} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
+                    formatter={(v: number) => formatBRL(v)} />
+                  <Bar dataKey="valor" fill={GOLD} radius={[0, 6, 6, 0]} maxBarSize={18}>
+                    <LabelList dataKey="valor" position="right" formatter={(v: number) => fmtCompactBRL(v)}
+                      style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          <Card title={`Detalhe por cidade (${porCidade.length}) — clique para ver clientes`} action={<ExportBtn onClick={exportCidade} />}>
+            <CidadeTable rows={porCidade} totalFat={totalFat} />
+          </Card>
         </>
       )}
 
@@ -2994,3 +3088,88 @@ function TabCliente({ orders, ordersPrev, items, range }: {
     </div>
   );
 }
+
+type CidadeRow = {
+  key: string; cidade: string; uf: string;
+  pedidos: number; unidades: number; bruto: number; liquido: number;
+  clientesQtd: number;
+  clientesArr: Array<{ key: string; razao: string; cnpj: string; pedidos: number; unidades: number; liquido: number; ultima: string }>;
+  ticket: number; pct: number;
+};
+
+function CidadeTable({ rows }: { rows: CidadeRow[]; totalFat: number }) {
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const fmtPct = (v: number) => `${v.toFixed(1)}%`;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+            <th className="px-2 py-2 text-left">Cidade / UF</th>
+            <th className="px-2 py-2 text-right">Clientes</th>
+            <th className="px-2 py-2 text-right">Pedidos</th>
+            <th className="px-2 py-2 text-right">Unid.</th>
+            <th className="px-2 py-2 text-right">Líquido</th>
+            <th className="px-2 py-2 text-right">Ticket</th>
+            <th className="px-2 py-2 text-right">% Total</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border/40">
+          {rows.map((c) => {
+            const open = openKey === c.key;
+            return (
+              <Fragment key={c.key}>
+                <tr
+                  className="hover:bg-surface-2/40 cursor-pointer"
+                  onClick={() => setOpenKey(open ? null : c.key)}
+                >
+                  <td className="px-2 py-2 text-text-primary font-medium">
+                    <span className="inline-block w-4 text-gold">{open ? "▾" : "▸"}</span>
+                    {c.cidade} / {c.uf}
+                  </td>
+                  <td className="px-2 py-2 text-right">{c.clientesQtd}</td>
+                  <td className="px-2 py-2 text-right">{c.pedidos}</td>
+                  <td className="px-2 py-2 text-right">{c.unidades.toLocaleString("pt-BR")}</td>
+                  <td className="px-2 py-2 text-right text-text-primary">{formatBRL(c.liquido)}</td>
+                  <td className="px-2 py-2 text-right">{formatBRL(c.ticket)}</td>
+                  <td className="px-2 py-2 text-right text-gold">{fmtPct(c.pct)}</td>
+                </tr>
+                {open && (
+                  <tr className="bg-surface-2/30">
+                    <td colSpan={7} className="px-4 py-3">
+                      <table className="w-full text-[11px]">
+                        <thead>
+                          <tr className="text-[10px] uppercase tracking-wider text-text-muted">
+                            <th className="px-2 py-1.5 text-left">Cliente</th>
+                            <th className="px-2 py-1.5 text-left">CNPJ</th>
+                            <th className="px-2 py-1.5 text-right">Pedidos</th>
+                            <th className="px-2 py-1.5 text-right">Unid.</th>
+                            <th className="px-2 py-1.5 text-right">Líquido</th>
+                            <th className="px-2 py-1.5 text-left">Última</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/30">
+                          {c.clientesArr.map((cli) => (
+                            <tr key={cli.key}>
+                              <td className="px-2 py-1.5 text-text-primary">{cli.razao}</td>
+                              <td className="px-2 py-1.5 text-text-secondary">{cli.cnpj}</td>
+                              <td className="px-2 py-1.5 text-right">{cli.pedidos}</td>
+                              <td className="px-2 py-1.5 text-right">{cli.unidades.toLocaleString("pt-BR")}</td>
+                              <td className="px-2 py-1.5 text-right text-text-primary">{formatBRL(cli.liquido)}</td>
+                              <td className="px-2 py-1.5 text-text-secondary">{new Date(cli.ultima).toLocaleDateString("pt-BR")}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
