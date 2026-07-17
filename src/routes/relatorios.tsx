@@ -3088,3 +3088,88 @@ function TabCliente({ orders, ordersPrev, items, range }: {
     </div>
   );
 }
+
+type CidadeRow = {
+  key: string; cidade: string; uf: string;
+  pedidos: number; unidades: number; bruto: number; liquido: number;
+  clientesQtd: number;
+  clientesArr: Array<{ key: string; razao: string; cnpj: string; pedidos: number; unidades: number; liquido: number; ultima: string }>;
+  ticket: number; pct: number;
+};
+
+function CidadeTable({ rows }: { rows: CidadeRow[]; totalFat: number }) {
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const fmtPct = (v: number) => `${v.toFixed(1)}%`;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+            <th className="px-2 py-2 text-left">Cidade / UF</th>
+            <th className="px-2 py-2 text-right">Clientes</th>
+            <th className="px-2 py-2 text-right">Pedidos</th>
+            <th className="px-2 py-2 text-right">Unid.</th>
+            <th className="px-2 py-2 text-right">Líquido</th>
+            <th className="px-2 py-2 text-right">Ticket</th>
+            <th className="px-2 py-2 text-right">% Total</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border/40">
+          {rows.map((c) => {
+            const open = openKey === c.key;
+            return (
+              <Fragment key={c.key}>
+                <tr
+                  className="hover:bg-surface-2/40 cursor-pointer"
+                  onClick={() => setOpenKey(open ? null : c.key)}
+                >
+                  <td className="px-2 py-2 text-text-primary font-medium">
+                    <span className="inline-block w-4 text-gold">{open ? "▾" : "▸"}</span>
+                    {c.cidade} / {c.uf}
+                  </td>
+                  <td className="px-2 py-2 text-right">{c.clientesQtd}</td>
+                  <td className="px-2 py-2 text-right">{c.pedidos}</td>
+                  <td className="px-2 py-2 text-right">{c.unidades.toLocaleString("pt-BR")}</td>
+                  <td className="px-2 py-2 text-right text-text-primary">{formatBRL(c.liquido)}</td>
+                  <td className="px-2 py-2 text-right">{formatBRL(c.ticket)}</td>
+                  <td className="px-2 py-2 text-right text-gold">{fmtPct(c.pct)}</td>
+                </tr>
+                {open && (
+                  <tr className="bg-surface-2/30">
+                    <td colSpan={7} className="px-4 py-3">
+                      <table className="w-full text-[11px]">
+                        <thead>
+                          <tr className="text-[10px] uppercase tracking-wider text-text-muted">
+                            <th className="px-2 py-1.5 text-left">Cliente</th>
+                            <th className="px-2 py-1.5 text-left">CNPJ</th>
+                            <th className="px-2 py-1.5 text-right">Pedidos</th>
+                            <th className="px-2 py-1.5 text-right">Unid.</th>
+                            <th className="px-2 py-1.5 text-right">Líquido</th>
+                            <th className="px-2 py-1.5 text-left">Última</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/30">
+                          {c.clientesArr.map((cli) => (
+                            <tr key={cli.key}>
+                              <td className="px-2 py-1.5 text-text-primary">{cli.razao}</td>
+                              <td className="px-2 py-1.5 text-text-secondary">{cli.cnpj}</td>
+                              <td className="px-2 py-1.5 text-right">{cli.pedidos}</td>
+                              <td className="px-2 py-1.5 text-right">{cli.unidades.toLocaleString("pt-BR")}</td>
+                              <td className="px-2 py-1.5 text-right text-text-primary">{formatBRL(cli.liquido)}</td>
+                              <td className="px-2 py-1.5 text-text-secondary">{new Date(cli.ultima).toLocaleDateString("pt-BR")}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
