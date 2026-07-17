@@ -2185,7 +2185,7 @@ function ProdutosRows({ items, totalRef, indent }: { items: ItemRow[]; totalRef:
 // TAB: CLIENTE  (Por cliente · Estado · Representante · Atendimento · Recompra)
 // ────────────────────────────────────────────────────────────────────────────
 
-type ClienteView = "cliente" | "estado" | "representante" | "atendimento" | "profundidade" | "recompra";
+type ClienteView = "cliente" | "cidade" | "estado" | "representante" | "atendimento" | "profundidade" | "recompra";
 
 function TabCliente({ orders, ordersPrev, items, range }: {
   orders: OrderRow[];
