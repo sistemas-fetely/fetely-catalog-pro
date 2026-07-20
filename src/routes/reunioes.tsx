@@ -112,7 +112,7 @@ function ReunioesPage() {
   const todas = usePreSelecoesEscopo();
   const [panel, setPanel] = useState<"presel" | "sessoes">("presel");
   const [tab, setTab] = useState<StatusPreSelecao | "todas">("nova");
-  const [sessaoTab, setSessaoTab] = useState<"todas" | "abandonado" | "aberto" | "montando" | "acessou">("todas");
+  const [sessaoTab, setSessaoTab] = useState<"todas" | "abandonado" | "aberto" | "montando" | "identificado" | "anonimo">("todas");
   const [busca, setBusca] = useState("");
   const [selecionada, setSelecionada] = useState<PreSelecao | null>(null);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
