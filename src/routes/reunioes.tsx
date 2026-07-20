@@ -282,7 +282,8 @@ function ReunioesPage() {
             { key: "abandonado", label: "Formulário abandonado", danger: true },
             { key: "aberto", label: "Preenchendo" },
             { key: "montando", label: "Montando" },
-            { key: "acessou", label: "Só acessou" },
+            { key: "identificado", label: "Identificado" },
+            { key: "anonimo", label: "Só acessou" },
           ] as const).map((t) => (
             <button
               key={t.key}
