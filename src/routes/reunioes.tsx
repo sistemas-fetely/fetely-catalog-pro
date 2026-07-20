@@ -112,7 +112,7 @@ function ReunioesPage() {
   const todas = usePreSelecoesEscopo();
   const [panel, setPanel] = useState<"presel" | "sessoes">("presel");
   const [tab, setTab] = useState<StatusPreSelecao | "todas">("nova");
-  const [sessaoTab, setSessaoTab] = useState<"todas" | "abandonado" | "aberto" | "montando" | "acessou">("todas");
+  const [sessaoTab, setSessaoTab] = useState<"todas" | "abandonado" | "aberto" | "montando" | "identificado" | "anonimo">("todas");
   const [busca, setBusca] = useState("");
   const [selecionada, setSelecionada] = useState<PreSelecao | null>(null);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
@@ -160,21 +160,19 @@ function ReunioesPage() {
     return c;
   }, [todas]);
 
+  const classifyGrupo = (g: SessaoGrupo): "abandonado" | "aberto" | "montando" | "identificado" | "anonimo" => {
+    const e = g.latest.estado_derivado;
+    if (e === "formulario_abandonado") return "abandonado";
+    if (e === "formulario_aberto") return "aberto";
+    if ((g.latest.qtd_itens ?? 0) >= 1 || e === "montando") return "montando";
+    if (g.latest.identificado_gate) return "identificado";
+    return "anonimo";
+  };
+
   const sessoesFiltradas = useMemo(() => {
     let out = sessoesGrupos;
     if (sessaoTab !== "todas") {
-      const map: Record<Exclude<typeof sessaoTab, "todas">, EstadoSessao> = {
-        abandonado: "formulario_abandonado",
-        aberto: "formulario_aberto",
-        montando: "montando",
-        acessou: "acessou",
-      };
-      const alvo = map[sessaoTab];
-      out = out.filter((g) =>
-        sessaoTab === "acessou"
-          ? g.latest.estado_derivado === "acessou" || g.latest.estado_derivado === "montagem_abandonada"
-          : g.latest.estado_derivado === alvo,
-      );
+      out = out.filter((g) => classifyGrupo(g) === sessaoTab);
     }
     const q = busca.trim().toLowerCase();
     if (q) {
@@ -188,13 +186,9 @@ function ReunioesPage() {
   }, [sessoesGrupos, sessaoTab, busca]);
 
   const sessoesCounts = useMemo(() => {
-    const c = { todas: sessoesGrupos.length, abandonado: 0, aberto: 0, montando: 0, acessou: 0 };
+    const c = { todas: sessoesGrupos.length, abandonado: 0, aberto: 0, montando: 0, identificado: 0, anonimo: 0 };
     for (const g of sessoesGrupos) {
-      const e = g.latest.estado_derivado;
-      if (e === "formulario_abandonado") c.abandonado++;
-      else if (e === "formulario_aberto") c.aberto++;
-      else if (e === "montando") c.montando++;
-      else if (e === "acessou" || e === "montagem_abandonada") c.acessou++;
+      c[classifyGrupo(g)]++;
     }
     return c;
   }, [sessoesGrupos]);
@@ -288,7 +282,8 @@ function ReunioesPage() {
             { key: "abandonado", label: "Formulário abandonado", danger: true },
             { key: "aberto", label: "Preenchendo" },
             { key: "montando", label: "Montando" },
-            { key: "acessou", label: "Só acessou" },
+            { key: "identificado", label: "Identificado" },
+            { key: "anonimo", label: "Só acessou" },
           ] as const).map((t) => (
             <button
               key={t.key}
