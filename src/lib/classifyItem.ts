@@ -1,8 +1,42 @@
+import type { Product } from "@/types";
+
 export function classificarItem(statusEstoque: string): "firme" | "provisao" {
   const s = (statusEstoque || "").toLowerCase().trim();
   if (s === "em estoque") return "firme";
   return "provisao";
 }
+
+/**
+ * Quantidade do produto que pode ser vendida firme agora.
+ * Preferência: `estoqueDisponivel` numérico. Fallback: se ainda não migrado,
+ * usa o `statusEstoque` textual (comportamento antigo: em estoque = ilimitado).
+ */
+export function disponivelParaVenda(product: Pick<Product, "estoqueDisponivel" | "statusEstoque">): number {
+  const q = Number(product.estoqueDisponivel ?? 0);
+  if (q > 0) return q;
+  if (classificarItem(product.statusEstoque || "") === "firme") return Number.POSITIVE_INFINITY;
+  return 0;
+}
+
+export function emEstoque(product: Pick<Product, "estoqueDisponivel" | "statusEstoque">): boolean {
+  return disponivelParaVenda(product) > 0;
+}
+
+/**
+ * Divide uma quantidade solicitada entre venda firme e provisão respeitando o
+ * estoque disponível. Não altera o produto — apenas calcula.
+ */
+export function roteamentoQtd(
+  product: Pick<Product, "estoqueDisponivel" | "statusEstoque">,
+  quantidade: number,
+): { firme: number; provisao: number } {
+  const qtd = Math.max(0, Math.floor(quantidade));
+  const disp = disponivelParaVenda(product);
+  if (!Number.isFinite(disp)) return { firme: qtd, provisao: 0 };
+  const firme = Math.min(qtd, disp);
+  return { firme, provisao: qtd - firme };
+}
+
 
 const MES_ORDEM: Record<string, number> = {
   jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6,
