@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight, XCircle, Trash2, RotateCcw, FileDown, Edit } from "lucide-react";
+import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight, XCircle, Trash2, RotateCcw, FileDown, Edit, LayoutDashboard } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 import { useProvisao, useVisibleProvisoes, useCanReprovarProvisao } from "@/store/provisaoStore";
 import { useAuth } from "@/store/authStore";
