@@ -155,7 +155,7 @@ export function CutleryGrid({ products, colecao, onColorChange }: Props) {
                   <span className="text-[10px] font-mono text-text-muted">
                     {p.sku}
                   </span>
-                  <StockBadge status={p.statusEstoque} />
+                  <StockBadge status={p.statusEstoque} estoqueDisponivel={p.estoqueDisponivel} />
                 </div>
                 <div className="text-[10px] text-text-muted mt-1">
                   Caixa: {p.multiplos} un.
