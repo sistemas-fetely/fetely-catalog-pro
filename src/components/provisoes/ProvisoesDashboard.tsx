@@ -24,6 +24,8 @@ function bucketPorProduto(product?: { categoria: string; grupo?: string; tipo?: 
 
 export function ProvisoesDashboard({ provisoes }: Props) {
   const products = useCatalog((s) => s.products);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
 
   const bucketBySku = useMemo(() => {
     const m = new Map<string, string>();
