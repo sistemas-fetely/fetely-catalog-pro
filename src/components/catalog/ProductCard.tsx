@@ -8,6 +8,7 @@ import { useOrder } from "@/store/orderStore";
 import { useAuth } from "@/store/authStore";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
+import { roteamentoQtd } from "@/lib/classifyItem";
 import type { Product } from "@/types";
 
 
@@ -84,7 +85,7 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
           </div>
         </div>
         <div className="absolute top-3 right-3">
-          <StockBadge status={product.statusEstoque} />
+          <StockBadge status={product.statusEstoque} estoqueDisponivel={product.estoqueDisponivel} />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent pointer-events-none" />
       </button>
@@ -210,30 +211,53 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
           </div>
         )}
 
-        {!isPublic && !preSelecao && (
-          <div className="mt-auto space-y-2 pt-2 border-t border-border/60">
-            <div className="text-[10px] uppercase tracking-wider text-text-muted">
-              Caixa: {product.multiplos} un. — mínimo
+        {!isPublic && !preSelecao && (() => {
+          const split = qty > 0 ? roteamentoQtd(product, qty) : { firme: 0, provisao: 0 };
+          const isMisto = split.firme > 0 && split.provisao > 0;
+          const isSoProvisao = split.firme === 0 && split.provisao > 0;
+          const btnLabel = indisponivel
+            ? "Indisponível"
+            : qty === 0
+            ? "Adicionar"
+            : isMisto
+            ? `Adicionar (${split.firme} firme + ${split.provisao} provisão)`
+            : isSoProvisao
+            ? `Provisionar (${split.provisao})`
+            : `Adicionar (${split.firme})`;
+          return (
+            <div className="mt-auto space-y-2 pt-2 border-t border-border/60">
+              <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                Caixa: {product.multiplos} un. — mínimo
+              </div>
+              <QuantityInput
+                value={qty}
+                onChange={setQty}
+                multiplos={product.multiplos}
+                disabled={indisponivel}
+              />
+              {qty > 0 && isMisto && (
+                <div className="rounded-md border border-stock-pre/40 bg-stock-pre/10 px-2 py-1 text-[10px] text-stock-pre text-center">
+                  Parte do pedido irá para provisão (excede estoque disponível)
+                </div>
+              )}
+              <button
+                type="button"
+                disabled={!canAdd}
+                onClick={() => {
+                  addItem(product, qty);
+                  setQty(0);
+                }}
+                className={`w-full rounded-md py-2 text-xs font-semibold uppercase tracking-[0.15em] transition disabled:opacity-30 disabled:cursor-not-allowed ${
+                  isSoProvisao
+                    ? "bg-stock-pre text-background hover:opacity-90"
+                    : "bg-gold text-background hover:bg-gold-light"
+                }`}
+              >
+                {btnLabel}
+              </button>
             </div>
-            <QuantityInput
-              value={qty}
-              onChange={setQty}
-              multiplos={product.multiplos}
-              disabled={indisponivel}
-            />
-            <button
-              type="button"
-              disabled={!canAdd}
-              onClick={() => {
-                addItem(product, qty);
-                setQty(0);
-              }}
-              className="w-full rounded-md bg-gold py-2 text-xs font-semibold uppercase tracking-[0.15em] text-background transition hover:bg-gold-light disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              {indisponivel ? "Indisponível" : "Adicionar"}
-            </button>
-          </div>
-        )}
+          );
+        })()}
 
         {preSelecao && (() => {
           const selected = preSelecao.qty !== undefined;

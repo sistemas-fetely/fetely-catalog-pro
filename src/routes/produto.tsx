@@ -155,7 +155,7 @@ function ProductPage() {
               />
             )}
             <div className="absolute top-3 right-3">
-              <StockBadge status={product.statusEstoque} />
+              <StockBadge status={product.statusEstoque} estoqueDisponivel={product.estoqueDisponivel} />
             </div>
           </div>
         </div>
