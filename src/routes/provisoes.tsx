@@ -67,7 +67,10 @@ function ProvisoesPage() {
         </p>
       </div>
 
+      <ProvisoesDashboard provisoes={provisoes} />
+
       <div className="flex flex-wrap items-center gap-2 mb-5">
+
         <div className="flex flex-wrap gap-1 bg-surface-2 p-1 rounded-md w-fit">
           <TabBtn active={tab === "aguardando"} onClick={() => setTab("aguardando")}>
             Aguardando ({aguardandoCount})
