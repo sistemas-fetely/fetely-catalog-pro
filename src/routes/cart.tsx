@@ -16,7 +16,7 @@ import { MixedCartBanner } from "@/components/cart/MixedCartBanner";
 import { ProvisaoSection } from "@/components/cart/ProvisaoSection";
 import { FinalConfirmModal } from "@/components/cart/FinalConfirmModal";
 import { SalvarModeloModal } from "@/components/duplicar/SalvarModeloModal";
-import { classificarItem, extrairDataPrevisao, compararPrevisao } from "@/lib/classifyItem";
+import { classificarItem, extrairDataPrevisao, compararPrevisao, roteamentoQtd } from "@/lib/classifyItem";
 import { useProvisao } from "@/store/provisaoStore";
 import { useCotacao } from "@/store/cotacaoStore";
 import type { CartItem, OrderCommercial, OrderMeta } from "@/types";
