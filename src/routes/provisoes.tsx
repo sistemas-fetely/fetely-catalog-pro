@@ -61,17 +61,29 @@ function ProvisoesPage() {
 
   return (
     <main className="mx-auto max-w-[1400px] px-3 py-4 sm:px-6 sm:py-10">
-      <div className="mb-5 sm:mb-8">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-gold">Pipeline</div>
-        <h1 className="font-display text-2xl sm:text-4xl mt-1">Provisões Futuras</h1>
-        <p className="text-text-secondary text-sm mt-1">
-          Rascunhos de pedidos aguardando liberação de estoque.
-        </p>
+      <div className="mb-5 sm:mb-8 flex items-start justify-between gap-3">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-gold">Pipeline</div>
+          <h1 className="font-display text-2xl sm:text-4xl mt-1">Provisões Futuras</h1>
+          <p className="text-text-secondary text-sm mt-1">
+            Rascunhos de pedidos aguardando liberação de estoque.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowDashboard((v) => !v)}
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-gold/40 bg-gold/10 hover:bg-gold/20 text-gold text-xs font-medium transition-colors"
+        >
+          <LayoutDashboard className="h-3.5 w-3.5" />
+          {showDashboard ? "Ocultar dashboard" : "Dashboard provisões"}
+        </button>
       </div>
 
-      <ProvisoesDashboard provisoes={provisoes} />
+      {showDashboard && <ProvisoesDashboard provisoes={provisoes} />}
 
       <div className="flex flex-wrap items-center gap-2 mb-5">
+
+
 
         <div className="flex flex-wrap gap-1 bg-surface-2 p-1 rounded-md w-fit">
           <TabBtn active={tab === "aguardando"} onClick={() => setTab("aguardando")}>
