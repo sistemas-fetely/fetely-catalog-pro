@@ -140,24 +140,24 @@ export function ProvisoesDashboard({ provisoes }: Props) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Por departamento */}
+        {/* Por categoria de negócio */}
         <div className="rounded-lg gold-border bg-surface overflow-hidden">
           <header className="px-4 py-2.5 border-b border-border bg-surface-2 flex items-center gap-2 text-[11px] uppercase tracking-wider text-text-muted">
             <Layers className="h-3.5 w-3.5 text-gold" />
-            Por departamento (em aberto)
+            Por categoria (em aberto)
           </header>
-          {porDepto.length === 0 ? (
+          {porBucket.length === 0 ? (
             <div className="p-6 text-center text-xs text-text-muted">
               Sem provisões em aberto.
             </div>
           ) : (
             <ul className="divide-y divide-border/50">
-              {porDepto.map((d) => {
-                const pct = totalDeptoValor > 0 ? (d.valor / totalDeptoValor) * 100 : 0;
+              {porBucket.map((d) => {
+                const pct = totalBucketValor > 0 ? (d.valor / totalBucketValor) * 100 : 0;
                 return (
-                  <li key={d.depto} className="px-4 py-3">
+                  <li key={d.bucket} className="px-4 py-3">
                     <div className="flex items-baseline justify-between gap-3">
-                      <div className="text-sm text-text-primary truncate">{d.depto}</div>
+                      <div className="text-sm text-text-primary truncate">{d.bucket}</div>
                       <div className="text-sm text-gold font-medium whitespace-nowrap">
                         {formatBRL(d.valor)}
                       </div>
