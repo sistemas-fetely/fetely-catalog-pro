@@ -58,6 +58,8 @@ type FarolRow = {
   sla_fase_atual: number | null;
   sla_cor: "verde" | "amarelo" | "vermelho" | null;
   fase_logistica: string | null;
+  dias_sem_confirmacao: number | null;
+  entregue_com_atraso: boolean | null;
 };
 
 const SLA_LABEL: Record<string, string> = {
