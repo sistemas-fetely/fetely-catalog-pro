@@ -153,7 +153,7 @@ export function NumericalCandleGrid({ products, colecao, onColorChange }: Props)
                 <div className="text-sm text-text-primary truncate">{p.nomeComercial}</div>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-[10px] font-mono text-text-muted">{p.sku}</span>
-                  <StockBadge status={p.statusEstoque} />
+                  <StockBadge status={p.statusEstoque} estoqueDisponivel={p.estoqueDisponivel} />
                 </div>
               </div>
               <div className="px-4 py-3 text-right text-xs text-text-secondary">
