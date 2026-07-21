@@ -8,6 +8,7 @@ import { useOrder } from "@/store/orderStore";
 import { useAuth } from "@/store/authStore";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
+import { roteamentoQtd } from "@/lib/classifyItem";
 import type { Product } from "@/types";
 
 
