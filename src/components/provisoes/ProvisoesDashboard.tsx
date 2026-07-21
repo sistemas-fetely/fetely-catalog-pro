@@ -191,30 +191,78 @@ export function ProvisoesDashboard({ provisoes }: Props) {
             <ul className="divide-y divide-border/50">
               {porBucket.map((d) => {
                 const pct = totalBucketValor > 0 ? (d.valor / totalBucketValor) * 100 : 0;
+                const isOpen = expanded === d.bucket;
                 return (
-                  <li key={d.bucket} className="px-4 py-3">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <div className="text-sm text-text-primary truncate">{d.bucket}</div>
-                      <div className="text-sm text-gold font-medium whitespace-nowrap">
-                        {formatBRL(d.valor)}
+                  <li key={d.bucket}>
+                    <button
+                      type="button"
+                      onClick={() => setExpanded(isOpen ? null : d.bucket)}
+                      className="w-full text-left px-4 py-3 hover:bg-surface-2/40 transition-colors"
+                    >
+                      <div className="flex items-baseline justify-between gap-3">
+                        <div className="flex items-center gap-1.5 text-sm text-text-primary truncate">
+                          {isOpen ? (
+                            <ChevronDown className="h-3.5 w-3.5 text-text-muted shrink-0" />
+                          ) : (
+                            <ChevronRight className="h-3.5 w-3.5 text-text-muted shrink-0" />
+                          )}
+                          {d.bucket}
+                        </div>
+                        <div className="text-sm text-gold font-medium whitespace-nowrap">
+                          {formatBRL(d.valor)}
+                        </div>
                       </div>
-                    </div>
-                    <div className="mt-1.5 h-1.5 rounded-full bg-surface-2 overflow-hidden">
-                      <div
-                        className="h-full bg-gold/70"
-                        style={{ width: `${pct.toFixed(1)}%` }}
-                      />
-                    </div>
-                    <div className="mt-1 flex items-center justify-between text-[10px] text-text-muted">
-                      <span>
-                        {d.provisoesQtd} provisão{d.provisoesQtd !== 1 ? "ões" : ""} ·{" "}
-                        {d.unidades.toLocaleString("pt-BR")} un.
-                      </span>
-                      <span>{pct.toFixed(0)}%</span>
-                    </div>
+                      <div className="mt-1.5 h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                        <div
+                          className="h-full bg-gold/70"
+                          style={{ width: `${pct.toFixed(1)}%` }}
+                        />
+                      </div>
+                      <div className="mt-1 flex items-center justify-between text-[10px] text-text-muted">
+                        <span>
+                          {d.provisoesQtd} provisão{d.provisoesQtd !== 1 ? "ões" : ""} ·{" "}
+                          {d.unidades.toLocaleString("pt-BR")} un.
+                        </span>
+                        <span>{pct.toFixed(0)}%</span>
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="px-4 pb-3 bg-surface/40">
+                        {d.itensList.length === 0 ? (
+                          <div className="text-[11px] text-text-muted py-2">Sem itens.</div>
+                        ) : (
+                          <table className="w-full text-[11px]">
+                            <thead>
+                              <tr className="text-text-muted uppercase tracking-wider text-[9px]">
+                                <th className="text-left font-normal py-1.5">Produto</th>
+                                <th className="text-right font-normal py-1.5 w-16">Qtd</th>
+                                <th className="text-right font-normal py-1.5 w-24">Valor</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border/40">
+                              {d.itensList.map((it) => (
+                                <tr key={it.sku} className="text-text-primary">
+                                  <td className="py-1.5 pr-2 truncate max-w-[220px]">
+                                    <div className="truncate">{it.nome}</div>
+                                    <div className="text-[9px] text-text-muted">{it.sku}</div>
+                                  </td>
+                                  <td className="py-1.5 text-right tabular-nums">
+                                    {it.unidades.toLocaleString("pt-BR")}
+                                  </td>
+                                  <td className="py-1.5 text-right tabular-nums text-gold">
+                                    {formatBRL(it.valor)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                    )}
                   </li>
                 );
               })}
+
             </ul>
           )}
         </div>
