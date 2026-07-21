@@ -146,6 +146,11 @@ export function ProvisoesDashboard({ provisoes }: Props) {
             <Layers className="h-3.5 w-3.5 text-gold" />
             Por categoria (em aberto)
           </header>
+          <div className="px-4 py-2 text-[10px] text-text-muted border-b border-border/50 bg-surface/40 space-y-1">
+            <div><span className="font-medium text-text-primary">Celebrar a mesa</span> = categoria Celebrar à Mesa + Acessórios de Mesa</div>
+            <div><span className="font-medium text-text-primary">Luz</span> = Luz e Momento velas decorativas</div>
+            <div><span className="font-medium text-text-primary">Momento</span> = Luz e Momento velas numéricas</div>
+          </div>
           {porBucket.length === 0 ? (
             <div className="p-6 text-center text-xs text-text-muted">
               Sem provisões em aberto.
