@@ -92,8 +92,6 @@ export function ProvisoesDashboard({ provisoes }: Props) {
         const nome = prod
           ? `${prod.nomeComercial || prod.sku}${prod.corNome ? ` · ${prod.corNome}` : ""}${prod.tamanhoNumero ? ` · ${prod.tamanhoNumero}` : ""}`
           : it.sku;
-
-          : it.sku;
         const existing = cur.itens.get(it.sku) ?? { sku: it.sku, nome, unidades: 0, valor: 0 };
         existing.unidades += qtd;
         existing.valor += valor;
