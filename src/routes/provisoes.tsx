@@ -45,6 +45,8 @@ function ProvisoesPage() {
   const [showReprovados, setShowReprovados] = useState(false);
   const provisoes = useVisibleProvisoes({ includeReprovados: showReprovados });
   const [tab, setTab] = useState<Tab>("aguardando");
+  const [showDashboard, setShowDashboard] = useState(false);
+
   const [openId, setOpenId] = useState<string | null>(highlight ?? null);
 
   const filtered = useMemo(() => {
