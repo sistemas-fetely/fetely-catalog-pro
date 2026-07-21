@@ -53,6 +53,8 @@ export interface Product {
   precoVarejo: number;
   precoAtacado: number;
   statusEstoque: string;
+  /** Quantidade disponível em estoque para venda firme. em_estoque = estoqueDisponivel > 0 */
+  estoqueDisponivel?: number;
 
   // Vela numérica
   isVelaNumerica: boolean;
