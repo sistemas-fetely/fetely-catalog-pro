@@ -1693,6 +1693,7 @@ export type Database = {
           descricao_produto: string | null
           ean: string | null
           estampa: string | null
+          estoque_disponivel: number
           familia: string | null
           grupo: string
           grupo_id: string
@@ -1743,6 +1744,7 @@ export type Database = {
           descricao_produto?: string | null
           ean?: string | null
           estampa?: string | null
+          estoque_disponivel?: number
           familia?: string | null
           grupo: string
           grupo_id: string
@@ -1793,6 +1795,7 @@ export type Database = {
           descricao_produto?: string | null
           ean?: string | null
           estampa?: string | null
+          estoque_disponivel?: number
           familia?: string | null
           grupo?: string
           grupo_id?: string
