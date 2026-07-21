@@ -58,6 +58,8 @@ type FarolRow = {
   sla_fase_atual: number | null;
   sla_cor: "verde" | "amarelo" | "vermelho" | null;
   fase_logistica: string | null;
+  dias_sem_confirmacao: number | null;
+  entregue_com_atraso: boolean | null;
 };
 
 const SLA_LABEL: Record<string, string> = {
@@ -202,10 +204,11 @@ const B2C_ESTAGIO_BADGE: Record<string, "default" | "secondary" | "outline" | "d
 };
 
 
+type CardKey = "no_prazo" | "atrasado" | "travado" | "entregue";
+
 function AbaB2B() {
   const [busca, setBusca] = useState("");
-  const [filtroPrazo, setFiltroPrazo] = useState("todos");
-  const [filtroBloqueio, setFiltroBloqueio] = useState("todos");
+  const [cardAtivo, setCardAtivo] = useState<CardKey | null>(null);
 
   const [canalTarget, setCanalTarget] = useState<{
     sncfPedidoId: string;
@@ -236,37 +239,25 @@ function AbaB2B() {
       if (!data?.ok) throw new Error(data?.error ?? "Erro na ponte SNCF");
       return {
         pedidos: (data.pedidos ?? []) as FarolRow[],
-        regua: (data.regua ?? []) as SlaFaseRow[],
       };
     },
   });
 
   const rows = data?.pedidos ?? [];
-  const slaFases = data?.regua ?? [];
-
-  const regua = useMemo(() => {
-    const fases = slaFases.filter((f) => f.estagio in SLA_LABEL);
-    const EXCLUIR_PREP = new Set(["em_separacao", "faturado", "em_transporte", "entregue"]);
-    const internas = fases.filter(
-      (f) => f.tipo_sla === "interno" && (f.sla_dias ?? 0) > 0 && !EXCLUIR_PREP.has(f.estagio),
-    );
-    const esperas = fases.filter((f) => f.tipo_sla === "espera_externa");
-    const somaInternos = internas.reduce((acc, f) => acc + (f.sla_dias ?? 0), 0);
-    const totalDias = somaInternos + 8;
-    return { internas, esperas, somaInternos, totalDias };
-  }, [slaFases]);
 
   const resumo = useMemo(() => {
     const r = {
       no_prazo: { count: 0, soma: 0 },
       atrasado: { count: 0, soma: 0 },
-      bloqueado: { count: 0, soma: 0 },
+      travado: { count: 0, soma: 0 },
+      entregue: { count: 0, soma: 0 },
     };
     for (const it of rows) {
       const v = Number(it.valor_liquido ?? 0);
       if (it.prazo === "no_prazo") { r.no_prazo.count++; r.no_prazo.soma += v; }
       if (it.prazo === "atrasado") { r.atrasado.count++; r.atrasado.soma += v; }
-      if (it.bloqueio) { r.bloqueado.count++; r.bloqueado.soma += v; }
+      if (it.bloqueio) { r.travado.count++; r.travado.soma += v; }
+      if (it.prazo === "entregue") { r.entregue.count++; r.entregue.soma += v; }
     }
     return r;
   }, [rows]);
@@ -274,55 +265,46 @@ function AbaB2B() {
   const filtradas = useMemo(() => {
     const q = busca.trim().toLowerCase();
     let arr = rows.filter((r) => {
-      if (filtroPrazo !== "todos" && (r.prazo ?? "") !== filtroPrazo) return false;
-      if (filtroBloqueio !== "todos" && filtroBloqueio !== "__qualquer__") {
-        if (filtroBloqueio === "sem") { if (r.bloqueio) return false; }
-        else if ((r.bloqueio ?? "") !== filtroBloqueio) return false;
-      }
-      if (filtroBloqueio === "__qualquer__" && !r.bloqueio) return false;
+      if (cardAtivo === "no_prazo" && r.prazo !== "no_prazo") return false;
+      if (cardAtivo === "atrasado" && r.prazo !== "atrasado") return false;
+      if (cardAtivo === "travado" && !r.bloqueio) return false;
+      if (cardAtivo === "entregue" && r.prazo !== "entregue") return false;
       if (q) {
         const hay = `${r.id_externo ?? ""} ${r.cliente ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
+    const bucket = (r: FarolRow): number => {
+      if (r.prazo === "atrasado") return 0;
+      if (r.bloqueio) return 1;
+      if (r.prazo === "no_prazo") return 2;
+      if (r.prazo === "entregue") return 4;
+      return 3;
+    };
     arr = [...arr].sort((a, b) => {
-      const pa = PRAZO_ORDER[a.prazo ?? ""] ?? 99;
-      const pb = PRAZO_ORDER[b.prazo ?? ""] ?? 99;
-      if (pa !== pb) return pa - pb;
+      const ba = bucket(a);
+      const bb = bucket(b);
+      if (ba !== bb) return ba - bb;
+      const sca = a.dias_sem_confirmacao ?? -Infinity;
+      const scb = b.dias_sem_confirmacao ?? -Infinity;
+      if (sca !== scb) return scb - sca;
       const da = a.dias_vs_meta ?? -Infinity;
       const db = b.dias_vs_meta ?? -Infinity;
-      if (da !== db) return db - da;
-      return (a.bloqueio ? 1 : 0) - (b.bloqueio ? 1 : 0);
+      return db - da;
     });
     return arr;
-  }, [rows, busca, filtroPrazo, filtroBloqueio]);
-
-  type CardKey = "no_prazo" | "atrasado" | "bloqueado";
-  const cardAtivo: CardKey | null =
-    filtroPrazo === "no_prazo" ? "no_prazo"
-    : filtroPrazo === "atrasado" ? "atrasado"
-    : filtroBloqueio === "__qualquer__" ? "bloqueado"
-    : null;
+  }, [rows, busca, cardAtivo]);
 
   function toggleCard(key: CardKey) {
-    if (key === "no_prazo") {
-      setFiltroPrazo(filtroPrazo === "no_prazo" ? "todos" : "no_prazo");
-      setFiltroBloqueio("todos");
-    } else if (key === "atrasado") {
-      setFiltroPrazo(filtroPrazo === "atrasado" ? "todos" : "atrasado");
-      setFiltroBloqueio("todos");
-    } else {
-      setFiltroBloqueio(cardAtivo === "bloqueado" ? "todos" : "__qualquer__");
-      setFiltroPrazo("todos");
-    }
+    setCardAtivo((cur) => (cur === key ? null : key));
   }
 
   const KpiCard = ({
-    label, count, soma, tone, ativo, onClick, sufixo,
+    label, count, tone, ativo, onClick, subtitulo,
   }: {
-    label: string; count: number; soma: number; tone: string;
-    ativo: boolean; onClick: () => void; sufixo?: string;
+    label: string; count: number; tone: string;
+    ativo: boolean; onClick: () => void; subtitulo?: string;
   }) => (
     <button
       type="button"
@@ -333,9 +315,9 @@ function AbaB2B() {
         <CardContent className="p-4">
           <p className="text-[10px] uppercase tracking-[0.15em] text-text-secondary">{label}</p>
           <p className="mt-1 text-2xl font-semibold text-text-primary">{count}</p>
-          <p className="text-xs text-text-secondary mt-0.5">
-            {BRL.format(soma)}{sufixo ? ` ${sufixo}` : ""}
-          </p>
+          {subtitulo && (
+            <p className="text-xs text-text-secondary mt-0.5">{subtitulo}</p>
+          )}
         </CardContent>
       </Card>
     </button>
@@ -350,94 +332,11 @@ function AbaB2B() {
         </p>
       </div>
 
-      {/* Régua de SLA */}
-      <Card>
-        <CardContent className="p-4 space-y-4">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-gold">régua de prazos</p>
-            <p className="text-xs text-text-secondary mt-1">
-              Meta = data prometida, fixada quando o pedido chega
-              {" · "}
-              ETA = previsão atual, atualizada conforme o pedido avança
-            </p>
-          </div>
-
-          <div className="overflow-x-auto"><div className="flex items-start gap-4 min-w-max">
-            {/* Preparação interna */}
-            <div>
-              <p className="text-[11px] uppercase tracking-wider text-text-secondary flex items-center gap-1.5 mb-2">
-                <Building className="h-3.5 w-3.5" /> preparação · ~{regua.somaInternos} d.u.
-              </p>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {regua.internas.map((f, idx) => (
-                  <div key={f.estagio} className="flex items-center gap-1.5">
-                    <div className="rounded border border-border bg-surface px-2 py-1 text-[11px]">
-                      <span className="text-text-primary">{SLA_LABEL[f.estagio] ?? f.estagio}</span>
-                      <span className="text-text-secondary ml-1">{f.sla_dias} d.u.</span>
-                    </div>
-                    {idx < regua.internas.length - 1 && (
-                      <ChevronRight className="h-3 w-3 text-text-secondary" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Logística */}
-            <div>
-              <p className="text-[11px] uppercase tracking-wider text-text-secondary flex items-center gap-1.5 mb-2">
-                <Truck className="h-3.5 w-3.5" /> logística · ~8 d.u.
-              </p>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {[
-                  { label: "Separando", sla: "1 d.u." },
-                  { label: "Conf. / NF", sla: "1 d.u." },
-                  { label: "Expedido", sla: "1 d.u." },
-                  { label: "Em trânsito", sla: "~5 d.u. · real por CEP" },
-                ].map((c, idx) => (
-                  <div key={c.label} className="flex items-center gap-1.5">
-                    <div className="rounded border border-border bg-surface px-2 py-1 text-[11px]">
-                      <span className="text-text-primary">{c.label}</span>
-                      <span className="text-text-secondary ml-1">{c.sla}</span>
-                    </div>
-                    {idx < 3 && <ArrowRight className="h-3 w-3 text-text-secondary" />}
-                  </div>
-                ))}
-                <ChevronRight className="h-3 w-3 text-text-secondary" />
-                <div className="rounded border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" />
-                  Entregue
-                </div>
-              </div>
-            </div>
-          </div></div>
-
-          <p className="text-[11px] text-text-secondary">
-            prazo base ≈ {regua.totalDias} dias úteis = {regua.somaInternos} preparação + 8 logística · sábados e domingos não contam
-          </p>
-
-          {regua.esperas.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 text-[11px] pt-2 border-t border-border">
-              <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                <Pause className="h-3 w-3" /> pausam o relógio:
-              </span>
-              {regua.esperas.map((f) => (
-                <span key={f.estagio} className="rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-300">
-                  {SLA_LABEL[f.estagio] ?? f.estagio}
-                </span>
-              ))}
-              <span className="text-text-secondary">dependem de terceiros, não contam no prazo</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard
           label="no prazo"
           count={resumo.no_prazo.count}
-          soma={resumo.no_prazo.soma}
           tone="bg-emerald-500/5"
           ativo={cardAtivo === "no_prazo"}
           onClick={() => toggleCard("no_prazo")}
@@ -445,23 +344,29 @@ function AbaB2B() {
         <KpiCard
           label="atrasado"
           count={resumo.atrasado.count}
-          soma={resumo.atrasado.soma}
           tone="bg-red-500/5"
           ativo={cardAtivo === "atrasado"}
           onClick={() => toggleCard("atrasado")}
-          sufixo="em risco"
+          subtitulo={`${BRL.format(resumo.atrasado.soma)} em risco`}
         />
         <KpiCard
-          label="bloqueado"
-          count={resumo.bloqueado.count}
-          soma={resumo.bloqueado.soma}
+          label="travado"
+          count={resumo.travado.count}
           tone="bg-amber-500/5"
-          ativo={cardAtivo === "bloqueado"}
-          onClick={() => toggleCard("bloqueado")}
+          ativo={cardAtivo === "travado"}
+          onClick={() => toggleCard("travado")}
+          subtitulo="pagamento / estoque"
+        />
+        <KpiCard
+          label="entregue"
+          count={resumo.entregue.count}
+          tone="bg-muted/40"
+          ativo={cardAtivo === "entregue"}
+          onClick={() => toggleCard("entregue")}
         />
       </div>
 
-      {/* Filtros */}
+      {/* Busca */}
       <div className="flex flex-wrap items-center gap-3">
         <Input
           placeholder="buscar por cliente ou nº pedido…"
@@ -469,28 +374,6 @@ function AbaB2B() {
           onChange={(e) => setBusca(e.target.value)}
           className="max-w-sm"
         />
-        <Select value={filtroPrazo} onValueChange={setFiltroPrazo}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">todos os prazos</SelectItem>
-            <SelectItem value="no_prazo">no prazo</SelectItem>
-            <SelectItem value="atrasado">atrasado</SelectItem>
-            <SelectItem value="pausado">pausado</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filtroBloqueio} onValueChange={setFiltroBloqueio}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">todos os bloqueios</SelectItem>
-            <SelectItem value="aguardando_pagamento">aguardando pagamento</SelectItem>
-            <SelectItem value="aguardando_estoque">aguardando estoque</SelectItem>
-            <SelectItem value="sem">sem bloqueio</SelectItem>
-          </SelectContent>
-        </Select>
         <p className="text-xs text-text-secondary ml-auto">
           {filtradas.length} pedido(s)
         </p>
@@ -503,10 +386,10 @@ function AbaB2B() {
             <TableHeader>
               <TableRow>
                 <TableHead>cliente</TableHead>
-                <TableHead>estágio · desde</TableHead>
-                <TableHead>prazo</TableHead>
-                <TableHead>eta · meta</TableHead>
-                <TableHead>situação</TableHead>
+                <TableHead>status</TableHead>
+                <TableHead>previsão</TableHead>
+                <TableHead>valor</TableHead>
+                <TableHead>alerta</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -532,37 +415,30 @@ function AbaB2B() {
                 </TableRow>
               ) : (
                 filtradas.map((r) => {
-                  const dvm = r.dias_vs_meta;
-                  const dvmColor =
-                    r.prazo === "atrasado" ? "text-red-500"
-                    : r.prazo === "no_prazo" ? "text-emerald-500"
-                    : "text-text-secondary";
-                  const dvmNode =
-                    dvm === null || dvm === undefined ? null
-                    : <span className={`${dvmColor} text-xs ml-1`}>{dvm > 0 ? `+${dvm}` : dvm}</span>;
-
-                  let situacao: React.ReactNode = <span className="text-text-secondary">—</span>;
-                  if (r.bloqueio) {
-                    situacao = (
-                      <Badge variant="outline" className={BLOQUEIO_BADGE}>
-                        {BLOQUEIO_LABEL[r.bloqueio] ?? r.bloqueio}
+                  let alerta: React.ReactNode = <span className="text-text-secondary">—</span>;
+                  if (r.dias_sem_confirmacao != null) {
+                    alerta = (
+                      <Badge
+                        variant="outline"
+                        className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-900"
+                      >
+                        sem confirmação · {r.dias_sem_confirmacao}d
                       </Badge>
                     );
-                  } else if (r.pago_apos_expedicao) {
-                    situacao = (
-                      <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
-                        <AlertTriangle className="h-3 w-3" /> pago após expedição
-                      </span>
+                  } else if (r.bloqueio) {
+                    alerta = (
+                      <Badge
+                        variant="outline"
+                        className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-900"
+                      >
+                        travado
+                      </Badge>
                     );
-                  } else if (r.sla_cor) {
-                    const corClass =
-                      r.sla_cor === "verde" ? "text-emerald-500"
-                      : r.sla_cor === "amarelo" ? "text-amber-500"
-                      : "text-red-500";
-                    situacao = (
-                      <span className={`flex items-center gap-1 text-xs ${corClass}`}>
-                        <Circle className="h-2.5 w-2.5 fill-current" />
-                        {r.tempo_na_fase ?? 0}d em {r.status_label ?? ESTAGIO_LABEL[r.estagio ?? ""] ?? "—"}
+                  } else if (r.entregue_com_atraso === true) {
+                    const dvm = r.dias_vs_meta ?? 0;
+                    alerta = (
+                      <span className="text-xs text-text-secondary">
+                        entregue {dvm > 0 ? `+${dvm}d` : `${dvm}d`}
                       </span>
                     );
                   }
@@ -575,26 +451,16 @@ function AbaB2B() {
                       </TableCell>
                       <TableCell>
                         <p className="text-sm">{r.status_label ?? "—"}</p>
-                        <p className="text-[11px] text-text-secondary">
-                          desde {fmtCurta(r.data_estagio)}
-                          {r.pago_apos_expedicao && r.data_pg ? ` · pago ${fmtCurta(r.data_pg)}` : ""}
-                        </p>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center">
-                          <Badge variant="outline" className={prazoBadgeClass(r.prazo)}>
-                            {PRAZO_LABEL[r.prazo ?? ""] ?? "—"}
-                          </Badge>
-                          {dvmNode}
-                        </div>
+                        <p className="text-sm">{fmtCurta(r.eta_vivo)}</p>
                       </TableCell>
                       <TableCell>
-                        <p className="text-xs">eta {fmtCurta(r.eta_vivo)}</p>
-                        <p className="text-[11px] text-text-secondary">meta {fmtDate(r.meta)}</p>
+                        <p className="text-sm">{BRL.format(Number(r.valor_liquido ?? 0))}</p>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 min-w-0">{situacao}</div>
+                          <div className="flex-1 min-w-0">{alerta}</div>
                           {r.pedido_id && (
                             <button
                               type="button"
