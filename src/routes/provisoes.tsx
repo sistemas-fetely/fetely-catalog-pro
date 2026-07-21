@@ -11,6 +11,7 @@ import { useOrder } from "@/store/orderStore";
 import { ReprovarDialog } from "@/components/ReprovarDialog";
 import { generateProvisaoPDF } from "@/lib/orderPdf";
 import { STATUS_PROVISAO_LABEL, type ProvisaoFutura, type StatusProvisao } from "@/types/provisao";
+import { ProvisoesDashboard } from "@/components/provisoes/ProvisoesDashboard";
 
 const search = z.object({
   highlight: z.string().optional(),
