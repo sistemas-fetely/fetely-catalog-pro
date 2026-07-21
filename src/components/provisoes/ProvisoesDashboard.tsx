@@ -59,24 +59,52 @@ export function ProvisoesDashboard({ provisoes }: Props) {
 
   // Agrupamento por categoria de negócio (a partir dos itens abertos)
   const porBucket = useMemo(() => {
+    type Item = { sku: string; nome: string; unidades: number; valor: number };
     const map = new Map<
       string,
-      { bucket: string; unidades: number; valor: number; provisoes: Set<string> }
+      {
+        bucket: string;
+        unidades: number;
+        valor: number;
+        provisoes: Set<string>;
+        itens: Map<string, Item>;
+      }
     >();
+    const productBySku = new Map(products.map((p) => [p.sku, p]));
     abertas.forEach((p) => {
       p.itens.forEach((it) => {
         const bucket = bucketBySku.get(it.sku) ?? "Sem categoria";
         const cur =
           map.get(bucket) ??
-          { bucket, unidades: 0, valor: 0, provisoes: new Set<string>() };
-        cur.unidades += Number(it.quantidade || 0);
-        cur.valor += Number(it.quantidade || 0) * Number(it.precoAtacadoReferencia || 0);
+          {
+            bucket,
+            unidades: 0,
+            valor: 0,
+            provisoes: new Set<string>(),
+            itens: new Map<string, Item>(),
+          };
+        const qtd = Number(it.quantidade || 0);
+        const valor = qtd * Number(it.precoAtacadoReferencia || 0);
+        cur.unidades += qtd;
+        cur.valor += valor;
         cur.provisoes.add(p.id);
+        const prod = productBySku.get(it.sku);
+        const nome = prod
+          ? `${prod.nomeExibicao || prod.sku}${prod.cor ? ` · ${prod.cor}` : ""}${prod.numero ? ` · ${prod.numero}` : ""}`
+          : it.sku;
+        const existing = cur.itens.get(it.sku) ?? { sku: it.sku, nome, unidades: 0, valor: 0 };
+        existing.unidades += qtd;
+        existing.valor += valor;
+        cur.itens.set(it.sku, existing);
         map.set(bucket, cur);
       });
     });
     return Array.from(map.values())
-      .map((v) => ({ ...v, provisoesQtd: v.provisoes.size }))
+      .map((v) => ({
+        ...v,
+        provisoesQtd: v.provisoes.size,
+        itensList: Array.from(v.itens.values()).sort((a, b) => b.valor - a.valor),
+      }))
       .sort((a, b) => {
         const ia = BUCKET_ORDER.indexOf(a.bucket);
         const ib = BUCKET_ORDER.indexOf(b.bucket);
@@ -85,7 +113,8 @@ export function ProvisoesDashboard({ provisoes }: Props) {
         if (ib !== -1) return 1;
         return b.valor - a.valor;
       });
-  }, [abertas, bucketBySku]);
+  }, [abertas, bucketBySku, products]);
+
 
   const totalBucketValor = porBucket.reduce((s, d) => s + d.valor, 0);
 
