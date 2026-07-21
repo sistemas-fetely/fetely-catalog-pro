@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { Package, Clock, CheckCircle2, TrendingUp, Layers } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Package, Clock, CheckCircle2, TrendingUp, Layers, ChevronDown, ChevronRight } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 import { useCatalog } from "@/store/catalogStore";
 import type { ProvisaoFutura } from "@/types/provisao";
@@ -8,6 +8,7 @@ import { compararPrevisao } from "@/lib/classifyItem";
 interface Props {
   provisoes: ProvisaoFutura[];
 }
+
 
 const BUCKET_ORDER = ["Celebrar a mesa", "Luz", "Momento"];
 
