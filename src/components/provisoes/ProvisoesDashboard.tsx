@@ -90,7 +90,9 @@ export function ProvisoesDashboard({ provisoes }: Props) {
         cur.provisoes.add(p.id);
         const prod = productBySku.get(it.sku);
         const nome = prod
-          ? `${prod.nomeExibicao || prod.sku}${prod.cor ? ` · ${prod.cor}` : ""}${prod.numero ? ` · ${prod.numero}` : ""}`
+          ? `${prod.nomeComercial || prod.sku}${prod.corNome ? ` · ${prod.corNome}` : ""}${prod.tamanhoNumero ? ` · ${prod.tamanhoNumero}` : ""}`
+          : it.sku;
+
           : it.sku;
         const existing = cur.itens.get(it.sku) ?? { sku: it.sku, nome, unidades: 0, valor: 0 };
         existing.unidades += qtd;
