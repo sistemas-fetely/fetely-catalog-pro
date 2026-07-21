@@ -164,6 +164,7 @@ function rowToProduct(row: Record<string, unknown>): Product {
     precoVarejo: Number(row.preco_varejo ?? 0),
     precoAtacado: Number(row.preco_atacado ?? 0),
     statusEstoque: (row.status_estoque as string | null) ?? "em estoque",
+    estoqueDisponivel: Number((row as { estoque_disponivel?: number | null }).estoque_disponivel ?? 0),
     isVelaNumerica: (row.is_vela_numerica as boolean) ?? false,
     numeroVela: (row.numero_vela as number | null) ?? null,
     ativo: (row.ativo as boolean) ?? true,
