@@ -212,6 +212,7 @@ export function productToRow(p: Product): Record<string, unknown> {
     preco_varejo: p.precoVarejo ?? 0,
     preco_atacado: p.precoAtacado ?? 0,
     status_estoque: p.statusEstoque || "em estoque",
+    estoque_disponivel: p.estoqueDisponivel ?? 0,
     is_vela_numerica: p.isVelaNumerica ?? false,
     numero_vela: p.numeroVela ?? null,
     ativo: p.ativo ?? true,
