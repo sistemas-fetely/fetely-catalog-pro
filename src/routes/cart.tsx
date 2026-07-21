@@ -16,7 +16,7 @@ import { MixedCartBanner } from "@/components/cart/MixedCartBanner";
 import { ProvisaoSection } from "@/components/cart/ProvisaoSection";
 import { FinalConfirmModal } from "@/components/cart/FinalConfirmModal";
 import { SalvarModeloModal } from "@/components/duplicar/SalvarModeloModal";
-import { classificarItem, extrairDataPrevisao, compararPrevisao } from "@/lib/classifyItem";
+import { extrairDataPrevisao, compararPrevisao, roteamentoQtd } from "@/lib/classifyItem";
 import { useProvisao } from "@/store/provisaoStore";
 import { useCotacao } from "@/store/cotacaoStore";
 import type { CartItem, OrderCommercial, OrderMeta } from "@/types";
@@ -122,13 +122,15 @@ function CartPage() {
   }, [negotiationAtivo]);
 
 
-  // Split firme / provisao
+  // Split firme / provisao — Fatia 2: split parcial por quantidade conforme estoque_disponivel.
+  // Um mesmo SKU pode gerar uma linha firme (até o estoque) e uma linha de provisão (excedente).
   const { itensFirmes, itensProvisao } = useMemo(() => {
     const firmes: CartItem[] = [];
     const provisao: CartItem[] = [];
     items.forEach((i) => {
-      if (classificarItem(i.product.statusEstoque) === "firme") firmes.push(i);
-      else provisao.push(i);
+      const { firme, provisao: prov } = roteamentoQtd(i.product, i.quantity);
+      if (firme > 0) firmes.push({ ...i, quantity: firme });
+      if (prov > 0) provisao.push({ ...i, quantity: prov });
     });
     return { itensFirmes: firmes, itensProvisao: provisao };
   }, [items]);
