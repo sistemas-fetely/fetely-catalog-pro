@@ -9,12 +9,24 @@ interface Props {
   provisoes: ProvisaoFutura[];
 }
 
+const BUCKET_ORDER = ["Celebrar a mesa", "Luz", "Momento"];
+
+function bucketPorProduto(product?: { categoria: string; grupo?: string; tipo?: string }): string {
+  if (!product) return "Sem categoria";
+  if (product.categoria === "Celebrar à Mesa") return "Celebrar a mesa";
+  if (product.categoria === "Luz e Momento") {
+    return product.tipo === "Numérica" ? "Momento" : "Luz";
+  }
+  if (product.categoria === "Acessórios de Mesa") return "Celebrar a mesa";
+  return product.categoria || "Sem categoria";
+}
+
 export function ProvisoesDashboard({ provisoes }: Props) {
   const products = useCatalog((s) => s.products);
 
-  const deptoBySku = useMemo(() => {
+  const bucketBySku = useMemo(() => {
     const m = new Map<string, string>();
-    products.forEach((p) => m.set(p.sku, p.departamento ?? "—"));
+    products.forEach((p) => m.set(p.sku, bucketPorProduto(p)));
     return m;
   }, [products]);
 
@@ -42,30 +54,37 @@ export function ProvisoesDashboard({ provisoes }: Props) {
     };
   }, [abertas, provisoes]);
 
-  // Agrupamento por departamento (a partir dos itens abertos)
-  const porDepto = useMemo(() => {
+  // Agrupamento por categoria de negócio (a partir dos itens abertos)
+  const porBucket = useMemo(() => {
     const map = new Map<
       string,
-      { depto: string; unidades: number; valor: number; provisoes: Set<string> }
+      { bucket: string; unidades: number; valor: number; provisoes: Set<string> }
     >();
     abertas.forEach((p) => {
       p.itens.forEach((it) => {
-        const depto = deptoBySku.get(it.sku) ?? "Sem departamento";
+        const bucket = bucketBySku.get(it.sku) ?? "Sem categoria";
         const cur =
-          map.get(depto) ??
-          { depto, unidades: 0, valor: 0, provisoes: new Set<string>() };
+          map.get(bucket) ??
+          { bucket, unidades: 0, valor: 0, provisoes: new Set<string>() };
         cur.unidades += Number(it.quantidade || 0);
         cur.valor += Number(it.quantidade || 0) * Number(it.precoAtacadoReferencia || 0);
         cur.provisoes.add(p.id);
-        map.set(depto, cur);
+        map.set(bucket, cur);
       });
     });
     return Array.from(map.values())
       .map((v) => ({ ...v, provisoesQtd: v.provisoes.size }))
-      .sort((a, b) => b.valor - a.valor);
-  }, [abertas, deptoBySku]);
+      .sort((a, b) => {
+        const ia = BUCKET_ORDER.indexOf(a.bucket);
+        const ib = BUCKET_ORDER.indexOf(b.bucket);
+        if (ia !== -1 && ib !== -1) return ia - ib;
+        if (ia !== -1) return -1;
+        if (ib !== -1) return 1;
+        return b.valor - a.valor;
+      });
+  }, [abertas, bucketBySku]);
 
-  const totalDeptoValor = porDepto.reduce((s, d) => s + d.valor, 0);
+  const totalBucketValor = porBucket.reduce((s, d) => s + d.valor, 0);
 
   // Esteira: agrupar por proximaPrevisao
   const esteira = useMemo(() => {
