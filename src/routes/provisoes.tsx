@@ -445,6 +445,8 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
               <span className="text-xs uppercase tracking-wider text-text-muted">Total de referência</span>
               <span className="font-display text-2xl text-stock-pre">{formatBRL(provisao.totalReferencia)}</span>
             </div>
+
+            <SubdivisaoCategoria items={itemsComStatus} />
           </div>
 
           <div>
