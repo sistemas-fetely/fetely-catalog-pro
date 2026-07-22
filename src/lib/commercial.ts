@@ -451,3 +451,27 @@ export const JUSTIFICATIVAS_NEGOCIACAO = [
   "Reativação de cliente",
   "Outro",
 ] as const;
+
+// === PEDIDO BONIFICADO ===
+export const CONDICAO_BONIFICADO_ID = 999;
+export const CONDICAO_BONIFICADO: CondicaoPagamento = {
+  id: CONDICAO_BONIFICADO_ID,
+  descricao: "Pedido bonificado",
+  valorMinimo: 0,
+  tipo: "boleto",
+  numeroParcelas: 1,
+  diasParcelas: [0],
+  semJuros: true,
+  ativa: true,
+  exibirParaVendedor: true,
+  destaque: false,
+  ordem: 999,
+};
+export const MOTIVOS_BONIFICACAO = [
+  { id: "amostra", label: "Amostra" },
+  { id: "brinde", label: "Brinde" },
+  { id: "compensacao", label: "Compensação" },
+  { id: "marketing", label: "Marketing" },
+  { id: "outro", label: "Outro (especificar)" },
+] as const;
+export type MotivoBonificacaoId = typeof MOTIVOS_BONIFICACAO[number]["id"];
