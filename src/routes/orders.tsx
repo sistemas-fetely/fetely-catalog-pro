@@ -32,6 +32,7 @@ export const Route = createFileRoute("/orders")({
 
 function OrdersPage() {
   const [showReprovados, setShowReprovados] = useState(false);
+  const [bonificadoOnly, setBonificadoOnly] = useState(false);
   const history = useVisibleOrders({ includeReprovados: showReprovados });
   const isAdmin = useAuth((s) => s.roles.includes("admin"));
   const isMaster = useAuth((s) => s.roles.includes("master"));
