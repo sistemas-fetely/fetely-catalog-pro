@@ -293,6 +293,14 @@ function OrdersPage() {
                             <XCircle className="h-2.5 w-2.5" /> Reprovado
                           </span>
                         )}
+                        {o.bonificado && (
+                          <span
+                            title={`Bonificado — ${o.motivoBonificacao ?? ""}`}
+                            className="inline-flex items-center gap-1 rounded-full border border-purple-500/40 bg-purple-500/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-purple-300"
+                          >
+                            ✨ Bonificado
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-text-secondary">
