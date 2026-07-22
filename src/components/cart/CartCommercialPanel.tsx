@@ -58,6 +58,20 @@ export function CartCommercialPanel({
 
   const [showSenha, setShowSenha] = useState(false);
 
+  // Pedido bonificado (só visível para internos/admin/master)
+  const roles = useAuth((s) => s.roles);
+  const profile = useAuth((s) => s.profile);
+  const canBonificar =
+    roles.includes("admin") ||
+    roles.includes("master") ||
+    (roles.includes("vendedor") && (profile?.tipo_vendedor ?? "interno") === "interno");
+  const [bonificado, setBonificado] = useState(false);
+  const [motivoBonif, setMotivoBonif] = useState<string>("");
+  const [motivoOutroTxt, setMotivoOutroTxt] = useState<string>("");
+  useEffect(() => { if (!canBonificar && bonificado) setBonificado(false); }, [canBonificar, bonificado]);
+  const motivoBonificacaoFinal =
+    motivoBonif === "outro" ? (motivoOutroTxt.trim() ? `outro: ${motivoOutroTxt.trim()}` : "") : motivoBonif;
+
   // V13 — premissas vigentes do cliente atual (se houver)
   const clienteId = useOrder((s) => s.meta.clienteId);
   const metaUf = useOrder((s) => s.meta.uf);
