@@ -399,8 +399,59 @@ export function CartCommercialPanel({
         )}
       </div>
 
+      {/* Pedido bonificado (interno / admin / master) */}
+      {canBonificar && (
+        <div className={`rounded-lg border p-4 sm:p-5 space-y-3 ${bonificado ? "border-purple-500/60 bg-purple-500/10" : "gold-border bg-surface"}`}>
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={bonificado}
+              onChange={(e) => setBonificado(e.target.checked)}
+              className="mt-1 accent-purple-400"
+            />
+            <span className="text-sm">
+              <span className="inline-flex items-center gap-1.5 text-purple-300 font-semibold">
+                <Gift className="h-4 w-4" /> Pedido bonificado
+              </span>
+              <span className="block text-[11px] text-text-muted mt-0.5">
+                Ignora o pedido mínimo. Não conta em meta, pace nem comissão. Baixa de estoque normal.
+              </span>
+            </span>
+          </label>
+          {bonificado && (
+            <div className="space-y-2 pl-6">
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-wider text-text-muted">
+                  Motivo <span className="text-stock-out">*</span>
+                </span>
+                <select
+                  value={motivoBonif}
+                  onChange={(e) => setMotivoBonif(e.target.value)}
+                  className="mt-1 w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="">Selecione…</option>
+                  {MOTIVOS_BONIFICACAO.map((m) => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+              </label>
+              {motivoBonif === "outro" && (
+                <input
+                  type="text"
+                  value={motivoOutroTxt}
+                  onChange={(e) => setMotivoOutroTxt(e.target.value)}
+                  placeholder="Descreva o motivo…"
+                  maxLength={200}
+                  className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+                />
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Seletor de pagamento */}
-      {faixa && (
+      {faixa && !bonificado && (
         <div className="rounded-lg gold-border bg-surface p-4 sm:p-5 space-y-3">
           <h3 className="text-xs uppercase tracking-[0.2em] text-gold-muted">
             Forma de pagamento
