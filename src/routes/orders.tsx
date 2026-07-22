@@ -184,6 +184,18 @@ function OrdersPage() {
           >
             {showReprovados ? "Ocultar reprovados" : "Mostrar reprovados"}
           </button>
+          <button
+            type="button"
+            onClick={() => setBonificadoOnly((v) => !v)}
+            className={`rounded-md border px-3 py-2 text-[11px] uppercase tracking-wider transition ${
+              bonificadoOnly
+                ? "border-purple-500/50 bg-purple-500/10 text-purple-300"
+                : "border-border text-text-secondary hover:text-text-primary"
+            }`}
+            title="Mostrar apenas pedidos bonificados"
+          >
+            ✨ Bonificados
+          </button>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
