@@ -268,7 +268,7 @@ Deno.serve(async (req) => {
     const { data: pedido, error: errPedido } = await supabase
       .from("orders")
       .select(`
-        id, created_at, cliente_id, cliente_snapshot, commercial, meta, forma_pagamento,
+        id, created_at, cliente_id, cliente_snapshot, commercial, meta, forma_pagamento, bonificado, motivo_bonificacao,
         valor_bruto, valor_liquido, total,
         vendedor_nome,
         sncf_enviado_em, sncf_tentativas,
@@ -287,7 +287,8 @@ Deno.serve(async (req) => {
       return jsonResponse(400, { error: "Pedido sem CNPJ no snapshot do cliente" });
     }
 
-    const formaNormalizada = normalizarForma(pedido.forma_pagamento);
+    // Pedido bonificado bypassa validação (é sempre boleto sentinela).
+    const formaNormalizada = (pedido as any).bonificado ? "boleto" : normalizarForma(pedido.forma_pagamento);
     if (!formaNormalizada) {
       return jsonResponse(400, {
         error: `Forma de pagamento inválida ou ausente: '${pedido.forma_pagamento}'. Aceita: pix, cartão, boleto.`,
