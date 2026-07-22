@@ -211,6 +211,10 @@ export interface SavedOrder {
   duplicadoDe?: string | null;
   modeloOrigemId?: string | null;
   grupoOrigemId?: string | null;
+  // Pedido bonificado (amostra/brinde/marketing/compensação/outro)
+  bonificado?: boolean;
+  motivoBonificacao?: string | null;
+  estadoLiberacao?: "aguardando_liberacao" | "enviado_sncf" | null;
 }
 
 
