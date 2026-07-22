@@ -142,6 +142,9 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
     duplicadoDe: (row.duplicado_de as string | null) ?? null,
     modeloOrigemId: (row.modelo_origem_id as string | null) ?? null,
     grupoOrigemId: (row.grupo_origem_id as string | null) ?? null,
+    bonificado: Boolean(row.bonificado ?? false),
+    motivoBonificacao: (row.motivo_bonificacao as string | null) ?? null,
+    estadoLiberacao: (row.estado_liberacao as SavedOrder["estadoLiberacao"]) ?? "aguardando_liberacao",
   };
 }
 
