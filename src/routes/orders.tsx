@@ -109,6 +109,7 @@ function OrdersPage() {
     const q = query.trim().toLowerCase();
     return history.filter((o) => {
       if (vendedorFilter !== "all" && o.vendedorId !== vendedorFilter) return false;
+      if (bonificadoOnly && !o.bonificado) return false;
       if (!q) return true;
       return (
         o.id.toLowerCase().includes(q) ||
@@ -117,7 +118,7 @@ function OrdersPage() {
         (o.vendedorNome ?? "").toLowerCase().includes(q)
       );
     });
-  }, [history, query, vendedorFilter]);
+  }, [history, query, vendedorFilter, bonificadoOnly]);
 
   return (
     <main className="mx-auto max-w-6xl px-3 py-6 sm:px-6 sm:py-12">
