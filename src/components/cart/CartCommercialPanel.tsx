@@ -98,14 +98,14 @@ export function CartCommercialPanel({
     if (detectada) return detectada;
     // Negociação master ativa libera pedido abaixo do mínimo → usa a faixa
     // não-reservada de menor valor para apresentar condições e cálculos.
-    if (ativo) {
+    if (ativo || bonificado) {
       const menor = [...FAIXAS]
         .filter((f) => !f.requerSenhaMaster)
         .sort((a, b) => a.valorMin - b.valorMin)[0];
       return menor ?? null;
     }
     return null;
-  }, [bruto, ativo, usarReservada, premissas]);
+  }, [bruto, ativo, usarReservada, premissas, bonificado]);
 
   // Condições disponíveis
   const condicoesDisponiveis = useMemo<CondicaoPagamento[]>(() => {
