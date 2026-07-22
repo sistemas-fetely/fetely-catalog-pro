@@ -247,6 +247,24 @@ Deno.serve(async (req) => {
     orderId = body?.order_id;
     if (!orderId) return jsonResponse(400, { error: "order_id obrigatório" });
 
+    // Gate: liberação do SNCF é exclusiva de admin/master
+    const jwtSend = req.headers.get("Authorization")?.substring(7).trim();
+    if (!jwtSend) return jsonResponse(401, { error: "JWT ausente" });
+    const { data: { user: userSend }, error: userErrSend } =
+      await supabase.auth.getUser(jwtSend);
+    if (userErrSend || !userSend) return jsonResponse(401, { error: "Token inválido" });
+    const { data: rolesSend } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userSend.id);
+    const papeisSend = (rolesSend ?? []).map((r: any) => r.role as string);
+    if (!papeisSend.some((r) => ["master", "admin"].includes(r))) {
+      return jsonResponse(403, {
+        error: "Apenas administradores podem liberar pedidos para o SNCF.",
+      });
+    }
+
+
     const { data: pedido, error: errPedido } = await supabase
       .from("orders")
       .select(`

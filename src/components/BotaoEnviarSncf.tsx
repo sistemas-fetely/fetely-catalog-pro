@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Send, Loader2, Check, AlertTriangle, X, RotateCw } from "lucide-react";
+import { Send, Loader2, Check, AlertTriangle, X, RotateCw, Lock } from "lucide-react";
 import { useEnviarParaSncf } from "@/hooks/useEnviarParaSncf";
 import {
   Dialog,
@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNegotiation } from "@/store/negotiationStore";
+import { useAuth } from "@/store/authStore";
 import { toast } from "sonner";
 
 function formatData(iso: string): string {
@@ -32,6 +33,20 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
   const [senha, setSenha] = useState("");
   const [verificando, setVerificando] = useState(false);
   const tryActivate = useNegotiation((s) => s.tryActivate);
+  const canLiberar = useAuth((s) => s.roles.includes("admin") || s.roles.includes("master"));
+
+  if (!canLiberar) {
+    return (
+      <button
+        disabled
+        title="Apenas admin/master pode liberar para o SNCF"
+        className={`${BASE} border-border/60 text-text-muted opacity-60 cursor-not-allowed`}
+      >
+        <Lock className="h-3.5 w-3.5" />
+      </button>
+    );
+  }
+
 
   async function confirmarReenvio() {
     if (!senha.trim()) {
