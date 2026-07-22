@@ -186,6 +186,8 @@ export function orderToRow(o: SavedOrder): Record<string, unknown> {
     duplicado_de: o.duplicadoDe ?? null,
     modelo_origem_id: o.modeloOrigemId ?? null,
     grupo_origem_id: o.grupoOrigemId ?? null,
+    bonificado: o.bonificado ?? false,
+    motivo_bonificacao: o.motivoBonificacao ?? null,
   };
 }
 
@@ -528,6 +530,8 @@ export const useOrder = create<OrderState>()(
           duplicadoDe,
           modeloOrigemId,
           grupoOrigemId,
+          bonificado: commercial?.bonificado ?? false,
+          motivoBonificacao: commercial?.motivoBonificacao ?? null,
         };
 
         // ── SAVE NO BANCO COM AWAIT REAL ──

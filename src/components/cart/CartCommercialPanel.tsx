@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Award, Lock, Settings2, Sparkles, Truck, X } from "lucide-react";
+import { Award, Gift, Lock, Settings2, Sparkles, Truck, X } from "lucide-react";
 import {
+  CONDICAO_BONIFICADO,
+  CONDICAO_BONIFICADO_ID,
   CONDICOES_PAGAMENTO,
   DESCONTO_MASTER_MAX,
   FAIXAS,
   JUSTIFICATIVAS_NEGOCIACAO,
+  MOTIVOS_BONIFICACAO,
   calcularPedido,
   detectarFaixa,
   proximaFaixa,
@@ -15,6 +18,7 @@ import { useNegotiation } from "@/store/negotiationStore";
 import { formatBRL } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
 import { useClientes } from "@/store/clienteStore";
+import { useAuth } from "@/store/authStore";
 import { getPremissasVigentes } from "@/lib/premissas";
 
 export interface CommercialState {
@@ -22,6 +26,8 @@ export interface CommercialState {
   condicao: CondicaoPagamento | null;
   podeFinalizar: boolean;
   motivoBloqueio: string | null;
+  bonificado?: boolean;
+  motivoBonificacao?: string;
 }
 
 export function CartCommercialPanel({
