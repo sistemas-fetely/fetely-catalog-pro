@@ -21,6 +21,7 @@ const segmentoSchema = z.enum([
   "buffet",
   "influencer",
   "consumidor",
+  "representacao",
   "outro",
 ]);
 const origemSchema = z.enum([
