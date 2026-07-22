@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Award, Lock, Settings2, Sparkles, Truck, X } from "lucide-react";
+import { Award, Gift, Lock, Settings2, Sparkles, Truck, X } from "lucide-react";
 import {
+  CONDICAO_BONIFICADO,
+  CONDICAO_BONIFICADO_ID,
   CONDICOES_PAGAMENTO,
   DESCONTO_MASTER_MAX,
   FAIXAS,
   JUSTIFICATIVAS_NEGOCIACAO,
+  MOTIVOS_BONIFICACAO,
   calcularPedido,
   detectarFaixa,
   proximaFaixa,
@@ -15,6 +18,7 @@ import { useNegotiation } from "@/store/negotiationStore";
 import { formatBRL } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
 import { useClientes } from "@/store/clienteStore";
+import { useAuth } from "@/store/authStore";
 import { getPremissasVigentes } from "@/lib/premissas";
 
 export interface CommercialState {
@@ -22,6 +26,8 @@ export interface CommercialState {
   condicao: CondicaoPagamento | null;
   podeFinalizar: boolean;
   motivoBloqueio: string | null;
+  bonificado?: boolean;
+  motivoBonificacao?: string;
 }
 
 export function CartCommercialPanel({
@@ -52,6 +58,20 @@ export function CartCommercialPanel({
 
   const [showSenha, setShowSenha] = useState(false);
 
+  // Pedido bonificado (só visível para internos/admin/master)
+  const roles = useAuth((s) => s.roles);
+  const profile = useAuth((s) => s.profile);
+  const canBonificar =
+    roles.includes("admin") ||
+    roles.includes("master") ||
+    (roles.includes("vendedor") && (profile?.tipo_vendedor ?? "interno") === "interno");
+  const [bonificado, setBonificado] = useState(false);
+  const [motivoBonif, setMotivoBonif] = useState<string>("");
+  const [motivoOutroTxt, setMotivoOutroTxt] = useState<string>("");
+  useEffect(() => { if (!canBonificar && bonificado) setBonificado(false); }, [canBonificar, bonificado]);
+  const motivoBonificacaoFinal =
+    motivoBonif === "outro" ? (motivoOutroTxt.trim() ? `outro: ${motivoOutroTxt.trim()}` : "") : motivoBonif;
+
   // V13 — premissas vigentes do cliente atual (se houver)
   const clienteId = useOrder((s) => s.meta.clienteId);
   const metaUf = useOrder((s) => s.meta.uf);
@@ -78,14 +98,14 @@ export function CartCommercialPanel({
     if (detectada) return detectada;
     // Negociação master ativa libera pedido abaixo do mínimo → usa a faixa
     // não-reservada de menor valor para apresentar condições e cálculos.
-    if (ativo) {
+    if (ativo || bonificado) {
       const menor = [...FAIXAS]
         .filter((f) => !f.requerSenhaMaster)
         .sort((a, b) => a.valorMin - b.valorMin)[0];
       return menor ?? null;
     }
     return null;
-  }, [bruto, ativo, usarReservada, premissas]);
+  }, [bruto, ativo, usarReservada, premissas, bonificado]);
 
   // Condições disponíveis
   const condicoesDisponiveis = useMemo<CondicaoPagamento[]>(() => {
@@ -102,25 +122,27 @@ export function CartCommercialPanel({
     );
   }, [faixa, ativo, liberarTodasCondicoes, bruto, premissas]);
 
-  // Condição selecionada
-  const condicao = useMemo(
-    () => condicoesDisponiveis.find((c) => c.id === condicaoSelecionadaId) ?? null,
-    [condicoesDisponiveis, condicaoSelecionadaId],
-  );
+  // Condição selecionada — bonificado força a condição sentinela
+  const condicao = useMemo(() => {
+    if (bonificado) return CONDICAO_BONIFICADO;
+    return condicoesDisponiveis.find((c) => c.id === condicaoSelecionadaId) ?? null;
+  }, [condicoesDisponiveis, condicaoSelecionadaId, bonificado]);
 
   // Pré-seleciona condição preferencial do cliente quando nada está selecionado
   useEffect(() => {
+    if (bonificado) return;
     if (!condicaoSelecionadaId && premissas?.condicaoPreferencialId) {
       const existe = condicoesDisponiveis.some(
         (c) => c.id === premissas.condicaoPreferencialId,
       );
       if (existe) setCondicaoSelecionadaId(premissas.condicaoPreferencialId);
     }
-  }, [premissas, condicoesDisponiveis, condicaoSelecionadaId, setCondicaoSelecionadaId]);
+  }, [premissas, condicoesDisponiveis, condicaoSelecionadaId, setCondicaoSelecionadaId, bonificado]);
 
   useEffect(() => {
+    if (bonificado) return;
     if (condicaoSelecionadaId && !condicao) setCondicaoSelecionadaId(null);
-  }, [condicao, condicaoSelecionadaId, setCondicaoSelecionadaId]);
+  }, [condicao, condicaoSelecionadaId, setCondicaoSelecionadaId, bonificado]);
 
   const calculo = useMemo(
     () =>
@@ -131,10 +153,10 @@ export function CartCommercialPanel({
         condicao,
         premissas,
         freteGratisOverride: ativo && freteGratis,
-        ignorarPedidoMinimo: ativo,
+        ignorarPedidoMinimo: ativo || bonificado,
         uf: ufDestino,
       }),
-    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino],
+    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino, bonificado],
   );
 
   const pedidoMinimo = calculo.pedidoMinimoEfetivo ?? 1500;
@@ -143,20 +165,31 @@ export function CartCommercialPanel({
   const negociacaoSemJustificativa =
     ativo && (descontoPct > 0 || abaixoDoMinimoLiberado) && !justificativa;
 
+  const bonificadoSemMotivo = bonificado && !motivoBonificacaoFinal;
+
   const podeFinalizar =
-    !!calculo.faixa && !!condicao && !negociacaoSemJustificativa;
+    !!calculo.faixa && !!condicao && !negociacaoSemJustificativa && !bonificadoSemMotivo;
 
   const motivoBloqueio = !calculo.faixa
-    ? `Pedido mínimo: ${formatBRL(pedidoMinimo)}. Adicione mais produtos ou ative a negociação master.`
+    ? `Pedido mínimo: ${formatBRL(pedidoMinimo)}. Adicione mais produtos, ative a negociação master ou marque como pedido bonificado.`
     : !condicao
       ? "Selecione uma condição de pagamento."
-      : negociacaoSemJustificativa
-        ? "Selecione uma justificativa para a negociação master."
-        : null;
+      : bonificadoSemMotivo
+        ? "Selecione (ou descreva) o motivo da bonificação."
+        : negociacaoSemJustificativa
+          ? "Selecione uma justificativa para a negociação master."
+          : null;
 
   useEffect(() => {
-    onChange({ calculo, condicao, podeFinalizar, motivoBloqueio });
-  }, [calculo, condicao, podeFinalizar, motivoBloqueio, onChange]);
+    onChange({
+      calculo,
+      condicao,
+      podeFinalizar,
+      motivoBloqueio,
+      bonificado,
+      motivoBonificacao: bonificado ? motivoBonificacaoFinal : undefined,
+    });
+  }, [calculo, condicao, podeFinalizar, motivoBloqueio, onChange, bonificado, motivoBonificacaoFinal]);
 
   const prox = premissas?.temFaixaFixa ? null : proximaFaixa(faixa);
   const faltaProx = prox ? prox.valorMin - bruto : 0;
@@ -366,8 +399,59 @@ export function CartCommercialPanel({
         )}
       </div>
 
+      {/* Pedido bonificado (interno / admin / master) */}
+      {canBonificar && (
+        <div className={`rounded-lg border p-4 sm:p-5 space-y-3 ${bonificado ? "border-purple-500/60 bg-purple-500/10" : "gold-border bg-surface"}`}>
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={bonificado}
+              onChange={(e) => setBonificado(e.target.checked)}
+              className="mt-1 accent-purple-400"
+            />
+            <span className="text-sm">
+              <span className="inline-flex items-center gap-1.5 text-purple-300 font-semibold">
+                <Gift className="h-4 w-4" /> Pedido bonificado
+              </span>
+              <span className="block text-[11px] text-text-muted mt-0.5">
+                Ignora o pedido mínimo. Não conta em meta, pace nem comissão. Baixa de estoque normal.
+              </span>
+            </span>
+          </label>
+          {bonificado && (
+            <div className="space-y-2 pl-6">
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-wider text-text-muted">
+                  Motivo <span className="text-stock-out">*</span>
+                </span>
+                <select
+                  value={motivoBonif}
+                  onChange={(e) => setMotivoBonif(e.target.value)}
+                  className="mt-1 w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="">Selecione…</option>
+                  {MOTIVOS_BONIFICACAO.map((m) => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+              </label>
+              {motivoBonif === "outro" && (
+                <input
+                  type="text"
+                  value={motivoOutroTxt}
+                  onChange={(e) => setMotivoOutroTxt(e.target.value)}
+                  placeholder="Descreva o motivo…"
+                  maxLength={200}
+                  className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+                />
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Seletor de pagamento */}
-      {faixa && (
+      {faixa && !bonificado && (
         <div className="rounded-lg gold-border bg-surface p-4 sm:p-5 space-y-3">
           <h3 className="text-xs uppercase tracking-[0.2em] text-gold-muted">
             Forma de pagamento

@@ -32,6 +32,7 @@ export const Route = createFileRoute("/orders")({
 
 function OrdersPage() {
   const [showReprovados, setShowReprovados] = useState(false);
+  const [bonificadoOnly, setBonificadoOnly] = useState(false);
   const history = useVisibleOrders({ includeReprovados: showReprovados });
   const isAdmin = useAuth((s) => s.roles.includes("admin"));
   const isMaster = useAuth((s) => s.roles.includes("master"));
@@ -108,6 +109,7 @@ function OrdersPage() {
     const q = query.trim().toLowerCase();
     return history.filter((o) => {
       if (vendedorFilter !== "all" && o.vendedorId !== vendedorFilter) return false;
+      if (bonificadoOnly && !o.bonificado) return false;
       if (!q) return true;
       return (
         o.id.toLowerCase().includes(q) ||
@@ -116,7 +118,7 @@ function OrdersPage() {
         (o.vendedorNome ?? "").toLowerCase().includes(q)
       );
     });
-  }, [history, query, vendedorFilter]);
+  }, [history, query, vendedorFilter, bonificadoOnly]);
 
   return (
     <main className="mx-auto max-w-6xl px-3 py-6 sm:px-6 sm:py-12">
@@ -181,6 +183,18 @@ function OrdersPage() {
             }`}
           >
             {showReprovados ? "Ocultar reprovados" : "Mostrar reprovados"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setBonificadoOnly((v) => !v)}
+            className={`rounded-md border px-3 py-2 text-[11px] uppercase tracking-wider transition ${
+              bonificadoOnly
+                ? "border-purple-500/50 bg-purple-500/10 text-purple-300"
+                : "border-border text-text-secondary hover:text-text-primary"
+            }`}
+            title="Mostrar apenas pedidos bonificados"
+          >
+            ✨ Bonificados
           </button>
           <input
             value={query}
@@ -277,6 +291,14 @@ function OrdersPage() {
                             className="inline-flex items-center gap-1 rounded-full border border-stock-out/40 bg-stock-out/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-stock-out"
                           >
                             <XCircle className="h-2.5 w-2.5" /> Reprovado
+                          </span>
+                        )}
+                        {o.bonificado && (
+                          <span
+                            title={`Bonificado — ${o.motivoBonificacao ?? ""}`}
+                            className="inline-flex items-center gap-1 rounded-full border border-purple-500/40 bg-purple-500/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-purple-300"
+                          >
+                            ✨ Bonificado
                           </span>
                         )}
                       </div>
@@ -514,6 +536,14 @@ function OrdersPage() {
                       {o.reprovado && (
                         <span className="inline-flex items-center gap-1 rounded-full border border-stock-out/40 bg-stock-out/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-stock-out">
                           <XCircle className="h-2.5 w-2.5" /> Reprovado
+                        </span>
+                      )}
+                      {o.bonificado && (
+                        <span
+                          title={`Bonificado — ${o.motivoBonificacao ?? ""}`}
+                          className="inline-flex items-center gap-1 rounded-full border border-purple-500/40 bg-purple-500/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-purple-300"
+                        >
+                          ✨ Bonificado
                         </span>
                       )}
                     </div>

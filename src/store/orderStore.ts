@@ -142,6 +142,9 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
     duplicadoDe: (row.duplicado_de as string | null) ?? null,
     modeloOrigemId: (row.modelo_origem_id as string | null) ?? null,
     grupoOrigemId: (row.grupo_origem_id as string | null) ?? null,
+    bonificado: Boolean(row.bonificado ?? false),
+    motivoBonificacao: (row.motivo_bonificacao as string | null) ?? null,
+    estadoLiberacao: (row.estado_liberacao as SavedOrder["estadoLiberacao"]) ?? "aguardando_liberacao",
   };
 }
 
@@ -183,6 +186,8 @@ export function orderToRow(o: SavedOrder): Record<string, unknown> {
     duplicado_de: o.duplicadoDe ?? null,
     modelo_origem_id: o.modeloOrigemId ?? null,
     grupo_origem_id: o.grupoOrigemId ?? null,
+    bonificado: o.bonificado ?? false,
+    motivo_bonificacao: o.motivoBonificacao ?? null,
   };
 }
 
@@ -525,6 +530,8 @@ export const useOrder = create<OrderState>()(
           duplicadoDe,
           modeloOrigemId,
           grupoOrigemId,
+          bonificado: commercial?.bonificado ?? false,
+          motivoBonificacao: commercial?.motivoBonificacao ?? null,
         };
 
         // ── SAVE NO BANCO COM AWAIT REAL ──

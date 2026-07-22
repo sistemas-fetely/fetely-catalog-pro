@@ -102,7 +102,7 @@ export const getMetasPaceData = createServerFn({ method: "GET" })
 
     const { data: pedidos } = await supabase
       .from("orders")
-      .select("id, total, vendedor_id, vendedor_nome, aprovado_em, created_at, status_pedido")
+      .select("id, total, vendedor_id, vendedor_nome, aprovado_em, created_at, status_pedido, bonificado")
       .in("status_pedido", STATUS_FATURADOS)
       .gte("created_at", inicio)
       .lt("created_at", fim);
@@ -114,6 +114,7 @@ export const getMetasPaceData = createServerFn({ method: "GET" })
       vendedor_nome: string | null;
       aprovado_em: string | null;
       created_at: string;
+      bonificado?: boolean | null;
     };
 
     const porVendedor = new Map<string, { realizado: number; porDia: Record<number, number> }>();
@@ -122,6 +123,8 @@ export const getMetasPaceData = createServerFn({ method: "GET" })
     const timePorDia: Record<number, number> = {};
 
     for (const p of (pedidos ?? []) as Pedido[]) {
+      // Pedidos bonificados não contam em meta/pace
+      if (p.bonificado) continue;
       const dataRef = p.aprovado_em ?? p.created_at;
       const dt = new Date(dataRef);
       const dia = dt.getDate();

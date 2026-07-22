@@ -1090,18 +1090,23 @@ export type Database = {
           aprovado_em: string | null
           aprovado_por_id: string | null
           aprovado_por_nome: string | null
+          bonificado: boolean
           cliente_id: string | null
           cliente_snapshot: Json | null
           commercial: Json | null
           created_at: string
           duplicado_de: string | null
+          estado_liberacao: string
           forma_pagamento: string | null
           frete: string | null
           grupo_origem_id: string | null
           historico: Json
           id: string
+          liberado_em: string | null
+          liberado_por: string | null
           meta: Json
           modelo_origem_id: string | null
+          motivo_bonificacao: string | null
           origem_perfil: string
           provisao_origem_id: string | null
           recusado_em: string | null
@@ -1141,18 +1146,23 @@ export type Database = {
           aprovado_em?: string | null
           aprovado_por_id?: string | null
           aprovado_por_nome?: string | null
+          bonificado?: boolean
           cliente_id?: string | null
           cliente_snapshot?: Json | null
           commercial?: Json | null
           created_at?: string
           duplicado_de?: string | null
+          estado_liberacao?: string
           forma_pagamento?: string | null
           frete?: string | null
           grupo_origem_id?: string | null
           historico?: Json
           id: string
+          liberado_em?: string | null
+          liberado_por?: string | null
           meta: Json
           modelo_origem_id?: string | null
+          motivo_bonificacao?: string | null
           origem_perfil?: string
           provisao_origem_id?: string | null
           recusado_em?: string | null
@@ -1192,18 +1202,23 @@ export type Database = {
           aprovado_em?: string | null
           aprovado_por_id?: string | null
           aprovado_por_nome?: string | null
+          bonificado?: boolean
           cliente_id?: string | null
           cliente_snapshot?: Json | null
           commercial?: Json | null
           created_at?: string
           duplicado_de?: string | null
+          estado_liberacao?: string
           forma_pagamento?: string | null
           frete?: string | null
           grupo_origem_id?: string | null
           historico?: Json
           id?: string
+          liberado_em?: string | null
+          liberado_por?: string | null
           meta?: Json
           modelo_origem_id?: string | null
+          motivo_bonificacao?: string | null
           origem_perfil?: string
           provisao_origem_id?: string | null
           recusado_em?: string | null

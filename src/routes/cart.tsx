@@ -317,6 +317,8 @@ function CartPage() {
       freteUf: c.freteUf,
       freteOrigem: c.freteOrigem,
       freteUsouFallback: c.freteUsouFallback ?? false,
+      bonificado: !!commercial.bonificado,
+      motivoBonificacao: commercial.motivoBonificacao,
     };
 
     setSalvandoPedido(true);
