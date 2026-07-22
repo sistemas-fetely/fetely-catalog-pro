@@ -122,25 +122,27 @@ export function CartCommercialPanel({
     );
   }, [faixa, ativo, liberarTodasCondicoes, bruto, premissas]);
 
-  // Condição selecionada
-  const condicao = useMemo(
-    () => condicoesDisponiveis.find((c) => c.id === condicaoSelecionadaId) ?? null,
-    [condicoesDisponiveis, condicaoSelecionadaId],
-  );
+  // Condição selecionada — bonificado força a condição sentinela
+  const condicao = useMemo(() => {
+    if (bonificado) return CONDICAO_BONIFICADO;
+    return condicoesDisponiveis.find((c) => c.id === condicaoSelecionadaId) ?? null;
+  }, [condicoesDisponiveis, condicaoSelecionadaId, bonificado]);
 
   // Pré-seleciona condição preferencial do cliente quando nada está selecionado
   useEffect(() => {
+    if (bonificado) return;
     if (!condicaoSelecionadaId && premissas?.condicaoPreferencialId) {
       const existe = condicoesDisponiveis.some(
         (c) => c.id === premissas.condicaoPreferencialId,
       );
       if (existe) setCondicaoSelecionadaId(premissas.condicaoPreferencialId);
     }
-  }, [premissas, condicoesDisponiveis, condicaoSelecionadaId, setCondicaoSelecionadaId]);
+  }, [premissas, condicoesDisponiveis, condicaoSelecionadaId, setCondicaoSelecionadaId, bonificado]);
 
   useEffect(() => {
+    if (bonificado) return;
     if (condicaoSelecionadaId && !condicao) setCondicaoSelecionadaId(null);
-  }, [condicao, condicaoSelecionadaId, setCondicaoSelecionadaId]);
+  }, [condicao, condicaoSelecionadaId, setCondicaoSelecionadaId, bonificado]);
 
   const calculo = useMemo(
     () =>
@@ -151,10 +153,10 @@ export function CartCommercialPanel({
         condicao,
         premissas,
         freteGratisOverride: ativo && freteGratis,
-        ignorarPedidoMinimo: ativo,
+        ignorarPedidoMinimo: ativo || bonificado,
         uf: ufDestino,
       }),
-    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino],
+    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino, bonificado],
   );
 
   const pedidoMinimo = calculo.pedidoMinimoEfetivo ?? 1500;
@@ -163,20 +165,31 @@ export function CartCommercialPanel({
   const negociacaoSemJustificativa =
     ativo && (descontoPct > 0 || abaixoDoMinimoLiberado) && !justificativa;
 
+  const bonificadoSemMotivo = bonificado && !motivoBonificacaoFinal;
+
   const podeFinalizar =
-    !!calculo.faixa && !!condicao && !negociacaoSemJustificativa;
+    !!calculo.faixa && !!condicao && !negociacaoSemJustificativa && !bonificadoSemMotivo;
 
   const motivoBloqueio = !calculo.faixa
-    ? `Pedido mínimo: ${formatBRL(pedidoMinimo)}. Adicione mais produtos ou ative a negociação master.`
+    ? `Pedido mínimo: ${formatBRL(pedidoMinimo)}. Adicione mais produtos, ative a negociação master ou marque como pedido bonificado.`
     : !condicao
       ? "Selecione uma condição de pagamento."
-      : negociacaoSemJustificativa
-        ? "Selecione uma justificativa para a negociação master."
-        : null;
+      : bonificadoSemMotivo
+        ? "Selecione (ou descreva) o motivo da bonificação."
+        : negociacaoSemJustificativa
+          ? "Selecione uma justificativa para a negociação master."
+          : null;
 
   useEffect(() => {
-    onChange({ calculo, condicao, podeFinalizar, motivoBloqueio });
-  }, [calculo, condicao, podeFinalizar, motivoBloqueio, onChange]);
+    onChange({
+      calculo,
+      condicao,
+      podeFinalizar,
+      motivoBloqueio,
+      bonificado,
+      motivoBonificacao: bonificado ? motivoBonificacaoFinal : undefined,
+    });
+  }, [calculo, condicao, podeFinalizar, motivoBloqueio, onChange, bonificado, motivoBonificacaoFinal]);
 
   const prox = premissas?.temFaixaFixa ? null : proximaFaixa(faixa);
   const faltaProx = prox ? prox.valorMin - bruto : 0;
