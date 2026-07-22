@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight, XCircle, Trash2, RotateCcw, FileDown, Edit, LayoutDashboard } from "lucide-react";
+import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight, ChevronDown, XCircle, Trash2, RotateCcw, FileDown, Edit, LayoutDashboard } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 import { useProvisao, useVisibleProvisoes, useCanReprovarProvisao } from "@/store/provisaoStore";
 import { useAuth } from "@/store/authStore";
@@ -445,6 +445,8 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
               <span className="text-xs uppercase tracking-wider text-text-muted">Total de referência</span>
               <span className="font-display text-2xl text-stock-pre">{formatBRL(provisao.totalReferencia)}</span>
             </div>
+
+            <SubdivisaoCategoria items={itemsComStatus} />
           </div>
 
           <div>
@@ -592,3 +594,132 @@ function Info({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+const BUCKET_ORDER_DETAIL = ["Celebrar a mesa", "Luz", "Momento"];
+
+function bucketPorProdutoDetail(product?: { categoria: string; tipo?: string }): string {
+  if (!product) return "Sem categoria";
+  if (product.categoria === "Celebrar à Mesa") return "Celebrar a mesa";
+  if (product.categoria === "Luz e Momento") {
+    return product.tipo === "Numérica" ? "Momento" : "Luz";
+  }
+  if (product.categoria === "Acessórios de Mesa") return "Celebrar a mesa";
+  return product.categoria || "Sem categoria";
+}
+
+function SubdivisaoCategoria({
+  items,
+}: {
+  items: Array<{
+    sku: string;
+    nomeComercial: string;
+    quantidade: number;
+    precoAtacadoReferencia: number;
+    produtoAtual?: { categoria: string; tipo?: string };
+  }>;
+}) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const buckets = useMemo(() => {
+    type Row = { sku: string; nome: string; unidades: number; valor: number };
+    const map = new Map<string, { bucket: string; unidades: number; valor: number; itens: Map<string, Row> }>();
+    items.forEach((i) => {
+      const bucket = bucketPorProdutoDetail(i.produtoAtual);
+      const qtd = Number(i.quantidade || 0);
+      const valor = qtd * Number(i.precoAtacadoReferencia || 0);
+      const cur = map.get(bucket) ?? { bucket, unidades: 0, valor: 0, itens: new Map<string, Row>() };
+      cur.unidades += qtd;
+      cur.valor += valor;
+      const existing = cur.itens.get(i.sku) ?? { sku: i.sku, nome: i.nomeComercial || i.sku, unidades: 0, valor: 0 };
+      existing.unidades += qtd;
+      existing.valor += valor;
+      cur.itens.set(i.sku, existing);
+      map.set(bucket, cur);
+    });
+    return Array.from(map.values())
+      .map((v) => ({ ...v, itensList: Array.from(v.itens.values()).sort((a, b) => b.valor - a.valor) }))
+      .sort((a, b) => {
+        const ia = BUCKET_ORDER_DETAIL.indexOf(a.bucket);
+        const ib = BUCKET_ORDER_DETAIL.indexOf(b.bucket);
+        if (ia !== -1 && ib !== -1) return ia - ib;
+        if (ia !== -1) return -1;
+        if (ib !== -1) return 1;
+        return b.valor - a.valor;
+      });
+  }, [items]);
+
+  if (buckets.length === 0) return null;
+  const total = buckets.reduce((s, b) => s + b.valor, 0);
+
+  return (
+    <div className="mt-4 rounded-md border border-border overflow-hidden">
+      <div className="px-3 py-2 bg-surface-2 text-[10px] uppercase tracking-wider text-text-muted">
+        Por categoria (nesta provisão)
+      </div>
+      <ul className="divide-y divide-border/50">
+        {buckets.map((b) => {
+          const pct = total > 0 ? (b.valor / total) * 100 : 0;
+          const isOpen = expanded === b.bucket;
+          return (
+            <li key={b.bucket}>
+              <button
+                type="button"
+                onClick={() => setExpanded(isOpen ? null : b.bucket)}
+                className="w-full text-left px-3 py-2.5 hover:bg-surface-2/40 transition-colors"
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <div className="flex items-center gap-1.5 text-sm text-text-primary truncate">
+                    {isOpen ? (
+                      <ChevronDown className="h-3.5 w-3.5 text-text-muted shrink-0" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5 text-text-muted shrink-0" />
+                    )}
+                    {b.bucket}
+                  </div>
+                  <div className="text-sm text-gold font-medium whitespace-nowrap">{formatBRL(b.valor)}</div>
+                </div>
+                <div className="mt-1.5 h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                  <div className="h-full bg-gold/70" style={{ width: `${pct.toFixed(1)}%` }} />
+                </div>
+                <div className="mt-1 flex items-center justify-between text-[10px] text-text-muted">
+                  <span>{b.unidades.toLocaleString("pt-BR")} un.</span>
+                  <span>{pct.toFixed(0)}%</span>
+                </div>
+              </button>
+              {isOpen && (
+                <div className="px-3 pb-3 bg-surface/40">
+                  <table className="w-full text-[11px]">
+                    <thead>
+                      <tr className="text-text-muted uppercase tracking-wider text-[9px]">
+                        <th className="text-left font-normal py-1.5">Produto</th>
+                        <th className="text-right font-normal py-1.5 w-16">Qtd</th>
+                        <th className="text-right font-normal py-1.5 w-24">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {b.itensList.map((it) => (
+                        <tr key={it.sku} className="text-text-primary">
+                          <td className="py-1.5 pr-2 truncate max-w-[220px]">
+                            <div className="truncate">{it.nome}</div>
+                            <div className="text-[9px] text-text-muted">{it.sku}</div>
+                          </td>
+                          <td className="py-1.5 text-right tabular-nums">
+                            {it.unidades.toLocaleString("pt-BR")}
+                          </td>
+                          <td className="py-1.5 text-right tabular-nums text-gold">
+                            {formatBRL(it.valor)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
