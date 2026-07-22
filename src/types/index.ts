@@ -142,6 +142,10 @@ export interface OrderCommercial {
   freteOrigem?: "negociacao_master" | "premissa_cliente" | "faixa";
   /** V20 — true quando a UF não tinha tabela cadastrada (usou fallback) */
   freteUsouFallback?: boolean;
+  /** Pedido bonificado — bypass do valor mínimo, sem meta/pace/comissão */
+  bonificado?: boolean;
+  /** Motivo da bonificação (amostra, brinde, compensacao, marketing, outro:texto) */
+  motivoBonificacao?: string;
 }
 
 export type StatusPedido =
