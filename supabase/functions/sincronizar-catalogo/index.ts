@@ -38,7 +38,7 @@ serve(async (req) => {
 
     const { data: produtos, error } = await supabase
       .from("products")
-      .select("sku, ean, nome_comercial, nome_completo, marca, linha, grupo, tipo, colecao, cor_nome, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm")
+      .select("sku, ean, nome_comercial, nome_completo, marca, linha, grupo, tipo, colecao, cor_nome, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, preco_varejo, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm")
       .eq("ativo", true)
       .order("sku");
 
@@ -72,6 +72,7 @@ serve(async (req) => {
         origem_fisc:          p.origem_fisc         ?? null,
         origem_prod:          p.origem_prod         ?? null,
         preco_atacado:        p.preco_atacado,
+        preco_varejo:         p.preco_varejo,
         peso_g:               p.peso_g,
         multiplos:            p.multiplos,
         ativo:                p.ativo,
