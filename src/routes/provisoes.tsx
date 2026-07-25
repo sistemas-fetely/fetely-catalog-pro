@@ -517,6 +517,8 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
             {provisao.cotacaoOrigemId && <Info label="Gerada da cotação" value={provisao.cotacaoOrigemId} />}
             {!provisao.pedidoFirmeId && !provisao.cotacaoOrigemId && <Info label="Origem" value="Direta (sem pedido/cotação)" />}
             {provisao.pedidoConvertidoId && <Info label="Convertida em" value={provisao.pedidoConvertidoId} />}
+            <Info label="Condição de pagamento" value={condicaoPagamento} />
+
           </div>
 
           <div>
