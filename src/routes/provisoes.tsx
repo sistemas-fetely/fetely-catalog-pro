@@ -413,9 +413,18 @@ function ProvisoesPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="font-mono text-[11px] text-gold truncate">{p.id}</div>
-                    <div className="text-sm text-text-primary truncate mt-0.5">
-                      {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
+                    <div className="text-sm text-text-primary truncate mt-0.5 flex items-center gap-1.5">
+                      <span className="truncate">{p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}</span>
+                      {isSncf(p) && (
+                        <span
+                          title="Cliente possui pedido aprovado enviado ao SNCF"
+                          className="shrink-0 inline-flex items-center rounded-full border border-stock-in/40 bg-stock-in/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-stock-in"
+                        >
+                          SNCF
+                        </span>
+                      )}
                     </div>
+
                     <div className="text-[10px] text-text-muted mt-0.5 truncate">
                       {p.vendedorNome} · {p.itens.length} {p.itens.length === 1 ? "item" : "itens"} · {new Date(p.criadoEm).toLocaleDateString("pt-BR")}
                     </div>
