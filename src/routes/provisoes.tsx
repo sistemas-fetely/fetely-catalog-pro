@@ -110,6 +110,8 @@ function ProvisoesPage() {
   const products = useCatalog((s) => s.products);
   const orders = useOrder((s) => s.history);
   const cotacoes = useCotacao((s) => s.cotacoes);
+  const clientes = useClientes((s) => s.clientes);
+  const condicoes = useCartilhas((s) => s.condicoes);
 
   const bucketBySku = useMemo(() => {
     const m = new Map<string, string>();
