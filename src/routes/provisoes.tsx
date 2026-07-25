@@ -189,9 +189,12 @@ function ProvisoesPage() {
     else if (tab === "liberado") list = list.filter((p) => p.status === "estoque_liberado");
     if (categoriaFiltro) list = list.filter((p) => provisaoBuckets(p).has(categoriaFiltro));
     if (condicaoFiltro) list = list.filter((p) => condicaoDe(p) === condicaoFiltro);
+    if (sncfFiltro === "com") list = list.filter((p) => isSncf(p));
+    else if (sncfFiltro === "sem") list = list.filter((p) => !isSncf(p));
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provisoes, tab, categoriaFiltro, condicaoFiltro, bucketBySku, orders, cotacoes]);
+  }, [provisoes, tab, categoriaFiltro, condicaoFiltro, sncfFiltro, sncfClientes, bucketBySku, orders, cotacoes]);
+
 
 
   const aguardandoCount = provisoes.filter((p) => p.status === "aguardando_estoque").length;
