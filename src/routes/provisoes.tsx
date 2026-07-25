@@ -127,7 +127,7 @@ function ProvisoesPage() {
     return s;
   };
 
-  const condicaoDe = (p: ProvisaoFutura) => getCondicaoPagamento(p, orders, cotacoes);
+  const condicaoDe = (p: ProvisaoFutura) => getCondicaoPagamento(p, orders, cotacoes, clientes, condicoes);
 
   const categoriasDisponiveis = useMemo(() => {
     const s = new Set<string>();
