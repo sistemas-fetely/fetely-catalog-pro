@@ -427,9 +427,11 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
   const clearCart = useOrder((s) => s.clearCart);
   const orders = useOrder((s) => s.history);
   const cotacoes = useCotacao((s) => s.cotacoes);
+  const clientes = useClientes((s) => s.clientes);
+  const condicoes = useCartilhas((s) => s.condicoes);
   const condicaoPagamento = useMemo(
-    () => getCondicaoPagamento(provisao, orders, cotacoes),
-    [provisao, orders, cotacoes],
+    () => getCondicaoPagamento(provisao, orders, cotacoes, clientes, condicoes),
+    [provisao, orders, cotacoes, clientes, condicoes],
   );
   const navigate = useNavigate();
   const [obs, setObs] = useState(provisao.observacoes ?? "");
