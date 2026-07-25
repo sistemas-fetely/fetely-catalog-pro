@@ -345,10 +345,21 @@ function ProvisoesPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-text-primary truncate max-w-[200px]">
-                        {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
+                      <div className="flex items-center gap-1.5">
+                        <div className="text-text-primary truncate max-w-[200px]">
+                          {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
+                        </div>
+                        {isSncf(p) && (
+                          <span
+                            title="Cliente possui pedido aprovado enviado ao SNCF"
+                            className="shrink-0 inline-flex items-center rounded-full border border-stock-in/40 bg-stock-in/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-stock-in"
+                          >
+                            SNCF
+                          </span>
+                        )}
                       </div>
                     </td>
+
                     <td className="px-4 py-3 text-text-secondary text-xs hidden lg:table-cell">
                       {p.vendedorNome}
                     </td>
