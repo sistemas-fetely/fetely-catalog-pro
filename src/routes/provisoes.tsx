@@ -74,14 +74,60 @@ function ProvisoesPage() {
   const provisoes = useVisibleProvisoes({ includeReprovados: showReprovados });
   const [tab, setTab] = useState<Tab>("aguardando");
   const [showDashboard, setShowDashboard] = useState(false);
+  const [categoriaFiltro, setCategoriaFiltro] = useState<string>("");
+  const [condicaoFiltro, setCondicaoFiltro] = useState<string>("");
+
+  const products = useCatalog((s) => s.products);
+  const orders = useOrder((s) => s.history);
+  const cotacoes = useCotacao((s) => s.cotacoes);
+
+  const bucketBySku = useMemo(() => {
+    const m = new Map<string, string>();
+    products.forEach((p) => m.set(p.sku, bucketPorProduto(p)));
+    return m;
+  }, [products]);
 
   const [openId, setOpenId] = useState<string | null>(highlight ?? null);
 
+  const provisaoBuckets = (p: ProvisaoFutura) => {
+    const s = new Set<string>();
+    p.itens.forEach((it) => s.add(bucketBySku.get(it.sku) ?? "Sem categoria"));
+    return s;
+  };
+
+  const condicaoDe = (p: ProvisaoFutura) => getCondicaoPagamento(p, orders, cotacoes);
+
+  const categoriasDisponiveis = useMemo(() => {
+    const s = new Set<string>();
+    provisoes.forEach((p) => provisaoBuckets(p).forEach((b) => s.add(b)));
+    return Array.from(s).sort((a, b) => {
+      const ia = CATEGORIA_ORDER.indexOf(a);
+      const ib = CATEGORIA_ORDER.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.localeCompare(b);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provisoes, bucketBySku]);
+
+  const condicoesDisponiveis = useMemo(() => {
+    const s = new Set<string>();
+    provisoes.forEach((p) => s.add(condicaoDe(p)));
+    return Array.from(s).sort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provisoes, orders, cotacoes]);
+
   const filtered = useMemo(() => {
-    if (tab === "aguardando") return provisoes.filter((p) => p.status === "aguardando_estoque");
-    if (tab === "liberado") return provisoes.filter((p) => p.status === "estoque_liberado");
-    return provisoes;
-  }, [provisoes, tab]);
+    let list = provisoes;
+    if (tab === "aguardando") list = list.filter((p) => p.status === "aguardando_estoque");
+    else if (tab === "liberado") list = list.filter((p) => p.status === "estoque_liberado");
+    if (categoriaFiltro) list = list.filter((p) => provisaoBuckets(p).has(categoriaFiltro));
+    if (condicaoFiltro) list = list.filter((p) => condicaoDe(p) === condicaoFiltro);
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provisoes, tab, categoriaFiltro, condicaoFiltro, bucketBySku, orders, cotacoes]);
+
 
   const aguardandoCount = provisoes.filter((p) => p.status === "aguardando_estoque").length;
   const liberadoCount = provisoes.filter((p) => p.status === "estoque_liberado").length;
