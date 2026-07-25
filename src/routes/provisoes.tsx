@@ -181,7 +181,42 @@ function ProvisoesPage() {
         >
           {showReprovados ? "Ocultar reprovadas" : "Mostrar reprovadas"}
         </button>
+
+        <select
+          value={categoriaFiltro}
+          onChange={(e) => setCategoriaFiltro(e.target.value)}
+          className="rounded-md border border-border bg-surface-2 px-3 py-1.5 text-[11px] uppercase tracking-wider text-text-secondary focus:border-gold outline-none"
+          title="Filtrar por categoria"
+        >
+          <option value="">Todas categorias</option>
+          {categoriasDisponiveis.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+
+        <select
+          value={condicaoFiltro}
+          onChange={(e) => setCondicaoFiltro(e.target.value)}
+          className="rounded-md border border-border bg-surface-2 px-3 py-1.5 text-[11px] uppercase tracking-wider text-text-secondary focus:border-gold outline-none max-w-[240px] truncate"
+          title="Filtrar por condição de pagamento"
+        >
+          <option value="">Todas condições</option>
+          {condicoesDisponiveis.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+
+        {(categoriaFiltro || condicaoFiltro) && (
+          <button
+            type="button"
+            onClick={() => { setCategoriaFiltro(""); setCondicaoFiltro(""); }}
+            className="text-[11px] uppercase tracking-wider text-text-muted hover:text-gold"
+          >
+            Limpar filtros
+          </button>
+        )}
       </div>
+
 
       {filtered.length === 0 ? (
         <div className="rounded-lg gold-border bg-surface p-12 text-center">
