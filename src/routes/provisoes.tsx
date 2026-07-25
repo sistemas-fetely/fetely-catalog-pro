@@ -8,10 +8,38 @@ import { useProvisao, useVisibleProvisoes, useCanReprovarProvisao } from "@/stor
 import { useAuth } from "@/store/authStore";
 import { useCatalog } from "@/store/catalogStore";
 import { useOrder } from "@/store/orderStore";
+import { useCotacao } from "@/store/cotacaoStore";
 import { ReprovarDialog } from "@/components/ReprovarDialog";
 import { generateProvisaoPDF } from "@/lib/orderPdf";
 import { STATUS_PROVISAO_LABEL, type ProvisaoFutura, type StatusProvisao } from "@/types/provisao";
 import { ProvisoesDashboard } from "@/components/provisoes/ProvisoesDashboard";
+
+const CATEGORIA_ORDER = ["Celebrar a mesa", "Luz", "Momento"];
+
+function bucketPorProduto(product?: { categoria?: string; tipo?: string }): string {
+  if (!product) return "Sem categoria";
+  if (product.categoria === "Celebrar à Mesa") return "Celebrar a mesa";
+  if (product.categoria === "Luz e Momento") return product.tipo === "Numérica" ? "Momento" : "Luz";
+  if (product.categoria === "Acessórios de Mesa") return "Celebrar a mesa";
+  return product.categoria || "Sem categoria";
+}
+
+function getCondicaoPagamento(
+  p: ProvisaoFutura,
+  orders: ReturnType<typeof useOrder.getState>["history"],
+  cotacoes: ReturnType<typeof useCotacao.getState>["cotacoes"],
+): string {
+  if (p.pedidoFirmeId) {
+    const o = orders.find((x) => x.id === p.pedidoFirmeId);
+    if (o) return o.commercial?.condicaoDescricao || o.meta?.condicaoPagamento || "—";
+  }
+  if (p.cotacaoOrigemId) {
+    const c = cotacoes.find((x) => x.id === p.cotacaoOrigemId);
+    if (c) return c.commercial?.condicaoDescricao || c.meta?.condicaoPagamento || "—";
+  }
+  return "—";
+}
+
 
 const search = z.object({
   highlight: z.string().optional(),
@@ -46,14 +74,60 @@ function ProvisoesPage() {
   const provisoes = useVisibleProvisoes({ includeReprovados: showReprovados });
   const [tab, setTab] = useState<Tab>("aguardando");
   const [showDashboard, setShowDashboard] = useState(false);
+  const [categoriaFiltro, setCategoriaFiltro] = useState<string>("");
+  const [condicaoFiltro, setCondicaoFiltro] = useState<string>("");
+
+  const products = useCatalog((s) => s.products);
+  const orders = useOrder((s) => s.history);
+  const cotacoes = useCotacao((s) => s.cotacoes);
+
+  const bucketBySku = useMemo(() => {
+    const m = new Map<string, string>();
+    products.forEach((p) => m.set(p.sku, bucketPorProduto(p)));
+    return m;
+  }, [products]);
 
   const [openId, setOpenId] = useState<string | null>(highlight ?? null);
 
+  const provisaoBuckets = (p: ProvisaoFutura) => {
+    const s = new Set<string>();
+    p.itens.forEach((it) => s.add(bucketBySku.get(it.sku) ?? "Sem categoria"));
+    return s;
+  };
+
+  const condicaoDe = (p: ProvisaoFutura) => getCondicaoPagamento(p, orders, cotacoes);
+
+  const categoriasDisponiveis = useMemo(() => {
+    const s = new Set<string>();
+    provisoes.forEach((p) => provisaoBuckets(p).forEach((b) => s.add(b)));
+    return Array.from(s).sort((a, b) => {
+      const ia = CATEGORIA_ORDER.indexOf(a);
+      const ib = CATEGORIA_ORDER.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.localeCompare(b);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provisoes, bucketBySku]);
+
+  const condicoesDisponiveis = useMemo(() => {
+    const s = new Set<string>();
+    provisoes.forEach((p) => s.add(condicaoDe(p)));
+    return Array.from(s).sort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provisoes, orders, cotacoes]);
+
   const filtered = useMemo(() => {
-    if (tab === "aguardando") return provisoes.filter((p) => p.status === "aguardando_estoque");
-    if (tab === "liberado") return provisoes.filter((p) => p.status === "estoque_liberado");
-    return provisoes;
-  }, [provisoes, tab]);
+    let list = provisoes;
+    if (tab === "aguardando") list = list.filter((p) => p.status === "aguardando_estoque");
+    else if (tab === "liberado") list = list.filter((p) => p.status === "estoque_liberado");
+    if (categoriaFiltro) list = list.filter((p) => provisaoBuckets(p).has(categoriaFiltro));
+    if (condicaoFiltro) list = list.filter((p) => condicaoDe(p) === condicaoFiltro);
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provisoes, tab, categoriaFiltro, condicaoFiltro, bucketBySku, orders, cotacoes]);
+
 
   const aguardandoCount = provisoes.filter((p) => p.status === "aguardando_estoque").length;
   const liberadoCount = provisoes.filter((p) => p.status === "estoque_liberado").length;
@@ -107,7 +181,42 @@ function ProvisoesPage() {
         >
           {showReprovados ? "Ocultar reprovadas" : "Mostrar reprovadas"}
         </button>
+
+        <select
+          value={categoriaFiltro}
+          onChange={(e) => setCategoriaFiltro(e.target.value)}
+          className="rounded-md border border-border bg-surface-2 px-3 py-1.5 text-[11px] uppercase tracking-wider text-text-secondary focus:border-gold outline-none"
+          title="Filtrar por categoria"
+        >
+          <option value="">Todas categorias</option>
+          {categoriasDisponiveis.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+
+        <select
+          value={condicaoFiltro}
+          onChange={(e) => setCondicaoFiltro(e.target.value)}
+          className="rounded-md border border-border bg-surface-2 px-3 py-1.5 text-[11px] uppercase tracking-wider text-text-secondary focus:border-gold outline-none max-w-[240px] truncate"
+          title="Filtrar por condição de pagamento"
+        >
+          <option value="">Todas condições</option>
+          {condicoesDisponiveis.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+
+        {(categoriaFiltro || condicaoFiltro) && (
+          <button
+            type="button"
+            onClick={() => { setCategoriaFiltro(""); setCondicaoFiltro(""); }}
+            className="text-[11px] uppercase tracking-wider text-text-muted hover:text-gold"
+          >
+            Limpar filtros
+          </button>
+        )}
       </div>
+
 
       {filtered.length === 0 ? (
         <div className="rounded-lg gold-border bg-surface p-12 text-center">
@@ -284,6 +393,12 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
   const addBulk = useOrder((s) => s.addBulk);
   const setMeta = useOrder((s) => s.setMeta);
   const clearCart = useOrder((s) => s.clearCart);
+  const orders = useOrder((s) => s.history);
+  const cotacoes = useCotacao((s) => s.cotacoes);
+  const condicaoPagamento = useMemo(
+    () => getCondicaoPagamento(provisao, orders, cotacoes),
+    [provisao, orders, cotacoes],
+  );
   const navigate = useNavigate();
   const [obs, setObs] = useState(provisao.observacoes ?? "");
   const [reprovarOpen, setReprovarOpen] = useState(false);
@@ -408,6 +523,8 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
             {provisao.cotacaoOrigemId && <Info label="Gerada da cotação" value={provisao.cotacaoOrigemId} />}
             {!provisao.pedidoFirmeId && !provisao.cotacaoOrigemId && <Info label="Origem" value="Direta (sem pedido/cotação)" />}
             {provisao.pedidoConvertidoId && <Info label="Convertida em" value={provisao.pedidoConvertidoId} />}
+            <Info label="Condição de pagamento" value={condicaoPagamento} />
+
           </div>
 
           <div>
