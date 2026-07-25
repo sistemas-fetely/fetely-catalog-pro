@@ -137,7 +137,22 @@ function ProvisoesPage() {
     return m;
   }, [products]);
 
+  const [sncfFiltro, setSncfFiltro] = useState<"" | "com" | "sem">("");
+
+  const sncfClientes = useMemo(() => {
+    const s = new Set<string>();
+    orders.forEach((o) => {
+      if ((o.estadoLiberacao === "enviado_sncf" || !!o.sncfPedidoId) && o.meta?.clienteId) {
+        s.add(o.meta.clienteId);
+      }
+    });
+    return s;
+  }, [orders]);
+
+  const isSncf = (p: ProvisaoFutura) => sncfClientes.has(p.clienteId);
+
   const [openId, setOpenId] = useState<string | null>(highlight ?? null);
+
 
   const provisaoBuckets = (p: ProvisaoFutura) => {
     const s = new Set<string>();
