@@ -46,20 +46,26 @@ function getCondicaoPagamento(
     const v = fromOrder(cotacoes.find((x) => x.id === p.cotacaoOrigemId));
     if (v) return v;
   }
-  // 3) Condição preferencial do cadastro do cliente
+  // 3) Último pedido do cliente já enviado ao SNCF (aprovado)
+  const pedidosCliente = orders
+    .filter((o) => o.meta?.clienteId === p.clienteId)
+    .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+  const ultimoSncf = pedidosCliente.find(
+    (o) => o.estadoLiberacao === "enviado_sncf" || !!o.sncfPedidoId,
+  );
+  const vSncf = fromOrder(ultimoSncf);
+  if (vSncf) return vSncf;
+  // 4) Condição preferencial do cadastro do cliente
   const cli = clientes.find((c) => c.id === p.clienteId);
   const prefId = cli?.premissasComerciais?.condicaoPreferencialId ?? null;
   if (prefId != null) {
     const cond = condicoes.find((c) => c.id === prefId);
     if (cond?.descricao) return cond.descricao;
   }
-  // 4) Último pedido do cliente
-  const ultimoPedido = orders
-    .filter((o) => o.meta?.clienteId === p.clienteId)
-    .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))[0];
-  const vPed = fromOrder(ultimoPedido);
+  // 5) Último pedido do cliente (qualquer)
+  const vPed = fromOrder(pedidosCliente[0]);
   if (vPed) return vPed;
-  // 5) Última cotação do cliente
+  // 6) Última cotação do cliente
   const ultimaCot = cotacoes
     .filter((c) => c.meta?.clienteId === p.clienteId)
     .sort((a, b) => (b.criadoEm || "").localeCompare(a.criadoEm || ""))[0];
@@ -68,6 +74,18 @@ function getCondicaoPagamento(
 
   return "—";
 }
+
+function clienteTemSncf(
+  p: ProvisaoFutura,
+  orders: ReturnType<typeof useOrder.getState>["history"],
+): boolean {
+  return orders.some(
+    (o) =>
+      o.meta?.clienteId === p.clienteId &&
+      (o.estadoLiberacao === "enviado_sncf" || !!o.sncfPedidoId),
+  );
+}
+
 
 
 
