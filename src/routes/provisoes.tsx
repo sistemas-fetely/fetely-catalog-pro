@@ -46,20 +46,26 @@ function getCondicaoPagamento(
     const v = fromOrder(cotacoes.find((x) => x.id === p.cotacaoOrigemId));
     if (v) return v;
   }
-  // 3) Condição preferencial do cadastro do cliente
+  // 3) Último pedido do cliente já enviado ao SNCF (aprovado)
+  const pedidosCliente = orders
+    .filter((o) => o.meta?.clienteId === p.clienteId)
+    .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+  const ultimoSncf = pedidosCliente.find(
+    (o) => o.estadoLiberacao === "enviado_sncf" || !!o.sncfPedidoId,
+  );
+  const vSncf = fromOrder(ultimoSncf);
+  if (vSncf) return vSncf;
+  // 4) Condição preferencial do cadastro do cliente
   const cli = clientes.find((c) => c.id === p.clienteId);
   const prefId = cli?.premissasComerciais?.condicaoPreferencialId ?? null;
   if (prefId != null) {
     const cond = condicoes.find((c) => c.id === prefId);
     if (cond?.descricao) return cond.descricao;
   }
-  // 4) Último pedido do cliente
-  const ultimoPedido = orders
-    .filter((o) => o.meta?.clienteId === p.clienteId)
-    .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))[0];
-  const vPed = fromOrder(ultimoPedido);
+  // 5) Último pedido do cliente (qualquer)
+  const vPed = fromOrder(pedidosCliente[0]);
   if (vPed) return vPed;
-  // 5) Última cotação do cliente
+  // 6) Última cotação do cliente
   const ultimaCot = cotacoes
     .filter((c) => c.meta?.clienteId === p.clienteId)
     .sort((a, b) => (b.criadoEm || "").localeCompare(a.criadoEm || ""))[0];
@@ -68,6 +74,18 @@ function getCondicaoPagamento(
 
   return "—";
 }
+
+function clienteTemSncf(
+  p: ProvisaoFutura,
+  orders: ReturnType<typeof useOrder.getState>["history"],
+): boolean {
+  return orders.some(
+    (o) =>
+      o.meta?.clienteId === p.clienteId &&
+      (o.estadoLiberacao === "enviado_sncf" || !!o.sncfPedidoId),
+  );
+}
+
 
 
 
@@ -119,7 +137,22 @@ function ProvisoesPage() {
     return m;
   }, [products]);
 
+  const [sncfFiltro, setSncfFiltro] = useState<"" | "com" | "sem">("");
+
+  const sncfClientes = useMemo(() => {
+    const s = new Set<string>();
+    orders.forEach((o) => {
+      if ((o.estadoLiberacao === "enviado_sncf" || !!o.sncfPedidoId) && o.meta?.clienteId) {
+        s.add(o.meta.clienteId);
+      }
+    });
+    return s;
+  }, [orders]);
+
+  const isSncf = (p: ProvisaoFutura) => sncfClientes.has(p.clienteId);
+
   const [openId, setOpenId] = useState<string | null>(highlight ?? null);
+
 
   const provisaoBuckets = (p: ProvisaoFutura) => {
     const s = new Set<string>();
@@ -156,9 +189,12 @@ function ProvisoesPage() {
     else if (tab === "liberado") list = list.filter((p) => p.status === "estoque_liberado");
     if (categoriaFiltro) list = list.filter((p) => provisaoBuckets(p).has(categoriaFiltro));
     if (condicaoFiltro) list = list.filter((p) => condicaoDe(p) === condicaoFiltro);
+    if (sncfFiltro === "com") list = list.filter((p) => isSncf(p));
+    else if (sncfFiltro === "sem") list = list.filter((p) => !isSncf(p));
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provisoes, tab, categoriaFiltro, condicaoFiltro, bucketBySku, orders, cotacoes]);
+  }, [provisoes, tab, categoriaFiltro, condicaoFiltro, sncfFiltro, sncfClientes, bucketBySku, orders, cotacoes]);
+
 
 
   const aguardandoCount = provisoes.filter((p) => p.status === "aguardando_estoque").length;
@@ -238,16 +274,28 @@ function ProvisoesPage() {
           ))}
         </select>
 
-        {(categoriaFiltro || condicaoFiltro) && (
+        <select
+          value={sncfFiltro}
+          onChange={(e) => setSncfFiltro(e.target.value as "" | "com" | "sem")}
+          className="rounded-md border border-border bg-surface-2 px-3 py-1.5 text-[11px] uppercase tracking-wider text-text-secondary focus:border-gold outline-none"
+          title="Filtrar por status SNCF do cliente"
+        >
+          <option value="">SNCF: todos</option>
+          <option value="com">Cliente com pedido SNCF</option>
+          <option value="sem">Cliente sem pedido SNCF</option>
+        </select>
+
+        {(categoriaFiltro || condicaoFiltro || sncfFiltro) && (
           <button
             type="button"
-            onClick={() => { setCategoriaFiltro(""); setCondicaoFiltro(""); }}
+            onClick={() => { setCategoriaFiltro(""); setCondicaoFiltro(""); setSncfFiltro(""); }}
             className="text-[11px] uppercase tracking-wider text-text-muted hover:text-gold"
           >
             Limpar filtros
           </button>
         )}
       </div>
+
 
 
       {filtered.length === 0 ? (
@@ -297,10 +345,21 @@ function ProvisoesPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-text-primary truncate max-w-[200px]">
-                        {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
+                      <div className="flex items-center gap-1.5">
+                        <div className="text-text-primary truncate max-w-[200px]">
+                          {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
+                        </div>
+                        {isSncf(p) && (
+                          <span
+                            title="Cliente possui pedido aprovado enviado ao SNCF"
+                            className="shrink-0 inline-flex items-center rounded-full border border-stock-in/40 bg-stock-in/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-stock-in"
+                          >
+                            SNCF
+                          </span>
+                        )}
                       </div>
                     </td>
+
                     <td className="px-4 py-3 text-text-secondary text-xs hidden lg:table-cell">
                       {p.vendedorNome}
                     </td>
@@ -354,9 +413,18 @@ function ProvisoesPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="font-mono text-[11px] text-gold truncate">{p.id}</div>
-                    <div className="text-sm text-text-primary truncate mt-0.5">
-                      {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
+                    <div className="text-sm text-text-primary truncate mt-0.5 flex items-center gap-1.5">
+                      <span className="truncate">{p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}</span>
+                      {isSncf(p) && (
+                        <span
+                          title="Cliente possui pedido aprovado enviado ao SNCF"
+                          className="shrink-0 inline-flex items-center rounded-full border border-stock-in/40 bg-stock-in/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-stock-in"
+                        >
+                          SNCF
+                        </span>
+                      )}
                     </div>
+
                     <div className="text-[10px] text-text-muted mt-0.5 truncate">
                       {p.vendedorNome} · {p.itens.length} {p.itens.length === 1 ? "item" : "itens"} · {new Date(p.criadoEm).toLocaleDateString("pt-BR")}
                     </div>
