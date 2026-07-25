@@ -274,16 +274,28 @@ function ProvisoesPage() {
           ))}
         </select>
 
-        {(categoriaFiltro || condicaoFiltro) && (
+        <select
+          value={sncfFiltro}
+          onChange={(e) => setSncfFiltro(e.target.value as "" | "com" | "sem")}
+          className="rounded-md border border-border bg-surface-2 px-3 py-1.5 text-[11px] uppercase tracking-wider text-text-secondary focus:border-gold outline-none"
+          title="Filtrar por status SNCF do cliente"
+        >
+          <option value="">SNCF: todos</option>
+          <option value="com">Cliente com pedido SNCF</option>
+          <option value="sem">Cliente sem pedido SNCF</option>
+        </select>
+
+        {(categoriaFiltro || condicaoFiltro || sncfFiltro) && (
           <button
             type="button"
-            onClick={() => { setCategoriaFiltro(""); setCondicaoFiltro(""); }}
+            onClick={() => { setCategoriaFiltro(""); setCondicaoFiltro(""); setSncfFiltro(""); }}
             className="text-[11px] uppercase tracking-wider text-text-muted hover:text-gold"
           >
             Limpar filtros
           </button>
         )}
       </div>
+
 
 
       {filtered.length === 0 ? (
