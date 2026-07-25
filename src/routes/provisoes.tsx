@@ -221,7 +221,7 @@ function ProvisoesPage() {
         </button>
       </div>
 
-      {showDashboard && <ProvisoesDashboard provisoes={provisoes} />}
+      {showDashboard && <ProvisoesDashboard provisoes={filtered} />}
 
       <div className="flex flex-wrap items-center gap-2 mb-5">
 
