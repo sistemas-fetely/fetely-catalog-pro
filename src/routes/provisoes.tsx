@@ -8,10 +8,38 @@ import { useProvisao, useVisibleProvisoes, useCanReprovarProvisao } from "@/stor
 import { useAuth } from "@/store/authStore";
 import { useCatalog } from "@/store/catalogStore";
 import { useOrder } from "@/store/orderStore";
+import { useCotacao } from "@/store/cotacaoStore";
 import { ReprovarDialog } from "@/components/ReprovarDialog";
 import { generateProvisaoPDF } from "@/lib/orderPdf";
 import { STATUS_PROVISAO_LABEL, type ProvisaoFutura, type StatusProvisao } from "@/types/provisao";
 import { ProvisoesDashboard } from "@/components/provisoes/ProvisoesDashboard";
+
+const CATEGORIA_ORDER = ["Celebrar a mesa", "Luz", "Momento"];
+
+function bucketPorProduto(product?: { categoria?: string; tipo?: string }): string {
+  if (!product) return "Sem categoria";
+  if (product.categoria === "Celebrar à Mesa") return "Celebrar a mesa";
+  if (product.categoria === "Luz e Momento") return product.tipo === "Numérica" ? "Momento" : "Luz";
+  if (product.categoria === "Acessórios de Mesa") return "Celebrar a mesa";
+  return product.categoria || "Sem categoria";
+}
+
+function getCondicaoPagamento(
+  p: ProvisaoFutura,
+  orders: ReturnType<typeof useOrder.getState>["history"],
+  cotacoes: ReturnType<typeof useCotacao.getState>["cotacoes"],
+): string {
+  if (p.pedidoFirmeId) {
+    const o = orders.find((x) => x.id === p.pedidoFirmeId);
+    if (o) return o.commercial?.condicaoDescricao || o.meta?.condicaoPagamento || "—";
+  }
+  if (p.cotacaoOrigemId) {
+    const c = cotacoes.find((x) => x.id === p.cotacaoOrigemId);
+    if (c) return c.commercial?.condicaoDescricao || c.meta?.condicaoPagamento || "—";
+  }
+  return "—";
+}
+
 
 const search = z.object({
   highlight: z.string().optional(),
