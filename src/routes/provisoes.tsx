@@ -9,6 +9,8 @@ import { useAuth } from "@/store/authStore";
 import { useCatalog } from "@/store/catalogStore";
 import { useOrder } from "@/store/orderStore";
 import { useCotacao } from "@/store/cotacaoStore";
+import { useClientes } from "@/store/clienteStore";
+import { useCartilhas } from "@/store/cartilhasStore";
 import { ReprovarDialog } from "@/components/ReprovarDialog";
 import { generateProvisaoPDF } from "@/lib/orderPdf";
 import { STATUS_PROVISAO_LABEL, type ProvisaoFutura, type StatusProvisao } from "@/types/provisao";
@@ -28,17 +30,45 @@ function getCondicaoPagamento(
   p: ProvisaoFutura,
   orders: ReturnType<typeof useOrder.getState>["history"],
   cotacoes: ReturnType<typeof useCotacao.getState>["cotacoes"],
+  clientes: ReturnType<typeof useClientes.getState>["clientes"],
+  condicoes: ReturnType<typeof useCartilhas.getState>["condicoes"],
 ): string {
+  const fromOrder = (o?: { commercial?: { condicaoDescricao?: string } | null; meta?: { condicaoPagamento?: string } | null }) =>
+    o?.commercial?.condicaoDescricao || o?.meta?.condicaoPagamento || "";
+
+  // 1) Pedido firme vinculado
   if (p.pedidoFirmeId) {
-    const o = orders.find((x) => x.id === p.pedidoFirmeId);
-    if (o) return o.commercial?.condicaoDescricao || o.meta?.condicaoPagamento || "—";
+    const v = fromOrder(orders.find((x) => x.id === p.pedidoFirmeId));
+    if (v) return v;
   }
+  // 2) Cotação de origem vinculada
   if (p.cotacaoOrigemId) {
-    const c = cotacoes.find((x) => x.id === p.cotacaoOrigemId);
-    if (c) return c.commercial?.condicaoDescricao || c.meta?.condicaoPagamento || "—";
+    const v = fromOrder(cotacoes.find((x) => x.id === p.cotacaoOrigemId));
+    if (v) return v;
   }
+  // 3) Condição preferencial do cadastro do cliente
+  const cli = clientes.find((c) => c.id === p.clienteId);
+  const prefId = cli?.premissasComerciais?.condicaoPreferencialId ?? null;
+  if (prefId != null) {
+    const cond = condicoes.find((c) => c.id === prefId);
+    if (cond?.descricao) return cond.descricao;
+  }
+  // 4) Último pedido do cliente
+  const ultimoPedido = orders
+    .filter((o) => o.meta?.clienteId === p.clienteId)
+    .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))[0];
+  const vPed = fromOrder(ultimoPedido);
+  if (vPed) return vPed;
+  // 5) Última cotação do cliente
+  const ultimaCot = cotacoes
+    .filter((c) => c.meta?.clienteId === p.clienteId)
+    .sort((a, b) => (b.criadoEm || "").localeCompare(a.criadoEm || ""))[0];
+  const vCot = fromOrder(ultimaCot);
+  if (vCot) return vCot;
+
   return "—";
 }
+
 
 
 const search = z.object({
@@ -80,6 +110,8 @@ function ProvisoesPage() {
   const products = useCatalog((s) => s.products);
   const orders = useOrder((s) => s.history);
   const cotacoes = useCotacao((s) => s.cotacoes);
+  const clientes = useClientes((s) => s.clientes);
+  const condicoes = useCartilhas((s) => s.condicoes);
 
   const bucketBySku = useMemo(() => {
     const m = new Map<string, string>();
@@ -95,7 +127,7 @@ function ProvisoesPage() {
     return s;
   };
 
-  const condicaoDe = (p: ProvisaoFutura) => getCondicaoPagamento(p, orders, cotacoes);
+  const condicaoDe = (p: ProvisaoFutura) => getCondicaoPagamento(p, orders, cotacoes, clientes, condicoes);
 
   const categoriasDisponiveis = useMemo(() => {
     const s = new Set<string>();
@@ -395,9 +427,11 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
   const clearCart = useOrder((s) => s.clearCart);
   const orders = useOrder((s) => s.history);
   const cotacoes = useCotacao((s) => s.cotacoes);
+  const clientes = useClientes((s) => s.clientes);
+  const condicoes = useCartilhas((s) => s.condicoes);
   const condicaoPagamento = useMemo(
-    () => getCondicaoPagamento(provisao, orders, cotacoes),
-    [provisao, orders, cotacoes],
+    () => getCondicaoPagamento(provisao, orders, cotacoes, clientes, condicoes),
+    [provisao, orders, cotacoes, clientes, condicoes],
   );
   const navigate = useNavigate();
   const [obs, setObs] = useState(provisao.observacoes ?? "");
