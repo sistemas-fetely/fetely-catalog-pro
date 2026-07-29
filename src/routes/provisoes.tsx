@@ -139,8 +139,6 @@ function ProvisoesPage() {
     return m;
   }, [products]);
 
-  const [sncfFiltro, setSncfFiltro] = useState<"" | "com" | "sem">("");
-
   const sncfClientes = useMemo(() => {
     const s = new Set<string>();
     orders.forEach((o) => {
