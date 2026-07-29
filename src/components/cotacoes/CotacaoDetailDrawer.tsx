@@ -52,7 +52,14 @@ export function CotacaoDetailDrawer({
     // qualquer interferência de re-render / unmount do drawer.
     const store = useOrder.getState();
     store.clearCart();
-    store.addBulk(itens.map((i) => ({ product: i.product, quantity: i.quantity })));
+    const catalog = useCatalog.getState().products;
+    const bySku = new Map(catalog.map((p) => [p.sku, p]));
+    store.addBulk(
+      itens.map((i) => ({
+        product: bySku.get(i.sku) ?? i.product,
+        quantity: i.quantity,
+      })),
+    );
     store.setMeta({
       ...cotacao.meta,
       cotacaoOrigemId: cotacao.id,
