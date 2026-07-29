@@ -67,7 +67,7 @@ export function ConverterEmPedidoModal({
     try {
       // Carrega o cart com TODOS os itens (firmes + provisão) p/ preservar UI/estado se algo der errado
       clearCart();
-      addBulk(cotacao.items.map((i) => ({ product: i.product, quantity: i.quantity })));
+      addBulk(itensHidratados.map((i) => ({ product: i.product, quantity: i.quantity })));
       setMeta({
         ...cotacao.meta,
         cotacaoOrigemId: cotacao.id,
