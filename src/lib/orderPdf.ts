@@ -4,7 +4,7 @@ import type { CartItem, Product, SavedOrder } from "@/types";
 import type { Cotacao } from "@/types/cotacao";
 import type { ProvisaoFutura } from "@/types/provisao";
 import { FRETE_PERCENT } from "@/lib/commercial";
-import { classificarItem } from "@/lib/classifyItem";
+import { emEstoque } from "@/lib/classifyItem";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 
 type GrupoColecao = { colecao: string; items: CartItem[]; subtotal: number; qtd: number };
@@ -159,7 +159,7 @@ function agruparItensPorSecao(items: CartItem[]): SecaoItens[] {
   const firmes: CartItem[] = [];
   const prov: CartItem[] = [];
   for (const it of items) {
-    if (classificarItem(it.product.statusEstoque || "") === "firme") firmes.push(it);
+    if (emEstoque(it.product)) firmes.push(it);
     else prov.push(it);
   }
   const fazGrupos = (arr: CartItem[]): { grupos: GrupoColecao[]; subtotal: number; qtd: number } => {

@@ -7,6 +7,7 @@ import type { Cotacao } from "@/types/cotacao";
 import { STATUS_COTACAO_LABEL } from "@/types/cotacao";
 import { useCotacao, diasAteExpirar } from "@/store/cotacaoStore";
 import { useOrder } from "@/store/orderStore";
+import { useCatalog } from "@/store/catalogStore";
 import { MarcarPerdidaModal } from "./MarcarPerdidaModal";
 import { ConverterEmPedidoModal } from "./ConverterEmPedidoModal";
 import { generateCotacaoPDF } from "@/lib/orderPdf";

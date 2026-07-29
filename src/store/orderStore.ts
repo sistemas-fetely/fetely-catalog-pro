@@ -771,14 +771,10 @@ export const useOrder = create<OrderState>()(
         }
 
         // Lazy imports para não criar dependência circular
-        const { classificarItem } = await import("@/lib/classifyItem");
+        const { emEstoque } = await import("@/lib/classifyItem");
         const { useProvisao } = await import("@/store/provisaoStore");
-        const itensFirmes = order.items.filter(
-          (i) => classificarItem(i.product.statusEstoque) === "firme",
-        );
-        const itensProvisao = order.items.filter(
-          (i) => classificarItem(i.product.statusEstoque) !== "firme",
-        );
+        const itensFirmes = order.items.filter((i) => emEstoque(i.product));
+        const itensProvisao = order.items.filter((i) => !emEstoque(i.product));
 
         const aprovadoEm = new Date().toISOString();
         const aprovadoPorNome =

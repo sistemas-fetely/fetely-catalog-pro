@@ -8,7 +8,7 @@ import type { ItemProvisao } from "@/types/provisao";
 import { useOrder } from "@/store/orderStore";
 import { useCotacao } from "@/store/cotacaoStore";
 import { useProvisao } from "@/store/provisaoStore";
-import { classificarItem, extrairDataPrevisao } from "@/lib/classifyItem";
+import { emEstoque, extrairDataPrevisao } from "@/lib/classifyItem";
 
 function toItemProvisao(i: CartItem): ItemProvisao {
   return {
@@ -45,7 +45,7 @@ export function ConverterEmPedidoModal({
     const firmes: CartItem[] = [];
     const provisao: CartItem[] = [];
     cotacao.items.forEach((i) => {
-      if (classificarItem(i.product.statusEstoque) === "firme") firmes.push(i);
+      if (emEstoque(i.product)) firmes.push(i);
       else provisao.push(i);
     });
     return { itensFirmes: firmes, itensProvisao: provisao };
