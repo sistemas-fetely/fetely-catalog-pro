@@ -296,6 +296,14 @@ function EmptyState() {
           <p className="text-text-secondary mt-3 text-sm">
             Escolha uma categoria para descobrir as coleções disponíveis.
           </p>
+          <div className="mt-4">
+            <Link
+              to="/catalog/todos"
+              className="inline-flex items-center gap-1.5 rounded-full gold-border px-3 py-1 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+            >
+              Ver todos os produtos <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">

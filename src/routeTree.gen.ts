@@ -45,6 +45,7 @@ import { Route as PortalProvisoesRouteImport } from './routes/portal.provisoes'
 import { Route as PortalPedidosRouteImport } from './routes/portal.pedidos'
 import { Route as PortalCotacoesRouteImport } from './routes/portal.cotacoes'
 import { Route as PortalContaRouteImport } from './routes/portal.conta'
+import { Route as CatalogTodosRouteImport } from './routes/catalog.todos'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSincronizacaoSncfRouteImport } from './routes/admin.sincronizacao-sncf'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
@@ -236,6 +237,11 @@ const PortalContaRoute = PortalContaRouteImport.update({
   path: '/conta',
   getParentRoute: () => PortalRoute,
 } as any)
+const CatalogTodosRoute = CatalogTodosRouteImport.update({
+  id: '/todos',
+  path: '/todos',
+  getParentRoute: () => CatalogRoute,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -327,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
+  '/catalog/todos': typeof CatalogTodosRoute
   '/portal/conta': typeof PortalContaRoute
   '/portal/cotacoes': typeof PortalCotacoesRoute
   '/portal/pedidos': typeof PortalPedidosRoute
@@ -374,6 +381,7 @@ export interface FileRoutesByTo {
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
+  '/catalog/todos': typeof CatalogTodosRoute
   '/portal/conta': typeof PortalContaRoute
   '/portal/cotacoes': typeof PortalCotacoesRoute
   '/portal/pedidos': typeof PortalPedidosRoute
@@ -423,6 +431,7 @@ export interface FileRoutesById {
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
+  '/catalog/todos': typeof CatalogTodosRoute
   '/portal/conta': typeof PortalContaRoute
   '/portal/cotacoes': typeof PortalCotacoesRoute
   '/portal/pedidos': typeof PortalPedidosRoute
@@ -473,6 +482,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
+    | '/catalog/todos'
     | '/portal/conta'
     | '/portal/cotacoes'
     | '/portal/pedidos'
@@ -520,6 +530,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
+    | '/catalog/todos'
     | '/portal/conta'
     | '/portal/cotacoes'
     | '/portal/pedidos'
@@ -568,6 +579,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
+    | '/catalog/todos'
     | '/portal/conta'
     | '/portal/cotacoes'
     | '/portal/pedidos'
@@ -873,6 +885,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalContaRouteImport
       parentRoute: typeof PortalRoute
     }
+    '/catalog/todos': {
+      id: '/catalog/todos'
+      path: '/todos'
+      fullPath: '/catalog/todos'
+      preLoaderRoute: typeof CatalogTodosRouteImport
+      parentRoute: typeof CatalogRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/admin/users'
@@ -947,10 +966,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface CatalogRouteChildren {
+  CatalogTodosRoute: typeof CatalogTodosRoute
   CatalogCategoriaCategoriaRoute: typeof CatalogCategoriaCategoriaRoute
 }
 
 const CatalogRouteChildren: CatalogRouteChildren = {
+  CatalogTodosRoute: CatalogTodosRoute,
   CatalogCategoriaCategoriaRoute: CatalogCategoriaCategoriaRoute,
 }
 
