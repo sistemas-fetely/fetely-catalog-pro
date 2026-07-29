@@ -124,6 +124,8 @@ function ProvisoesPage() {
   const [showDashboard, setShowDashboard] = useState(false);
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("");
   const [condicaoFiltro, setCondicaoFiltro] = useState<string>("");
+  const [sncfFiltro, setSncfFiltro] = useState<"" | "com" | "sem">("");
+  const [busca, setBusca] = useState("");
 
   const products = useCatalog((s) => s.products);
   const orders = useOrder((s) => s.history);
