@@ -8,6 +8,7 @@ import type { ItemProvisao } from "@/types/provisao";
 import { useOrder } from "@/store/orderStore";
 import { useCotacao } from "@/store/cotacaoStore";
 import { useProvisao } from "@/store/provisaoStore";
+import { useCatalog } from "@/store/catalogStore";
 import { emEstoque, extrairDataPrevisao } from "@/lib/classifyItem";
 
 function toItemProvisao(i: CartItem): ItemProvisao {
