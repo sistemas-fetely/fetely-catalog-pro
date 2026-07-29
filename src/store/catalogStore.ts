@@ -217,6 +217,7 @@ export function productToRow(p: Product): Record<string, unknown> {
     is_vela_numerica: p.isVelaNumerica ?? false,
     numero_vela: p.numeroVela ?? null,
     ativo: p.ativo ?? true,
+    pronta_entrega: p.prontaEntrega ?? false,
   };
 }
 
