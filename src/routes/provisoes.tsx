@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight, ChevronDown, XCircle, Trash2, RotateCcw, FileDown, Edit, LayoutDashboard } from "lucide-react";
+import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight, ChevronDown, XCircle, Trash2, RotateCcw, FileDown, Edit, LayoutDashboard, Search } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 import { useProvisao, useVisibleProvisoes, useCanReprovarProvisao } from "@/store/provisaoStore";
 import { useAuth } from "@/store/authStore";
@@ -124,6 +124,8 @@ function ProvisoesPage() {
   const [showDashboard, setShowDashboard] = useState(false);
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("");
   const [condicaoFiltro, setCondicaoFiltro] = useState<string>("");
+  const [sncfFiltro, setSncfFiltro] = useState<"" | "com" | "sem">("");
+  const [busca, setBusca] = useState("");
 
   const products = useCatalog((s) => s.products);
   const orders = useOrder((s) => s.history);
@@ -136,8 +138,6 @@ function ProvisoesPage() {
     products.forEach((p) => m.set(p.sku, bucketPorProduto(p)));
     return m;
   }, [products]);
-
-  const [sncfFiltro, setSncfFiltro] = useState<"" | "com" | "sem">("");
 
   const sncfClientes = useMemo(() => {
     const s = new Set<string>();
@@ -161,6 +161,18 @@ function ProvisoesPage() {
   };
 
   const condicaoDe = (p: ProvisaoFutura) => getCondicaoPagamento(p, orders, cotacoes, clientes, condicoes);
+
+  const matchBusca = (p: ProvisaoFutura, termo: string) => {
+    if (!termo.trim()) return true;
+    const q = termo.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    const nome = (p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const cnpj = (p.clienteSnapshot.cnpj || "").replace(/\D/g, "");
+    const origens = [p.pedidoFirmeId, p.cotacaoOrigemId, p.pedidoConvertidoId]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return nome.includes(q) || cnpj.includes(q) || origens.includes(q);
+  };
 
   const categoriasDisponiveis = useMemo(() => {
     const s = new Set<string>();
@@ -191,9 +203,10 @@ function ProvisoesPage() {
     if (condicaoFiltro) list = list.filter((p) => condicaoDe(p) === condicaoFiltro);
     if (sncfFiltro === "com") list = list.filter((p) => isSncf(p));
     else if (sncfFiltro === "sem") list = list.filter((p) => !isSncf(p));
+    if (busca.trim()) list = list.filter((p) => matchBusca(p, busca));
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provisoes, tab, categoriaFiltro, condicaoFiltro, sncfFiltro, sncfClientes, bucketBySku, orders, cotacoes]);
+  }, [provisoes, tab, categoriaFiltro, condicaoFiltro, sncfFiltro, busca, sncfClientes, bucketBySku, orders, cotacoes]);
 
 
 
@@ -250,6 +263,17 @@ function ProvisoesPage() {
           {showReprovados ? "Ocultar reprovadas" : "Mostrar reprovadas"}
         </button>
 
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-muted" />
+          <input
+            type="text"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por cliente, CNPJ ou nº origem"
+            className="w-full rounded-md border border-border bg-surface-2 pl-8 pr-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-gold outline-none"
+          />
+        </div>
+
         <select
           value={categoriaFiltro}
           onChange={(e) => setCategoriaFiltro(e.target.value)}
@@ -285,10 +309,10 @@ function ProvisoesPage() {
           <option value="sem">Cliente sem pedido SNCF</option>
         </select>
 
-        {(categoriaFiltro || condicaoFiltro || sncfFiltro) && (
+        {(categoriaFiltro || condicaoFiltro || sncfFiltro || busca) && (
           <button
             type="button"
-            onClick={() => { setCategoriaFiltro(""); setCondicaoFiltro(""); setSncfFiltro(""); }}
+            onClick={() => { setCategoriaFiltro(""); setCondicaoFiltro(""); setSncfFiltro(""); setBusca(""); }}
             className="text-[11px] uppercase tracking-wider text-text-muted hover:text-gold"
           >
             Limpar filtros
