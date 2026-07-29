@@ -8,7 +8,8 @@ import type { ItemProvisao } from "@/types/provisao";
 import { useOrder } from "@/store/orderStore";
 import { useCotacao } from "@/store/cotacaoStore";
 import { useProvisao } from "@/store/provisaoStore";
-import { classificarItem, extrairDataPrevisao } from "@/lib/classifyItem";
+import { useCatalog } from "@/store/catalogStore";
+import { emEstoque, extrairDataPrevisao } from "@/lib/classifyItem";
 
 function toItemProvisao(i: CartItem): ItemProvisao {
   return {
@@ -41,14 +42,20 @@ export function ConverterEmPedidoModal({
   const createProvisao = useProvisao((s) => s.createProvisao);
   const [saving, setSaving] = useState(false);
 
-  const { itensFirmes, itensProvisao } = useMemo(() => {
+  const { itensFirmes, itensProvisao, itensHidratados } = useMemo(() => {
+    const catalog = useCatalog.getState().products;
+    const bySku = new Map(catalog.map((p) => [p.sku, p]));
+    const hidratados: CartItem[] = cotacao.items.map((i) => ({
+      ...i,
+      product: bySku.get(i.sku) ?? i.product,
+    }));
     const firmes: CartItem[] = [];
     const provisao: CartItem[] = [];
-    cotacao.items.forEach((i) => {
-      if (classificarItem(i.product.statusEstoque) === "firme") firmes.push(i);
+    hidratados.forEach((i) => {
+      if (emEstoque(i.product)) firmes.push(i);
       else provisao.push(i);
     });
-    return { itensFirmes: firmes, itensProvisao: provisao };
+    return { itensFirmes: firmes, itensProvisao: provisao, itensHidratados: hidratados };
   }, [cotacao.items]);
 
   const isMisto = itensFirmes.length > 0 && itensProvisao.length > 0;
@@ -60,7 +67,7 @@ export function ConverterEmPedidoModal({
     try {
       // Carrega o cart com TODOS os itens (firmes + provisão) p/ preservar UI/estado se algo der errado
       clearCart();
-      addBulk(cotacao.items.map((i) => ({ product: i.product, quantity: i.quantity })));
+      addBulk(itensHidratados.map((i) => ({ product: i.product, quantity: i.quantity })));
       setMeta({
         ...cotacao.meta,
         cotacaoOrigemId: cotacao.id,
