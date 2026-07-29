@@ -55,6 +55,8 @@ export interface Product {
   statusEstoque: string;
   /** Quantidade disponível em estoque para venda firme. em_estoque = estoqueDisponivel > 0 */
   estoqueDisponivel?: number;
+  /** V?? — Produto de pronta entrega: sempre disponível, roteia direto para pedido (sem gate de quantidade). */
+  prontaEntrega?: boolean;
 
   // Vela numérica
   isVelaNumerica: boolean;
