@@ -34,11 +34,11 @@ import { Route as ConfirmationRouteImport } from './routes/confirmation'
 import { Route as CondicoesPagamentoRouteImport } from './routes/condicoes-pagamento'
 import { Route as CommercialRouteImport } from './routes/commercial'
 import { Route as ClientesRouteImport } from './routes/clientes'
-import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
+import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
 import { Route as StandLeadsRouteImport } from './routes/stand.leads'
 import { Route as ReunioesImportarRouteImport } from './routes/reunioes.importar'
 import { Route as PortalProvisoesRouteImport } from './routes/portal.provisoes'
@@ -182,11 +182,6 @@ const ClientesRoute = ClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CatalogRoute = CatalogRouteImport.update({
-  id: '/catalog',
-  path: '/catalog',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CartRoute = CartRouteImport.update({
   id: '/cart',
   path: '/cart',
@@ -206,6 +201,11 @@ const PortalIndexRoute = PortalIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => PortalRoute,
+} as any)
+const CatalogIndexRoute = CatalogIndexRouteImport.update({
+  id: '/catalog/',
+  path: '/catalog/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const StandLeadsRoute = StandLeadsRouteImport.update({
   id: '/leads',
@@ -238,9 +238,9 @@ const PortalContaRoute = PortalContaRouteImport.update({
   getParentRoute: () => PortalRoute,
 } as any)
 const CatalogTodosRoute = CatalogTodosRouteImport.update({
-  id: '/todos',
-  path: '/todos',
-  getParentRoute: () => CatalogRoute,
+  id: '/catalog/todos',
+  path: '/catalog/todos',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
@@ -289,16 +289,15 @@ const AdminAccessLogsRoute = AdminAccessLogsRouteImport.update({
 } as any)
 const CatalogCategoriaCategoriaRoute =
   CatalogCategoriaCategoriaRouteImport.update({
-    id: '/categoria/$categoria',
-    path: '/categoria/$categoria',
-    getParentRoute: () => CatalogRoute,
+    id: '/catalog/categoria/$categoria',
+    path: '/catalog/categoria/$categoria',
+    getParentRoute: () => rootRouteImport,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
-  '/catalog': typeof CatalogRouteWithChildren
   '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
   '/condicoes-pagamento': typeof CondicoesPagamentoRoute
@@ -340,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/portal/provisoes': typeof PortalProvisoesRoute
   '/reunioes/importar': typeof ReunioesImportarRoute
   '/stand/leads': typeof StandLeadsRoute
+  '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -347,7 +347,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
-  '/catalog': typeof CatalogRouteWithChildren
   '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
   '/condicoes-pagamento': typeof CondicoesPagamentoRoute
@@ -388,6 +387,7 @@ export interface FileRoutesByTo {
   '/portal/provisoes': typeof PortalProvisoesRoute
   '/reunioes/importar': typeof ReunioesImportarRoute
   '/stand/leads': typeof StandLeadsRoute
+  '/catalog': typeof CatalogIndexRoute
   '/portal': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -396,7 +396,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
-  '/catalog': typeof CatalogRouteWithChildren
   '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
   '/condicoes-pagamento': typeof CondicoesPagamentoRoute
@@ -438,6 +437,7 @@ export interface FileRoutesById {
   '/portal/provisoes': typeof PortalProvisoesRoute
   '/reunioes/importar': typeof ReunioesImportarRoute
   '/stand/leads': typeof StandLeadsRoute
+  '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -447,7 +447,6 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/cart'
-    | '/catalog'
     | '/clientes'
     | '/commercial'
     | '/condicoes-pagamento'
@@ -489,6 +488,7 @@ export interface FileRouteTypes {
     | '/portal/provisoes'
     | '/reunioes/importar'
     | '/stand/leads'
+    | '/catalog/'
     | '/portal/'
     | '/catalog/categoria/$categoria'
   fileRoutesByTo: FileRoutesByTo
@@ -496,7 +496,6 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/cart'
-    | '/catalog'
     | '/clientes'
     | '/commercial'
     | '/condicoes-pagamento'
@@ -537,6 +536,7 @@ export interface FileRouteTypes {
     | '/portal/provisoes'
     | '/reunioes/importar'
     | '/stand/leads'
+    | '/catalog'
     | '/portal'
     | '/catalog/categoria/$categoria'
   id:
@@ -544,7 +544,6 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/cart'
-    | '/catalog'
     | '/clientes'
     | '/commercial'
     | '/condicoes-pagamento'
@@ -586,6 +585,7 @@ export interface FileRouteTypes {
     | '/portal/provisoes'
     | '/reunioes/importar'
     | '/stand/leads'
+    | '/catalog/'
     | '/portal/'
     | '/catalog/categoria/$categoria'
   fileRoutesById: FileRoutesById
@@ -594,7 +594,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyticsRoute: typeof AnalyticsRoute
   CartRoute: typeof CartRoute
-  CatalogRoute: typeof CatalogRouteWithChildren
   ClientesRoute: typeof ClientesRoute
   CommercialRoute: typeof CommercialRoute
   CondicoesPagamentoRoute: typeof CondicoesPagamentoRoute
@@ -629,6 +628,9 @@ export interface RootRouteChildren {
   AdminProductsRoute: typeof AdminProductsRoute
   AdminSincronizacaoSncfRoute: typeof AdminSincronizacaoSncfRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  CatalogTodosRoute: typeof CatalogTodosRoute
+  CatalogIndexRoute: typeof CatalogIndexRoute
+  CatalogCategoriaCategoriaRoute: typeof CatalogCategoriaCategoriaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -808,13 +810,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/catalog': {
-      id: '/catalog'
-      path: '/catalog'
-      fullPath: '/catalog'
-      preLoaderRoute: typeof CatalogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/cart': {
       id: '/cart'
       path: '/cart'
@@ -842,6 +837,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/portal/'
       preLoaderRoute: typeof PortalIndexRouteImport
       parentRoute: typeof PortalRoute
+    }
+    '/catalog/': {
+      id: '/catalog/'
+      path: '/catalog'
+      fullPath: '/catalog/'
+      preLoaderRoute: typeof CatalogIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/stand/leads': {
       id: '/stand/leads'
@@ -887,10 +889,10 @@ declare module '@tanstack/react-router' {
     }
     '/catalog/todos': {
       id: '/catalog/todos'
-      path: '/todos'
+      path: '/catalog/todos'
       fullPath: '/catalog/todos'
       preLoaderRoute: typeof CatalogTodosRouteImport
-      parentRoute: typeof CatalogRoute
+      parentRoute: typeof rootRouteImport
     }
     '/admin/users': {
       id: '/admin/users'
@@ -957,26 +959,13 @@ declare module '@tanstack/react-router' {
     }
     '/catalog/categoria/$categoria': {
       id: '/catalog/categoria/$categoria'
-      path: '/categoria/$categoria'
+      path: '/catalog/categoria/$categoria'
       fullPath: '/catalog/categoria/$categoria'
       preLoaderRoute: typeof CatalogCategoriaCategoriaRouteImport
-      parentRoute: typeof CatalogRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
-
-interface CatalogRouteChildren {
-  CatalogTodosRoute: typeof CatalogTodosRoute
-  CatalogCategoriaCategoriaRoute: typeof CatalogCategoriaCategoriaRoute
-}
-
-const CatalogRouteChildren: CatalogRouteChildren = {
-  CatalogTodosRoute: CatalogTodosRoute,
-  CatalogCategoriaCategoriaRoute: CatalogCategoriaCategoriaRoute,
-}
-
-const CatalogRouteWithChildren =
-  CatalogRoute._addFileChildren(CatalogRouteChildren)
 
 interface PortalRouteChildren {
   PortalContaRoute: typeof PortalContaRoute
@@ -1023,7 +1012,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
   CartRoute: CartRoute,
-  CatalogRoute: CatalogRouteWithChildren,
   ClientesRoute: ClientesRoute,
   CommercialRoute: CommercialRoute,
   CondicoesPagamentoRoute: CondicoesPagamentoRoute,
@@ -1058,7 +1046,20 @@ const rootRouteChildren: RootRouteChildren = {
   AdminProductsRoute: AdminProductsRoute,
   AdminSincronizacaoSncfRoute: AdminSincronizacaoSncfRoute,
   AdminUsersRoute: AdminUsersRoute,
+  CatalogTodosRoute: CatalogTodosRoute,
+  CatalogIndexRoute: CatalogIndexRoute,
+  CatalogCategoriaCategoriaRoute: CatalogCategoriaCategoriaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
