@@ -162,6 +162,18 @@ function ProvisoesPage() {
 
   const condicaoDe = (p: ProvisaoFutura) => getCondicaoPagamento(p, orders, cotacoes, clientes, condicoes);
 
+  const matchBusca = (p: ProvisaoFutura, termo: string) => {
+    if (!termo.trim()) return true;
+    const q = termo.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    const nome = (p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const cnpj = (p.clienteSnapshot.cnpj || "").replace(/\D/g, "");
+    const origens = [p.pedidoFirmeId, p.cotacaoOrigemId, p.pedidoConvertidoId]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return nome.includes(q) || cnpj.includes(q) || origens.includes(q);
+  };
+
   const categoriasDisponiveis = useMemo(() => {
     const s = new Set<string>();
     provisoes.forEach((p) => provisaoBuckets(p).forEach((b) => s.add(b)));
@@ -191,9 +203,10 @@ function ProvisoesPage() {
     if (condicaoFiltro) list = list.filter((p) => condicaoDe(p) === condicaoFiltro);
     if (sncfFiltro === "com") list = list.filter((p) => isSncf(p));
     else if (sncfFiltro === "sem") list = list.filter((p) => !isSncf(p));
+    if (busca.trim()) list = list.filter((p) => matchBusca(p, busca));
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provisoes, tab, categoriaFiltro, condicaoFiltro, sncfFiltro, sncfClientes, bucketBySku, orders, cotacoes]);
+  }, [provisoes, tab, categoriaFiltro, condicaoFiltro, sncfFiltro, busca, sncfClientes, bucketBySku, orders, cotacoes]);
 
 
 
