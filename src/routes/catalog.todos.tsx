@@ -44,7 +44,10 @@ function TodosProdutosPage() {
   useEffect(() => {
     const t = setTimeout(() => {
       navigate({
-        search: (prev) => ({ ...prev, q: query || undefined }),
+        search: (prev: { q?: string; categoria?: string; colecao?: string }) => ({
+          ...prev,
+          q: query || undefined,
+        }),
         replace: true,
       });
     }, 200);
