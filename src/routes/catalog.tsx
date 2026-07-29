@@ -124,6 +124,14 @@ function CatalogPage() {
           style={{ transition: "opacity 150ms ease-out" }}
           className="px-3 py-4 sm:px-6 sm:py-8 max-w-[1200px] mx-auto"
         >
+          <div className="flex justify-end mb-3">
+            <Link
+              to="/catalog/todos"
+              className="inline-flex items-center gap-1.5 rounded-full gold-border px-3 py-1 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+            >
+              Ver todos os produtos <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
           {!colecao ? (
             <EmptyState />
           ) : (
