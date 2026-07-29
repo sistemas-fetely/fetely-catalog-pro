@@ -85,7 +85,7 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
           </div>
         </div>
         <div className="absolute top-3 right-3">
-          <StockBadge status={product.statusEstoque} estoqueDisponivel={product.estoqueDisponivel} />
+          <StockBadge status={product.statusEstoque} estoqueDisponivel={product.estoqueDisponivel} prontaEntrega={product.prontaEntrega} />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent pointer-events-none" />
       </button>
