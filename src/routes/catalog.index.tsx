@@ -27,7 +27,7 @@ const searchSchema = z.object({
   highlight: fallback(z.string(), "").optional(),
 });
 
-export const Route = createFileRoute("/catalog")({
+export const Route = createFileRoute("/catalog/")({
   validateSearch: zodValidator(searchSchema),
   head: () => ({
     meta: [
