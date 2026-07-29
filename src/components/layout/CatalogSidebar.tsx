@@ -229,6 +229,19 @@ export function CatalogSidebar({
         </>
       )}
 
+      {!collapsed && (
+        <div className="px-3 pt-2">
+          <Link
+            to="/catalog/todos"
+            onClick={() => onNavigate?.()}
+            className="w-full inline-flex items-center justify-between gap-2 rounded-md gold-border px-3 py-2 text-[11px] uppercase tracking-wider text-gold hover:bg-gold/10 transition"
+          >
+            <span>Ver todos os produtos</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      )}
+
       <nav className="flex-1 overflow-y-auto scrollbar-thin py-3">
         {Object.entries(tree).map(([categoria, grupos]) => (
           <div key={categoria} className="mb-4">
