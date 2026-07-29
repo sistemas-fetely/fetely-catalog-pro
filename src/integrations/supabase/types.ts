@@ -1731,6 +1731,7 @@ export type Database = {
           preco_atacado: number
           preco_varejo: number
           profundidade_cm: number | null
+          pronta_entrega: boolean
           qtd_kit: number
           sku: string
           status_estoque: string
@@ -1782,6 +1783,7 @@ export type Database = {
           preco_atacado?: number
           preco_varejo?: number
           profundidade_cm?: number | null
+          pronta_entrega?: boolean
           qtd_kit?: number
           sku: string
           status_estoque?: string
@@ -1833,6 +1835,7 @@ export type Database = {
           preco_atacado?: number
           preco_varejo?: number
           profundidade_cm?: number | null
+          pronta_entrega?: boolean
           qtd_kit?: number
           sku?: string
           status_estoque?: string
