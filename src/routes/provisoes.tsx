@@ -263,6 +263,17 @@ function ProvisoesPage() {
           {showReprovados ? "Ocultar reprovadas" : "Mostrar reprovadas"}
         </button>
 
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-muted" />
+          <input
+            type="text"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por cliente, CNPJ ou nº origem"
+            className="w-full rounded-md border border-border bg-surface-2 pl-8 pr-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-gold outline-none"
+          />
+        </div>
+
         <select
           value={categoriaFiltro}
           onChange={(e) => setCategoriaFiltro(e.target.value)}
@@ -298,10 +309,10 @@ function ProvisoesPage() {
           <option value="sem">Cliente sem pedido SNCF</option>
         </select>
 
-        {(categoriaFiltro || condicaoFiltro || sncfFiltro) && (
+        {(categoriaFiltro || condicaoFiltro || sncfFiltro || busca) && (
           <button
             type="button"
-            onClick={() => { setCategoriaFiltro(""); setCondicaoFiltro(""); setSncfFiltro(""); }}
+            onClick={() => { setCategoriaFiltro(""); setCondicaoFiltro(""); setSncfFiltro(""); setBusca(""); }}
             className="text-[11px] uppercase tracking-wider text-text-muted hover:text-gold"
           >
             Limpar filtros
