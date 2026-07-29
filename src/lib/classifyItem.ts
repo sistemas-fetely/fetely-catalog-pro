@@ -11,14 +11,15 @@ export function classificarItem(statusEstoque: string): "firme" | "provisao" {
  * Preferência: `estoqueDisponivel` numérico. Fallback: se ainda não migrado,
  * usa o `statusEstoque` textual (comportamento antigo: em estoque = ilimitado).
  */
-export function disponivelParaVenda(product: Pick<Product, "estoqueDisponivel" | "statusEstoque">): number {
+export function disponivelParaVenda(product: Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega">): number {
+  if (product.prontaEntrega) return Number.POSITIVE_INFINITY;
   const q = Number(product.estoqueDisponivel ?? 0);
   if (q > 0) return q;
   if (classificarItem(product.statusEstoque || "") === "firme") return Number.POSITIVE_INFINITY;
   return 0;
 }
 
-export function emEstoque(product: Pick<Product, "estoqueDisponivel" | "statusEstoque">): boolean {
+export function emEstoque(product: Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega">): boolean {
   return disponivelParaVenda(product) > 0;
 }
 
@@ -27,7 +28,7 @@ export function emEstoque(product: Pick<Product, "estoqueDisponivel" | "statusEs
  * estoque disponível. Não altera o produto — apenas calcula.
  */
 export function roteamentoQtd(
-  product: Pick<Product, "estoqueDisponivel" | "statusEstoque">,
+  product: Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega">,
   quantidade: number,
 ): { firme: number; provisao: number } {
   const qtd = Math.max(0, Math.floor(quantidade));

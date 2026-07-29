@@ -168,6 +168,7 @@ function rowToProduct(row: Record<string, unknown>): Product {
     isVelaNumerica: (row.is_vela_numerica as boolean) ?? false,
     numeroVela: (row.numero_vela as number | null) ?? null,
     ativo: (row.ativo as boolean) ?? true,
+    prontaEntrega: (row.pronta_entrega as boolean) ?? false,
   };
 }
 
@@ -216,6 +217,7 @@ export function productToRow(p: Product): Record<string, unknown> {
     is_vela_numerica: p.isVelaNumerica ?? false,
     numero_vela: p.numeroVela ?? null,
     ativo: p.ativo ?? true,
+    pronta_entrega: p.prontaEntrega ?? false,
   };
 }
 
