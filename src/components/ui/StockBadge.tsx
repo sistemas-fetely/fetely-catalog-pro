@@ -4,20 +4,24 @@ interface StockBadgeProps {
   status: string;
   /** Fatia 3: quando informado, mostra a quantidade disponível no rótulo "Em estoque · N". */
   estoqueDisponivel?: number;
+  /** Produto de pronta entrega (ex.: Celebrar à Mesa) — mostra "Pronta Entrega" e ignora estoque numérico. */
+  prontaEntrega?: boolean;
   className?: string;
 }
 
-export function StockBadge({ status, estoqueDisponivel, className }: StockBadgeProps) {
+export function StockBadge({ status, estoqueDisponivel, prontaEntrega, className }: StockBadgeProps) {
   const s = (status || "").trim().toLowerCase();
   const disp = Number(estoqueDisponivel ?? 0);
   let color = "bg-muted text-text-muted";
   let label = "Consultar";
 
-  if (s === "em estoque") {
+  if (prontaEntrega) {
+    color = "bg-stock-in/15 text-stock-in border border-stock-in/30";
+    label = "Pronta Entrega";
+  } else if (s === "em estoque") {
     color = "bg-stock-in/15 text-stock-in border border-stock-in/30";
     label = disp > 0 ? `Em Estoque · ${disp}` : "Em Estoque";
   } else if (s.startsWith("prev")) {
-    // Se tem estoque numérico apesar da previsão, prioriza mostrar o firme disponível
     if (disp > 0) {
       color = "bg-stock-in/15 text-stock-in border border-stock-in/30";
       label = `Em Estoque · ${disp}`;
