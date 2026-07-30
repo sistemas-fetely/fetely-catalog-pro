@@ -57,6 +57,9 @@ export function CartCommercialPanel({
   } = useNegotiation();
 
   const [showSenha, setShowSenha] = useState(false);
+  // Descontos não são aplicados automaticamente — o vendedor habilita quando aplicável
+  const [aplicarDescontos, setAplicarDescontos] = useState(false);
+
 
   // Pedido bonificado (só visível para internos/admin/master)
   const roles = useAuth((s) => s.roles);
