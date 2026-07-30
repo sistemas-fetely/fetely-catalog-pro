@@ -162,9 +162,12 @@ export function CartCommercialPanel({
         freteGratisOverride: ativo && freteGratis,
         ignorarPedidoMinimo: ativo || bonificado,
         uf: ufDestino,
-        aplicarDescontos,
+        aplicarDescontoCelebra: aplicarCelebra,
+        aplicarDescontoNegociacao: aplicarNegociacao,
+        aplicarBonusPix: aplicarPix,
       }),
-    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino, bonificado, aplicarDescontos],
+    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino, bonificado, aplicarCelebra, aplicarNegociacao, aplicarPix],
+
 
   );
 
