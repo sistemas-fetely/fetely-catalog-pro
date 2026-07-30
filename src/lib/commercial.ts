@@ -371,11 +371,11 @@ export function calcularPedido(args: {
       ? faixa!.descontoCelebra + premissas.descontoHomologadoPercent
       : premissas.descontoHomologadoPercent;
   }
-  if (!aplicarDescontos) descontoCelebraPct = 0;
+  if (!usarCelebra) descontoCelebraPct = 0;
   const descontoCelebraValor = bruto * (descontoCelebraPct / 100);
   const aposCelebra = bruto - descontoCelebraValor;
 
-  const masterPct = aplicarDescontos
+  const masterPct = usarNegociacao
     ? Math.max(0, Math.min(REGRAS_ATUAIS.descontoMasterMax, descontoMasterPct))
     : 0;
   const descontoMasterValor = aposCelebra * (masterPct / 100);
@@ -386,7 +386,7 @@ export function calcularPedido(args: {
     ? premissas.bonusPixPercent
     : faixa!.bonusPix;
   const aplicouPix =
-    aplicarDescontos &&
+    usarPix &&
     !!condicao &&
     condicao.tipo === "pix" &&
     bonusPixPct > 0 &&
