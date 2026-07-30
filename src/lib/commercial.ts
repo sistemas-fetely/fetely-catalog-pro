@@ -292,6 +292,8 @@ export function calcularPedido(args: {
   ignorarPedidoMinimo?: boolean;
   /** V20 — UF de destino para cálculo de frete FOB. Opcional: sem UF usa fallback. */
   uf?: string | null;
+  /** Quando false, nenhum desconto/bônus é aplicado (venda sem desconto). */
+  aplicarDescontos?: boolean;
 }): CalculoPedido {
   const {
     bruto,
@@ -302,7 +304,9 @@ export function calcularPedido(args: {
     freteGratisOverride = false,
     ignorarPedidoMinimo = false,
     uf = null,
+    aplicarDescontos = true,
   } = args;
+
 
   // 1. FAIXA — premissa pode forçar faixa fixa
   let faixa: Faixa | null;
@@ -359,13 +363,13 @@ export function calcularPedido(args: {
       ? faixa!.descontoCelebra + premissas.descontoHomologadoPercent
       : premissas.descontoHomologadoPercent;
   }
+  if (!aplicarDescontos) descontoCelebraPct = 0;
   const descontoCelebraValor = bruto * (descontoCelebraPct / 100);
   const aposCelebra = bruto - descontoCelebraValor;
 
-  const masterPct = Math.max(
-    0,
-    Math.min(REGRAS_ATUAIS.descontoMasterMax, descontoMasterPct),
-  );
+  const masterPct = aplicarDescontos
+    ? Math.max(0, Math.min(REGRAS_ATUAIS.descontoMasterMax, descontoMasterPct))
+    : 0;
   const descontoMasterValor = aposCelebra * (masterPct / 100);
   const subtotalAposDescontos = aposCelebra - descontoMasterValor;
 
@@ -374,6 +378,7 @@ export function calcularPedido(args: {
     ? premissas.bonusPixPercent
     : faixa!.bonusPix;
   const aplicouPix =
+    aplicarDescontos &&
     !!condicao &&
     condicao.tipo === "pix" &&
     bonusPixPct > 0 &&
@@ -381,6 +386,7 @@ export function calcularPedido(args: {
   const bonusPixValor = aplicouPix
     ? subtotalAposDescontos * (bonusPixPct / 100)
     : 0;
+
 
   // 4. FRETE — precedência: negociação master → premissa do cliente → faixa
   let freteOrigem: FreteOrigem;

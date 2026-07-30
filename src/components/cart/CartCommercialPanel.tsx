@@ -57,6 +57,9 @@ export function CartCommercialPanel({
   } = useNegotiation();
 
   const [showSenha, setShowSenha] = useState(false);
+  // Descontos não são aplicados automaticamente — o vendedor habilita quando aplicável
+  const [aplicarDescontos, setAplicarDescontos] = useState(false);
+
 
   // Pedido bonificado (só visível para internos/admin/master)
   const roles = useAuth((s) => s.roles);
@@ -155,8 +158,10 @@ export function CartCommercialPanel({
         freteGratisOverride: ativo && freteGratis,
         ignorarPedidoMinimo: ativo || bonificado,
         uf: ufDestino,
+        aplicarDescontos,
       }),
-    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino, bonificado],
+    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino, bonificado, aplicarDescontos],
+
   );
 
   const pedidoMinimo = calculo.pedidoMinimoEfetivo ?? 1500;
@@ -246,18 +251,40 @@ export function CartCommercialPanel({
               </p>
             )}
 
+            {/* Habilitar / desabilitar descontos */}
+            <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border bg-surface-2/60 px-3 py-2">
+              <input
+                type="checkbox"
+                checked={aplicarDescontos}
+                onChange={(e) => setAplicarDescontos(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-[var(--gold,#c9a227)]"
+              />
+              <span className="text-xs">
+                <span className="font-medium text-text-primary">Aplicar descontos comerciais</span>
+                <span className="block text-text-secondary">
+                  {aplicarDescontos
+                    ? "Desconto Celebra, bônus PIX e negociação estão sendo aplicados."
+                    : "Venda sem desconto: preço cheio, sem bônus PIX nem desconto de faixa."}
+                </span>
+              </span>
+            </label>
+
             <ul className="text-sm space-y-1.5">
               <Row label="Valor do pedido" value={formatBRL(bruto)} />
-              <Row
-                label={
-                  premissas?.temDescontoHomologado
-                    ? `Desconto homologado (${descontoEfetivoPct}%${premissas.descontoHomologadoSobrePos ? " · acumula" : " · substitui"})`
-                    : `Desconto Celebra (${descontoEfetivoPct}%)`
-                }
-                value={`– ${formatBRL(calculo.descontoCelebraValor)}`}
-                accent
-              />
-              {ativo && descontoPct > 0 && (
+              {aplicarDescontos ? (
+                <Row
+                  label={
+                    premissas?.temDescontoHomologado
+                      ? `Desconto homologado (${descontoEfetivoPct}%${premissas.descontoHomologadoSobrePos ? " · acumula" : " · substitui"})`
+                      : `Desconto Celebra (${descontoEfetivoPct}%)`
+                  }
+                  value={`– ${formatBRL(calculo.descontoCelebraValor)}`}
+                  accent
+                />
+              ) : (
+                <Row label="Descontos" value="Desabilitados" />
+              )}
+              {aplicarDescontos && ativo && descontoPct > 0 && (
                 <Row
                   label={`Desconto negociação (${descontoPct}%)`}
                   value={`– ${formatBRL(calculo.descontoMasterValor)}`}
@@ -272,6 +299,7 @@ export function CartCommercialPanel({
                 />
               )}
             </ul>
+
 
             {/* Frete */}
             {calculo.freteBase != null && calculo.freteBase > 0 && (
