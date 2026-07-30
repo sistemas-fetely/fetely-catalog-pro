@@ -292,6 +292,8 @@ export function calcularPedido(args: {
   ignorarPedidoMinimo?: boolean;
   /** V20 — UF de destino para cálculo de frete FOB. Opcional: sem UF usa fallback. */
   uf?: string | null;
+  /** Quando false, nenhum desconto/bônus é aplicado (venda sem desconto). */
+  aplicarDescontos?: boolean;
 }): CalculoPedido {
   const {
     bruto,
@@ -302,7 +304,9 @@ export function calcularPedido(args: {
     freteGratisOverride = false,
     ignorarPedidoMinimo = false,
     uf = null,
+    aplicarDescontos = true,
   } = args;
+
 
   // 1. FAIXA — premissa pode forçar faixa fixa
   let faixa: Faixa | null;
