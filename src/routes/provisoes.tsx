@@ -650,8 +650,10 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
 
 
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <Info label="Cliente" value={provisao.clienteSnapshot.razaoSocial} />
+            <Info label="Cliente" value={provisao.clienteSnapshot.nomeFantasia || provisao.clienteSnapshot.razaoSocial} />
+            <Info label="Razão social" value={provisao.clienteSnapshot.razaoSocial} />
             <Info label="CNPJ" value={provisao.clienteSnapshot.cnpj} />
+
             <Info label="Vendedor" value={provisao.vendedorNome} />
             <Info label="Próx. previsão" value={provisao.proximaPrevisao} />
             <Info label="Criada em" value={new Date(provisao.criadoEm).toLocaleString("pt-BR")} />
