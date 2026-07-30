@@ -363,13 +363,13 @@ export function calcularPedido(args: {
       ? faixa!.descontoCelebra + premissas.descontoHomologadoPercent
       : premissas.descontoHomologadoPercent;
   }
+  if (!aplicarDescontos) descontoCelebraPct = 0;
   const descontoCelebraValor = bruto * (descontoCelebraPct / 100);
   const aposCelebra = bruto - descontoCelebraValor;
 
-  const masterPct = Math.max(
-    0,
-    Math.min(REGRAS_ATUAIS.descontoMasterMax, descontoMasterPct),
-  );
+  const masterPct = aplicarDescontos
+    ? Math.max(0, Math.min(REGRAS_ATUAIS.descontoMasterMax, descontoMasterPct))
+    : 0;
   const descontoMasterValor = aposCelebra * (masterPct / 100);
   const subtotalAposDescontos = aposCelebra - descontoMasterValor;
 
@@ -378,6 +378,7 @@ export function calcularPedido(args: {
     ? premissas.bonusPixPercent
     : faixa!.bonusPix;
   const aplicouPix =
+    aplicarDescontos &&
     !!condicao &&
     condicao.tipo === "pix" &&
     bonusPixPct > 0 &&
@@ -385,6 +386,7 @@ export function calcularPedido(args: {
   const bonusPixValor = aplicouPix
     ? subtotalAposDescontos * (bonusPixPct / 100)
     : 0;
+
 
   // 4. FRETE — precedência: negociação master → premissa do cliente → faixa
   let freteOrigem: FreteOrigem;
