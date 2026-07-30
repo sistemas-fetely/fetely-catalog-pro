@@ -164,15 +164,25 @@ function ProvisoesPage() {
 
   const matchBusca = (p: ProvisaoFutura, termo: string) => {
     if (!termo.trim()) return true;
-    const q = termo.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-    const nome = (p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    const cnpj = (p.clienteSnapshot.cnpj || "").replace(/\D/g, "");
+    const norm = (v?: string | null) => (v || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const q = norm(termo);
+    const cli = clientes.find((c) => c.id === p.clienteSnapshot.clienteId) ?? null;
+    const nomes = [
+      p.clienteSnapshot.nomeFantasia,
+      p.clienteSnapshot.razaoSocial,
+      cli?.nomeFantasia,
+      cli?.razaoSocial,
+    ]
+      .map(norm)
+      .join("|");
+    const cnpj = (p.clienteSnapshot.cnpj || cli?.cnpj || "").replace(/\D/g, "");
     const origens = [p.pedidoFirmeId, p.cotacaoOrigemId, p.pedidoConvertidoId]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
-    return nome.includes(q) || cnpj.includes(q) || origens.includes(q);
+    return nomes.includes(q) || cnpj.includes(q) || origens.includes(q);
   };
+
 
   const categoriasDisponiveis = useMemo(() => {
     const s = new Set<string>();
@@ -269,7 +279,7 @@ function ProvisoesPage() {
             type="text"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar por cliente, CNPJ ou nº origem"
+            placeholder="Buscar por cliente, razão social, CNPJ ou nº origem"
             className="w-full rounded-md border border-border bg-surface-2 pl-8 pr-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-gold outline-none"
           />
         </div>
@@ -640,8 +650,10 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
 
 
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <Info label="Cliente" value={provisao.clienteSnapshot.razaoSocial} />
+            <Info label="Cliente" value={provisao.clienteSnapshot.nomeFantasia || provisao.clienteSnapshot.razaoSocial} />
+            <Info label="Razão social" value={provisao.clienteSnapshot.razaoSocial} />
             <Info label="CNPJ" value={provisao.clienteSnapshot.cnpj} />
+
             <Info label="Vendedor" value={provisao.vendedorNome} />
             <Info label="Próx. previsão" value={provisao.proximaPrevisao} />
             <Info label="Criada em" value={new Date(provisao.criadoEm).toLocaleString("pt-BR")} />
