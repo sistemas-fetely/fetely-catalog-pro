@@ -61,7 +61,7 @@ export function CartCommercialPanel({
   const [aplicarCelebra, setAplicarCelebra] = useState(false);
   const [aplicarNegociacao, setAplicarNegociacao] = useState(false);
   const [aplicarPix, setAplicarPix] = useState(false);
-  const aplicarDescontos = aplicarCelebra || aplicarNegociacao || aplicarPix;
+  
 
 
 
