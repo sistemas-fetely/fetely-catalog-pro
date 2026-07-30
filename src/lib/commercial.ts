@@ -294,6 +294,10 @@ export function calcularPedido(args: {
   uf?: string | null;
   /** Quando false, nenhum desconto/bônus é aplicado (venda sem desconto). */
   aplicarDescontos?: boolean;
+  /** Controles independentes — sobrepõem `aplicarDescontos` quando informados. */
+  aplicarDescontoCelebra?: boolean;
+  aplicarDescontoNegociacao?: boolean;
+  aplicarBonusPix?: boolean;
 }): CalculoPedido {
   const {
     bruto,
@@ -306,6 +310,10 @@ export function calcularPedido(args: {
     uf = null,
     aplicarDescontos = true,
   } = args;
+  const usarCelebra = args.aplicarDescontoCelebra ?? aplicarDescontos;
+  const usarNegociacao = args.aplicarDescontoNegociacao ?? aplicarDescontos;
+  const usarPix = args.aplicarBonusPix ?? aplicarDescontos;
+
 
 
   // 1. FAIXA — premissa pode forçar faixa fixa
