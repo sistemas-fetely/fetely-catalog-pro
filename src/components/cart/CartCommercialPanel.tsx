@@ -57,8 +57,12 @@ export function CartCommercialPanel({
   } = useNegotiation();
 
   const [showSenha, setShowSenha] = useState(false);
-  // Descontos não são aplicados automaticamente — o vendedor habilita quando aplicável
-  const [aplicarDescontos, setAplicarDescontos] = useState(false);
+  // Descontos não são aplicados automaticamente — o vendedor habilita cada um
+  const [aplicarCelebra, setAplicarCelebra] = useState(false);
+  const [aplicarNegociacao, setAplicarNegociacao] = useState(false);
+  const [aplicarPix, setAplicarPix] = useState(false);
+  const aplicarDescontos = aplicarCelebra || aplicarNegociacao || aplicarPix;
+
 
 
   // Pedido bonificado (só visível para internos/admin/master)
