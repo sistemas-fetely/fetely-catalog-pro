@@ -158,8 +158,10 @@ export function CartCommercialPanel({
         freteGratisOverride: ativo && freteGratis,
         ignorarPedidoMinimo: ativo || bonificado,
         uf: ufDestino,
+        aplicarDescontos,
       }),
-    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino, bonificado],
+    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino, bonificado, aplicarDescontos],
+
   );
 
   const pedidoMinimo = calculo.pedidoMinimoEfetivo ?? 1500;
