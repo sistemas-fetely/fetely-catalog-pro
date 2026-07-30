@@ -650,10 +650,13 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
 
 
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <Info label="Cliente" value={provisao.clienteSnapshot.nomeFantasia || provisao.clienteSnapshot.razaoSocial} />
-            <Info label="Razão social" value={provisao.clienteSnapshot.razaoSocial} />
+            <div className="col-span-2">
+              <Info label="Cliente" value={provisao.clienteSnapshot.nomeFantasia || provisao.clienteSnapshot.razaoSocial} />
+            </div>
+            <div className="col-span-2">
+              <Info label="Razão social" value={provisao.clienteSnapshot.razaoSocial} />
+            </div>
             <Info label="CNPJ" value={provisao.clienteSnapshot.cnpj} />
-
             <Info label="Vendedor" value={provisao.vendedorNome} />
             <Info label="Próx. previsão" value={provisao.proximaPrevisao} />
             <Info label="Criada em" value={new Date(provisao.criadoEm).toLocaleString("pt-BR")} />
@@ -662,7 +665,6 @@ function ProvisaoDetail({ provisao, onClose }: { provisao: ProvisaoFutura; onClo
             {!provisao.pedidoFirmeId && !provisao.cotacaoOrigemId && <Info label="Origem" value="Direta (sem pedido/cotação)" />}
             {provisao.pedidoConvertidoId && <Info label="Convertida em" value={provisao.pedidoConvertidoId} />}
             <Info label="Condição de pagamento" value={condicaoPagamento} />
-
           </div>
 
           <div>
