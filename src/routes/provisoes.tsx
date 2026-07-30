@@ -279,7 +279,7 @@ function ProvisoesPage() {
             type="text"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar por cliente, CNPJ ou nº origem"
+            placeholder="Buscar por cliente, razão social, CNPJ ou nº origem"
             className="w-full rounded-md border border-border bg-surface-2 pl-8 pr-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-gold outline-none"
           />
         </div>
