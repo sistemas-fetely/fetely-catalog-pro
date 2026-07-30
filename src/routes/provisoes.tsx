@@ -164,15 +164,25 @@ function ProvisoesPage() {
 
   const matchBusca = (p: ProvisaoFutura, termo: string) => {
     if (!termo.trim()) return true;
-    const q = termo.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-    const nome = (p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    const cnpj = (p.clienteSnapshot.cnpj || "").replace(/\D/g, "");
+    const norm = (v?: string | null) => (v || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const q = norm(termo);
+    const cli = clientes.find((c) => c.id === p.clienteSnapshot.id) ?? null;
+    const nomes = [
+      p.clienteSnapshot.nomeFantasia,
+      p.clienteSnapshot.razaoSocial,
+      cli?.nomeFantasia,
+      cli?.razaoSocial,
+    ]
+      .map(norm)
+      .join("|");
+    const cnpj = (p.clienteSnapshot.cnpj || cli?.cnpj || "").replace(/\D/g, "");
     const origens = [p.pedidoFirmeId, p.cotacaoOrigemId, p.pedidoConvertidoId]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
-    return nome.includes(q) || cnpj.includes(q) || origens.includes(q);
+    return nomes.includes(q) || cnpj.includes(q) || origens.includes(q);
   };
+
 
   const categoriasDisponiveis = useMemo(() => {
     const s = new Set<string>();
