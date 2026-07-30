@@ -166,7 +166,7 @@ function ProvisoesPage() {
     if (!termo.trim()) return true;
     const norm = (v?: string | null) => (v || "").toLowerCase().replace(/[^a-z0-9]/g, "");
     const q = norm(termo);
-    const cli = clientes.find((c) => c.id === p.clienteSnapshot.id) ?? null;
+    const cli = clientes.find((c) => c.id === p.clienteSnapshot.clienteId) ?? null;
     const nomes = [
       p.clienteSnapshot.nomeFantasia,
       p.clienteSnapshot.razaoSocial,
