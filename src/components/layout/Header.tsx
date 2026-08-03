@@ -87,6 +87,12 @@ export function Header() {
   const isPublic = !session;
   const isClientePortal = roles.includes("cliente");
   const isInternalUser = !isPublic && !isClientePortal;
+  const isRepresentante =
+    !roles.includes("admin") &&
+    !roles.includes("master") &&
+    roles.includes("vendedor") &&
+    profile?.tipo_vendedor === "representante";
+
 
   return (
     <TooltipProvider delayDuration={200}>
