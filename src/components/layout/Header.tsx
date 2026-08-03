@@ -213,7 +213,8 @@ export function Header() {
             )}
 
             {/* Settings link */}
-            {isInternalUser && (
+            {isInternalUser && !isRepresentante && (
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
