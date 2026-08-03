@@ -172,7 +172,36 @@ export const PERMISSOES_PADRAO: Record<
   ],
 };
 
+/**
+ * Representante (vendedor externo): acesso restrito a operar os PRÓPRIOS
+ * pedidos/cotações/provisões/clientes. Sem dashboard, metas, relatórios,
+ * configurações ou qualquer visão agregada da empresa.
+ */
+export const TELAS_REPRESENTANTE: string[] = [
+  "catalogo",
+  "catalogo_precos",
+  "pedidos_lista",
+  "pedidos_novo",
+  "pedidos_detalhe",
+  "pedidos_exportar",
+  "cotacoes_lista",
+  "cotacoes_nova",
+  "cotacoes_converter",
+  "provisoes_lista",
+  "provisoes_converter",
+  "clientes_lista",
+  "clientes_detalhe",
+  "clientes_criar",
+  "clientes_editar",
+];
+
+/** True quando a tela é permitida para o perfil representante. */
+export function representanteConcede(telaId: string): boolean {
+  return TELAS_REPRESENTANTE.includes(telaId);
+}
+
 /** True quando o perfil base concede essa (tela, ação). */
+
 export function perfilBaseConcede(
   perfil: PerfilBaseRole,
   telaId: string,
