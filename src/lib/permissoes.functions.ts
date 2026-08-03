@@ -38,7 +38,7 @@ export const getMinhasPermissoes = createServerFn({ method: "GET" })
 
     const [rolesRes, profileRes, perfisOvRes, grupoOvRes, excecoesRes] = await Promise.all([
       supabaseAdmin.from("user_roles").select("role").eq("user_id", userId),
-      supabaseAdmin.from("profiles").select("grupo_permissao_id").eq("id", userId).maybeSingle(),
+      supabaseAdmin.from("profiles").select("grupo_permissao_id, tipo_vendedor").eq("id", userId).maybeSingle(),
       supabaseAdmin.from("permissoes_perfis_override").select("perfil, tela_id, acao, permitido"),
       supabaseAdmin.from("permissoes_grupo_overrides").select("grupo_id, tela_id, acao, permitido"),
       supabaseAdmin
@@ -48,8 +48,15 @@ export const getMinhasPermissoes = createServerFn({ method: "GET" })
     ]);
 
     const roles = (rolesRes.data ?? []).map((r) => r.role as string);
-    const grupoId = (profileRes.data as { grupo_permissao_id: string | null } | null)
-      ?.grupo_permissao_id ?? null;
+    const profileRow = profileRes.data as
+      | { grupo_permissao_id: string | null; tipo_vendedor: string | null }
+      | null;
+    const grupoId = profileRow?.grupo_permissao_id ?? null;
+    const isRepresentante =
+      !roles.includes("admin") &&
+      !roles.includes("master") &&
+      roles.includes("vendedor") &&
+      profileRow?.tipo_vendedor === "representante";
 
     const set = computarPermissoesEfetivas({
       roles,
@@ -58,6 +65,16 @@ export const getMinhasPermissoes = createServerFn({ method: "GET" })
       grupoOverrides: (grupoOvRes.data ?? []) as never,
       excecoes: (excecoesRes.data ?? []) as never,
     });
+
+    // Representante: intersecção com a whitelist do perfil (fonte de verdade
+    // no servidor — não depende da UI).
+    if (isRepresentante) {
+      const { representanteConcede } = await import("@/security/permissions");
+      for (const k of Array.from(set)) {
+        const telaId = k.split(":")[0]!;
+        if (!representanteConcede(telaId)) set.delete(k);
+      }
+    }
 
     // Devolve como array para serialização
     return Array.from(set).map((k) => {
