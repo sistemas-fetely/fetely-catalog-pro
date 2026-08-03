@@ -260,25 +260,34 @@ export const useCotacao = create<CotacaoState>()((set, get) => ({
 }));
 
 export function useVisibleCotacoes(): Cotacao[] {
-  // RLS já filtra no servidor (vendedora vê as suas, master vê tudo,
-  // cliente vê as dele). Aqui só aplicamos um defense-in-depth para
-  // o papel "cliente" caso algum dia o RLS afrouxe.
+  // RLS já filtra no servidor; aqui aplicamos defense-in-depth por papel.
   const cotacoes = useCotacao((s) => s.cotacoes);
+  const user = useAuth((s) => s.user);
   const profile = useAuth((s) => s.profile);
   const roles = useAuth((s) => s.roles);
   const clientes = useClientes((s) => s.clientes);
+  const admin = roles.includes("admin") || roles.includes("master");
 
-  if (roles.includes("cliente") && !roles.includes("admin") && !roles.includes("master")) {
+  if (roles.includes("cliente") && !admin) {
     const cid = profile?.cliente_id ?? null;
     if (!cid) return [];
     return cotacoes.filter((c) => c.meta.clienteId === cid);
   }
 
-  // master/admin/vendedora: confia no RLS + filtra por clientes acessíveis
-  // (vendedoras só receberam as suas via RLS de qualquer forma)
-  void clientes; // mantido para compat de hook deps
-  return cotacoes;
+  if (admin) return cotacoes;
+  if (!user) return [];
+
+  // Vendedor (interno ou representante): próprias cotações + de clientes seus.
+  const meusClienteIds = new Set(
+    clientes.filter((c) => c.cadastradoPorVendedorId === user.id).map((c) => c.id),
+  );
+  return cotacoes.filter(
+    (c) =>
+      c.vendedorId === user.id ||
+      (c.meta.clienteId && meusClienteIds.has(c.meta.clienteId)),
+  );
 }
+
 
 export function diasAteExpirar(cotacao: Cotacao): number {
   const ms = new Date(cotacao.validoAte).getTime() - Date.now();
