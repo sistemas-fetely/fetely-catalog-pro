@@ -5,8 +5,11 @@
 import { create } from "zustand";
 import { useCallback } from "react";
 import type { AcaoPermissao } from "@/security/permissions";
+import { representanteConcede } from "@/security/permissions";
 import { chave } from "@/security/permissionEvaluator";
 import { getMinhasPermissoes } from "@/lib/permissoes.functions";
+import { useAuth } from "@/store/authStore";
+
 
 interface PermissoesState {
   hydrated: boolean;
