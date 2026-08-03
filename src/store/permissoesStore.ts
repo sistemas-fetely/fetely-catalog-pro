@@ -5,8 +5,11 @@
 import { create } from "zustand";
 import { useCallback } from "react";
 import type { AcaoPermissao } from "@/security/permissions";
+import { representanteConcede } from "@/security/permissions";
 import { chave } from "@/security/permissionEvaluator";
 import { getMinhasPermissoes } from "@/lib/permissoes.functions";
+import { useAuth } from "@/store/authStore";
+
 
 interface PermissoesState {
   hydrated: boolean;
@@ -38,20 +41,36 @@ export const usePermissoesStore = create<PermissoesState>((set, get) => ({
   reset: () => set({ hydrated: false, loading: false, permissoes: new Set() }),
 }));
 
+/** True quando o usuário logado é vendedor representante (não admin/master). */
+export function ehRepresentanteAgora(): boolean {
+  const { roles, profile } = useAuth.getState();
+  if (roles.includes("admin") || roles.includes("master")) return false;
+  return roles.includes("vendedor") && profile?.tipo_vendedor === "representante";
+}
+
 /**
  * Hook reativo. Devolve `temPermissao(telaId, acao?)`.
  * - Enquanto não hidratou → true (otimista, evita flash).
  * - Depois → consulta o Set efetivo.
+ * - Representante → intersecção com a whitelist do perfil.
  */
 export function useTemPermissao() {
   const permissoes = usePermissoesStore((s) => s.permissoes);
   const hydrated = usePermissoesStore((s) => s.hydrated);
+  const roles = useAuth((s) => s.roles);
+  const profile = useAuth((s) => s.profile);
+  const isRepresentante =
+    !roles.includes("admin") &&
+    !roles.includes("master") &&
+    roles.includes("vendedor") &&
+    profile?.tipo_vendedor === "representante";
   return useCallback(
     (telaId: string, acao: AcaoPermissao = "ver"): boolean => {
+      if (isRepresentante && !representanteConcede(telaId)) return false;
       if (!hydrated) return true;
       return permissoes.has(`${telaId}:${acao}`);
     },
-    [permissoes, hydrated],
+    [permissoes, hydrated, isRepresentante],
   );
 }
 
@@ -60,7 +79,9 @@ export function temPermissaoAgora(
   telaId: string,
   acao: AcaoPermissao = "ver",
 ): boolean {
+  if (ehRepresentanteAgora() && !representanteConcede(telaId)) return false;
   const { hydrated, permissoes } = usePermissoesStore.getState();
   if (!hydrated) return true;
   return permissoes.has(`${telaId}:${acao}`);
 }
+

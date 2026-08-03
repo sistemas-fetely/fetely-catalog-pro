@@ -31,7 +31,10 @@ const ROTAS: RotaProtegida[] = [
 
   // OPERACIONAL
   { prefix: "/dashboard", telaId: "dashboard" },
+  { prefix: "/metas-pace", telaId: "dashboard" },
   { prefix: "/relatorios", telaId: "relatorios" },
+
+
   { prefix: "/analytics", telaId: "relatorios" },
   { prefix: "/orders", telaId: "pedidos_lista" },
   { prefix: "/farol", telaId: "pedidos_lista" },
@@ -58,4 +61,30 @@ export function regraDaRota(
     if (bate) return { telaId: r.telaId, acao: r.acao ?? "ver" };
   }
   return null;
+}
+
+/**
+ * Prefixos bloqueados para vendedor representante — ele só opera os próprios
+ * pedidos/cotações/provisões/clientes. Nada de visão agregada ou configuração.
+ */
+const BLOQUEADOS_REPRESENTANTE: string[] = [
+  "/dashboard",
+  "/metas-pace",
+  "/relatorios",
+  "/analytics",
+  "/farol",
+  "/settings",
+  "/commercial",
+  "/condicoes-pagamento",
+  "/import",
+  "/photos",
+  "/admin",
+  "/stand",
+  "/qualificacao",
+];
+
+export function rotaBloqueadaParaRepresentante(pathname: string): boolean {
+  return BLOQUEADOS_REPRESENTANTE.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
 }
