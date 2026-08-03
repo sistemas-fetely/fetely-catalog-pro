@@ -225,9 +225,26 @@ function BootEffects() {
   // Guarda granular de telas (V18): consulta permissoesStore.
   const permHydrated = usePermissoesStore((s) => s.hydrated);
   const permissoes = usePermissoesStore((s) => s.permissoes);
+  const profile = useAuth((s) => s.profile);
+  const isRepresentante =
+    !roles.includes("admin") &&
+    !roles.includes("master") &&
+    roles.includes("vendedor") &&
+    profile?.tipo_vendedor === "representante";
   useEffect(() => {
-    if (loading || !session || !permHydrated) return;
+    if (loading || !session) return;
     if (roles.includes("admin") || roles.includes("master")) return; // admin/master nunca são bloqueados
+
+    // Representante: bloqueio de áreas gerenciais / de configuração.
+    if (isRepresentante && rotaBloqueadaParaRepresentante(pathname)) {
+      toast.error("Acesso restrito", {
+        description: "Seu perfil acessa apenas seus próprios pedidos e clientes.",
+      });
+      navigate({ to: "/orders" });
+      return;
+    }
+
+    if (!permHydrated) return;
     const regra = regraDaRota(pathname);
     if (!regra) return;
     const ok = permissoes.has(`${regra.telaId}:${regra.acao}`);
@@ -235,10 +252,15 @@ function BootEffects() {
       toast.error("Acesso negado", {
         description: "Você não tem permissão para acessar esta tela.",
       });
-      const destino = roles.includes("cliente") ? "/portal" : "/dashboard";
+      const destino = roles.includes("cliente")
+        ? "/portal"
+        : isRepresentante
+        ? "/orders"
+        : "/dashboard";
       navigate({ to: destino });
     }
-  }, [loading, session, roles, permHydrated, permissoes, pathname, navigate]);
+  }, [loading, session, roles, isRepresentante, permHydrated, permissoes, pathname, navigate]);
+
 
   return null;
 }
