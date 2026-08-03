@@ -31,7 +31,10 @@ const ROTAS: RotaProtegida[] = [
 
   // OPERACIONAL
   { prefix: "/dashboard", telaId: "dashboard" },
+  { prefix: "/metas-pace", telaId: "dashboard" },
+  { prefix: "/settings", telaId: "cfg_regras_gerais" },
   { prefix: "/relatorios", telaId: "relatorios" },
+
   { prefix: "/analytics", telaId: "relatorios" },
   { prefix: "/orders", telaId: "pedidos_lista" },
   { prefix: "/farol", telaId: "pedidos_lista" },
