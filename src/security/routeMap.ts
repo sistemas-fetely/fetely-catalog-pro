@@ -62,3 +62,29 @@ export function regraDaRota(
   }
   return null;
 }
+
+/**
+ * Prefixos bloqueados para vendedor representante — ele só opera os próprios
+ * pedidos/cotações/provisões/clientes. Nada de visão agregada ou configuração.
+ */
+const BLOQUEADOS_REPRESENTANTE: string[] = [
+  "/dashboard",
+  "/metas-pace",
+  "/relatorios",
+  "/analytics",
+  "/farol",
+  "/settings",
+  "/commercial",
+  "/condicoes-pagamento",
+  "/import",
+  "/photos",
+  "/admin",
+  "/stand",
+  "/qualificacao",
+];
+
+export function rotaBloqueadaParaRepresentante(pathname: string): boolean {
+  return BLOQUEADOS_REPRESENTANTE.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
+}
