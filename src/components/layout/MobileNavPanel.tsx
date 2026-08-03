@@ -70,12 +70,22 @@ export function MobileNavPanel({ onNavigate }: { onNavigate?: () => void }) {
     { to: "/settings", label: "Configurações", Icon: Settings },
   ];
 
+  const roles = useAuth((s) => s.roles);
+  const profile = useAuth((s) => s.profile);
+  const isRepresentante =
+    !isAdminOrMaster &&
+    roles.includes("vendedor") &&
+    profile?.tipo_vendedor === "representante";
+
   const filter = (items: Item[]) =>
     items.filter((it) => {
       if (it.adminOnly && !isAdminOrMaster) return false;
+      if (isRepresentante && ["/settings", "/photos", "/import", "/dashboard"].includes(it.to))
+        return false;
       if (it.tela && !temPermissao(it.tela, "ver")) return false;
       return true;
     });
+
 
   const isActive = (it: Item) =>
     it.exact ? pathname === it.to : pathname === it.to || pathname.startsWith(it.to + "/");
