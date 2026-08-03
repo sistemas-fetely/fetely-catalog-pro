@@ -17,7 +17,7 @@ import { FilaDuplicacaoBar } from "@/components/duplicar/FilaDuplicacaoBar";
 import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
 import { usePermissoesStore } from "@/store/permissoesStore";
-import { regraDaRota } from "@/security/routeMap";
+import { regraDaRota, rotaBloqueadaParaRepresentante } from "@/security/routeMap";
 import "@/store/cartilhasStore"; // side-effect: sincroniza commercial.ts com a cartilha persistida
 import { bootstrapFopAfterLogin } from "@/lib/fopBootstrap";
 import { Toaster } from "@/components/ui/sonner";
