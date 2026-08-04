@@ -74,6 +74,7 @@ function CotacoesPage() {
     if (filtro === "abertas") list = list.filter((c) => c.status === "aberta");
     else if (filtro === "em_negociacao") list = list.filter((c) => c.status === "em_negociacao");
     else if (filtro === "aprovadas") list = list.filter((c) => c.status === "aprovada");
+    else if (filtro === "convertidas") list = list.filter((c) => c.status === "convertida");
     if (busca) {
       const q = busca.toLowerCase();
       list = list.filter(
