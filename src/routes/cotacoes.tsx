@@ -39,7 +39,7 @@ const STATUS_ICON: Record<StatusCotacao, string> = {
   perdida: "🔴",
 };
 
-type Filtro = "abertas" | "em_negociacao" | "aprovadas" | "todas";
+type Filtro = "abertas" | "em_negociacao" | "aprovadas" | "convertidas" | "todas";
 
 function CotacoesPage() {
   const cotacoes = useVisibleCotacoes();
