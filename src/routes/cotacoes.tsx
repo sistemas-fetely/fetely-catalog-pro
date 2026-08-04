@@ -64,6 +64,7 @@ function CotacoesPage() {
       abertas: cotacoes.filter((c) => c.status === "aberta").length,
       em_negociacao: cotacoes.filter((c) => c.status === "em_negociacao").length,
       aprovadas: cotacoes.filter((c) => c.status === "aprovada").length,
+      convertidas: cotacoes.filter((c) => c.status === "convertida").length,
       todas: cotacoes.length,
     };
   }, [cotacoes]);
