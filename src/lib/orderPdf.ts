@@ -464,6 +464,12 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
     } else {
       items.push([`Frete FOB (${fretePctStr}%)`, `+ ${formatBRL(c.freteValor ?? 0)}`]);
     }
+    if ((c.acrescimoIsentoIEValor ?? 0) > 0.01) {
+      items.push([
+        `Acréscimo isento de IE (${c.acrescimoIsentoIEPercent ?? 15}%)`,
+        `+ ${formatBRL(c.acrescimoIsentoIEValor ?? 0)}`,
+      ]);
+    }
 
     // Provisão futura (referência) — diferença entre total salvo e totalFinal comercial
     const provisaoRef = Math.max(0, (order.total ?? 0) - (c.totalFinal ?? 0));
@@ -765,6 +771,9 @@ function renderOrderBlockHTML(order: SavedOrder): string {
       linhasFin.push(`<div><span>Frete CIF (incluso · faixa ${escapeHtml(c.faixaNome)})</span><b>Grátis</b></div>`);
     } else {
       linhasFin.push(`<div><span>Frete FOB (${fretePctStr}%)</span><b>+ ${formatBRL(c.freteValor ?? 0)}</b></div>`);
+    }
+    if ((c.acrescimoIsentoIEValor ?? 0) > 0.01) {
+      linhasFin.push(`<div><span>Acréscimo isento de IE (${c.acrescimoIsentoIEPercent ?? 15}%)</span><b>+ ${formatBRL(c.acrescimoIsentoIEValor ?? 0)}</b></div>`);
     }
     const provisaoRefHTML = Math.max(0, (order.total ?? 0) - (c.totalFinal ?? 0));
     if (provisaoRefHTML > 0.01) {
