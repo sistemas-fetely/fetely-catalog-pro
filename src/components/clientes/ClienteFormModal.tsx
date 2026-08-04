@@ -391,7 +391,7 @@ export function ClienteFormModal({
               />
             </Field>
             <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
-              <Field label="Inscrição Estadual">
+              <Field label="Inscrição Estadual *">
                 <input
                   className="input"
                   value={cliente.inscricaoEstadual ?? ""}
