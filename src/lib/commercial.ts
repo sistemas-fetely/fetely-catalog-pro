@@ -271,7 +271,17 @@ export interface CalculoPedido {
   freteOrigem?: FreteOrigem;
   /** V20 — true quando a UF não estava cadastrada e usou o fallback padrão */
   freteUsouFallback?: boolean;
+  /** V21 — acréscimo por cliente isento de Inscrição Estadual */
+  acrescimoIsentoIEValor?: number;
+  /** V21 — percentual do acréscimo de isento de IE aplicado (0 quando não aplicado) */
+  acrescimoIsentoIEPercent?: number;
+  /** V21 — true quando o acréscimo de isento de IE foi aplicado */
+  acrescimoIsentoIEAplicado?: boolean;
 }
+
+/** V21 — percentual de acréscimo aplicado quando o cliente é isento de Inscrição Estadual */
+export const ACRESCIMO_ISENTO_IE_PERCENT = 15;
+
 
 /** Percentual padrão de frete sobre o subtotal após descontos. Mantido para
  * compatibilidade com cálculos antigos; novos pedidos usam a tabela por UF. */
