@@ -436,8 +436,14 @@ export function calcularPedido(args: {
   const freteIsento = freteGratisOverride || isentoPorCif;
   const freteValor = freteIsento ? 0 : freteBase;
 
+  // 6. ACRÉSCIMO ISENTO DE INSCRIÇÃO ESTADUAL — V21
+  const acrescimoPct = aplicarAcrescimoIsentoIE ? acrescimoIsentoIEPercent : 0;
+  const acrescimoIsentoIEValor = aplicarAcrescimoIsentoIE
+    ? Math.round(subtotalAposDescontos * (acrescimoPct / 100) * 100) / 100
+    : 0;
+
   const subtotalComBonus = subtotalAposDescontos - bonusPixValor;
-  const total = subtotalComBonus + freteValor;
+  const total = subtotalComBonus + freteValor + acrescimoIsentoIEValor;
   return {
     bruto,
     faixa,
@@ -446,7 +452,7 @@ export function calcularPedido(args: {
     subtotalAposDescontos,
     bonusPixValor,
     total,
-    totalSemPix: subtotalAposDescontos + freteValor,
+    totalSemPix: subtotalAposDescontos + freteValor + acrescimoIsentoIEValor,
     aplicouPix,
     premissasAplicadas: !!premissas,
     descontoCelebraPercentEfetivo: descontoCelebraPct,
@@ -461,8 +467,12 @@ export function calcularPedido(args: {
     freteUf: uf ? uf.toUpperCase() : undefined,
     freteOrigem,
     freteUsouFallback: freteEfetivo === "FOB" ? freteUsouFallback : false,
+    acrescimoIsentoIEValor,
+    acrescimoIsentoIEPercent: acrescimoPct,
+    acrescimoIsentoIEAplicado: aplicarAcrescimoIsentoIE,
   };
 }
+
 
 // SHA-256 hash (browser only)
 export async function hashSenha(senha: string): Promise<string> {
