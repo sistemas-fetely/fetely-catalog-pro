@@ -39,7 +39,7 @@ const STATUS_ICON: Record<StatusCotacao, string> = {
   perdida: "🔴",
 };
 
-type Filtro = "abertas" | "em_negociacao" | "aprovadas" | "todas";
+type Filtro = "abertas" | "em_negociacao" | "aprovadas" | "convertidas" | "todas";
 
 function CotacoesPage() {
   const cotacoes = useVisibleCotacoes();
@@ -64,6 +64,7 @@ function CotacoesPage() {
       abertas: cotacoes.filter((c) => c.status === "aberta").length,
       em_negociacao: cotacoes.filter((c) => c.status === "em_negociacao").length,
       aprovadas: cotacoes.filter((c) => c.status === "aprovada").length,
+      convertidas: cotacoes.filter((c) => c.status === "convertida").length,
       todas: cotacoes.length,
     };
   }, [cotacoes]);
@@ -73,6 +74,7 @@ function CotacoesPage() {
     if (filtro === "abertas") list = list.filter((c) => c.status === "aberta");
     else if (filtro === "em_negociacao") list = list.filter((c) => c.status === "em_negociacao");
     else if (filtro === "aprovadas") list = list.filter((c) => c.status === "aprovada");
+    else if (filtro === "convertidas") list = list.filter((c) => c.status === "convertida");
     if (busca) {
       const q = busca.toLowerCase();
       list = list.filter(
@@ -109,6 +111,7 @@ function CotacoesPage() {
             ["abertas", `Abertas: ${counts.abertas}`],
             ["em_negociacao", `Em negociação: ${counts.em_negociacao}`],
             ["aprovadas", `Aprovadas: ${counts.aprovadas}`],
+            ["convertidas", `Convertidas: ${counts.convertidas}`],
             ["todas", `Todas: ${counts.todas}`],
           ] as [Filtro, string][]
         ).map(([key, label]) => (
