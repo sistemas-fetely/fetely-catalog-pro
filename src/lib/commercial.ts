@@ -271,6 +271,14 @@ export interface CalculoPedido {
   freteOrigem?: FreteOrigem;
   /** V20 — true quando a UF não estava cadastrada e usou o fallback padrão */
   freteUsouFallback?: boolean;
+  /** V23 — modo do ajuste manual de frete na negociação */
+  freteAjusteModo?: "percent" | "valor";
+  /** V23 — percentual do ajuste manual (pode ser negativo) */
+  freteAjustePercent?: number;
+  /** V23 — valor do ajuste manual aplicado no frete (+ acréscimo / – decréscimo) */
+  freteAjusteValor?: number;
+  /** V23 — true quando houve ajuste manual de frete */
+  freteAjusteAplicado?: boolean;
   /** V21 — acréscimo por cliente isento de Inscrição Estadual */
   acrescimoIsentoIEValor?: number;
   /** V21 — percentual do acréscimo de isento de IE aplicado (0 quando não aplicado) */
