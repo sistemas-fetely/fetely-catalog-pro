@@ -111,6 +111,7 @@ function CotacoesPage() {
             ["abertas", `Abertas: ${counts.abertas}`],
             ["em_negociacao", `Em negociação: ${counts.em_negociacao}`],
             ["aprovadas", `Aprovadas: ${counts.aprovadas}`],
+            ["convertidas", `Convertidas: ${counts.convertidas}`],
             ["todas", `Todas: ${counts.todas}`],
           ] as [Filtro, string][]
         ).map(([key, label]) => (
