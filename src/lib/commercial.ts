@@ -448,7 +448,18 @@ export function calcularPedido(args: {
     freteEfetivo === "FOB" ? Math.round(subtotalAposDescontos * (ufPercent / 100) * 100) / 100 : 0;
   const isentoPorCif = freteEfetivo === "CIF";
   const freteIsento = freteGratisOverride || isentoPorCif;
-  const freteValor = freteIsento ? 0 : freteBase;
+  const freteAntesAjuste = freteIsento ? 0 : freteBase;
+
+  // 5b. FRETE — V23: ajuste manual (acréscimo/decréscimo) em % ou R$
+  const freteAjusteAplicado = !!freteAjusteQtd;
+  const freteAjusteValor = freteAjusteAplicado
+    ? Math.round(
+        (freteAjusteModo === "percent"
+          ? freteAntesAjuste * (freteAjusteQtd / 100)
+          : freteAjusteQtd) * 100,
+      ) / 100
+    : 0;
+  const freteValor = Math.max(0, Math.round((freteAntesAjuste + freteAjusteValor) * 100) / 100);
 
   // 6. ACRÉSCIMO ISENTO DE INSCRIÇÃO ESTADUAL — V21
   const acrescimoPct = aplicarAcrescimoIsentoIE ? acrescimoIsentoIEPercent : 0;
