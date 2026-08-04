@@ -372,6 +372,33 @@ export function CartCommercialPanel({
               </div>
             )}
 
+            {/* V21 — Acréscimo isento de Inscrição Estadual */}
+            <div className="rounded-md border border-border bg-surface-2/60 px-3 py-2 text-xs space-y-1">
+              <label className="flex cursor-pointer items-baseline justify-between gap-2">
+                <span className="flex items-center gap-2 text-text-secondary">
+                  <input
+                    type="checkbox"
+                    checked={aplicarIsentoIE}
+                    onChange={(e) => setAplicarIsentoIE(e.target.checked)}
+                    className="h-3 w-3 accent-[var(--gold,#c9a227)]"
+                  />
+                  Acréscimo isento de IE ({ACRESCIMO_ISENTO_IE_PERCENT}%)
+                </span>
+                <span className={aplicarIsentoIE ? "text-text-primary" : "text-text-muted"}>
+                  {aplicarIsentoIE
+                    ? `+ ${formatBRL(calculo.acrescimoIsentoIEValor ?? 0)}`
+                    : "Não aplicado"}
+                </span>
+              </label>
+              <p className="text-[10px] text-text-muted">
+                {clienteIsentoIE
+                  ? "Cliente cadastrado como isento de Inscrição Estadual — acréscimo sugerido automaticamente."
+                  : "Cliente possui Inscrição Estadual. Marque apenas se o acréscimo for devido."}
+              </p>
+            </div>
+
+
+
             <div className="border-t border-border pt-3 space-y-1">
               <div className="flex items-baseline justify-between">
                 <span className="text-xs uppercase tracking-wider text-text-secondary">
