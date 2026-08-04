@@ -144,6 +144,13 @@ export interface OrderCommercial {
   freteOrigem?: "negociacao_master" | "premissa_cliente" | "faixa";
   /** V20 — true quando a UF não tinha tabela cadastrada (usou fallback) */
   freteUsouFallback?: boolean;
+  /** V21 — valor do acréscimo por cliente isento de Inscrição Estadual */
+  acrescimoIsentoIEValor?: number;
+  /** V21 — percentual do acréscimo de isento de IE aplicado */
+  acrescimoIsentoIEPercent?: number;
+  /** V21 — true quando o acréscimo de isento de IE foi aplicado neste pedido */
+  acrescimoIsentoIEAplicado?: boolean;
+
   /** Pedido bonificado — bypass do valor mínimo, sem meta/pace/comissão */
   bonificado?: boolean;
   /** Motivo da bonificação (amostra, brinde, compensacao, marketing, outro:texto) */
