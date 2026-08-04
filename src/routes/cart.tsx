@@ -317,6 +317,9 @@ function CartPage() {
       freteUf: c.freteUf,
       freteOrigem: c.freteOrigem,
       freteUsouFallback: c.freteUsouFallback ?? false,
+      acrescimoIsentoIEValor: c.acrescimoIsentoIEValor ?? 0,
+      acrescimoIsentoIEPercent: c.acrescimoIsentoIEPercent ?? 0,
+      acrescimoIsentoIEAplicado: !!c.acrescimoIsentoIEAplicado,
       bonificado: !!commercial.bonificado,
       motivoBonificacao: commercial.motivoBonificacao,
     };
@@ -441,6 +444,9 @@ function CartPage() {
       freteUf: c.freteUf,
       freteOrigem: c.freteOrigem,
       freteUsouFallback: c.freteUsouFallback ?? false,
+      acrescimoIsentoIEValor: c.acrescimoIsentoIEValor ?? 0,
+      acrescimoIsentoIEPercent: c.acrescimoIsentoIEPercent ?? 0,
+      acrescimoIsentoIEAplicado: !!c.acrescimoIsentoIEAplicado,
     };
     const metaCompleto = {
       ...meta,
