@@ -151,6 +151,13 @@ export function CartCommercialPanel({
     if (condicaoSelecionadaId && !condicao) setCondicaoSelecionadaId(null);
   }, [condicao, condicaoSelecionadaId, setCondicaoSelecionadaId, bonificado]);
 
+  // V21 — acréscimo por isenção de Inscrição Estadual (puxa do cadastro do cliente)
+  const clienteIsentoIE = !!cliente?.isentoIE;
+  const [aplicarIsentoIE, setAplicarIsentoIE] = useState(false);
+  useEffect(() => {
+    setAplicarIsentoIE(clienteIsentoIE);
+  }, [clienteIsentoIE, clienteId]);
+
   const calculo = useMemo(
     () =>
       calcularPedido({
@@ -165,11 +172,11 @@ export function CartCommercialPanel({
         aplicarDescontoCelebra: aplicarCelebra,
         aplicarDescontoNegociacao: aplicarNegociacao,
         aplicarBonusPix: aplicarPix,
+        aplicarAcrescimoIsentoIE: aplicarIsentoIE,
       }),
-    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino, bonificado, aplicarCelebra, aplicarNegociacao, aplicarPix],
-
-
+    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino, bonificado, aplicarCelebra, aplicarNegociacao, aplicarPix, aplicarIsentoIE],
   );
+
 
   const pedidoMinimo = calculo.pedidoMinimoEfetivo ?? 1500;
   const abaixoDoMinimoLiberado = ativo && bruto < pedidoMinimo && !!calculo.faixa;
