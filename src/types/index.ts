@@ -144,6 +144,11 @@ export interface OrderCommercial {
   freteOrigem?: "negociacao_master" | "premissa_cliente" | "faixa";
   /** V20 — true quando a UF não tinha tabela cadastrada (usou fallback) */
   freteUsouFallback?: boolean;
+  /** V23 — ajuste manual de frete feito na negociação */
+  freteAjusteModo?: "percent" | "valor";
+  freteAjustePercent?: number;
+  freteAjusteValor?: number;
+  freteAjusteAplicado?: boolean;
   /** V21 — valor do acréscimo por cliente isento de Inscrição Estadual */
   acrescimoIsentoIEValor?: number;
   /** V21 — percentual do acréscimo de isento de IE aplicado */

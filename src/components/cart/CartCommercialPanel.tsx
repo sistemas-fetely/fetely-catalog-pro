@@ -47,6 +47,8 @@ export function CartCommercialPanel({
     usarReservada,
     condicaoSelecionadaId,
     freteGratis,
+    freteAjusteModo,
+    freteAjusteQtd,
     liberarTodasCondicoes,
     setDescontoPct,
     setJustificativa,
@@ -54,6 +56,8 @@ export function CartCommercialPanel({
     setUsarReservada,
     setCondicaoSelecionadaId,
     setFreteGratis,
+    setFreteAjusteModo,
+    setFreteAjusteQtd,
     setLiberarTodasCondicoes,
     desativar,
   } = useNegotiation();
@@ -175,8 +179,10 @@ export function CartCommercialPanel({
         aplicarDescontoNegociacao: aplicarNegociacao,
         aplicarBonusPix: aplicarPix,
         aplicarAcrescimoIsentoIE: aplicarIsentoIE,
+        freteAjusteModo,
+        freteAjusteQtd: ativo ? freteAjusteQtd : 0,
       }),
-    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, ufDestino, bonificado, aplicarCelebra, aplicarNegociacao, aplicarPix, aplicarIsentoIE],
+    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, freteAjusteModo, freteAjusteQtd, ufDestino, bonificado, aplicarCelebra, aplicarNegociacao, aplicarPix, aplicarIsentoIE],
   );
 
 
@@ -356,6 +362,24 @@ export function CartCommercialPanel({
                       {calculo.freteUf ? ` — ${calculo.freteUf}` : ""}
                       {calculo.fretePercent ? ` · ${calculo.fretePercent}%` : ""}
                     </span>
+                    <span className="text-text-primary">+ {formatBRL(calculo.freteValor ?? 0)}</span>
+                  </div>
+                )}
+                {calculo.freteAjusteAplicado && (
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-text-secondary">
+                      Ajuste de frete (negociação)
+                      {calculo.freteAjusteModo === "percent" ? ` · ${freteAjusteQtd}%` : ""}
+                    </span>
+                    <span className={(calculo.freteAjusteValor ?? 0) < 0 ? "text-gold" : "text-text-primary"}>
+                      {(calculo.freteAjusteValor ?? 0) < 0 ? "– " : "+ "}
+                      {formatBRL(Math.abs(calculo.freteAjusteValor ?? 0))}
+                    </span>
+                  </div>
+                )}
+                {calculo.freteAjusteAplicado && (
+                  <div className="flex items-baseline justify-between border-t border-border pt-1">
+                    <span className="text-text-secondary">Frete final</span>
                     <span className="text-text-primary">+ {formatBRL(calculo.freteValor ?? 0)}</span>
                   </div>
                 )}
@@ -639,6 +663,53 @@ export function CartCommercialPanel({
                 </span>
               </span>
             </label>
+
+            <div className="rounded-md border border-border bg-surface-2/50 p-2.5 space-y-2">
+              <div className="text-sm">
+                <strong className="text-gold">Ajuste de frete</strong>
+                <span className="block text-[11px] text-text-muted">
+                  Acréscimo (positivo) ou decréscimo (negativo) sobre o frete calculado.
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={freteAjusteModo}
+                  onChange={(e) => setFreteAjusteModo(e.target.value as "percent" | "valor")}
+                  className="bg-surface-2 border border-border rounded-md px-2 py-1.5 text-sm"
+                >
+                  <option value="percent">%</option>
+                  <option value="valor">R$</option>
+                </select>
+                <input
+                  type="number"
+                  step={freteAjusteModo === "percent" ? 1 : 10}
+                  value={freteAjusteQtd === 0 ? "" : freteAjusteQtd}
+                  placeholder="0"
+                  onChange={(e) => setFreteAjusteQtd(parseFloat(e.target.value))}
+                  disabled={freteGratis}
+                  className="flex-1 bg-surface-2 border border-border rounded-md px-2 py-1.5 text-sm disabled:opacity-50"
+                />
+                {!!freteAjusteQtd && (
+                  <button
+                    type="button"
+                    onClick={() => setFreteAjusteQtd(0)}
+                    className="text-[11px] uppercase tracking-wider text-text-muted hover:text-gold"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
+              {freteGratis ? (
+                <p className="text-[10px] text-text-muted">
+                  Frete grátis ativo — desmarque para ajustar o valor.
+                </p>
+              ) : (
+                <p className="text-[10px] text-text-muted">
+                  Frete base: {formatBRL(calculo.freteBase ?? 0)} → final:{" "}
+                  <strong className="text-text-primary">{formatBRL(calculo.freteValor ?? 0)}</strong>
+                </p>
+              )}
+            </div>
 
             <label className="flex items-start gap-2 text-sm cursor-pointer">
               <input
