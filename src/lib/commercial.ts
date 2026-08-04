@@ -271,6 +271,14 @@ export interface CalculoPedido {
   freteOrigem?: FreteOrigem;
   /** V20 — true quando a UF não estava cadastrada e usou o fallback padrão */
   freteUsouFallback?: boolean;
+  /** V23 — modo do ajuste manual de frete na negociação */
+  freteAjusteModo?: "percent" | "valor";
+  /** V23 — percentual do ajuste manual (pode ser negativo) */
+  freteAjustePercent?: number;
+  /** V23 — valor do ajuste manual aplicado no frete (+ acréscimo / – decréscimo) */
+  freteAjusteValor?: number;
+  /** V23 — true quando houve ajuste manual de frete */
+  freteAjusteAplicado?: boolean;
   /** V21 — acréscimo por cliente isento de Inscrição Estadual */
   acrescimoIsentoIEValor?: number;
   /** V21 — percentual do acréscimo de isento de IE aplicado (0 quando não aplicado) */
@@ -312,6 +320,10 @@ export function calcularPedido(args: {
   aplicarAcrescimoIsentoIE?: boolean;
   /** V21 — percentual do acréscimo (default 15%) */
   acrescimoIsentoIEPercent?: number;
+  /** V23 — ajuste manual do frete na negociação: modo do ajuste */
+  freteAjusteModo?: "percent" | "valor";
+  /** V23 — quantidade do ajuste (positiva = acréscimo, negativa = decréscimo) */
+  freteAjusteQtd?: number;
 }): CalculoPedido {
   const {
     bruto,
@@ -325,6 +337,8 @@ export function calcularPedido(args: {
     aplicarDescontos = true,
     aplicarAcrescimoIsentoIE = false,
     acrescimoIsentoIEPercent = ACRESCIMO_ISENTO_IE_PERCENT,
+    freteAjusteModo = "percent",
+    freteAjusteQtd = 0,
   } = args;
   const usarCelebra = args.aplicarDescontoCelebra ?? aplicarDescontos;
   const usarNegociacao = args.aplicarDescontoNegociacao ?? aplicarDescontos;
@@ -434,7 +448,18 @@ export function calcularPedido(args: {
     freteEfetivo === "FOB" ? Math.round(subtotalAposDescontos * (ufPercent / 100) * 100) / 100 : 0;
   const isentoPorCif = freteEfetivo === "CIF";
   const freteIsento = freteGratisOverride || isentoPorCif;
-  const freteValor = freteIsento ? 0 : freteBase;
+  const freteAntesAjuste = freteIsento ? 0 : freteBase;
+
+  // 5b. FRETE — V23: ajuste manual (acréscimo/decréscimo) em % ou R$
+  const freteAjusteAplicado = !!freteAjusteQtd;
+  const freteAjusteValor = freteAjusteAplicado
+    ? Math.round(
+        (freteAjusteModo === "percent"
+          ? freteAntesAjuste * (freteAjusteQtd / 100)
+          : freteAjusteQtd) * 100,
+      ) / 100
+    : 0;
+  const freteValor = Math.max(0, Math.round((freteAntesAjuste + freteAjusteValor) * 100) / 100);
 
   // 6. ACRÉSCIMO ISENTO DE INSCRIÇÃO ESTADUAL — V21
   const acrescimoPct = aplicarAcrescimoIsentoIE ? acrescimoIsentoIEPercent : 0;
@@ -467,6 +492,10 @@ export function calcularPedido(args: {
     freteUf: uf ? uf.toUpperCase() : undefined,
     freteOrigem,
     freteUsouFallback: freteEfetivo === "FOB" ? freteUsouFallback : false,
+    freteAjusteModo,
+    freteAjustePercent: freteAjusteModo === "percent" ? freteAjusteQtd : undefined,
+    freteAjusteValor,
+    freteAjusteAplicado,
     acrescimoIsentoIEValor,
     acrescimoIsentoIEPercent: acrescimoPct,
     acrescimoIsentoIEAplicado: aplicarAcrescimoIsentoIE,
