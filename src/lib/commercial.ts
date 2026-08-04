@@ -320,6 +320,10 @@ export function calcularPedido(args: {
   aplicarAcrescimoIsentoIE?: boolean;
   /** V21 — percentual do acréscimo (default 15%) */
   acrescimoIsentoIEPercent?: number;
+  /** V23 — ajuste manual do frete na negociação: modo do ajuste */
+  freteAjusteModo?: "percent" | "valor";
+  /** V23 — quantidade do ajuste (positiva = acréscimo, negativa = decréscimo) */
+  freteAjusteQtd?: number;
 }): CalculoPedido {
   const {
     bruto,
@@ -333,6 +337,8 @@ export function calcularPedido(args: {
     aplicarDescontos = true,
     aplicarAcrescimoIsentoIE = false,
     acrescimoIsentoIEPercent = ACRESCIMO_ISENTO_IE_PERCENT,
+    freteAjusteModo = "percent",
+    freteAjusteQtd = 0,
   } = args;
   const usarCelebra = args.aplicarDescontoCelebra ?? aplicarDescontos;
   const usarNegociacao = args.aplicarDescontoNegociacao ?? aplicarDescontos;
