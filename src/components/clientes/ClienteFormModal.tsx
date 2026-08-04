@@ -162,6 +162,12 @@ export function ClienteFormModal({
       cliente.contatoNome.trim().length > 0 &&
       cliente.contatoTelefone.trim().length > 0;
     if (!base) return false;
+    // Inscrição Estadual é obrigatória: número OU isento (impacta o preço final)
+    if (!cliente.isInternacional) {
+      const ieOk =
+        (cliente.isentoIE ?? false) || (cliente.inscricaoEstadual ?? "").trim().length > 0;
+      if (!ieOk) return false;
+    }
     if (cliente.isInternacional) {
       return Boolean(cliente.pais && cliente.documentoNumero?.trim());
     }
@@ -170,9 +176,18 @@ export function ClienteFormModal({
 
   const handleSave = async () => {
     if (!podeSalvar) {
-      toast.error("Preencha Razão Social, Nome do contato e Telefone.");
+      const ieFaltando =
+        !cliente.isInternacional &&
+        !(cliente.isentoIE ?? false) &&
+        (cliente.inscricaoEstadual ?? "").trim().length === 0;
+      toast.error(
+        ieFaltando
+          ? "Informe a Inscrição Estadual ou marque como Isento — isso influencia a composição do preço final."
+          : "Preencha Razão Social, Nome do contato e Telefone.",
+      );
       return;
     }
+
     if (salvando) return;
     if (!user?.id) {
       toast.error("Sua sessão ainda está carregando. Atualize a página antes de continuar.");
@@ -376,7 +391,7 @@ export function ClienteFormModal({
               />
             </Field>
             <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
-              <Field label="Inscrição Estadual">
+              <Field label="Inscrição Estadual *">
                 <input
                   className="input"
                   value={cliente.inscricaoEstadual ?? ""}
@@ -393,6 +408,11 @@ export function ClienteFormModal({
                 Isento
               </label>
             </div>
+            <p className="text-[11px] text-text-muted">
+              Informe o número da Inscrição Estadual ou marque <strong>Isento</strong>. Clientes
+              isentos recebem acréscimo de 15% na composição do preço final do pedido.
+            </p>
+
           </TabsContent>
 
           {/* ENDERECO */}

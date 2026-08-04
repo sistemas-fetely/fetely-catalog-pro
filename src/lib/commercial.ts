@@ -271,7 +271,17 @@ export interface CalculoPedido {
   freteOrigem?: FreteOrigem;
   /** V20 — true quando a UF não estava cadastrada e usou o fallback padrão */
   freteUsouFallback?: boolean;
+  /** V21 — acréscimo por cliente isento de Inscrição Estadual */
+  acrescimoIsentoIEValor?: number;
+  /** V21 — percentual do acréscimo de isento de IE aplicado (0 quando não aplicado) */
+  acrescimoIsentoIEPercent?: number;
+  /** V21 — true quando o acréscimo de isento de IE foi aplicado */
+  acrescimoIsentoIEAplicado?: boolean;
 }
+
+/** V21 — percentual de acréscimo aplicado quando o cliente é isento de Inscrição Estadual */
+export const ACRESCIMO_ISENTO_IE_PERCENT = 15;
+
 
 /** Percentual padrão de frete sobre o subtotal após descontos. Mantido para
  * compatibilidade com cálculos antigos; novos pedidos usam a tabela por UF. */
@@ -298,6 +308,10 @@ export function calcularPedido(args: {
   aplicarDescontoCelebra?: boolean;
   aplicarDescontoNegociacao?: boolean;
   aplicarBonusPix?: boolean;
+  /** V21 — aplica acréscimo por cliente isento de Inscrição Estadual */
+  aplicarAcrescimoIsentoIE?: boolean;
+  /** V21 — percentual do acréscimo (default 15%) */
+  acrescimoIsentoIEPercent?: number;
 }): CalculoPedido {
   const {
     bruto,
@@ -309,10 +323,13 @@ export function calcularPedido(args: {
     ignorarPedidoMinimo = false,
     uf = null,
     aplicarDescontos = true,
+    aplicarAcrescimoIsentoIE = false,
+    acrescimoIsentoIEPercent = ACRESCIMO_ISENTO_IE_PERCENT,
   } = args;
   const usarCelebra = args.aplicarDescontoCelebra ?? aplicarDescontos;
   const usarNegociacao = args.aplicarDescontoNegociacao ?? aplicarDescontos;
   const usarPix = args.aplicarBonusPix ?? aplicarDescontos;
+
 
 
 
@@ -419,8 +436,14 @@ export function calcularPedido(args: {
   const freteIsento = freteGratisOverride || isentoPorCif;
   const freteValor = freteIsento ? 0 : freteBase;
 
+  // 6. ACRÉSCIMO ISENTO DE INSCRIÇÃO ESTADUAL — V21
+  const acrescimoPct = aplicarAcrescimoIsentoIE ? acrescimoIsentoIEPercent : 0;
+  const acrescimoIsentoIEValor = aplicarAcrescimoIsentoIE
+    ? Math.round(subtotalAposDescontos * (acrescimoPct / 100) * 100) / 100
+    : 0;
+
   const subtotalComBonus = subtotalAposDescontos - bonusPixValor;
-  const total = subtotalComBonus + freteValor;
+  const total = subtotalComBonus + freteValor + acrescimoIsentoIEValor;
   return {
     bruto,
     faixa,
@@ -429,7 +452,7 @@ export function calcularPedido(args: {
     subtotalAposDescontos,
     bonusPixValor,
     total,
-    totalSemPix: subtotalAposDescontos + freteValor,
+    totalSemPix: subtotalAposDescontos + freteValor + acrescimoIsentoIEValor,
     aplicouPix,
     premissasAplicadas: !!premissas,
     descontoCelebraPercentEfetivo: descontoCelebraPct,
@@ -444,8 +467,12 @@ export function calcularPedido(args: {
     freteUf: uf ? uf.toUpperCase() : undefined,
     freteOrigem,
     freteUsouFallback: freteEfetivo === "FOB" ? freteUsouFallback : false,
+    acrescimoIsentoIEValor,
+    acrescimoIsentoIEPercent: acrescimoPct,
+    acrescimoIsentoIEAplicado: aplicarAcrescimoIsentoIE,
   };
 }
+
 
 // SHA-256 hash (browser only)
 export async function hashSenha(senha: string): Promise<string> {
