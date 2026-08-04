@@ -135,7 +135,17 @@ function variantesDaColecao(products: Product[], colecao: string): Product[] {
   const list = products.filter((p) => p.colecao === colecao && p.ativo !== false);
   const allTalheres = list.length > 0 && list.every((p) => p.grupo === "Talheres");
   const allNumerica = list.length > 0 && list.every((p) => p.numeroVela != null);
-  if (allTalheres || allNumerica) {
+  if (allTalheres) {
+    // Talheres: uma entrada por cor + tipo de peça (faca, garfo, colher…)
+    const seen = new Set<string>();
+    return list.filter((p) => {
+      const key = `${p.corNome}|${p.tipo ?? ""}|${p.tamanhoRef ?? ""}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+  if (allNumerica) {
     const seen = new Set<string>();
     return list.filter((p) => {
       if (seen.has(p.corNome)) return false;
@@ -143,6 +153,7 @@ function variantesDaColecao(products: Product[], colecao: string): Product[] {
       return true;
     });
   }
+
   const seen = new Set<string>();
   return list.filter((p) => {
     if (seen.has(p.sku)) return false;

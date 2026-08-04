@@ -81,13 +81,16 @@ function variantesDaColecao(products: Product[], colecao: string): Product[] {
   const list = products.filter((p) => p.colecao === colecao && p.ativo !== false);
   const allTalheres = list.length > 0 && list.every((p) => p.grupo === "Talheres");
   if (allTalheres) {
+    // Talheres: uma linha por cor + tipo de peça (faca, garfo, colher…)
     const seen = new Set<string>();
     return list.filter((p) => {
-      if (seen.has(p.corNome)) return false;
-      seen.add(p.corNome);
+      const key = `${p.corNome}|${p.tipo ?? ""}|${p.tamanhoRef ?? ""}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
       return true;
     });
   }
+
   // Velas numéricas e demais: uma linha por SKU (cor + número + tamanho)
   const seen = new Set<string>();
   return list.filter((p) => {
