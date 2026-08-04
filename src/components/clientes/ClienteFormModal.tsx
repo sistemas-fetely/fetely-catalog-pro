@@ -408,6 +408,11 @@ export function ClienteFormModal({
                 Isento
               </label>
             </div>
+            <p className="text-[11px] text-text-muted">
+              Informe o número da Inscrição Estadual ou marque <strong>Isento</strong>. Clientes
+              isentos recebem acréscimo de 15% na composição do preço final do pedido.
+            </p>
+
           </TabsContent>
 
           {/* ENDERECO */}
