@@ -26,6 +26,8 @@ interface SessionState {
   usarReservada: boolean;
   condicaoSelecionadaId: number | null;
   freteGratis: boolean;
+  freteAjusteModo: "percent" | "valor";
+  freteAjusteQtd: number;
   liberarTodasCondicoes: boolean;
 }
 
@@ -40,6 +42,8 @@ interface NegotiationStore extends PersistState, SessionState {
   setUsarReservada: (v: boolean) => void;
   setCondicaoSelecionadaId: (id: number | null) => void;
   setFreteGratis: (v: boolean) => void;
+  setFreteAjusteModo: (v: "percent" | "valor") => void;
+  setFreteAjusteQtd: (v: number) => void;
   setLiberarTodasCondicoes: (v: boolean) => void;
   resetSession: () => void;
 }
@@ -53,6 +57,8 @@ const defaultSession: SessionState = {
   usarReservada: false,
   condicaoSelecionadaId: null,
   freteGratis: false,
+  freteAjusteModo: "percent",
+  freteAjusteQtd: 0,
   liberarTodasCondicoes: true,
 };
 
@@ -97,6 +103,8 @@ export const useNegotiation = create<NegotiationStore>()(
           observacaoInterna: "",
           usarReservada: false,
           freteGratis: false,
+          freteAjusteModo: "percent",
+          freteAjusteQtd: 0,
           liberarTodasCondicoes: true,
         }),
 
@@ -117,6 +125,8 @@ export const useNegotiation = create<NegotiationStore>()(
       setUsarReservada: (v) => set({ usarReservada: v }),
       setCondicaoSelecionadaId: (id) => set({ condicaoSelecionadaId: id }),
       setFreteGratis: (v) => set({ freteGratis: v }),
+      setFreteAjusteModo: (v) => set({ freteAjusteModo: v }),
+      setFreteAjusteQtd: (v) => set({ freteAjusteQtd: Number.isFinite(v) ? v : 0 }),
       setLiberarTodasCondicoes: (v) => set({ liberarTodasCondicoes: v }),
       resetSession: () => set({ ...defaultSession, tentativas: 0 }),
     }),
