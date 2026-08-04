@@ -339,7 +339,7 @@ export function CartCommercialPanel({
 
 
             {/* Frete */}
-            {calculo.freteBase != null && calculo.freteBase > 0 && (
+            {((calculo.freteBase ?? 0) > 0 || (calculo.freteValor ?? 0) > 0) && (
               <div className="rounded-md border border-border bg-surface-2/60 px-3 py-2 text-xs space-y-1">
                 {calculo.freteGratisNegociado ? (
                   <div className="flex items-baseline justify-between">
