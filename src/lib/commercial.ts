@@ -308,6 +308,10 @@ export function calcularPedido(args: {
   aplicarDescontoCelebra?: boolean;
   aplicarDescontoNegociacao?: boolean;
   aplicarBonusPix?: boolean;
+  /** V21 — aplica acréscimo por cliente isento de Inscrição Estadual */
+  aplicarAcrescimoIsentoIE?: boolean;
+  /** V21 — percentual do acréscimo (default 15%) */
+  acrescimoIsentoIEPercent?: number;
 }): CalculoPedido {
   const {
     bruto,
@@ -319,10 +323,13 @@ export function calcularPedido(args: {
     ignorarPedidoMinimo = false,
     uf = null,
     aplicarDescontos = true,
+    aplicarAcrescimoIsentoIE = false,
+    acrescimoIsentoIEPercent = ACRESCIMO_ISENTO_IE_PERCENT,
   } = args;
   const usarCelebra = args.aplicarDescontoCelebra ?? aplicarDescontos;
   const usarNegociacao = args.aplicarDescontoNegociacao ?? aplicarDescontos;
   const usarPix = args.aplicarBonusPix ?? aplicarDescontos;
+
 
 
 
