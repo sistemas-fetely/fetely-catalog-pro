@@ -162,6 +162,12 @@ export function ClienteFormModal({
       cliente.contatoNome.trim().length > 0 &&
       cliente.contatoTelefone.trim().length > 0;
     if (!base) return false;
+    // Inscrição Estadual é obrigatória: número OU isento (impacta o preço final)
+    if (!cliente.isInternacional) {
+      const ieOk =
+        (cliente.isentoIE ?? false) || (cliente.inscricaoEstadual ?? "").trim().length > 0;
+      if (!ieOk) return false;
+    }
     if (cliente.isInternacional) {
       return Boolean(cliente.pais && cliente.documentoNumero?.trim());
     }
@@ -170,9 +176,18 @@ export function ClienteFormModal({
 
   const handleSave = async () => {
     if (!podeSalvar) {
-      toast.error("Preencha Razão Social, Nome do contato e Telefone.");
+      const ieFaltando =
+        !cliente.isInternacional &&
+        !(cliente.isentoIE ?? false) &&
+        (cliente.inscricaoEstadual ?? "").trim().length === 0;
+      toast.error(
+        ieFaltando
+          ? "Informe a Inscrição Estadual ou marque como Isento — isso influencia a composição do preço final."
+          : "Preencha Razão Social, Nome do contato e Telefone.",
+      );
       return;
     }
+
     if (salvando) return;
     if (!user?.id) {
       toast.error("Sua sessão ainda está carregando. Atualize a página antes de continuar.");
