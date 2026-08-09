@@ -38,7 +38,7 @@ serve(async (req) => {
 
     const { data: produtos, error } = await supabase
       .from("products")
-      .select("sku, ean, nome_comercial, nome_completo, marca, linha, grupo, tipo, colecao, cor_nome, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, preco_varejo, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm")
+      .select("sku, ean, nome_comercial, nome_completo, marca, linha, grupo, tipo, colecao, cor_nome, cor, estampa, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, preco_varejo, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm")
       .eq("ativo", true)
       .order("sku");
 
@@ -61,7 +61,13 @@ serve(async (req) => {
         grupo:                p.grupo               ?? null,
         tipo:                 p.tipo                ?? null,
         colecao:              p.colecao             ?? null,
+        // cor e estampa sao os atributos DISCRIMINANTES: quando dois SKUs tem o mesmo
+        // nome comercial, sao eles que separam (Petale = 6 cores; Fresh-Frutta e
+        // Solar-Tropical = estampa). O SNCF usa esses campos em fn_gerar_nome_operacional()
+        // para montar o nome usado na separacao e na NF. Nao remover.
         cor_nome:             p.cor_nome            ?? null,
+        cor:                  p.cor                 ?? null,
+        estampa:              p.estampa             ?? null,
         tamanho_numero:       p.tamanho_numero      ?? null,
         descricao_produto:    p.descricao_produto   ?? null,
         tipo_embalagem:       p.tipo_embalagem      ?? null,
