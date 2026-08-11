@@ -41,7 +41,18 @@ function buildTree(products: Product[], filterMode: "atacado" | "varejo" = "atac
       if (!p.precoVarejo || p.precoVarejo <= 0) continue;
     }
     if (!tree[p.categoria]) tree[p.categoria] = {};
+
+    // Categoria plana: só coleções, sem nível de grupo/produto
+    if (FLAT_COLECAO_CATEGORIES.has(p.categoria)) {
+      if (!tree[p.categoria][COLECOES_KEY]) tree[p.categoria][COLECOES_KEY] = [];
+      if (!tree[p.categoria][COLECOES_KEY].includes(p.colecao)) {
+        tree[p.categoria][COLECOES_KEY].push(p.colecao);
+      }
+      continue;
+    }
+
     const colecaoFirst = COLECAO_FIRST_CATEGORIES.has(p.categoria);
+
 
     if (colecaoFirst && SUBDIVIDED_GROUPS.has(p.grupo)) {
       const key = `${GRP_PREFIX}${p.grupo}`;
