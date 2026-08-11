@@ -303,6 +303,37 @@ export function CatalogSidebar({
                   const gkey = `${categoria}::${lvl1}`;
                   const isOpen = expandedGroups[gkey] ?? true;
 
+                  // Categoria plana: lista as coleções direto, sem subdivisão
+                  if (FLAT_COLECAO_CATEGORIES.has(categoria)) {
+                    const filtradas = lvl2List.filter(matchesFiltro);
+                    if (filtradas.length === 0) return null;
+                    return (
+                      <ul key={gkey} className="px-2 pb-1">
+                        {filtradas.map((col) => {
+                          const active = activeColecao === col;
+                          const cnt = countProdutos(products, filterMode, categoria, col);
+                          return (
+                            <li key={col}>
+                              <button
+                                onClick={() => handleSelectColecao(col, undefined, categoria)}
+                                className={`flex w-full items-center gap-2 text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
+                                  active
+                                    ? "border-gold bg-gold/10 text-gold"
+                                    : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2/60"
+                                }`}
+                              >
+                                <span className="flex-1 truncate">{col}</span>
+                                <span className="text-[10px] text-text-muted tabular-nums">{cnt}</span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    );
+                  }
+
+
+
                   // Grupo virtual "Coleções" (categorias coleção-first)
                   if (colecaoFirst && lvl1 === COLECOES_KEY) {
                     const filtradas = lvl2List.filter(matchesFiltro);
