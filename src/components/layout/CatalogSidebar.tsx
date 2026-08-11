@@ -22,11 +22,14 @@ type Tree = Record<string, Record<string, string[]>>;
 
 // Categorias onde a hierarquia é invertida: Coleção → Grupo (ex.: Celebrar à Mesa)
 const COLECAO_FIRST_CATEGORIES = new Set(["Celebrar à Mesa", "Acessórios de Mesa"]);
+// Categorias listadas só por coleção, sem subdivisão por grupo/produto
+const FLAT_COLECAO_CATEGORIES = new Set(["Imaginar & Celebrar"]);
 // Grupos que devem aparecer como subdivisão expansível
 const SUBDIVIDED_GROUPS = new Set(["Jogo Americano", "Copos e Taças", "Talheres"]);
 const GRP_PREFIX = "GRP::";
 // Rótulo do grupo virtual "Coleções" (agrupa a lista longa de coleções soltas)
 const COLECOES_KEY = "__COLECOES__";
+
 
 function buildTree(products: Product[], filterMode: "atacado" | "varejo" = "atacado"): Tree {
   const tree: Tree = {};
