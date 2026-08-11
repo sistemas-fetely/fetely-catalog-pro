@@ -22,11 +22,14 @@ type Tree = Record<string, Record<string, string[]>>;
 
 // Categorias onde a hierarquia é invertida: Coleção → Grupo (ex.: Celebrar à Mesa)
 const COLECAO_FIRST_CATEGORIES = new Set(["Celebrar à Mesa", "Acessórios de Mesa"]);
+// Categorias listadas só por coleção, sem subdivisão por grupo/produto
+const FLAT_COLECAO_CATEGORIES = new Set(["Imaginar & Celebrar"]);
 // Grupos que devem aparecer como subdivisão expansível
 const SUBDIVIDED_GROUPS = new Set(["Jogo Americano", "Copos e Taças", "Talheres"]);
 const GRP_PREFIX = "GRP::";
 // Rótulo do grupo virtual "Coleções" (agrupa a lista longa de coleções soltas)
 const COLECOES_KEY = "__COLECOES__";
+
 
 function buildTree(products: Product[], filterMode: "atacado" | "varejo" = "atacado"): Tree {
   const tree: Tree = {};
@@ -38,7 +41,18 @@ function buildTree(products: Product[], filterMode: "atacado" | "varejo" = "atac
       if (!p.precoVarejo || p.precoVarejo <= 0) continue;
     }
     if (!tree[p.categoria]) tree[p.categoria] = {};
+
+    // Categoria plana: só coleções, sem nível de grupo/produto
+    if (FLAT_COLECAO_CATEGORIES.has(p.categoria)) {
+      if (!tree[p.categoria][COLECOES_KEY]) tree[p.categoria][COLECOES_KEY] = [];
+      if (!tree[p.categoria][COLECOES_KEY].includes(p.colecao)) {
+        tree[p.categoria][COLECOES_KEY].push(p.colecao);
+      }
+      continue;
+    }
+
     const colecaoFirst = COLECAO_FIRST_CATEGORIES.has(p.categoria);
+
 
     if (colecaoFirst && SUBDIVIDED_GROUPS.has(p.grupo)) {
       const key = `${GRP_PREFIX}${p.grupo}`;
@@ -288,6 +302,37 @@ export function CatalogSidebar({
                   const colecaoFirst = isColecaoFirst(categoria);
                   const gkey = `${categoria}::${lvl1}`;
                   const isOpen = expandedGroups[gkey] ?? true;
+
+                  // Categoria plana: lista as coleções direto, sem subdivisão
+                  if (FLAT_COLECAO_CATEGORIES.has(categoria)) {
+                    const filtradas = lvl2List.filter(matchesFiltro);
+                    if (filtradas.length === 0) return null;
+                    return (
+                      <ul key={gkey} className="px-2 pb-1">
+                        {filtradas.map((col) => {
+                          const active = activeColecao === col;
+                          const cnt = countProdutos(products, filterMode, categoria, col);
+                          return (
+                            <li key={col}>
+                              <button
+                                onClick={() => handleSelectColecao(col, undefined, categoria)}
+                                className={`flex w-full items-center gap-2 text-left text-xs py-1.5 pl-3 pr-2 rounded transition border-l-2 ${
+                                  active
+                                    ? "border-gold bg-gold/10 text-gold"
+                                    : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-2/60"
+                                }`}
+                              >
+                                <span className="flex-1 truncate">{col}</span>
+                                <span className="text-[10px] text-text-muted tabular-nums">{cnt}</span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    );
+                  }
+
+
 
                   // Grupo virtual "Coleções" (categorias coleção-first)
                   if (colecaoFirst && lvl1 === COLECOES_KEY) {
