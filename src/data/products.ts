@@ -81,7 +81,10 @@ export const COLLECTION_ACCENT: Record<string, string> = {
   "Floréale Glass": "oklch(0.85 0.04 200)",
   "Lineare Glass": "oklch(0.82 0.02 80)",
   Lavoire: "oklch(0.78 0.11 85)",
+  "Esprit d’Halloween": "oklch(0.62 0.16 55)",
+  Fairytale: "oklch(0.80 0.10 330)",
 };
+
 
 export const CATEGORIES = Array.from(new Set(PRODUCTS.map((p) => p.categoria)));
 
