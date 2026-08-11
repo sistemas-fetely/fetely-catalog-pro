@@ -451,7 +451,9 @@ function EmptyStatePublic({ vendedor }: { vendedor: string }) {
     const CATS = [
       { nome: "Celebrar à Mesa", descricao: "Coleções completas para mesa posta: jogos americanos, copos, taças e acessórios." },
       { nome: "Luz e Momento", descricao: "Velas decorativas, numéricas e aromas para celebrações inesquecíveis." },
+      { nome: "Imaginar & Celebrar", descricao: "Celebrações infantis: coleções temáticas completas para festas cheias de imaginação." },
     ];
+
     return (
       <div className="space-y-8">
         <header className="text-center max-w-2xl mx-auto pt-4 sm:pt-8">
