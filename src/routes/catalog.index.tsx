@@ -290,7 +290,13 @@ function EmptyState() {
         descricao:
           "Velas decorativas, numéricas e aromas para celebrações inesquecíveis.",
       },
+      {
+        nome: "Imaginar & Celebrar",
+        descricao:
+          "Celebrações infantis: coleções temáticas completas para festas cheias de imaginação.",
+      },
     ];
+
 
     return (
       <div className="space-y-8">
