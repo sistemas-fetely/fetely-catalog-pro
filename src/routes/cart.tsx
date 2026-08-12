@@ -198,7 +198,10 @@ function CartPage() {
   // Resolve cliente from clienteStore for snapshot (lazy read of localStorage)
   const resolveClienteSnapshot = useCallback((): ClienteSnapshot | null => {
     if (meta.clienteSnapshot) return meta.clienteSnapshot;
-    if (!meta.clienteId || typeof window === "undefined") return null;
+    if (!meta.clienteId) return null;
+    const fromStore = clientesAll.find((x) => x.id === meta.clienteId);
+    if (fromStore) return buildClienteSnapshot(fromStore);
+    if (typeof window === "undefined") return null;
     try {
       const raw = window.localStorage.getItem("fetely_clientes_v1");
       if (!raw) return null;
@@ -209,7 +212,32 @@ function CartPage() {
     } catch {
       return null;
     }
-  }, [meta.clienteId, meta.clienteSnapshot]);
+  }, [meta.clienteId, meta.clienteSnapshot, clientesAll]);
+
+  /**
+   * Igual ao resolveClienteSnapshot, mas com fallback no banco quando o cliente
+   * não está no cache local (cache limpo, outro dispositivo, cadastro feito por
+   * outro usuário). Evita abortar o salvamento em silêncio.
+   */
+  const ensureClienteSnapshot = useCallback(async (): Promise<ClienteSnapshot | null> => {
+    const local = resolveClienteSnapshot();
+    if (local) return local;
+    if (!meta.clienteId) return null;
+    try {
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("*")
+        .eq("id", meta.clienteId)
+        .maybeSingle();
+      if (error || !data) return null;
+      const snap = buildClienteSnapshot(rowToCliente(data as Record<string, unknown>));
+      setMeta({ clienteSnapshot: snap });
+      return snap;
+    } catch {
+      return null;
+    }
+  }, [meta.clienteId, resolveClienteSnapshot, setMeta]);
+
 
   // V16 — Auto-popula meta com o cliente do portal logado.
   // Se o cliente ainda não está no store local (cliente portal não hidrata
@@ -270,8 +298,14 @@ function CartPage() {
   const executeConfirm = async () => {
 
     if (salvandoPedido) return;
-    const snapshot = resolveClienteSnapshot();
-    if (!snapshot) return alert("Selecione um cliente cadastrado.");
+    const snapshot = await ensureClienteSnapshot();
+    if (!snapshot) {
+      toast.error("Selecione um cliente cadastrado", {
+        description: "Não foi possível carregar os dados do cliente. Reabra a seleção de cliente e tente novamente.",
+        duration: 7000,
+      });
+      return;
+    }
 
     if (!commercial?.podeFinalizar || !commercial.calculo.faixa || !commercial.condicao) {
       return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
@@ -415,8 +449,14 @@ function CartPage() {
 
   const handleSalvarCotacao = async () => {
     if (salvandoPedido) return;
-    const snapshot = resolveClienteSnapshot();
-    if (!snapshot) return alert("Selecione um cliente cadastrado.");
+    const snapshot = await ensureClienteSnapshot();
+    if (!snapshot) {
+      toast.error("Selecione um cliente cadastrado", {
+        description: "Não foi possível carregar os dados do cliente. Reabra a seleção de cliente e tente novamente.",
+        duration: 7000,
+      });
+      return;
+    }
     if (!commercial?.calculo.faixa || !commercial.condicao) {
       return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
     }
@@ -534,8 +574,14 @@ function CartPage() {
   // Salvar tudo como provisão (carrinho 100% previsão)
   const handleSaveOnlyProvisao = async () => {
     if (salvandoPedido) return;
-    const snapshot = resolveClienteSnapshot();
-    if (!snapshot) return alert("Selecione um cliente cadastrado.");
+    const snapshot = await ensureClienteSnapshot();
+    if (!snapshot) {
+      toast.error("Selecione um cliente cadastrado", {
+        description: "Não foi possível carregar os dados do cliente. Reabra a seleção de cliente e tente novamente.",
+        duration: 7000,
+      });
+      return;
+    }
     setSalvandoPedido(true);
     try {
       const prov = await createProvisao({

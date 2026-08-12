@@ -523,7 +523,7 @@ function AdminUsersPage() {
                       onClick={() =>
                         navigate({
                           to: "/admin/permissoes",
-                          search: { userId: u.id },
+                          search: { userId: u.id, grupoId: undefined },
                         })
                       }
                       className="inline-flex items-center gap-1 rounded-md border border-gold/40 bg-gold/10 px-2 py-1 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/20 transition whitespace-nowrap"
@@ -620,7 +620,7 @@ function AdminUsersPage() {
                   onClick={() =>
                     navigate({
                       to: "/admin/permissoes",
-                      search: { userId: u.id },
+                      search: { userId: u.id, grupoId: undefined },
                     })
                   }
                   className="text-text-secondary hover:text-gold p-1"
