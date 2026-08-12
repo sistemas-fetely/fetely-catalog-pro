@@ -1,3 +1,4 @@
+import { safeLocalStorage } from "@/lib/safeStorage";
 export type SegmentoLead =
   | "boutique_decoracao"
   | "papelaria_atelie"
@@ -50,7 +51,7 @@ export function getLeads(): Lead[] {
 export function saveLead(lead: Lead): void {
   const list = getLeads();
   list.push(lead);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 }
 
 export function maskWhatsApp(value: string): string {

@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { safeLocalStorage } from "@/lib/safeStorage";
 
 const LS_OVERRIDE = "fetely_feature_flags";
 
@@ -28,7 +29,7 @@ function readOverride(): Partial<FeatureFlags> {
 export function setFeatureFlagOverride(patch: Partial<FeatureFlags>): void {
   if (typeof window === "undefined") return;
   const current = { ...readOverride(), ...patch };
-  localStorage.setItem(LS_OVERRIDE, JSON.stringify(current));
+  safeLocalStorage.setItem(LS_OVERRIDE, JSON.stringify(current));
 }
 
 export function clearFeatureFlagOverride(): void {
