@@ -437,6 +437,10 @@ Deno.serve(async (req) => {
       frete_tipo:             commercial?.frete              ?? null,
       desconto_celebra_valor: commercial?.descontoCelebraValor ?? 0,
       bonus_pix_valor:        commercial?.bonusPixValor        ?? 0,
+      acrescimo_ie_valor:     commercial?.acrescimoIsentoIEValor   ?? 0,
+      acrescimo_ie_pct:       commercial?.acrescimoIsentoIEPercent ?? null,
+      acrescimo_ie_aplicado:  commercial?.acrescimoIsentoIEAplicado === true,
+
     };
 
     const enviarPayload = (payload: Record<string, unknown>) => fetch(SNCF_URL, {
