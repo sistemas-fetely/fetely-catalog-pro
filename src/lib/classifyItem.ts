@@ -12,6 +12,10 @@ export function classificarItem(statusEstoque: string): "firme" | "provisao" {
  * usa o `statusEstoque` textual (comportamento antigo: em estoque = ilimitado).
  */
 export function disponivelParaVenda(product: Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega">): number {
+  const status = (product.statusEstoque || "").toLowerCase().trim();
+  // Uma previsão explícita prevalece sobre flags antigas/inconsistentes do
+  // catálogo. Isso evita transformar itens ainda futuros em pedido firme.
+  if (status.includes("prev")) return 0;
   if (product.prontaEntrega) return Number.POSITIVE_INFINITY;
   const q = Number(product.estoqueDisponivel ?? 0);
   if (q > 0) return q;
