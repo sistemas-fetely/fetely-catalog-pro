@@ -3,17 +3,8 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type { Product } from "@/types";
 import { PRODUCTS as DEFAULT_PRODUCTS, NUMERIC_CANDLE_COLLECTIONS } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
+import { createSafeStorage } from "@/lib/safeStorage";
 
-const noopStorage: Storage = {
-  length: 0,
-  clear: () => {},
-  getItem: () => null,
-  key: () => null,
-  removeItem: () => {},
-  setItem: () => {},
-};
-const safeStorage = (): Storage =>
-  typeof window !== "undefined" ? window.localStorage : noopStorage;
 
 export type AuditAcao =
   | "criado" | "editado" | "desativado" | "reativado" | "duplicado" | "importado";
@@ -404,7 +395,7 @@ export const useCatalog = create<CatalogState>()(
     }),
     {
       name: "fetely-catalog",
-      storage: createJSONStorage(safeStorage),
+      storage: createJSONStorage(createSafeStorage),
       version: 11,
       partialize: (state) => ({
         products: state.products,

@@ -10,17 +10,8 @@ import {
   type RegrasGerais,
 } from "@/lib/commercial";
 import { supabase } from "@/integrations/supabase/client";
+import { createSafeStorage } from "@/lib/safeStorage";
 
-const noopStorage: Storage = {
-  length: 0,
-  clear: () => {},
-  getItem: () => null,
-  key: () => null,
-  removeItem: () => {},
-  setItem: () => {},
-};
-const safeStorage = (): Storage =>
-  typeof window !== "undefined" ? window.localStorage : noopStorage;
 
 export type AuditEntidade = "faixa" | "condicao" | "regras_gerais";
 export type AuditAcao = "criado" | "editado" | "desativado" | "reativado" | "reordenado";
@@ -515,7 +506,7 @@ export const useCartilhas = create<CartilhasState>()(
     }),
     {
       name: "fetely-cartilhas",
-      storage: createJSONStorage(safeStorage),
+      storage: createJSONStorage(createSafeStorage),
       version: 2,
       partialize: (state) => ({
         faixas: state.faixas,

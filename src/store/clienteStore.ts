@@ -4,17 +4,8 @@ import type { Cliente } from "@/types/cliente";
 import { useAuth } from "@/store/authStore";
 import { useOrder } from "@/store/orderStore";
 import { supabase } from "@/integrations/supabase/client";
+import { createSafeStorage } from "@/lib/safeStorage";
 
-const noopStorage: Storage = {
-  length: 0,
-  clear: () => {},
-  getItem: () => null,
-  key: () => null,
-  removeItem: () => {},
-  setItem: () => {},
-};
-const safeStorage = (): Storage =>
-  typeof window !== "undefined" ? window.localStorage : noopStorage;
 
 interface ClienteState {
   clientes: Cliente[];
@@ -251,7 +242,7 @@ export const useClientes = create<ClienteState>()(
     }),
     {
       name: "fetely_clientes_v1",
-      storage: createJSONStorage(safeStorage),
+      storage: createJSONStorage(createSafeStorage),
       partialize: (state) => ({ clientes: state.clientes }) as Partial<ClienteState>,
     },
   ),

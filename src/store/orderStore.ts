@@ -12,54 +12,9 @@ import type {
 import { useAuth } from "@/store/authStore";
 import { useClientes } from "@/store/clienteStore";
 import { supabase } from "@/integrations/supabase/client";
+import { createSafeStorage } from "@/lib/safeStorage";
 
 
-const noopStorage: Storage = {
-  length: 0,
-  clear: () => {},
-  getItem: () => null,
-  key: () => null,
-  removeItem: () => {},
-  setItem: () => {},
-};
-const safeStorage = (): Storage => {
-  if (typeof window === "undefined") return noopStorage;
-  const ls = window.localStorage;
-  return {
-    get length() {
-      return ls.length;
-    },
-    clear: () => ls.clear(),
-    key: (i: number) => ls.key(i),
-    getItem: (k: string) => {
-      try {
-        return ls.getItem(k);
-      } catch {
-        return null;
-      }
-    },
-    removeItem: (k: string) => {
-      try {
-        ls.removeItem(k);
-      } catch {
-        /* noop */
-      }
-    },
-    setItem: (k: string, v: string) => {
-      try {
-        ls.setItem(k, v);
-      } catch (err) {
-        // Quota exceeded — drop oversized persisted entry and retry once
-        try {
-          ls.removeItem(k);
-          ls.setItem(k, v);
-        } catch {
-          console.warn("[orderStore] localStorage quota exceeded; skipping persist", err);
-        }
-      }
-    },
-  } as Storage;
-};
 
 interface OrderState {
   items: CartItem[];
@@ -999,7 +954,7 @@ export const useOrder = create<OrderState>()(
 
     {
       name: "fetely-order",
-      storage: createJSONStorage(safeStorage),
+      storage: createJSONStorage(createSafeStorage),
       partialize: (state) =>
         ({
           items: state.items,

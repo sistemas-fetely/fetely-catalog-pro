@@ -1,16 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { createSafeStorage } from "@/lib/safeStorage";
 
-const noopStorage: Storage = {
-  length: 0,
-  clear: () => {},
-  getItem: () => null,
-  key: () => null,
-  removeItem: () => {},
-  setItem: () => {},
-};
-const safeStorage = (): Storage =>
-  typeof window !== "undefined" ? window.localStorage : noopStorage;
 
 interface UIState {
   sidebarCollapsed: boolean;
@@ -48,7 +39,7 @@ export const useUI = create<UIState>()(
     }),
     {
       name: "fetely-ui",
-      storage: createJSONStorage(safeStorage),
+      storage: createJSONStorage(createSafeStorage),
       partialize: (s) => ({
         sidebarCollapsed: s.sidebarCollapsed,
         expandedGroups: s.expandedGroups,
