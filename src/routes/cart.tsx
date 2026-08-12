@@ -298,8 +298,14 @@ function CartPage() {
   const executeConfirm = async () => {
 
     if (salvandoPedido) return;
-    const snapshot = resolveClienteSnapshot();
-    if (!snapshot) return alert("Selecione um cliente cadastrado.");
+    const snapshot = await ensureClienteSnapshot();
+    if (!snapshot) {
+      toast.error("Selecione um cliente cadastrado", {
+        description: "Não foi possível carregar os dados do cliente. Reabra a seleção de cliente e tente novamente.",
+        duration: 7000,
+      });
+      return;
+    }
 
     if (!commercial?.podeFinalizar || !commercial.calculo.faixa || !commercial.condicao) {
       return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
@@ -443,8 +449,14 @@ function CartPage() {
 
   const handleSalvarCotacao = async () => {
     if (salvandoPedido) return;
-    const snapshot = resolveClienteSnapshot();
-    if (!snapshot) return alert("Selecione um cliente cadastrado.");
+    const snapshot = await ensureClienteSnapshot();
+    if (!snapshot) {
+      toast.error("Selecione um cliente cadastrado", {
+        description: "Não foi possível carregar os dados do cliente. Reabra a seleção de cliente e tente novamente.",
+        duration: 7000,
+      });
+      return;
+    }
     if (!commercial?.calculo.faixa || !commercial.condicao) {
       return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
     }
@@ -562,8 +574,14 @@ function CartPage() {
   // Salvar tudo como provisão (carrinho 100% previsão)
   const handleSaveOnlyProvisao = async () => {
     if (salvandoPedido) return;
-    const snapshot = resolveClienteSnapshot();
-    if (!snapshot) return alert("Selecione um cliente cadastrado.");
+    const snapshot = await ensureClienteSnapshot();
+    if (!snapshot) {
+      toast.error("Selecione um cliente cadastrado", {
+        description: "Não foi possível carregar os dados do cliente. Reabra a seleção de cliente e tente novamente.",
+        duration: 7000,
+      });
+      return;
+    }
     setSalvandoPedido(true);
     try {
       const prov = await createProvisao({
