@@ -198,7 +198,10 @@ function CartPage() {
   // Resolve cliente from clienteStore for snapshot (lazy read of localStorage)
   const resolveClienteSnapshot = useCallback((): ClienteSnapshot | null => {
     if (meta.clienteSnapshot) return meta.clienteSnapshot;
-    if (!meta.clienteId || typeof window === "undefined") return null;
+    if (!meta.clienteId) return null;
+    const fromStore = clientesAll.find((x) => x.id === meta.clienteId);
+    if (fromStore) return buildClienteSnapshot(fromStore);
+    if (typeof window === "undefined") return null;
     try {
       const raw = window.localStorage.getItem("fetely_clientes_v1");
       if (!raw) return null;
@@ -209,7 +212,32 @@ function CartPage() {
     } catch {
       return null;
     }
-  }, [meta.clienteId, meta.clienteSnapshot]);
+  }, [meta.clienteId, meta.clienteSnapshot, clientesAll]);
+
+  /**
+   * Igual ao resolveClienteSnapshot, mas com fallback no banco quando o cliente
+   * não está no cache local (cache limpo, outro dispositivo, cadastro feito por
+   * outro usuário). Evita abortar o salvamento em silêncio.
+   */
+  const ensureClienteSnapshot = useCallback(async (): Promise<ClienteSnapshot | null> => {
+    const local = resolveClienteSnapshot();
+    if (local) return local;
+    if (!meta.clienteId) return null;
+    try {
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("*")
+        .eq("id", meta.clienteId)
+        .maybeSingle();
+      if (error || !data) return null;
+      const snap = buildClienteSnapshot(rowToCliente(data as Record<string, unknown>));
+      setMeta({ clienteSnapshot: snap });
+      return snap;
+    } catch {
+      return null;
+    }
+  }, [meta.clienteId, resolveClienteSnapshot, setMeta]);
+
 
   // V16 — Auto-popula meta com o cliente do portal logado.
   // Se o cliente ainda não está no store local (cliente portal não hidrata
