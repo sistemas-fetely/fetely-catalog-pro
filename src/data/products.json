@@ -35,7 +35,7 @@
     "qtdKit": 5,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -74,7 +74,7 @@
     "qtdKit": 5,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -113,7 +113,7 @@
     "qtdKit": 5,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -152,7 +152,7 @@
     "qtdKit": 5,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -191,7 +191,7 @@
     "qtdKit": 5,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -1322,7 +1322,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -1362,7 +1362,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -1402,7 +1402,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -1442,7 +1442,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -1482,7 +1482,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -1522,7 +1522,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -1562,7 +1562,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -1602,7 +1602,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -1642,7 +1642,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -1682,7 +1682,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -1722,7 +1722,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -1762,7 +1762,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -1802,7 +1802,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -1842,7 +1842,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -1882,7 +1882,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -1922,7 +1922,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -1962,7 +1962,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -2002,7 +2002,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -2042,7 +2042,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -2082,7 +2082,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -2122,7 +2122,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -2162,7 +2162,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -2202,7 +2202,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -2242,7 +2242,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -2282,7 +2282,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -2322,7 +2322,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -2362,7 +2362,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -2402,7 +2402,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -2442,7 +2442,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -2482,7 +2482,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -2522,7 +2522,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -2562,7 +2562,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -2602,7 +2602,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -2642,7 +2642,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -2682,7 +2682,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -2722,7 +2722,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -2762,7 +2762,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -2802,7 +2802,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -2842,7 +2842,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -2882,7 +2882,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -2922,7 +2922,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -2962,7 +2962,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -3002,7 +3002,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -3042,7 +3042,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -3082,7 +3082,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -3122,7 +3122,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -3162,7 +3162,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -3202,7 +3202,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -3242,7 +3242,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -3282,7 +3282,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -3322,7 +3322,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -3362,7 +3362,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -3402,7 +3402,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -3442,7 +3442,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -3482,7 +3482,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -3522,7 +3522,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -3562,7 +3562,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -3602,7 +3602,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -3642,7 +3642,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -3682,7 +3682,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -3722,7 +3722,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -3762,7 +3762,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -3802,7 +3802,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -3842,7 +3842,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -3882,7 +3882,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -3922,7 +3922,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -3962,7 +3962,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -4002,7 +4002,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -4042,7 +4042,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -4082,7 +4082,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -4707,7 +4707,7 @@
     "qtdKit": 1,
     "precoVarejo": 13.9,
     "precoAtacado": 8.1765,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -4747,7 +4747,7 @@
     "qtdKit": 1,
     "precoVarejo": 13.9,
     "precoAtacado": 8.1765,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -4787,7 +4787,7 @@
     "qtdKit": 1,
     "precoVarejo": 13.9,
     "precoAtacado": 8.1765,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -4827,7 +4827,7 @@
     "qtdKit": 1,
     "precoVarejo": 13.9,
     "precoAtacado": 8.1765,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -4867,7 +4867,7 @@
     "qtdKit": 1,
     "precoVarejo": 13.9,
     "precoAtacado": 8.1765,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -4907,7 +4907,7 @@
     "qtdKit": 1,
     "precoVarejo": 13.9,
     "precoAtacado": 8.1765,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -4947,7 +4947,7 @@
     "qtdKit": 1,
     "precoVarejo": 13.9,
     "precoAtacado": 8.1765,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -4987,7 +4987,7 @@
     "qtdKit": 1,
     "precoVarejo": 13.9,
     "precoAtacado": 8.1765,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -5027,7 +5027,7 @@
     "qtdKit": 1,
     "precoVarejo": 13.9,
     "precoAtacado": 8.1765,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -5067,7 +5067,7 @@
     "qtdKit": 1,
     "precoVarejo": 13.9,
     "precoAtacado": 8.1765,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -5341,7 +5341,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -5381,7 +5381,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -5421,7 +5421,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -5461,7 +5461,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -5501,7 +5501,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -5541,7 +5541,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -5581,7 +5581,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -5621,7 +5621,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -5661,7 +5661,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -5701,7 +5701,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -5741,7 +5741,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -5781,7 +5781,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -5821,7 +5821,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -5861,7 +5861,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -5901,7 +5901,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -5941,7 +5941,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -5981,7 +5981,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -6021,7 +6021,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -6061,7 +6061,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -6101,7 +6101,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -6141,7 +6141,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -6181,7 +6181,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -6221,7 +6221,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -6261,7 +6261,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -6301,7 +6301,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -6341,7 +6341,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -6381,7 +6381,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -6421,7 +6421,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -6461,7 +6461,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -6501,7 +6501,7 @@
     "qtdKit": 1,
     "precoVarejo": 18.9,
     "precoAtacado": 11.1176,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -6541,7 +6541,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -6581,7 +6581,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -6621,7 +6621,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -6661,7 +6661,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -6701,7 +6701,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -6741,7 +6741,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -6781,7 +6781,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -6821,7 +6821,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -6861,7 +6861,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -6901,7 +6901,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -6941,7 +6941,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -6981,7 +6981,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -7021,7 +7021,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -7061,7 +7061,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -7101,7 +7101,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -7141,7 +7141,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -7181,7 +7181,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -7221,7 +7221,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -7261,7 +7261,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -7301,7 +7301,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -7341,7 +7341,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -7381,7 +7381,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -7421,7 +7421,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -7461,7 +7461,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -7501,7 +7501,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -7541,7 +7541,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -7581,7 +7581,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -7621,7 +7621,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -7661,7 +7661,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -7701,7 +7701,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -7741,7 +7741,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -7781,7 +7781,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -7821,7 +7821,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -7861,7 +7861,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -7901,7 +7901,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -7941,7 +7941,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -7981,7 +7981,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -8021,7 +8021,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -8061,7 +8061,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -8101,7 +8101,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -8141,7 +8141,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -8181,7 +8181,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -8221,7 +8221,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -8261,7 +8261,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -8301,7 +8301,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -8341,7 +8341,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -8381,7 +8381,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -8421,7 +8421,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -8461,7 +8461,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -8501,7 +8501,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -8541,7 +8541,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -8581,7 +8581,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -8621,7 +8621,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -8661,7 +8661,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -8701,7 +8701,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -8741,7 +8741,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -8781,7 +8781,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -8821,7 +8821,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -8861,7 +8861,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -8901,7 +8901,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -8941,7 +8941,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 0
   },
@@ -8981,7 +8981,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 1
   },
@@ -9021,7 +9021,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 2
   },
@@ -9061,7 +9061,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 3
   },
@@ -9101,7 +9101,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 4
   },
@@ -9141,7 +9141,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 5
   },
@@ -9181,7 +9181,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 6
   },
@@ -9221,7 +9221,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 7
   },
@@ -9261,7 +9261,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 8
   },
@@ -9301,7 +9301,7 @@
     "qtdKit": 1,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": true,
     "numeroVela": 9
   },
@@ -22754,7 +22754,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -22793,7 +22793,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -22832,7 +22832,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -22871,7 +22871,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -22910,7 +22910,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -22949,7 +22949,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -22988,7 +22988,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23027,7 +23027,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23066,7 +23066,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23105,7 +23105,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23144,7 +23144,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23183,7 +23183,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23222,7 +23222,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23261,7 +23261,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23300,7 +23300,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23339,7 +23339,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23378,7 +23378,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23417,7 +23417,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23456,7 +23456,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23495,7 +23495,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23534,7 +23534,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23573,7 +23573,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23612,7 +23612,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23651,7 +23651,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23690,7 +23690,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23729,7 +23729,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -23768,7 +23768,7 @@
     "qtdKit": 6,
     "precoVarejo": 17.9,
     "precoAtacado": 10.5294,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25055,7 +25055,7 @@
     "qtdKit": 5,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25094,7 +25094,7 @@
     "qtdKit": 5,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25133,7 +25133,7 @@
     "qtdKit": 5,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25172,7 +25172,7 @@
     "qtdKit": 5,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25211,7 +25211,7 @@
     "qtdKit": 5,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25250,7 +25250,7 @@
     "qtdKit": 5,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25289,7 +25289,7 @@
     "qtdKit": 5,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25328,7 +25328,7 @@
     "qtdKit": 5,
     "precoVarejo": 16.9,
     "precoAtacado": 9.9412,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25562,7 +25562,7 @@
     "qtdKit": 10,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25601,7 +25601,7 @@
     "qtdKit": 10,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25640,7 +25640,7 @@
     "qtdKit": 10,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25679,7 +25679,7 @@
     "qtdKit": 10,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25718,7 +25718,7 @@
     "qtdKit": 6,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25757,7 +25757,7 @@
     "qtdKit": 6,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25796,7 +25796,7 @@
     "qtdKit": 6,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25835,7 +25835,7 @@
     "qtdKit": 6,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25874,7 +25874,7 @@
     "qtdKit": 6,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25913,7 +25913,7 @@
     "qtdKit": 6,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25952,7 +25952,7 @@
     "qtdKit": 6,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -25991,7 +25991,7 @@
     "qtdKit": 6,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26030,7 +26030,7 @@
     "qtdKit": 6,
     "precoVarejo": 34.9,
     "precoAtacado": 20.5294,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26069,7 +26069,7 @@
     "qtdKit": 6,
     "precoVarejo": 34.9,
     "precoAtacado": 20.5294,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26108,7 +26108,7 @@
     "qtdKit": 6,
     "precoVarejo": 34.9,
     "precoAtacado": 20.5294,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26147,7 +26147,7 @@
     "qtdKit": 6,
     "precoVarejo": 34.9,
     "precoAtacado": 20.5294,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26186,7 +26186,7 @@
     "qtdKit": 6,
     "precoVarejo": 39.9,
     "precoAtacado": 23.4706,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26225,7 +26225,7 @@
     "qtdKit": 6,
     "precoVarejo": 39.9,
     "precoAtacado": 23.4706,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26264,7 +26264,7 @@
     "qtdKit": 6,
     "precoVarejo": 39.9,
     "precoAtacado": 23.4706,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26303,7 +26303,7 @@
     "qtdKit": 6,
     "precoVarejo": 39.9,
     "precoAtacado": 23.4706,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26342,7 +26342,7 @@
     "qtdKit": 4,
     "precoVarejo": 44.9,
     "precoAtacado": 26.4118,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26381,7 +26381,7 @@
     "qtdKit": 4,
     "precoVarejo": 44.9,
     "precoAtacado": 26.4118,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26420,7 +26420,7 @@
     "qtdKit": 4,
     "precoVarejo": 44.9,
     "precoAtacado": 26.4118,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26459,7 +26459,7 @@
     "qtdKit": 4,
     "precoVarejo": 44.9,
     "precoAtacado": 26.4118,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26888,7 +26888,7 @@
     "qtdKit": 6,
     "precoVarejo": 12.9,
     "precoAtacado": 7.5882,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26927,7 +26927,7 @@
     "qtdKit": 6,
     "precoVarejo": 12.9,
     "precoAtacado": 7.5882,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -26966,7 +26966,7 @@
     "qtdKit": 6,
     "precoVarejo": 12.9,
     "precoAtacado": 7.5882,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -27005,7 +27005,7 @@
     "qtdKit": 6,
     "precoVarejo": 12.9,
     "precoAtacado": 7.5882,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -27044,7 +27044,7 @@
     "qtdKit": 6,
     "precoVarejo": 12.9,
     "precoAtacado": 7.5882,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -27083,7 +27083,7 @@
     "qtdKit": 6,
     "precoVarejo": 12.9,
     "precoAtacado": 7.5882,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -27122,7 +27122,7 @@
     "qtdKit": 6,
     "precoVarejo": 12.9,
     "precoAtacado": 7.5882,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -27395,7 +27395,7 @@
     "qtdKit": 6,
     "precoVarejo": 19.9,
     "precoAtacado": 11.7059,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -27434,7 +27434,7 @@
     "qtdKit": 6,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -27473,7 +27473,7 @@
     "qtdKit": 6,
     "precoVarejo": 34.9,
     "precoAtacado": 20.5294,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -27512,7 +27512,7 @@
     "qtdKit": 6,
     "precoVarejo": 39.9,
     "precoAtacado": 23.4706,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -27551,7 +27551,7 @@
     "qtdKit": 4,
     "precoVarejo": 29.9,
     "precoAtacado": 17.5882,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -27590,7 +27590,7 @@
     "qtdKit": 4,
     "precoVarejo": 39.9,
     "precoAtacado": 23.4706,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28136,7 +28136,7 @@
     "qtdKit": 10,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28175,7 +28175,7 @@
     "qtdKit": 10,
     "precoVarejo": 24.9,
     "precoAtacado": 14.6471,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28214,7 +28214,7 @@
     "qtdKit": 6,
     "precoVarejo": 44.9,
     "precoAtacado": 26.4118,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28253,7 +28253,7 @@
     "qtdKit": 6,
     "precoVarejo": 44.9,
     "precoAtacado": 26.4118,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28292,7 +28292,7 @@
     "qtdKit": 6,
     "precoVarejo": 44.9,
     "precoAtacado": 26.4118,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28331,7 +28331,7 @@
     "qtdKit": 6,
     "precoVarejo": 44.9,
     "precoAtacado": 26.4118,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28370,7 +28370,7 @@
     "qtdKit": 6,
     "precoVarejo": 29.9,
     "precoAtacado": 17.5882,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28409,7 +28409,7 @@
     "qtdKit": 6,
     "precoVarejo": 29.9,
     "precoAtacado": 17.5882,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28448,7 +28448,7 @@
     "qtdKit": 6,
     "precoVarejo": 34.9,
     "precoAtacado": 20.5294,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28487,7 +28487,7 @@
     "qtdKit": 6,
     "precoVarejo": 34.9,
     "precoAtacado": 20.5294,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28526,7 +28526,7 @@
     "qtdKit": 6,
     "precoVarejo": 39.9,
     "precoAtacado": 23.4706,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28565,7 +28565,7 @@
     "qtdKit": 6,
     "precoVarejo": 39.9,
     "precoAtacado": 23.4706,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28604,7 +28604,7 @@
     "qtdKit": 6,
     "precoVarejo": 39.9,
     "precoAtacado": 23.4706,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28643,7 +28643,7 @@
     "qtdKit": 4,
     "precoVarejo": 39.9,
     "precoAtacado": 23.4706,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28682,7 +28682,7 @@
     "qtdKit": 4,
     "precoVarejo": 44.9,
     "precoAtacado": 26.4118,
-    "statusEstoque": "Prev. Jul 2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28955,7 +28955,7 @@
     "qtdKit": 6,
     "precoVarejo": 19.9,
     "precoAtacado": 11.7059,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -28994,7 +28994,7 @@
     "qtdKit": 6,
     "precoVarejo": 19.9,
     "precoAtacado": 11.7059,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -29033,7 +29033,7 @@
     "qtdKit": 6,
     "precoVarejo": 19.9,
     "precoAtacado": 11.7059,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -29072,7 +29072,7 @@
     "qtdKit": 6,
     "precoVarejo": 19.9,
     "precoAtacado": 11.7059,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -29111,7 +29111,7 @@
     "qtdKit": 6,
     "precoVarejo": 19.9,
     "precoAtacado": 11.7059,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -29150,7 +29150,7 @@
     "qtdKit": 6,
     "precoVarejo": 19.9,
     "precoAtacado": 11.7059,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -29189,7 +29189,7 @@
     "qtdKit": 6,
     "precoVarejo": 19.9,
     "precoAtacado": 11.7059,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -29228,7 +29228,7 @@
     "qtdKit": 6,
     "precoVarejo": 19.9,
     "precoAtacado": 11.7059,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -29267,7 +29267,7 @@
     "qtdKit": 6,
     "precoVarejo": 19.9,
     "precoAtacado": 11.7059,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -34662,7 +34662,7 @@
     "qtdKit": 6,
     "precoVarejo": 14.9,
     "precoAtacado": 8.7647,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -34701,7 +34701,7 @@
     "qtdKit": 6,
     "precoVarejo": 14.9,
     "precoAtacado": 8.7647,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -34740,7 +34740,7 @@
     "qtdKit": 6,
     "precoVarejo": 14.9,
     "precoAtacado": 8.7647,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -34779,7 +34779,7 @@
     "qtdKit": 6,
     "precoVarejo": 14.9,
     "precoAtacado": 8.7647,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -34818,7 +34818,7 @@
     "qtdKit": 6,
     "precoVarejo": 14.9,
     "precoAtacado": 8.7647,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -34857,7 +34857,7 @@
     "qtdKit": 6,
     "precoVarejo": 14.9,
     "precoAtacado": 8.7647,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -34896,7 +34896,7 @@
     "qtdKit": 6,
     "precoVarejo": 14.9,
     "precoAtacado": 8.7647,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
@@ -34935,7 +34935,7 @@
     "qtdKit": 6,
     "precoVarejo": 14.9,
     "precoAtacado": 8.7647,
-    "statusEstoque": "Prev. Jul_2026",
+    "statusEstoque": "Prev. Out_2026",
     "isVelaNumerica": false
   },
   {
