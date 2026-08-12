@@ -415,8 +415,9 @@ function CartPage() {
         });
       }
 
-      if (provisaoOrigemId) {
-        updateProvisaoStatus(provisaoOrigemId, "convertido_em_pedido", {
+      const provisaoConvertidaId = provisaoOrigemId ?? editandoProvisaoId;
+      if (provisaoConvertidaId) {
+        updateProvisaoStatus(provisaoConvertidaId, "convertido_em_pedido", {
           pedidoConvertidoId: order.id,
         });
       }
@@ -615,9 +616,21 @@ function CartPage() {
       toast.error("A provisão precisa ter pelo menos um item");
       return;
     }
+    // Se algum item já está disponível, a edição deixa de ser uma simples
+    // atualização: abre a confirmação para gerar o pedido firme e uma nova
+    // provisão somente com o saldo que continua em previsão.
+    if (itensFirmes.length > 0) {
+      if (!commercial?.podeFinalizar || !commercial.calculo.faixa || !commercial.condicao) {
+        toast.error(commercial?.motivoBloqueio ?? "Revise as condições do pedido firme.");
+        return;
+      }
+      setShowFinalConfirm(true);
+      return;
+    }
+
     setSalvandoPedido(true);
     try {
-      const itensPatch = items.map(toItemProvisao);
+      const itensPatch = itensProvisao.map(toItemProvisao);
       const upd = await atualizarProvisao(editandoProvisaoId, {
         itens: itensPatch,
         observacoes: meta.observacoes || undefined,
@@ -1010,14 +1023,14 @@ function CartPage() {
             {editandoProvisaoId ? (
               <>
                 <p className="mb-3 text-xs text-gold">
-                  Editando provisão {editandoProvisaoId}. Salvar sobrescreve os itens atuais.
+                  Editando provisão {editandoProvisaoId}. Itens disponíveis serão gerados como pedido firme e o saldo ficará em uma nova provisão.
                 </p>
                 <button
                   onClick={handleSalvarEdicaoProvisao}
                   disabled={!meta.clienteId || salvandoPedido || items.length === 0}
                   className="w-full rounded-md bg-gold py-3 text-xs font-semibold uppercase tracking-[0.18em] text-background hover:bg-gold-light disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {salvandoPedido ? "Salvando..." : "Salvar alterações da provisão"}
+                  {salvandoPedido ? "Salvando..." : itensFirmes.length > 0 ? "Confirmar divisão" : "Salvar alterações da provisão"}
                 </button>
                 <button
                   onClick={() => {
@@ -1130,7 +1143,7 @@ function CartPage() {
               disabled={!meta.clienteId || salvandoPedido || items.length === 0}
               className="shrink-0 rounded-md bg-gold px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-background disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {salvandoPedido ? "Salvando..." : "Salvar provisão"}
+              {salvandoPedido ? "Salvando..." : itensFirmes.length > 0 ? "Confirmar divisão" : "Salvar provisão"}
             </button>
           ) : apenasProvisao ? (
             <button
