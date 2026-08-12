@@ -124,13 +124,10 @@ function CartPage() {
 
   const provisaoOrigemId = (meta as OrderMeta & { provisaoOrigemId?: string }).provisaoOrigemId;
 
-  // Split firme / provisao — Fatia 2: split parcial por quantidade conforme estoque_disponivel.
-  // Ao converter uma provisão, todos os itens precisam seguir para o pedido firme mesmo que o
-  // catálogo ainda conserve o status de previsão; caso contrário o fluxo criaria outra provisão.
+  // Split firme / provisao — split parcial por quantidade conforme estoque_disponivel.
+  // Vale também ao converter uma provisão: itens com pronta entrega descem como firme e
+  // itens que continuam em previsão permanecem na fila de provisão.
   const { itensFirmes, itensProvisao } = useMemo(() => {
-    if (provisaoOrigemId) {
-      return { itensFirmes: items, itensProvisao: [] };
-    }
     const firmes: CartItem[] = [];
     const provisao: CartItem[] = [];
     items.forEach((i) => {
@@ -139,7 +136,7 @@ function CartPage() {
       if (prov > 0) provisao.push({ ...i, quantity: prov });
     });
     return { itensFirmes: firmes, itensProvisao: provisao };
-  }, [items, provisaoOrigemId]);
+  }, [items]);
 
   const isMisto = itensFirmes.length > 0 && itensProvisao.length > 0;
   const apenasProvisao = itensFirmes.length === 0 && itensProvisao.length > 0;
