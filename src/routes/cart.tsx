@@ -122,9 +122,15 @@ function CartPage() {
   }, [negotiationAtivo]);
 
 
+  const provisaoOrigemId = (meta as OrderMeta & { provisaoOrigemId?: string }).provisaoOrigemId;
+
   // Split firme / provisao — Fatia 2: split parcial por quantidade conforme estoque_disponivel.
-  // Um mesmo SKU pode gerar uma linha firme (até o estoque) e uma linha de provisão (excedente).
+  // Ao converter uma provisão, todos os itens precisam seguir para o pedido firme mesmo que o
+  // catálogo ainda conserve o status de previsão; caso contrário o fluxo criaria outra provisão.
   const { itensFirmes, itensProvisao } = useMemo(() => {
+    if (provisaoOrigemId) {
+      return { itensFirmes: items, itensProvisao: [] };
+    }
     const firmes: CartItem[] = [];
     const provisao: CartItem[] = [];
     items.forEach((i) => {
@@ -133,7 +139,7 @@ function CartPage() {
       if (prov > 0) provisao.push({ ...i, quantity: prov });
     });
     return { itensFirmes: firmes, itensProvisao: provisao };
-  }, [items]);
+  }, [items, provisaoOrigemId]);
 
   const isMisto = itensFirmes.length > 0 && itensProvisao.length > 0;
   const apenasProvisao = itensFirmes.length === 0 && itensProvisao.length > 0;
@@ -412,8 +418,8 @@ function CartPage() {
         });
       }
 
-      if (meta.provisaoOrigemId) {
-        updateProvisaoStatus(meta.provisaoOrigemId, "convertido_em_pedido", {
+      if (provisaoOrigemId) {
+        updateProvisaoStatus(provisaoOrigemId, "convertido_em_pedido", {
           pedidoConvertidoId: order.id,
         });
       }
@@ -682,9 +688,9 @@ function CartPage() {
         </div>
       )}
 
-      {meta.provisaoOrigemId && !editandoProvisaoId && (
+      {provisaoOrigemId && !editandoProvisaoId && (
         <div className="mb-4 rounded-md border border-stock-pre/40 bg-stock-pre/10 px-3 py-2.5 sm:px-4 sm:py-3 text-xs text-stock-pre">
-          ⚡ Estes itens vieram da Provisão <strong>{meta.provisaoOrigemId}</strong>. Verifique quantidades e condições antes de confirmar.
+          ⚡ Estes itens vieram da Provisão <strong>{provisaoOrigemId}</strong>. Verifique quantidades e condições antes de confirmar.
         </div>
       )}
 
