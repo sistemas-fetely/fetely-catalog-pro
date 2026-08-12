@@ -1,13 +1,8 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { CartItem } from "@/types";
+import { createSafeStorage } from "@/lib/safeStorage";
 
-const noopStorage: Storage = {
-  length: 0, clear: () => {}, getItem: () => null,
-  key: () => null, removeItem: () => {}, setItem: () => {},
-};
-const safeStorage = (): Storage =>
-  typeof window !== "undefined" ? window.localStorage : noopStorage;
 
 export type StatusFilaItem = "pendente" | "feito" | "pulado";
 
@@ -81,7 +76,7 @@ export const useDuplicacao = create<DuplicacaoState>()(
     }),
     {
       name: "fetely-duplicacao-v1",
-      storage: createJSONStorage(safeStorage),
+      storage: createJSONStorage(createSafeStorage),
     },
   ),
 );

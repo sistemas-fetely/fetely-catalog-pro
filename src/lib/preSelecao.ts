@@ -1,6 +1,7 @@
 import type { PreSelecao, ItemPreSelecao, SegmentoCliente, StatusPreSelecao } from "@/types/preSelecao";
 import { EXPIRACAO_PADRAO_HORAS } from "@/types/preSelecao";
 import { supabase } from "@/integrations/supabase/client";
+import { safeLocalStorage } from "@/lib/safeStorage";
 
 const STORAGE_KEY = "fetely_pre_selecoes";
 const COUNTER_KEY = "fetely_pre_selecao_counter";
@@ -24,7 +25,7 @@ export function loadPreSelecoes(): PreSelecao[] {
 
 export function savePreSelecoes(list: PreSelecao[]): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 }
 
 export async function nextPreSelecaoId(): Promise<string> {
@@ -47,7 +48,7 @@ export async function nextPreSelecaoId(): Promise<string> {
       : Math.random().toString(36).slice(2, 6).toUpperCase();
   if (typeof window !== "undefined") {
     const n = parseInt(localStorage.getItem(COUNTER_KEY) || "0", 10) + 1;
-    localStorage.setItem(COUNTER_KEY, String(n));
+    safeLocalStorage.setItem(COUNTER_KEY, String(n));
   }
   return `PS${ts}${random}`;
 }

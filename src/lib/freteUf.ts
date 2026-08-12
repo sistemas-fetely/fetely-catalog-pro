@@ -1,3 +1,4 @@
+import { safeLocalStorage } from "@/lib/safeStorage";
 // V20 — Tabela de frete FOB por UF.
 // Armazenamento em localStorage com seed automático na primeira leitura.
 // Calculadora de frete consulta esta tabela apenas quando o frete é FOB —
@@ -50,9 +51,9 @@ function hasStorage(): boolean {
 function inicializar(): void {
   if (!hasStorage()) return;
   if (!localStorage.getItem(KEY_INIT)) {
-    localStorage.setItem(KEY_TABELA, JSON.stringify(FRETE_UF_PADRAO));
-    localStorage.setItem(KEY_FALLBACK, JSON.stringify(FRETE_FALLBACK_PERCENT_DEFAULT));
-    localStorage.setItem(KEY_INIT, "true");
+    safeLocalStorage.setItem(KEY_TABELA, JSON.stringify(FRETE_UF_PADRAO));
+    safeLocalStorage.setItem(KEY_FALLBACK, JSON.stringify(FRETE_FALLBACK_PERCENT_DEFAULT));
+    safeLocalStorage.setItem(KEY_INIT, "true");
   }
 }
 
@@ -71,7 +72,7 @@ export function getFretesUF(): FreteUF[] {
 
 export function setFretesUF(lista: FreteUF[]): void {
   if (!hasStorage()) return;
-  localStorage.setItem(KEY_TABELA, JSON.stringify(lista));
+  safeLocalStorage.setItem(KEY_TABELA, JSON.stringify(lista));
 }
 
 export function getFreteFallbackPercent(): number {
@@ -89,7 +90,7 @@ export function getFreteFallbackPercent(): number {
 
 export function setFreteFallbackPercent(n: number): void {
   if (!hasStorage()) return;
-  localStorage.setItem(KEY_FALLBACK, JSON.stringify(n));
+  safeLocalStorage.setItem(KEY_FALLBACK, JSON.stringify(n));
 }
 
 export function upsertFreteUF(entry: FreteUF, usuario?: string): void {

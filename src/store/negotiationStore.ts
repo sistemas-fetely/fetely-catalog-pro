@@ -1,17 +1,8 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { hashSenha, SENHA_MASTER_DEFAULT } from "@/lib/commercial";
+import { createSafeStorage } from "@/lib/safeStorage";
 
-const noopStorage: Storage = {
-  length: 0,
-  clear: () => {},
-  getItem: () => null,
-  key: () => null,
-  removeItem: () => {},
-  setItem: () => {},
-};
-const safeStorage = (): Storage =>
-  typeof window !== "undefined" ? window.localStorage : noopStorage;
 
 interface PersistState {
   masterHash: string | null;
@@ -132,7 +123,7 @@ export const useNegotiation = create<NegotiationStore>()(
     }),
     {
       name: "fetely-negotiation-v2",
-      storage: createJSONStorage(safeStorage),
+      storage: createJSONStorage(createSafeStorage),
       partialize: (s) => ({ masterHash: s.masterHash }),
     },
   ),

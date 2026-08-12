@@ -6,6 +6,7 @@
 // Todas as operações são "best-effort": falhas nunca quebram a UX.
 
 import { supabase } from "@/integrations/supabase/client";
+import { safeLocalStorage } from "@/lib/safeStorage";
 
 const COOKIE_NAME = "fetely_session_id";
 const LS_SESSION = "fetely_session_id";
@@ -58,7 +59,7 @@ export function getOrCreateSessionId(): string {
   if (!id) id = localStorage.getItem(LS_SESSION);
   if (!id) {
     id = uuid();
-    localStorage.setItem(LS_SESSION, id);
+    safeLocalStorage.setItem(LS_SESSION, id);
   }
   writeCookie(COOKIE_NAME, id);
   return id;
@@ -71,7 +72,7 @@ export function getOrCreateDeviceId(): string {
   if (!id) id = localStorage.getItem(LS_DEVICE);
   if (!id) {
     id = uuid();
-    localStorage.setItem(LS_DEVICE, id);
+    safeLocalStorage.setItem(LS_DEVICE, id);
   }
   writeCookie(DEVICE_COOKIE, id);
   return id;
@@ -90,7 +91,7 @@ export function loadGateIdentidade(): GateIdentidade | null {
 
 export function saveGateIdentidade(g: GateIdentidade): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(LS_GATE, JSON.stringify(g));
+  safeLocalStorage.setItem(LS_GATE, JSON.stringify(g));
 }
 
 interface EnsureLinkResult {

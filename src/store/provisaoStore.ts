@@ -6,17 +6,8 @@ import { useAuth } from "@/store/authStore";
 import { useClientes } from "@/store/clienteStore";
 import { compararPrevisao } from "@/lib/classifyItem";
 import { supabase } from "@/integrations/supabase/client";
+import { createSafeStorage } from "@/lib/safeStorage";
 
-const noopStorage: Storage = {
-  length: 0,
-  clear: () => {},
-  getItem: () => null,
-  key: () => null,
-  removeItem: () => {},
-  setItem: () => {},
-};
-const safeStorage = (): Storage =>
-  typeof window !== "undefined" ? window.localStorage : noopStorage;
 
 interface CreateProvisaoInput {
   clienteId: string;
@@ -450,7 +441,7 @@ export const useProvisao = create<ProvisaoState>()(
     }),
     {
       name: "fetely_provisoes_v1",
-      storage: createJSONStorage(safeStorage),
+      storage: createJSONStorage(createSafeStorage),
       partialize: (state) =>
         ({ provisoes: state.provisoes, counter: state.counter }) as Partial<ProvisaoState>,
     },
