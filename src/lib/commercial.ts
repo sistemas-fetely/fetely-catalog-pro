@@ -56,7 +56,6 @@ export interface RegrasGerais {
   provisaoExpirarDias: number;
   faixaReservadaNome: string;
   bonusPixPadrao: number;
-  acrescimoIsentoIEPct: number;
   atualizadoEm?: string;
   atualizadoPor?: string;
 }
@@ -183,7 +182,6 @@ export const REGRAS_DEFAULT: RegrasGerais = {
   provisaoExpirarDias: 90,
   faixaReservadaNome: "Reservada",
   bonusPixPadrao: 2.5,
-  acrescimoIsentoIEPct: 15,
 };
 
 
@@ -291,7 +289,7 @@ export interface CalculoPedido {
   acrescimoIsentoIEAplicado?: boolean;
 }
 
-/** Fallback de 15% — o valor vigente vem de `REGRAS_ATUAIS.acrescimoIsentoIEPct`. */
+/** V21 — percentual de acréscimo aplicado quando o cliente é isento de Inscrição Estadual */
 export const ACRESCIMO_ISENTO_IE_PERCENT = 15;
 
 
@@ -341,7 +339,7 @@ export function calcularPedido(args: {
     uf = null,
     aplicarDescontos = true,
     aplicarAcrescimoIsentoIE = false,
-    acrescimoIsentoIEPercent = REGRAS_ATUAIS.acrescimoIsentoIEPct ?? ACRESCIMO_ISENTO_IE_PERCENT,
+    acrescimoIsentoIEPercent = ACRESCIMO_ISENTO_IE_PERCENT,
     freteAjusteModo = "percent",
 
     freteAjusteQtd = 0,
