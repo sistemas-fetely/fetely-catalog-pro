@@ -1,27 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { Award, Gift, Lock, Settings2, Sparkles, Truck, X } from "lucide-react";
 import {
-  ACRESCIMO_ISENTO_IE_PERCENT,
   CONDICAO_BONIFICADO,
-
   CONDICAO_BONIFICADO_ID,
   CONDICOES_PAGAMENTO,
   DESCONTO_MASTER_MAX,
   FAIXAS,
   JUSTIFICATIVAS_NEGOCIACAO,
   MOTIVOS_BONIFICACAO,
+  REGRAS_ATUAIS,
   calcularPedido,
   detectarFaixa,
   proximaFaixa,
   type CalculoPedido,
   type CondicaoPagamento,
 } from "@/lib/commercial";
+import { situacaoFiscalCliente, deveAplicarAcrescimoIE } from "@/lib/situacaoFiscal";
 import { useNegotiation } from "@/store/negotiationStore";
 import { formatBRL } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
 import { useClientes } from "@/store/clienteStore";
 import { useAuth } from "@/store/authStore";
 import { getPremissasVigentes } from "@/lib/premissas";
+
 
 export interface CommercialState {
   calculo: CalculoPedido;
