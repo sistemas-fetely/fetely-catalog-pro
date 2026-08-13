@@ -340,7 +340,9 @@ function CartPage() {
       descontoMasterPct: negotiationAtivo ? negDescontoPct : 0,
       descontoMasterValor: c.descontoMasterValor,
       bonusPixValor: c.bonusPixValor,
+      bonusPixPercent: c.bonusPixPercentEfetivo ?? 0,
       aplicouPix: c.aplicouPix,
+
       totalFinal: c.total,
       totalSemPix: c.totalSemPix,
       negociacao: negotiationAtivo,
@@ -478,7 +480,9 @@ function CartPage() {
       descontoMasterPct: negotiationAtivo ? negDescontoPct : 0,
       descontoMasterValor: c.descontoMasterValor,
       bonusPixValor: c.bonusPixValor,
+      bonusPixPercent: c.bonusPixPercentEfetivo ?? 0,
       aplicouPix: c.aplicouPix,
+
       totalFinal: c.total,
       totalSemPix: c.totalSemPix,
       negociacao: negotiationAtivo,
