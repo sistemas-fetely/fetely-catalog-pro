@@ -56,9 +56,11 @@ export interface RegrasGerais {
   provisaoExpirarDias: number;
   faixaReservadaNome: string;
   bonusPixPadrao: number;
+  acrescimoIsentoIEPct: number;
   atualizadoEm?: string;
   atualizadoPor?: string;
 }
+
 
 export const FAIXAS_DEFAULT: Faixa[] = [
   {
@@ -181,7 +183,9 @@ export const REGRAS_DEFAULT: RegrasGerais = {
   provisaoExpirarDias: 90,
   faixaReservadaNome: "Reservada",
   bonusPixPadrao: 2.5,
+  acrescimoIsentoIEPct: 15,
 };
+
 
 // === LIVE BINDINGS — mantidos em sincronia pelo cartilhasStore via _syncCommercial() ===
 export const FAIXAS: Faixa[] = [...FAIXAS_DEFAULT];
@@ -287,8 +291,9 @@ export interface CalculoPedido {
   acrescimoIsentoIEAplicado?: boolean;
 }
 
-/** V21 — percentual de acréscimo aplicado quando o cliente é isento de Inscrição Estadual */
+/** Fallback de 15% — o valor vigente vem de `REGRAS_ATUAIS.acrescimoIsentoIEPct`. */
 export const ACRESCIMO_ISENTO_IE_PERCENT = 15;
+
 
 
 /** Percentual padrão de frete sobre o subtotal após descontos. Mantido para
@@ -336,8 +341,9 @@ export function calcularPedido(args: {
     uf = null,
     aplicarDescontos = true,
     aplicarAcrescimoIsentoIE = false,
-    acrescimoIsentoIEPercent = ACRESCIMO_ISENTO_IE_PERCENT,
+    acrescimoIsentoIEPercent = REGRAS_ATUAIS.acrescimoIsentoIEPct ?? ACRESCIMO_ISENTO_IE_PERCENT,
     freteAjusteModo = "percent",
+
     freteAjusteQtd = 0,
   } = args;
   const usarCelebra = args.aplicarDescontoCelebra ?? aplicarDescontos;
