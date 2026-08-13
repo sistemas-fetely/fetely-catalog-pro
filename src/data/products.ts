@@ -11,13 +11,19 @@ const SIX_PACK_COLLECTIONS = new Set([
   "Spirale",
 ]);
 
+// Categorias que são sempre pronta entrega (pedido firme), independente da tag
+// de previsão herdada da planilha.
+const PRONTA_ENTREGA_CATEGORIES = new Set(["Celebrar à Mesa"]);
+
 // Catálogo carregado direto da base oficial (planilha XLSX → JSON).
 export const PRODUCTS: Product[] = (rawProducts as Product[]).map((p) => {
+  const prontaEntrega = p.prontaEntrega ?? PRONTA_ENTREGA_CATEGORIES.has(p.categoria);
   if (SIX_PACK_COLLECTIONS.has(p.colecao) && p.multiplos === 12) {
-    return { ...p, multiplos: 6 };
+    return { ...p, multiplos: 6, prontaEntrega };
   }
-  return p;
+  return { ...p, prontaEntrega };
 });
+
 
 // Coleções derivadas dinamicamente do dataset
 const _numericCandles = Array.from(
