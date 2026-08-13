@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import { useAuth } from "@/store/authStore";
 import { useOrder } from "@/store/orderStore";
 import { formatBRL } from "@/lib/format";
+import { getBonusPixPercent, formatPercentBR } from "@/lib/commercial";
+
 import type { SavedOrder } from "@/types";
 import { ExportModal } from "@/components/export/ExportModal";
 import { Download, X } from "lucide-react";
@@ -203,10 +205,11 @@ function OrderDetailDrawer({ order, onClose }: { order: SavedOrder; onClose: () 
                 )}
                 {order.commercial.bonusPixValor > 0 && (
                   <Row
-                    label="Bônus PIX"
+                    label={`Bônus PIX (${formatPercentBR(getBonusPixPercent(order.commercial))}%)`}
                     value={`− ${formatBRL(order.commercial.bonusPixValor)}`}
                   />
                 )}
+
                 <Row label="Frete" value={order.commercial.frete} />
                 <Row
                   label="Pagamento"

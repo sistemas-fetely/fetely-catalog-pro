@@ -3,7 +3,8 @@ import { Check, Copy, Download, Home, FileClock, Mail, Printer, FileText, FileBa
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/format";
-import { FRETE_PERCENT } from "@/lib/commercial";
+import { FRETE_PERCENT, getBonusPixPercent, formatPercentBR } from "@/lib/commercial";
+
 import { useVisibleOrders, useOrder, useCanReprovarOrder } from "@/store/orderStore";
 import { useAuth } from "@/store/authStore";
 import { useProvisao } from "@/store/provisaoStore";
@@ -90,8 +91,10 @@ function formatOrderText(order: SavedOrder): string {
       );
     }
     if (c.aplicouPix) {
-      lines.push(`Bônus PIX (2,5%):              – ${formatBRL(c.bonusPixValor)}`);
+      const pct = getBonusPixPercent(c);
+      lines.push(`Bônus PIX (${formatPercentBR(pct)}%):              – ${formatBRL(c.bonusPixValor)}`);
     }
+
     if (c.frete === "FOB") {
       const subAposDesc = c.bruto - c.descontoCelebraValor - c.descontoMasterValor;
       const fretePct = c.fretePercent ?? FRETE_PERCENT;
@@ -622,8 +625,9 @@ function PedidoResumoPrintBlock({ order }: { order: SavedOrder }) {
             </div>
           )}
           {c && c.aplicouPix && c.bonusPixValor > 0 && (
-            <div>Bônus PIX: − {fmt(c.bonusPixValor)}</div>
+            <div>Bônus PIX ({formatPercentBR(getBonusPixPercent(c))}%): − {fmt(c.bonusPixValor)}</div>
           )}
+
           {c && c.frete === "FOB" && (() => {
             const subAposDesc = c.bruto - c.descontoCelebraValor - c.descontoMasterValor;
             const fretePct = c.fretePercent ?? FRETE_PERCENT;

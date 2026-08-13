@@ -1,6 +1,8 @@
 import type { SavedOrder } from "@/types";
+import { getBonusPixPercent, formatPercentBR } from "@/lib/commercial";
 
 function formatBRL(n: number): string {
+
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
@@ -183,7 +185,7 @@ export function buildSOpsEmail(order: SavedOrder): EmailContent {
       ${c ? row("Valor bruto", formatBRL(c.bruto)) : ""}
       ${c && c.descontoCelebraValor > 0 ? row(`Desc. ${c.faixaNome} (${c.descontoCelebraPct}%)`, `− ${formatBRL(c.descontoCelebraValor)}`) : ""}
       ${c && c.descontoMasterValor > 0 ? row(`Desc. Master (${c.descontoMasterPct}%)`, `− ${formatBRL(c.descontoMasterValor)}`) : ""}
-      ${c && c.aplicouPix && c.bonusPixValor > 0 ? row("Bônus PIX", `− ${formatBRL(c.bonusPixValor)}`) : ""}
+      ${c && c.aplicouPix && c.bonusPixValor > 0 ? row(`Bônus PIX (${formatPercentBR(getBonusPixPercent(c))}%)`, `− ${formatBRL(c.bonusPixValor)}`) : ""}
       <tr><td colspan="2" style="padding: 8px 0; border-top: 1px solid #e0e0e0;"></td></tr>
       ${row("Total final", formatBRL(order.total))}
       ${c?.negociacao ? row("⚠️ Negociação", c.justificativa || "Sim") : ""}

@@ -123,7 +123,10 @@ export interface OrderCommercial {
   descontoMasterPct: number;
   descontoMasterValor: number;
   bonusPixValor: number;
+  /** Percentual do bônus PIX aplicado no momento do pedido */
+  bonusPixPercent?: number;
   aplicouPix: boolean;
+
   totalFinal: number;
   totalSemPix: number;
   negociacao: boolean;
