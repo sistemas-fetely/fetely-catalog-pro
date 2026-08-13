@@ -201,7 +201,6 @@ function rowToRegras(row: Record<string, unknown>): RegrasGerais {
     provisaoExpirarDias: Number(row.provisao_expirar_dias ?? 0),
     faixaReservadaNome: (row.faixa_reservada_nome as string) ?? "Reservada",
     bonusPixPadrao: Number(row.bonus_pix_padrao ?? 0),
-    acrescimoIsentoIEPct: Number(row.acrescimo_isento_ie_pct ?? 15),
     atualizadoEm: (row.atualizado_em as string | null) ?? undefined,
     atualizadoPor: (row.atualizado_por as string | null) ?? undefined,
   };
@@ -218,7 +217,6 @@ function regrasToRow(r: RegrasGerais, usuario?: string): Record<string, unknown>
     provisao_expirar_dias: r.provisaoExpirarDias,
     faixa_reservada_nome: r.faixaReservadaNome,
     bonus_pix_padrao: r.bonusPixPadrao,
-    acrescimo_isento_ie_pct: r.acrescimoIsentoIEPct,
     atualizado_por: usuario ?? null,
   };
 }
