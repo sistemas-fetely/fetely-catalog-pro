@@ -455,8 +455,9 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
       items.push([`Desconto Master (${c.descontoMasterPct}%)`, `− ${formatBRL(c.descontoMasterValor)}`]);
     }
     if (c.aplicouPix && c.bonusPixValor > 0) {
-      items.push([`Bônus PIX`, `− ${formatBRL(c.bonusPixValor)}`]);
+      items.push([`Bônus PIX (${formatPercentBR(getBonusPixPercent(c))}%)`, `− ${formatBRL(c.bonusPixValor)}`]);
     }
+
     // Frete — sempre exibir (cobrado quando FOB, cortesia/incluso quando CIF)
     const fretePctStr = (c.fretePercent ?? FRETE_PERCENT).toFixed(1).replace(".", ",");
     if (c.freteIsento || c.frete === "CIF") {
@@ -765,7 +766,8 @@ function renderOrderBlockHTML(order: SavedOrder): string {
     if (c.descontoMasterValor > 0)
       linhasFin.push(`<div><span>Desconto Master (${c.descontoMasterPct}%)</span><b>− ${formatBRL(c.descontoMasterValor)}</b></div>`);
     if (c.aplicouPix && c.bonusPixValor > 0)
-      linhasFin.push(`<div><span>Bônus PIX</span><b>− ${formatBRL(c.bonusPixValor)}</b></div>`);
+      linhasFin.push(`<div><span>Bônus PIX (${formatPercentBR(getBonusPixPercent(c))}%)</span><b>− ${formatBRL(c.bonusPixValor)}</b></div>`);
+
     const fretePctStr = (c.fretePercent ?? FRETE_PERCENT).toFixed(1).replace(".", ",");
     if (c.freteIsento || c.frete === "CIF") {
       linhasFin.push(`<div><span>Frete CIF (incluso · faixa ${escapeHtml(c.faixaNome)})</span><b>Grátis</b></div>`);
@@ -882,7 +884,8 @@ function renderOrderResumoHTML(order: SavedOrder): string {
     if (c.descontoMasterValor > 0)
       linhasFin.push(`<div>Desconto Master (${c.descontoMasterPct}%): − ${fmt(c.descontoMasterValor)}</div>`);
     if (c.aplicouPix && c.bonusPixValor > 0)
-      linhasFin.push(`<div>Bônus PIX: − ${fmt(c.bonusPixValor)}</div>`);
+      linhasFin.push(`<div>Bônus PIX (${formatPercentBR(getBonusPixPercent(c))}%): − ${fmt(c.bonusPixValor)}</div>`);
+
     if (c.frete === "FOB") {
       const subAposDesc = c.bruto - c.descontoCelebraValor - c.descontoMasterValor;
       const fretePct = c.fretePercent ?? FRETE_PERCENT;
