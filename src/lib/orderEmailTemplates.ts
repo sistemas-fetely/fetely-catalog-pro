@@ -1,6 +1,8 @@
 import type { SavedOrder } from "@/types";
+import { getBonusPixPercent, formatPercentBR } from "@/lib/commercial";
 
 function formatBRL(n: number): string {
+
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
