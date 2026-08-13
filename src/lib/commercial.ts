@@ -518,7 +518,21 @@ export async function hashSenha(senha: string): Promise<string> {
 
 export const SENHA_MASTER_DEFAULT = "Hamsa1818";
 
+import type { OrderCommercial } from "@/types";
+
+export function getBonusPixPercent(c: OrderCommercial): number {
+  if (c.bonusPixPercent != null && c.bonusPixPercent > 0) return c.bonusPixPercent;
+  const base = c.bruto - c.descontoCelebraValor - c.descontoMasterValor;
+  if (c.bonusPixValor <= 0 || base <= 0) return 0;
+  return Math.round((c.bonusPixValor / base) * 100 * 10) / 10;
+}
+
+export function formatPercentBR(n: number): string {
+  return n.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+}
+
 export const JUSTIFICATIVAS_NEGOCIACAO = [
+
   "Feira / evento presencial",
   "Cliente estratégico",
   "Liquidação de estoque",
