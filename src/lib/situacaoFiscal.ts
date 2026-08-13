@@ -14,7 +14,9 @@ export function situacaoFiscalCliente(args: {
   isentoIE?: boolean | null;
 }): SituacaoFiscal {
   const dig = (args.inscricaoEstadual ?? "").replace(/\D/g, "");
-  const semIE = dig === "" || /^(.)*$/.test(dig); // vazio ou dígito repetido (000...)
+  const digitoRepetido = dig.length > 0 && dig.split("").every((c) => c === dig[0]);
+  const semIE = dig === "" || digitoRepetido; // vazio ou dígito repetido (000...)
+
 
   if (!semIE && dig.length >= 8 && dig.length <= 14) return "contribuinte";
   if (!semIE) return "pendente_saneamento"; // tem número, formato não fecha
