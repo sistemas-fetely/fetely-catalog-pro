@@ -396,7 +396,7 @@ export const useCatalog = create<CatalogState>()(
     {
       name: "fetely-catalog",
       storage: createJSONStorage(createSafeStorage),
-      version: 11,
+      version: 12,
       partialize: (state) => ({
         products: state.products,
         source: state.source,
