@@ -1,27 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { Award, Gift, Lock, Settings2, Sparkles, Truck, X } from "lucide-react";
 import {
-  ACRESCIMO_ISENTO_IE_PERCENT,
   CONDICAO_BONIFICADO,
-
   CONDICAO_BONIFICADO_ID,
   CONDICOES_PAGAMENTO,
   DESCONTO_MASTER_MAX,
   FAIXAS,
   JUSTIFICATIVAS_NEGOCIACAO,
   MOTIVOS_BONIFICACAO,
+  REGRAS_ATUAIS,
   calcularPedido,
   detectarFaixa,
   proximaFaixa,
   type CalculoPedido,
   type CondicaoPagamento,
 } from "@/lib/commercial";
+import { situacaoFiscalCliente, deveAplicarAcrescimoIE } from "@/lib/situacaoFiscal";
 import { useNegotiation } from "@/store/negotiationStore";
 import { formatBRL } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
 import { useClientes } from "@/store/clienteStore";
 import { useAuth } from "@/store/authStore";
 import { getPremissasVigentes } from "@/lib/premissas";
+
 
 export interface CommercialState {
   calculo: CalculoPedido;
@@ -157,12 +158,13 @@ export function CartCommercialPanel({
     if (condicaoSelecionadaId && !condicao) setCondicaoSelecionadaId(null);
   }, [condicao, condicaoSelecionadaId, setCondicaoSelecionadaId, bonificado]);
 
-  // V21 — acréscimo por isenção de Inscrição Estadual (puxa do cadastro do cliente)
-  const clienteIsentoIE = !!cliente?.isentoIE;
-  const [aplicarIsentoIE, setAplicarIsentoIE] = useState(false);
-  useEffect(() => {
-    setAplicarIsentoIE(clienteIsentoIE);
-  }, [clienteIsentoIE, clienteId]);
+  // V21 — acréscimo por isenção de Inscrição Estadual (derivado do cadastro do cliente)
+  const situacaoFiscal = situacaoFiscalCliente({
+    inscricaoEstadual: cliente?.inscricaoEstadual,
+    isentoIE: cliente?.isentoIE,
+  });
+  const aplicarIsentoIE = deveAplicarAcrescimoIE(situacaoFiscal);
+
 
   const calculo = useMemo(
     () =>
@@ -398,30 +400,30 @@ export function CartCommercialPanel({
               </div>
             )}
 
-            {/* V21 — Acréscimo isento de Inscrição Estadual */}
+            {/* V21 — Acréscimo fiscal por Inscrição Estadual */}
             <div className="rounded-md border border-border bg-surface-2/60 px-3 py-2 text-xs space-y-1">
-              <label className="flex cursor-pointer items-baseline justify-between gap-2">
-                <span className="flex items-center gap-2 text-text-secondary">
-                  <input
-                    type="checkbox"
-                    checked={aplicarIsentoIE}
-                    onChange={(e) => setAplicarIsentoIE(e.target.checked)}
-                    className="h-3 w-3 accent-[var(--gold,#c9a227)]"
-                  />
-                  Acréscimo isento de IE ({ACRESCIMO_ISENTO_IE_PERCENT}%)
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-text-secondary">
+                  Acréscimo fiscal ({REGRAS_ATUAIS.acrescimoIsentoIEPct}%)
                 </span>
                 <span className={aplicarIsentoIE ? "text-text-primary" : "text-text-muted"}>
                   {aplicarIsentoIE
                     ? `+ ${formatBRL(calculo.acrescimoIsentoIEValor ?? 0)}`
                     : "Não aplicado"}
                 </span>
-              </label>
+              </div>
               <p className="text-[10px] text-text-muted">
-                {clienteIsentoIE
-                  ? "Cliente cadastrado como isento de Inscrição Estadual — acréscimo sugerido automaticamente."
-                  : "Cliente possui Inscrição Estadual. Marque apenas se o acréscimo for devido."}
+                {situacaoFiscal === "contribuinte" &&
+                  "Cliente com Inscrição Estadual válida. Sem acréscimo."}
+                {situacaoFiscal === "isento" &&
+                  "Cliente isento de Inscrição Estadual. Acréscimo aplicado pela regra fiscal."}
+                {situacaoFiscal === "nao_contribuinte" &&
+                  "Cliente sem Inscrição Estadual. Acréscimo aplicado pela regra fiscal."}
+                {situacaoFiscal === "pendente_saneamento" &&
+                  "Inscrição Estadual cadastrada em formato inválido. O acréscimo não é aplicado até o cadastro ser corrigido."}
               </p>
             </div>
+
 
 
 

@@ -2310,6 +2310,7 @@ export type Database = {
       }
       regras_gerais: {
         Row: {
+          acrescimo_isento_ie_pct: number
           atualizado_em: string
           atualizado_por: string | null
           bloqueio_senha_master_minutos: number
@@ -2322,6 +2323,7 @@ export type Database = {
           tentativas_senha_master: number
         }
         Insert: {
+          acrescimo_isento_ie_pct?: number
           atualizado_em?: string
           atualizado_por?: string | null
           bloqueio_senha_master_minutos?: number
@@ -2334,6 +2336,7 @@ export type Database = {
           tentativas_senha_master?: number
         }
         Update: {
+          acrescimo_isento_ie_pct?: number
           atualizado_em?: string
           atualizado_por?: string | null
           bloqueio_senha_master_minutos?: number
