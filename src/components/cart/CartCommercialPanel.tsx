@@ -158,12 +158,13 @@ export function CartCommercialPanel({
     if (condicaoSelecionadaId && !condicao) setCondicaoSelecionadaId(null);
   }, [condicao, condicaoSelecionadaId, setCondicaoSelecionadaId, bonificado]);
 
-  // V21 — acréscimo por isenção de Inscrição Estadual (puxa do cadastro do cliente)
-  const clienteIsentoIE = !!cliente?.isentoIE;
-  const [aplicarIsentoIE, setAplicarIsentoIE] = useState(false);
-  useEffect(() => {
-    setAplicarIsentoIE(clienteIsentoIE);
-  }, [clienteIsentoIE, clienteId]);
+  // V21 — acréscimo por isenção de Inscrição Estadual (derivado do cadastro do cliente)
+  const situacaoFiscal = situacaoFiscalCliente({
+    inscricaoEstadual: cliente?.inscricaoEstadual,
+    isentoIE: cliente?.isentoIE,
+  });
+  const aplicarIsentoIE = deveAplicarAcrescimoIE(situacaoFiscal);
+
 
   const calculo = useMemo(
     () =>
