@@ -3,7 +3,13 @@ import autoTable from "jspdf-autotable";
 import type { CartItem, Product, SavedOrder } from "@/types";
 import type { Cotacao } from "@/types/cotacao";
 import type { ProvisaoFutura } from "@/types/provisao";
-import { FRETE_PERCENT, getBonusPixPercent, formatPercentBR } from "@/lib/commercial";
+import {
+  FRETE_PERCENT,
+  getBonusPixPercent,
+  formatPercentBR,
+  fatorDescontoItens,
+  percentDescontoItens,
+} from "@/lib/commercial";
 import { emEstoque } from "@/lib/classifyItem";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 
