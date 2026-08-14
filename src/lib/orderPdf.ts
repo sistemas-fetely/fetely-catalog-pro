@@ -859,7 +859,7 @@ function renderOrderBlockHTML(order: SavedOrder): string {
 
     <table class="items">
       <thead>
-        <tr><th>SKU</th><th>Descrição</th><th class="r">Qtd</th><th class="r">Unit</th><th class="r">Subtotal</th></tr>
+        <tr><th>SKU</th><th>Descrição</th><th class="r">Qtd</th><th class="r">Unit${temDesc ? ` (−${formatPercentBR(pctDesc)}%)` : ""}</th><th class="r">Subtotal${temDesc ? ` (−${formatPercentBR(pctDesc)}%)` : ""}</th></tr>
       </thead>
       <tbody>${itensRows}</tbody>
     </table>
