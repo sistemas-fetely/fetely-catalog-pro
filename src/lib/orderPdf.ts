@@ -39,10 +39,27 @@ async function urlToDataUrl(url: string, maxSize = 200): Promise<LoadedImage | n
   } catch { return null; }
 }
 
+/**
+ * Chave de foto: velas numéricas compartilham UMA foto por coleção+cor+tamanho
+ * (não uma foto por número). Demais itens usam o próprio SKU.
+ */
+function photoKeyForItem(it: CartItem): string {
+  const p = it.product;
+  if (isVelaNumericaForPdf(p)) {
+    return [
+      "VELA",
+      normalizeSortKey(p.colecao),
+      normalizeSortKey(p.corNome || p.cor || ""),
+      normalizeSortKey(p.tamanhoRef || p.tamanhoNumero || ""),
+    ].join("|");
+  }
+  return `SKU|${it.sku}`;
+}
+
 async function loadItemThumbs(items: CartItem[]): Promise<ThumbMap> {
   const photos = usePhotos.getState();
   const map: ThumbMap = new Map();
-  const seen = new Map<string, string>(); // sku -> url
+  const seen = new Map<string, string>(); // photoKey -> url
   for (const it of items) {
     const colecao = it.product.colecao || "";
     const cor = it.product.corNome || "";
@@ -56,12 +73,13 @@ async function loadItemThumbs(items: CartItem[]): Promise<ThumbMap> {
       (primary && getProdutoPhoto(photos, colecao, primary)) ||
       (cor && getProdutoPhoto(photos, colecao, cor)) ||
       undefined;
-    if (url) seen.set(it.sku, url);
+    const key = photoKeyForItem(it);
+    if (url && !seen.has(key)) seen.set(key, url);
   }
   await Promise.all(
-    Array.from(seen.entries()).map(async ([sku, url]) => {
-      const img = await urlToDataUrl(url);
-      if (img) map.set(sku, img);
+    Array.from(seen.entries()).map(async ([key, url]) => {
+      const img = await urlToDataUrl(url, 320);
+      if (img) map.set(key, img);
     }),
   );
   return map;
@@ -328,9 +346,16 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
   const pctDesc = percentDescontoItens(order.commercial);
   const hasThumbs = !!thumbs && thumbs.size > 0;
   const COLS = hasThumbs ? 6 : 5;
-  type Row = (string | { content: string; colSpan?: number; styles?: Record<string, unknown> })[];
+  type Row = (
+    | string
+    | { content: string; colSpan?: number; rowSpan?: number; styles?: Record<string, unknown> }
+  )[];
   const body: Row[] = [];
-  const skuByRow = new Map<number, string>();
+  const photoByRow = new Map<number, string>();
+  const priceByRow = new Map<number, { unit: [string, string]; sub: [string, string] }>();
+
+  const INVISIBLE = "#ffffff";
+
   for (const sec of secoes) {
     body.push([
       {
@@ -359,36 +384,63 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
           },
         },
       ]);
-      for (const item of g.items) {
+      // Velas numéricas: uma única foto por cor/tamanho, com os números listados abaixo.
+      const runLen = new Map<number, number>();
+      for (let i = 0; i < g.items.length; ) {
+        const key = photoKeyForItem(g.items[i]);
+        let j = i + 1;
+        if (isVelaNumericaForPdf(g.items[i].product)) {
+          while (j < g.items.length && photoKeyForItem(g.items[j]) === key) j++;
+        }
+        runLen.set(i, j - i);
+        i = j;
+      }
+
+      g.items.forEach((item, idx) => {
         const unit = item.product.precoAtacado;
         const subtotal = unit * item.quantity;
         const unitCom = Math.round(unit * fatorDesc * 100) / 100;
         const subtotalCom = Math.round(unitCom * item.quantity * 100) / 100;
         const unitTxt = temDesc
-          ? `de ${formatBRL(unit)}\npor ${formatBRL(unitCom)}`
+          ? `${formatBRL(unit)}\n${formatBRL(unitCom)}`
           : formatBRL(unit);
         const subTxt = temDesc
-          ? `de ${formatBRL(subtotal)}\npor ${formatBRL(subtotalCom)}`
+          ? `${formatBRL(subtotal)}\n${formatBRL(subtotalCom)}`
           : formatBRL(subtotal);
-        const row: Row = hasThumbs
-          ? [
-              "",
-              item.sku,
-              item.product.nomeComercial || item.product.nomeCompleto || "",
-              `${item.quantity}`,
-              unitTxt,
-              subTxt,
-            ]
-          : [
-              item.sku,
-              item.product.nomeComercial || item.product.nomeCompleto || "",
-              `${item.quantity}`,
-              unitTxt,
-              subTxt,
-            ];
-        skuByRow.set(body.length, item.sku);
+        const priceStyles = temDesc ? { textColor: INVISIBLE, fontSize: 7.5 } : undefined;
+
+        const numero = isVelaNumericaForPdf(item.product)
+          ? inferSequenceNumber(item.product)
+          : null;
+        const nomeBase = item.product.nomeComercial || item.product.nomeCompleto || "";
+        const desc =
+          numero !== null
+            ? `Nº ${numero}  ·  ${[item.product.corNome || item.product.cor, item.product.tamanhoRef || item.product.tamanhoNumero].filter(Boolean).join(" · ")}`.trim()
+            : nomeBase;
+
+        const priceCells: Row = [
+          { content: `${item.quantity}` },
+          { content: unitTxt, styles: priceStyles },
+          { content: subTxt, styles: priceStyles },
+        ];
+
+        const row: Row = [];
+        if (hasThumbs) {
+          const span = runLen.get(idx);
+          if (span !== undefined) {
+            row.push({ content: "", rowSpan: span });
+            photoByRow.set(body.length, photoKeyForItem(item));
+          }
+        }
+        row.push(item.sku, desc, ...priceCells);
+        if (temDesc) {
+          priceByRow.set(body.length, {
+            unit: [formatBRL(unit), formatBRL(unitCom)],
+            sub: [formatBRL(subtotal), formatBRL(subtotalCom)],
+          });
+        }
         body.push(row);
-      }
+      });
     }
   }
 
@@ -398,19 +450,22 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
     ? [["Foto", "SKU", "Descrição", "Qtd", unitLabel, subLabel]]
     : [["SKU", "Descrição", "Qtd", unitLabel, subLabel]];
 
+  const idxUnit = hasThumbs ? 4 : 3;
+  const idxSub = hasThumbs ? 5 : 4;
+
   const columnStyles: Record<number, Record<string, unknown>> = hasThumbs
     ? {
-        0: { cellWidth: 18, minCellHeight: 18 },
-        1: { cellWidth: 26 },
+        0: { cellWidth: 22, minCellHeight: 16 },
+        1: { cellWidth: 24 },
         3: { cellWidth: 12, halign: "right" },
-        4: { cellWidth: temDesc ? 28 : 22, halign: "right" },
-        5: { cellWidth: temDesc ? 32 : 26, halign: "right" },
+        4: { cellWidth: temDesc ? 26 : 22, halign: "right" },
+        5: { cellWidth: temDesc ? 30 : 26, halign: "right" },
       }
     : {
         0: { cellWidth: 28 },
         2: { cellWidth: 12, halign: "right" },
-        3: { cellWidth: temDesc ? 30 : 25, halign: "right" },
-        4: { cellWidth: temDesc ? 34 : 28, halign: "right" },
+        3: { cellWidth: temDesc ? 28 : 25, halign: "right" },
+        4: { cellWidth: temDesc ? 32 : 28, halign: "right" },
       };
 
   autoTable(doc, {
@@ -437,11 +492,38 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
     },
     columnStyles,
     didDrawCell: (data) => {
-      if (!hasThumbs) return;
-      if (data.section !== "body" || data.column.index !== 0) return;
-      const sku = skuByRow.get(data.row.index);
-      if (!sku) return;
-      const img = thumbs!.get(sku);
+      if (data.section !== "body") return;
+
+      // Preço "antes → depois": linha cheia riscada em cinza + preço final em dourado.
+      if (temDesc && (data.column.index === idxUnit || data.column.index === idxSub)) {
+        const pair = priceByRow.get(data.row.index);
+        if (pair) {
+          const [antes, depois] = data.column.index === idxUnit ? pair.unit : pair.sub;
+          const right = data.cell.x + data.cell.width - 2.5;
+          const cy = data.cell.y + data.cell.height / 2;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7);
+          doc.setTextColor(COLORS.textSecondary);
+          doc.text(antes, right, cy - 0.8, { align: "right" });
+          const w = doc.getTextWidth(antes);
+          doc.setDrawColor(COLORS.textSecondary);
+          doc.setLineWidth(0.25);
+          doc.line(right - w, cy - 1.6, right, cy - 1.6);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(8.5);
+          doc.setTextColor(COLORS.gold);
+          doc.text(depois, right, cy + 3.4, { align: "right" });
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(COLORS.black);
+          doc.setDrawColor(COLORS.separator);
+          doc.setLineWidth(0.1);
+        }
+      }
+
+      if (!hasThumbs || data.column.index !== 0) return;
+      const key = photoByRow.get(data.row.index);
+      if (!key) return;
+      const img = thumbs!.get(key);
       if (!img) return;
       const pad = 1;
       const bw = data.cell.width - pad * 2;
