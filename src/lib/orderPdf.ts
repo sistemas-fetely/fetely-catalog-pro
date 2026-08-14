@@ -384,38 +384,161 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
           },
         },
       ]);
-      for (const item of g.items) {
+      // Velas numéricas: uma única foto por cor/tamanho, com os números listados abaixo.
+      const runLen = new Map<number, number>();
+      for (let i = 0; i < g.items.length; ) {
+        const key = photoKeyForItem(g.items[i]);
+        let j = i + 1;
+        if (isVelaNumericaForPdf(g.items[i].product)) {
+          while (j < g.items.length && photoKeyForItem(g.items[j]) === key) j++;
+        }
+        runLen.set(i, j - i);
+        i = j;
+      }
+
+      g.items.forEach((item, idx) => {
         const unit = item.product.precoAtacado;
         const subtotal = unit * item.quantity;
         const unitCom = Math.round(unit * fatorDesc * 100) / 100;
         const subtotalCom = Math.round(unitCom * item.quantity * 100) / 100;
         const unitTxt = temDesc
-          ? `de ${formatBRL(unit)}\npor ${formatBRL(unitCom)}`
+          ? `${formatBRL(unit)}\n${formatBRL(unitCom)}`
           : formatBRL(unit);
         const subTxt = temDesc
-          ? `de ${formatBRL(subtotal)}\npor ${formatBRL(subtotalCom)}`
+          ? `${formatBRL(subtotal)}\n${formatBRL(subtotalCom)}`
           : formatBRL(subtotal);
-        const row: Row = hasThumbs
-          ? [
-              "",
-              item.sku,
-              item.product.nomeComercial || item.product.nomeCompleto || "",
-              `${item.quantity}`,
-              unitTxt,
-              subTxt,
-            ]
-          : [
-              item.sku,
-              item.product.nomeComercial || item.product.nomeCompleto || "",
-              `${item.quantity}`,
-              unitTxt,
-              subTxt,
-            ];
-        skuByRow.set(body.length, item.sku);
+        const priceStyles = temDesc ? { textColor: INVISIBLE, fontSize: 7.5 } : undefined;
+
+        const numero = isVelaNumericaForPdf(item.product)
+          ? inferSequenceNumber(item.product)
+          : null;
+        const nomeBase = item.product.nomeComercial || item.product.nomeCompleto || "";
+        const desc =
+          numero !== null
+            ? `Nº ${numero}  ·  ${[item.product.corNome || item.product.cor, item.product.tamanhoRef || item.product.tamanhoNumero].filter(Boolean).join(" · ")}`.trim()
+            : nomeBase;
+
+        const priceCells: Row = [
+          { content: `${item.quantity}` },
+          { content: unitTxt, styles: priceStyles },
+          { content: subTxt, styles: priceStyles },
+        ];
+
+        const row: Row = [];
+        if (hasThumbs) {
+          const span = runLen.get(idx);
+          if (span !== undefined) {
+            row.push({ content: "", rowSpan: span });
+            photoByRow.set(body.length, photoKeyForItem(item));
+          }
+        }
+        row.push(item.sku, desc, ...priceCells);
+        if (temDesc) {
+          priceByRow.set(body.length, {
+            unit: [formatBRL(unit), formatBRL(unitCom)],
+            sub: [formatBRL(subtotal), formatBRL(subtotalCom)],
+          });
+        }
         body.push(row);
-      }
+      });
     }
   }
+
+  const unitLabel = temDesc ? `Unit (−${formatPercentBR(pctDesc)}%)` : "Unit";
+  const subLabel = temDesc ? `Subtotal (−${formatPercentBR(pctDesc)}%)` : "Subtotal";
+  const head: Row[] = hasThumbs
+    ? [["Foto", "SKU", "Descrição", "Qtd", unitLabel, subLabel]]
+    : [["SKU", "Descrição", "Qtd", unitLabel, subLabel]];
+
+  const idxUnit = hasThumbs ? 4 : 3;
+  const idxSub = hasThumbs ? 5 : 4;
+
+  const columnStyles: Record<number, Record<string, unknown>> = hasThumbs
+    ? {
+        0: { cellWidth: 22, minCellHeight: 16 },
+        1: { cellWidth: 24 },
+        3: { cellWidth: 12, halign: "right" },
+        4: { cellWidth: temDesc ? 26 : 22, halign: "right" },
+        5: { cellWidth: temDesc ? 30 : 26, halign: "right" },
+      }
+    : {
+        0: { cellWidth: 28 },
+        2: { cellWidth: 12, halign: "right" },
+        3: { cellWidth: temDesc ? 28 : 25, halign: "right" },
+        4: { cellWidth: temDesc ? 32 : 28, halign: "right" },
+      };
+
+  autoTable(doc, {
+    startY: y,
+    head: head as unknown as (string | number)[][],
+    body: body as unknown as (string | number)[][],
+    margin: { left: margin, right: margin },
+    theme: "plain",
+    styles: {
+      fontSize: 8.5,
+      cellPadding: 2.5,
+      textColor: COLORS.black,
+      lineColor: COLORS.separator,
+      lineWidth: 0.1,
+      valign: "middle",
+    },
+    headStyles: {
+      fontStyle: "bold",
+      fontSize: 8,
+      textColor: COLORS.gold,
+      fillColor: false as unknown as undefined,
+      lineWidth: { bottom: 0.5 },
+      lineColor: COLORS.black,
+    },
+    columnStyles,
+    didDrawCell: (data) => {
+      if (data.section !== "body") return;
+
+      // Preço "antes → depois": linha cheia riscada em cinza + preço final em dourado.
+      if (temDesc && (data.column.index === idxUnit || data.column.index === idxSub)) {
+        const pair = priceByRow.get(data.row.index);
+        if (pair) {
+          const [antes, depois] = data.column.index === idxUnit ? pair.unit : pair.sub;
+          const right = data.cell.x + data.cell.width - 2.5;
+          const cy = data.cell.y + data.cell.height / 2;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7);
+          doc.setTextColor(COLORS.textSecondary);
+          doc.text(antes, right, cy - 0.8, { align: "right" });
+          const w = doc.getTextWidth(antes);
+          doc.setDrawColor(COLORS.textSecondary);
+          doc.setLineWidth(0.25);
+          doc.line(right - w, cy - 1.6, right, cy - 1.6);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(8.5);
+          doc.setTextColor(COLORS.gold);
+          doc.text(depois, right, cy + 3.4, { align: "right" });
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(COLORS.black);
+          doc.setDrawColor(COLORS.separator);
+          doc.setLineWidth(0.1);
+        }
+      }
+
+      if (!hasThumbs || data.column.index !== 0) return;
+      const key = photoByRow.get(data.row.index);
+      if (!key) return;
+      const img = thumbs!.get(key);
+      if (!img) return;
+      const pad = 1;
+      const bw = data.cell.width - pad * 2;
+      const bh = data.cell.height - pad * 2;
+      const ratio = img.w / img.h;
+      let dw = bw, dh = bw / ratio;
+      if (dh > bh) { dh = bh; dw = bh * ratio; }
+      const dx = data.cell.x + (data.cell.width - dw) / 2;
+      const dy = data.cell.y + (data.cell.height - dh) / 2;
+      try {
+        doc.addImage(img.data, "JPEG", dx, dy, dw, dh, undefined, "FAST");
+      } catch { /* ignore */ }
+    },
+  });
+
 
   const unitLabel = temDesc ? `Unit (−${formatPercentBR(pctDesc)}%)` : "Unit";
   const subLabel = temDesc ? `Subtotal (−${formatPercentBR(pctDesc)}%)` : "Subtotal";
