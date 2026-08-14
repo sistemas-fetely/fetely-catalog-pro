@@ -798,24 +798,15 @@ function CartPage() {
                             multiplos={item.product.multiplos}
                             compact
                           />
-                          <div className="text-right">
-                            <div className="text-gold font-medium">{formatBRL(subtotal)}</div>
-                            <div className="text-[10px] text-text-muted">
-                              {negociado ? (
-                                <>
-                                  <span className="line-through text-text-muted/60">
-                                    {formatBRL(precoTabela)}
-                                  </span>{" "}
-                                  <span className="text-gold">{formatBRL(precoEfetivo)}</span> un.
-                                  {(item.descontoItemPct ?? 0) > 0 && (
-                                    <span className="text-gold"> · −{item.descontoItemPct}%</span>
-                                  )}
-                                </>
-                              ) : (
-                                <>{formatBRL(precoTabela)} un.</>
-                              )}
-                            </div>
-                          </div>
+                          <ItemPriceCell
+                            precoTabela={precoTabela}
+                            precoEfetivo={precoEfetivo}
+                            subtotal={subtotal}
+                            quantity={item.quantity}
+                            negociado={negociado}
+                            descontoItemPct={item.descontoItemPct}
+                            fatorGlobal={fatorGlobal}
+                          />
                           <button
                             onClick={() => removeItem(item.sku)}
                             className="hidden sm:block text-text-muted hover:text-stock-out p-2"
