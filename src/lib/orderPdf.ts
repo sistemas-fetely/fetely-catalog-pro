@@ -392,23 +392,25 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
     }
   }
 
+  const unitLabel = temDesc ? `Unit (−${formatPercentBR(pctDesc)}%)` : "Unit";
+  const subLabel = temDesc ? `Subtotal (−${formatPercentBR(pctDesc)}%)` : "Subtotal";
   const head: Row[] = hasThumbs
-    ? [["Foto", "SKU", "Descrição", "Qtd", "Unit", "Subtotal"]]
-    : [["SKU", "Descrição", "Qtd", "Unit", "Subtotal"]];
+    ? [["Foto", "SKU", "Descrição", "Qtd", unitLabel, subLabel]]
+    : [["SKU", "Descrição", "Qtd", unitLabel, subLabel]];
 
   const columnStyles: Record<number, Record<string, unknown>> = hasThumbs
     ? {
         0: { cellWidth: 18, minCellHeight: 18 },
         1: { cellWidth: 26 },
         3: { cellWidth: 12, halign: "right" },
-        4: { cellWidth: 22, halign: "right" },
-        5: { cellWidth: 26, halign: "right" },
+        4: { cellWidth: temDesc ? 28 : 22, halign: "right" },
+        5: { cellWidth: temDesc ? 32 : 26, halign: "right" },
       }
     : {
         0: { cellWidth: 28 },
         2: { cellWidth: 12, halign: "right" },
-        3: { cellWidth: 25, halign: "right" },
-        4: { cellWidth: 28, halign: "right" },
+        3: { cellWidth: temDesc ? 30 : 25, halign: "right" },
+        4: { cellWidth: temDesc ? 34 : 28, halign: "right" },
       };
 
   autoTable(doc, {
