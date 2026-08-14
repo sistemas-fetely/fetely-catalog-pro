@@ -439,16 +439,16 @@ export const useOrder = create<OrderState>()(
         }
 
         // ── ID sequencial global via RPC (security definer) — contorna RLS por vendedor ──
-        let nextId = `PED-${Date.now()}`;
-        try {
-          const { data: rpcId, error: errRpc } = await supabase.rpc("next_order_id");
-          if (errRpc) throw errRpc;
-          if (typeof rpcId === "string" && /^PED-\d+$/.test(rpcId)) {
-            nextId = rpcId;
+        const reservarId = async (): Promise<string> => {
+          try {
+            const { data: rpcId, error: errRpc } = await supabase.rpc("next_order_id");
+            if (errRpc) throw errRpc;
+            if (typeof rpcId === "string" && /^PED-\d+$/.test(rpcId)) return rpcId;
+          } catch (err) {
+            console.error("[orderStore] next_order_id RPC falhou, usando fallback timestamp:", err);
           }
-        } catch (err) {
-          console.error("[orderStore] next_order_id RPC falhou, usando fallback timestamp:", err);
-        }
+          return `PED-${Date.now()}`;
+        };
 
         // V19 — Carimba origem de duplicação se houver fila ativa
         let duplicadoDe: string | null = null;
@@ -471,14 +471,14 @@ export const useOrder = create<OrderState>()(
           /* noop */
         }
 
-        const order: SavedOrder = {
-          id: nextId,
+        const buildOrder = (id: string): SavedOrder => ({
+          id,
           createdAt: new Date().toISOString(),
           items,
           meta: metaWithSnapshot,
           total,
           commercial,
-          vendedorId: auth.user.id,
+          vendedorId: auth.user!.id,
           vendedorNome: vendedorNomeFinal,
           vendedorLogin: profile?.login_amigavel ?? profile?.email ?? undefined,
           vendedorTipo: profile?.tipo_vendedor ?? null,
@@ -487,40 +487,90 @@ export const useOrder = create<OrderState>()(
           grupoOrigemId,
           bonificado: commercial?.bonificado ?? false,
           motivoBonificacao: commercial?.motivoBonificacao ?? null,
+        });
+
+        const isUniqueViolation = (err: unknown) =>
+          (err as { code?: string } | null)?.code === "23505";
+
+        const describeErr = (err: unknown) => {
+          const e = err as { message?: string; details?: string; hint?: string; code?: string };
+          const parts = [e?.message, e?.details, e?.hint, e?.code ? `(${e.code})` : null].filter(
+            Boolean,
+          );
+          return err instanceof Error
+            ? err.message
+            : parts.length > 0
+              ? parts.join(" — ")
+              : (() => {
+                  try {
+                    return JSON.stringify(err);
+                  } catch {
+                    return String(err);
+                  }
+                })();
         };
 
-        // ── SAVE NO BANCO COM AWAIT REAL ──
-        try {
+        // ── CRIAÇÃO: INSERT puro do cabeçalho (fail-loud em colisão de PK) + retry com ID novo ──
+        let order: SavedOrder | null = null;
+        let lastPkError: unknown = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          const candidate = buildOrder(await reservarId());
           const { error: errO } = await supabase
             .from("orders")
-            .upsert(orderToRow(order) as never, { onConflict: "id" });
-          if (errO) throw errO;
-
-          const itemRows = await orderItemsToRows(order);
-          if (itemRows.length > 0) {
-            await supabase.from("order_items").delete().eq("order_id", order.id);
-            const { error: errI } = await supabase
-              .from("order_items")
-              .insert(itemRows as never);
-            if (errI) throw errI;
+            .insert(orderToRow(candidate) as never);
+          if (!errO) {
+            order = candidate;
+            break;
           }
-        } catch (err: unknown) {
-          console.error("[orderStore] saveOrder banco falhou:", err, order.id);
-          const e = err as { message?: string; details?: string; hint?: string; code?: string };
-          const parts = [e?.message, e?.details, e?.hint, e?.code ? `(${e.code})` : null]
-            .filter(Boolean);
-          const msg =
-            err instanceof Error
-              ? err.message
-              : parts.length > 0
-                ? parts.join(" — ")
-                : (() => { try { return JSON.stringify(err); } catch { return String(err); } })();
+          if (isUniqueViolation(errO)) {
+            lastPkError = errO;
+            console.warn(
+              `[orderStore] colisão de ID de pedido (${candidate.id}) — tentativa ${attempt}/3`,
+            );
+            continue;
+          }
+          console.error("[orderStore] saveOrder cabeçalho falhou:", errO, candidate.id);
+          const msg = describeErr(errO);
           throw new Error(
             msg
               ? `Não foi possível salvar o pedido no banco: ${msg}`
               : "Não foi possível salvar o pedido. Verifique sua conexão e tente novamente.",
           );
         }
+
+        if (!order) {
+          console.error("[orderStore] saveOrder: falha ao reservar ID após 3 tentativas", lastPkError);
+          throw new Error("Não foi possível reservar um número de pedido. Tente novamente.");
+        }
+
+        // ── ITENS: só depois do cabeçalho inserido, usando o id efetivamente gravado ──
+        try {
+          const itemRows = await orderItemsToRows(order);
+          if (itemRows.length > 0) {
+            await supabase.from("order_items").delete().eq("order_id", order.id);
+            const { error: errI } = await supabase
+              .from("order_items")
+              .insert(itemRows as never);
+            if (errI) {
+              if (isUniqueViolation(errI)) {
+                throw new Error(
+                  `Conflito ao gravar os itens do pedido ${order.id}: outra sessão já gravou itens nesse número. Recarregue a página e confira o pedido antes de tentar novamente.`,
+                );
+              }
+              throw errI;
+            }
+          }
+        } catch (err: unknown) {
+          console.error("[orderStore] saveOrder itens falhou:", err, order.id);
+          if (err instanceof Error) throw err;
+          const msg = describeErr(err);
+          throw new Error(
+            msg
+              ? `Não foi possível salvar os itens do pedido: ${msg}`
+              : "Não foi possível salvar os itens do pedido. Verifique sua conexão e tente novamente.",
+          );
+        }
+
 
         // ── SÓ ADICIONA AO HISTORY APÓS SUCESSO NO BANCO ──
         set((s) => ({ history: [order, ...s.history].slice(0, 200) }));
