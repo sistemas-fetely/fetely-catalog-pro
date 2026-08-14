@@ -91,18 +91,21 @@ function ItemPriceCell({
 
   return (
     <div className="text-right">
-      <div className="text-[10px] text-text-muted/60 line-through leading-tight">
-        {formatBRL(subtotal)}
-      </div>
-      <div className="text-gold font-medium leading-tight">{formatBRL(subFinal)}</div>
-      <div className="text-[10px] text-text-muted mt-0.5">
-        <span className="line-through text-text-muted/60">{formatBRL(precoTabela)}</span>{" "}
-        <span className="text-gold">{formatBRL(unitFinal)}</span> un.
+      <div className="flex items-center justify-end gap-1.5">
+        <span className="text-[11px] text-text-muted/70 line-through">{formatBRL(subtotal)}</span>
         {pctTotal > 0.05 && (
-          <span className="ml-1 rounded-sm border border-gold/40 bg-gold/10 px-1 text-[9px] text-gold">
+          <span className="rounded-full border border-gold/40 bg-gold/10 px-1.5 py-[1px] text-[9px] font-semibold tracking-wide text-gold">
             −{formatPercentBR(pctTotal)}%
           </span>
         )}
+      </div>
+      <div className="text-gold font-semibold text-[15px] leading-tight">
+        {formatBRL(subFinal)}
+      </div>
+      <div className="text-[10px] text-text-muted leading-tight">
+        <span className="line-through text-text-muted/60">{formatBRL(precoTabela)}</span>
+        <span className="mx-1 text-text-muted/50">→</span>
+        <span className="text-gold/90">{formatBRL(unitFinal)}</span> un.
       </div>
       {(descontoItemPct ?? 0) > 0 && (
         <div className="text-[9px] text-gold/80">item −{descontoItemPct}%</div>
