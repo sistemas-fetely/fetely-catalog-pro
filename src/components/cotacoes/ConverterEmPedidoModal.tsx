@@ -108,9 +108,10 @@ export function ConverterEmPedidoModal({
 
       // 2) Pedido firme — só se houver itens em estoque
       if (itensFirmes.length > 0) {
-        const pedido = await saveOrder(cotacao.commercial, itensFirmes);
+        const pedido = await saveOrder(comercialFirme, itensFirmes);
         pedidoId = pedido.id;
       }
+
 
       if (pedidoId && provisaoId) {
         useProvisao.getState().updateStatus(provisaoId, "aguardando_estoque", {
