@@ -13,6 +13,7 @@ import { useAuth } from "@/store/authStore";
 import { useClientes } from "@/store/clienteStore";
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeStorage } from "@/lib/safeStorage";
+import { formatBRL } from "@/lib/format";
 
 
 
