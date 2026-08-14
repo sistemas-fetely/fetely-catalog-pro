@@ -742,6 +742,7 @@ function CartPage() {
                   {group.map((item) => {
                     const precoTabela = item.product.precoAtacado;
                     const precoEfetivo = effectiveUnitPrice(item);
+                    const fatorGlobal = fatorDescontoItens(commercial?.calculo);
                     const subtotal = effectiveItemSubtotal(item);
                     const negociado = hasItemOverride(item);
                     const img =
