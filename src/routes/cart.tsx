@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { formatBRL } from "@/lib/format";
+import { fatorDescontoItens, formatPercentBR } from "@/lib/commercial";
 import { useOrder, cartTotal, effectiveUnitPrice, effectiveItemSubtotal, hasItemOverride } from "@/store/orderStore";
 import { useNegotiation, registrarNegociacao } from "@/store/negotiationStore";
 import { CartCommercialPanel, type CommercialState } from "@/components/cart/CartCommercialPanel";
@@ -53,6 +54,61 @@ function buildClienteSnapshot(c: Cliente): ClienteSnapshot {
     enderecoEntrega: endereco,
     premissasAplicadas: getPremissasVigentes(c),
   };
+}
+
+/** Célula de preço: mostra "antes → depois" quando há desconto (item ou global). */
+function ItemPriceCell({
+  precoTabela,
+  precoEfetivo,
+  subtotal,
+  quantity,
+  negociado,
+  descontoItemPct,
+  fatorGlobal,
+}: {
+  precoTabela: number;
+  precoEfetivo: number;
+  subtotal: number;
+  quantity: number;
+  negociado: boolean;
+  descontoItemPct?: number;
+  fatorGlobal: number;
+}) {
+  const unitFinal = Math.round(precoEfetivo * fatorGlobal * 100) / 100;
+  const subFinal = Math.round(unitFinal * quantity * 100) / 100;
+  const temDesconto = negociado || fatorGlobal < 1;
+  const pctTotal =
+    precoTabela > 0 ? Math.round((1 - unitFinal / precoTabela) * 1000) / 10 : 0;
+
+  if (!temDesconto) {
+    return (
+      <div className="text-right">
+        <div className="text-gold font-medium">{formatBRL(subtotal)}</div>
+        <div className="text-[10px] text-text-muted">{formatBRL(precoTabela)} un.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-right">
+      <div className="text-[10px] text-text-muted/60 line-through leading-tight">
+        {formatBRL(subtotal)}
+      </div>
+      <div className="text-gold font-medium leading-tight">{formatBRL(subFinal)}</div>
+      <div className="text-[10px] text-text-muted mt-0.5">
+        <span className="line-through text-text-muted/60">{formatBRL(precoTabela)}</span>{" "}
+        <span className="text-gold">{formatBRL(unitFinal)}</span> un.
+        {pctTotal > 0.05 && (
+          <span className="ml-1 rounded-sm border border-gold/40 bg-gold/10 px-1 text-[9px] text-gold">
+            −{formatPercentBR(pctTotal)}%
+          </span>
+        )}
+      </div>
+      {(descontoItemPct ?? 0) > 0 && (
+        <div className="text-[9px] text-gold/80">item −{descontoItemPct}%</div>
+      )}
+    </div>
+  );
 }
 
 function toItemProvisao(i: CartItem): ItemProvisao {
@@ -742,6 +798,7 @@ function CartPage() {
                   {group.map((item) => {
                     const precoTabela = item.product.precoAtacado;
                     const precoEfetivo = effectiveUnitPrice(item);
+                    const fatorGlobal = fatorDescontoItens(commercial?.calculo);
                     const subtotal = effectiveItemSubtotal(item);
                     const negociado = hasItemOverride(item);
                     const img =
@@ -798,24 +855,15 @@ function CartPage() {
                             multiplos={item.product.multiplos}
                             compact
                           />
-                          <div className="text-right">
-                            <div className="text-gold font-medium">{formatBRL(subtotal)}</div>
-                            <div className="text-[10px] text-text-muted">
-                              {negociado ? (
-                                <>
-                                  <span className="line-through text-text-muted/60">
-                                    {formatBRL(precoTabela)}
-                                  </span>{" "}
-                                  <span className="text-gold">{formatBRL(precoEfetivo)}</span> un.
-                                  {(item.descontoItemPct ?? 0) > 0 && (
-                                    <span className="text-gold"> · −{item.descontoItemPct}%</span>
-                                  )}
-                                </>
-                              ) : (
-                                <>{formatBRL(precoTabela)} un.</>
-                              )}
-                            </div>
-                          </div>
+                          <ItemPriceCell
+                            precoTabela={precoTabela}
+                            precoEfetivo={precoEfetivo}
+                            subtotal={subtotal}
+                            quantity={item.quantity}
+                            negociado={negociado}
+                            descontoItemPct={item.descontoItemPct}
+                            fatorGlobal={fatorGlobal}
+                          />
                           <button
                             onClick={() => removeItem(item.sku)}
                             className="hidden sm:block text-text-muted hover:text-stock-out p-2"

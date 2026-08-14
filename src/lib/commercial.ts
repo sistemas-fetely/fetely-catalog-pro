@@ -531,6 +531,34 @@ export function formatPercentBR(n: number): string {
   return n.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 1 });
 }
 
+/**
+ * Fator de desconto proporcional aplicado sobre os itens (Celebra + Negociação + Bônus PIX).
+ * Não inclui frete nem acréscimo fiscal — apenas o que reduz o preço dos produtos.
+ * Retorna 1 quando não há desconto.
+ */
+export function fatorDescontoItens(
+  c?: Pick<
+    OrderCommercial,
+    "bruto" | "descontoCelebraValor" | "descontoMasterValor" | "bonusPixValor" | "aplicouPix"
+  > | null,
+): number {
+  if (!c || !c.bruto || c.bruto <= 0) return 1;
+  const descontos =
+    (c.descontoCelebraValor ?? 0) +
+    (c.descontoMasterValor ?? 0) +
+    (c.aplicouPix ? c.bonusPixValor ?? 0 : 0);
+  if (descontos <= 0.001) return 1;
+  const fator = (c.bruto - descontos) / c.bruto;
+  return fator > 0 && fator < 0.999999 ? fator : 1;
+}
+
+/** Percentual total de desconto aplicado sobre os itens. */
+export function percentDescontoItens(
+  c?: Parameters<typeof fatorDescontoItens>[0],
+): number {
+  return Math.round((1 - fatorDescontoItens(c)) * 100 * 10) / 10;
+}
+
 export const JUSTIFICATIVAS_NEGOCIACAO = [
 
   "Feira / evento presencial",

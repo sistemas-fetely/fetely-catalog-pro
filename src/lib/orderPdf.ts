@@ -3,7 +3,13 @@ import autoTable from "jspdf-autotable";
 import type { CartItem, Product, SavedOrder } from "@/types";
 import type { Cotacao } from "@/types/cotacao";
 import type { ProvisaoFutura } from "@/types/provisao";
-import { FRETE_PERCENT, getBonusPixPercent, formatPercentBR } from "@/lib/commercial";
+import {
+  FRETE_PERCENT,
+  getBonusPixPercent,
+  formatPercentBR,
+  fatorDescontoItens,
+  percentDescontoItens,
+} from "@/lib/commercial";
 import { emEstoque } from "@/lib/classifyItem";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 
@@ -317,6 +323,9 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
 
   // ─── TABELA DE ITENS (agrupada por seção → coleção) ───
   const secoes = agruparItensPorSecao(order.items);
+  const fatorDesc = fatorDescontoItens(order.commercial);
+  const temDesc = fatorDesc < 1;
+  const pctDesc = percentDescontoItens(order.commercial);
   const hasThumbs = !!thumbs && thumbs.size > 0;
   const COLS = hasThumbs ? 6 : 5;
   type Row = (string | { content: string; colSpan?: number; styles?: Record<string, unknown> })[];
@@ -351,22 +360,31 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
         },
       ]);
       for (const item of g.items) {
-        const subtotal = item.product.precoAtacado * item.quantity;
+        const unit = item.product.precoAtacado;
+        const subtotal = unit * item.quantity;
+        const unitCom = Math.round(unit * fatorDesc * 100) / 100;
+        const subtotalCom = Math.round(unitCom * item.quantity * 100) / 100;
+        const unitTxt = temDesc
+          ? `de ${formatBRL(unit)}\npor ${formatBRL(unitCom)}`
+          : formatBRL(unit);
+        const subTxt = temDesc
+          ? `de ${formatBRL(subtotal)}\npor ${formatBRL(subtotalCom)}`
+          : formatBRL(subtotal);
         const row: Row = hasThumbs
           ? [
               "",
               item.sku,
               item.product.nomeComercial || item.product.nomeCompleto || "",
               `${item.quantity}`,
-              formatBRL(item.product.precoAtacado),
-              formatBRL(subtotal),
+              unitTxt,
+              subTxt,
             ]
           : [
               item.sku,
               item.product.nomeComercial || item.product.nomeCompleto || "",
               `${item.quantity}`,
-              formatBRL(item.product.precoAtacado),
-              formatBRL(subtotal),
+              unitTxt,
+              subTxt,
             ];
         skuByRow.set(body.length, item.sku);
         body.push(row);
@@ -374,23 +392,25 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
     }
   }
 
+  const unitLabel = temDesc ? `Unit (−${formatPercentBR(pctDesc)}%)` : "Unit";
+  const subLabel = temDesc ? `Subtotal (−${formatPercentBR(pctDesc)}%)` : "Subtotal";
   const head: Row[] = hasThumbs
-    ? [["Foto", "SKU", "Descrição", "Qtd", "Unit", "Subtotal"]]
-    : [["SKU", "Descrição", "Qtd", "Unit", "Subtotal"]];
+    ? [["Foto", "SKU", "Descrição", "Qtd", unitLabel, subLabel]]
+    : [["SKU", "Descrição", "Qtd", unitLabel, subLabel]];
 
   const columnStyles: Record<number, Record<string, unknown>> = hasThumbs
     ? {
         0: { cellWidth: 18, minCellHeight: 18 },
         1: { cellWidth: 26 },
         3: { cellWidth: 12, halign: "right" },
-        4: { cellWidth: 22, halign: "right" },
-        5: { cellWidth: 26, halign: "right" },
+        4: { cellWidth: temDesc ? 28 : 22, halign: "right" },
+        5: { cellWidth: temDesc ? 32 : 26, halign: "right" },
       }
     : {
         0: { cellWidth: 28 },
         2: { cellWidth: 12, halign: "right" },
-        3: { cellWidth: 25, halign: "right" },
-        4: { cellWidth: 28, halign: "right" },
+        3: { cellWidth: temDesc ? 30 : 25, halign: "right" },
+        4: { cellWidth: temDesc ? 34 : 28, halign: "right" },
       };
 
   autoTable(doc, {
@@ -729,6 +749,9 @@ function escapeHtml(s: string | undefined | null): string {
 
 function renderOrderBlockHTML(order: SavedOrder): string {
   const secoes = agruparItensPorSecao(order.items);
+  const fatorDesc = fatorDescontoItens(order.commercial);
+  const temDesc = fatorDesc < 1;
+  const pctDesc = percentDescontoItens(order.commercial);
   const itensRows = secoes
     .map((sec) => {
       const secCls = sec.tipo === "firme" ? "sec-firme" : "sec-prov";
@@ -738,14 +761,23 @@ function renderOrderBlockHTML(order: SavedOrder): string {
           const gh = `<tr class="grp"><td colspan="5">${escapeHtml(g.colecao)} · ${g.qtd} un. · ${formatBRL(g.subtotal)}</td></tr>`;
           const linhas = g.items
             .map((it) => {
-              const subtotal = it.product.precoAtacado * it.quantity;
+              const unit = it.product.precoAtacado;
+              const subtotal = unit * it.quantity;
+              const unitCom = Math.round(unit * fatorDesc * 100) / 100;
+              const subCom = Math.round(unitCom * it.quantity * 100) / 100;
+              const cellUnit = temDesc
+                ? `<s class="antes">${formatBRL(unit)}</s><br><b class="depois">${formatBRL(unitCom)}</b>`
+                : formatBRL(unit);
+              const cellSub = temDesc
+                ? `<s class="antes">${formatBRL(subtotal)}</s><br><b class="depois">${formatBRL(subCom)}</b>`
+                : formatBRL(subtotal);
               return `
         <tr>
           <td class="mono">${escapeHtml(it.sku)}</td>
           <td>${escapeHtml(it.product.nomeComercial || it.product.nomeCompleto || "")}</td>
           <td class="r">${it.quantity}</td>
-          <td class="r">${formatBRL(it.product.precoAtacado)}</td>
-          <td class="r">${formatBRL(subtotal)}</td>
+          <td class="r">${cellUnit}</td>
+          <td class="r">${cellSub}</td>
         </tr>`;
             })
             .join("");
@@ -827,7 +859,7 @@ function renderOrderBlockHTML(order: SavedOrder): string {
 
     <table class="items">
       <thead>
-        <tr><th>SKU</th><th>Descrição</th><th class="r">Qtd</th><th class="r">Unit</th><th class="r">Subtotal</th></tr>
+        <tr><th>SKU</th><th>Descrição</th><th class="r">Qtd</th><th class="r">Unit${temDesc ? ` (−${formatPercentBR(pctDesc)}%)` : ""}</th><th class="r">Subtotal${temDesc ? ` (−${formatPercentBR(pctDesc)}%)` : ""}</th></tr>
       </thead>
       <tbody>${itensRows}</tbody>
     </table>
@@ -971,6 +1003,8 @@ function buildPrintHTML(orders: SavedOrder[], mode: "completa" | "resumida"): st
     .wrap{padding:14mm}
     .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
     .r{text-align:right}
+    .antes{color:#9a9a9a;font-size:9px}
+    .depois{color:#b8923a;font-weight:600}
     .lbl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#6a6a6a}
     table{width:100%;border-collapse:collapse}
     th,td{padding:5px 6px;border-bottom:1px solid #e0e0e0;vertical-align:top}
