@@ -1003,6 +1003,8 @@ function buildPrintHTML(orders: SavedOrder[], mode: "completa" | "resumida"): st
     .wrap{padding:14mm}
     .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
     .r{text-align:right}
+    .antes{color:#9a9a9a;font-size:9px}
+    .depois{color:#b8923a;font-weight:600}
     .lbl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#6a6a6a}
     table{width:100%;border-collapse:collapse}
     th,td{padding:5px 6px;border-bottom:1px solid #e0e0e0;vertical-align:top}
