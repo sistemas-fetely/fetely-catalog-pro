@@ -389,6 +389,10 @@ export const useOrder = create<OrderState>()(
           commercial?.totalFinal ??
           items.reduce((sum, i) => sum + effectiveItemSubtotal(i), 0);
 
+        // ── GUARD (antes de qualquer gravação e antes da reserva de ID) ──
+        assertCommercialMatchesItems(commercial, items, "saveOrder");
+
+
         // ── GUARD: session pronta e usuário identificado ──
         const auth = useAuth.getState();
         if (!auth.session || !auth.user?.id) {
