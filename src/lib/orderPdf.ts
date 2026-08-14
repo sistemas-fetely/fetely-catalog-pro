@@ -749,6 +749,9 @@ function escapeHtml(s: string | undefined | null): string {
 
 function renderOrderBlockHTML(order: SavedOrder): string {
   const secoes = agruparItensPorSecao(order.items);
+  const fatorDesc = fatorDescontoItens(order.commercial);
+  const temDesc = fatorDesc < 1;
+  const pctDesc = percentDescontoItens(order.commercial);
   const itensRows = secoes
     .map((sec) => {
       const secCls = sec.tipo === "firme" ? "sec-firme" : "sec-prov";
@@ -758,14 +761,23 @@ function renderOrderBlockHTML(order: SavedOrder): string {
           const gh = `<tr class="grp"><td colspan="5">${escapeHtml(g.colecao)} · ${g.qtd} un. · ${formatBRL(g.subtotal)}</td></tr>`;
           const linhas = g.items
             .map((it) => {
-              const subtotal = it.product.precoAtacado * it.quantity;
+              const unit = it.product.precoAtacado;
+              const subtotal = unit * it.quantity;
+              const unitCom = Math.round(unit * fatorDesc * 100) / 100;
+              const subCom = Math.round(unitCom * it.quantity * 100) / 100;
+              const cellUnit = temDesc
+                ? `<s class="antes">${formatBRL(unit)}</s><br><b class="depois">${formatBRL(unitCom)}</b>`
+                : formatBRL(unit);
+              const cellSub = temDesc
+                ? `<s class="antes">${formatBRL(subtotal)}</s><br><b class="depois">${formatBRL(subCom)}</b>`
+                : formatBRL(subtotal);
               return `
         <tr>
           <td class="mono">${escapeHtml(it.sku)}</td>
           <td>${escapeHtml(it.product.nomeComercial || it.product.nomeCompleto || "")}</td>
           <td class="r">${it.quantity}</td>
-          <td class="r">${formatBRL(it.product.precoAtacado)}</td>
-          <td class="r">${formatBRL(subtotal)}</td>
+          <td class="r">${cellUnit}</td>
+          <td class="r">${cellSub}</td>
         </tr>`;
             })
             .join("");
