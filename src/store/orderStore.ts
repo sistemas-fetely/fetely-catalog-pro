@@ -1030,6 +1030,36 @@ export function hasItemOverride(item: CartItem): boolean {
   return item.precoOverride !== undefined || (item.descontoItemPct ?? 0) > 0;
 }
 
+/**
+ * FAIL-LOUD — impede que um pedido nasça com total comercial que não corresponde
+ * aos itens que estão sendo persistidos. Usa a MESMA fórmula de subtotal
+ * empregada por orderItemsToRows (preço efetivo × qtd × (1 - desconto_item)).
+ * Tolerância de R$ 0,05 apenas para arredondamento de preços com 4 decimais.
+ */
+export function assertCommercialMatchesItems(
+  commercial: OrderCommercial | undefined,
+  items: CartItem[],
+  contexto: string,
+): void {
+  if (!commercial) return;
+  const brutoItens = items.reduce((sum, i) => sum + effectiveItemSubtotal(i), 0);
+  const diff = Math.abs(brutoItens - commercial.bruto);
+  if (diff <= 0.05) return;
+  console.error(
+    `[orderStore] ${contexto}: divergência entre itens e total do pedido`,
+    {
+      brutoItens,
+      brutoComercial: commercial.bruto,
+      diferenca: diff,
+      skus: items.map((i) => i.sku),
+    },
+  );
+  throw new Error(
+    `Divergência de valores: os itens somam ${formatBRL(brutoItens)}, mas o total do pedido está em ${formatBRL(commercial.bruto)} (diferença ${formatBRL(diff)}). O pedido não foi salvo. Recarregue o catálogo e refaça a conferência antes de confirmar.`,
+  );
+}
+
+
 export function cartTotal(items: CartItem[]): number {
   return items.reduce((sum, i) => sum + effectiveItemSubtotal(i), 0);
 }
