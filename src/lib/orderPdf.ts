@@ -317,6 +317,9 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
 
   // ─── TABELA DE ITENS (agrupada por seção → coleção) ───
   const secoes = agruparItensPorSecao(order.items);
+  const fatorDesc = fatorDescontoItens(order.commercial);
+  const temDesc = fatorDesc < 1;
+  const pctDesc = percentDescontoItens(order.commercial);
   const hasThumbs = !!thumbs && thumbs.size > 0;
   const COLS = hasThumbs ? 6 : 5;
   type Row = (string | { content: string; colSpan?: number; styles?: Record<string, unknown> })[];
