@@ -716,6 +716,10 @@ export const useOrder = create<OrderState>()(
           commercial?.totalFinal ??
           items.reduce((s, i) => s + effectiveItemSubtotal(i), 0);
 
+        // ── GUARD (antes de qualquer gravação e antes da reserva de ID) ──
+        assertCommercialMatchesItems(commercial, items, "saveOrderAsCliente");
+
+
         let nextId = `PED-${Date.now()}`;
         try {
           const { data: rpcId } = await supabase.rpc("next_order_id");
