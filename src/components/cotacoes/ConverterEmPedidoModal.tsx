@@ -10,6 +10,7 @@ import { useCotacao } from "@/store/cotacaoStore";
 import { useProvisao } from "@/store/provisaoStore";
 import { useCatalog } from "@/store/catalogStore";
 import { emEstoque, extrairDataPrevisao } from "@/lib/classifyItem";
+import { recalcularComercialParaItens } from "@/lib/recalcComercial";
 
 function toItemProvisao(i: CartItem): ItemProvisao {
   return {
@@ -61,6 +62,18 @@ export function ConverterEmPedidoModal({
   const isMisto = itensFirmes.length > 0 && itensProvisao.length > 0;
   const apenasProvisao = itensFirmes.length === 0 && itensProvisao.length > 0;
 
+  // Recalcula as bases de cálculo sobre os itens firmes reais (o catálogo pode ter
+  // mudado desde a criação da cotação). Decisões comerciais são preservadas.
+  const comercialFirme = useMemo(() => {
+    if (!cotacao.commercial || itensFirmes.length === 0) return undefined;
+    return recalcularComercialParaItens(cotacao.commercial, itensFirmes);
+  }, [cotacao.commercial, itensFirmes]);
+
+  const totalFirme = comercialFirme?.totalFinal ?? 0;
+  const houveDiferenca =
+    !!comercialFirme && Math.abs(totalFirme - cotacao.total) > 0.05;
+
+
   const handleConvert = async () => {
     if (saving) return;
     setSaving(true);
@@ -95,9 +108,10 @@ export function ConverterEmPedidoModal({
 
       // 2) Pedido firme — só se houver itens em estoque
       if (itensFirmes.length > 0) {
-        const pedido = await saveOrder(cotacao.commercial, itensFirmes);
+        const pedido = await saveOrder(comercialFirme, itensFirmes);
         pedidoId = pedido.id;
       }
+
 
       if (pedidoId && provisaoId) {
         useProvisao.getState().updateStatus(provisaoId, "aguardando_estoque", {
@@ -170,6 +184,24 @@ export function ConverterEmPedidoModal({
             </ul>
           </div>
         )}
+
+        {houveDiferenca && (
+          <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 space-y-1">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-amber-500 font-semibold">
+              Valores recalculados
+            </div>
+            <div className="text-xs text-text-secondary">
+              Total da cotação: <span className="text-text-primary">{formatBRL(cotacao.total)}</span>
+              {" · "}
+              Total do pedido firme: <span className="text-text-primary font-medium">{formatBRL(totalFirme)}</span>
+            </div>
+            <div className="text-[11px] text-text-muted">
+              A diferença corresponde aos itens que hoje estão em previsão e seguem para a provisão.
+            </div>
+          </div>
+        )}
+
+
 
         {apenasProvisao && (
           <div className="rounded-md border border-blue-500/40 bg-blue-500/5 p-3 space-y-1">
