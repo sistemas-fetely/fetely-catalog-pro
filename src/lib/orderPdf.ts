@@ -360,22 +360,31 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
         },
       ]);
       for (const item of g.items) {
-        const subtotal = item.product.precoAtacado * item.quantity;
+        const unit = item.product.precoAtacado;
+        const subtotal = unit * item.quantity;
+        const unitCom = Math.round(unit * fatorDesc * 100) / 100;
+        const subtotalCom = Math.round(unitCom * item.quantity * 100) / 100;
+        const unitTxt = temDesc
+          ? `de ${formatBRL(unit)}\npor ${formatBRL(unitCom)}`
+          : formatBRL(unit);
+        const subTxt = temDesc
+          ? `de ${formatBRL(subtotal)}\npor ${formatBRL(subtotalCom)}`
+          : formatBRL(subtotal);
         const row: Row = hasThumbs
           ? [
               "",
               item.sku,
               item.product.nomeComercial || item.product.nomeCompleto || "",
               `${item.quantity}`,
-              formatBRL(item.product.precoAtacado),
-              formatBRL(subtotal),
+              unitTxt,
+              subTxt,
             ]
           : [
               item.sku,
               item.product.nomeComercial || item.product.nomeCompleto || "",
               `${item.quantity}`,
-              formatBRL(item.product.precoAtacado),
-              formatBRL(subtotal),
+              unitTxt,
+              subTxt,
             ];
         skuByRow.set(body.length, item.sku);
         body.push(row);
