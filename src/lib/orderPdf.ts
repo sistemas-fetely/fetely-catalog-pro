@@ -39,10 +39,27 @@ async function urlToDataUrl(url: string, maxSize = 200): Promise<LoadedImage | n
   } catch { return null; }
 }
 
+/**
+ * Chave de foto: velas numéricas compartilham UMA foto por coleção+cor+tamanho
+ * (não uma foto por número). Demais itens usam o próprio SKU.
+ */
+function photoKeyForItem(it: CartItem): string {
+  const p = it.product;
+  if (isVelaNumericaForPdf(p)) {
+    return [
+      "VELA",
+      normalizeSortKey(p.colecao),
+      normalizeSortKey(p.corNome || p.cor || ""),
+      normalizeSortKey(p.tamanhoRef || p.tamanhoNumero || ""),
+    ].join("|");
+  }
+  return `SKU|${it.sku}`;
+}
+
 async function loadItemThumbs(items: CartItem[]): Promise<ThumbMap> {
   const photos = usePhotos.getState();
   const map: ThumbMap = new Map();
-  const seen = new Map<string, string>(); // sku -> url
+  const seen = new Map<string, string>(); // photoKey -> url
   for (const it of items) {
     const colecao = it.product.colecao || "";
     const cor = it.product.corNome || "";
@@ -56,12 +73,13 @@ async function loadItemThumbs(items: CartItem[]): Promise<ThumbMap> {
       (primary && getProdutoPhoto(photos, colecao, primary)) ||
       (cor && getProdutoPhoto(photos, colecao, cor)) ||
       undefined;
-    if (url) seen.set(it.sku, url);
+    const key = photoKeyForItem(it);
+    if (url && !seen.has(key)) seen.set(key, url);
   }
   await Promise.all(
-    Array.from(seen.entries()).map(async ([sku, url]) => {
-      const img = await urlToDataUrl(url);
-      if (img) map.set(sku, img);
+    Array.from(seen.entries()).map(async ([key, url]) => {
+      const img = await urlToDataUrl(url, 320);
+      if (img) map.set(key, img);
     }),
   );
   return map;
