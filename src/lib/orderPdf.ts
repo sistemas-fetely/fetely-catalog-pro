@@ -346,9 +346,16 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
   const pctDesc = percentDescontoItens(order.commercial);
   const hasThumbs = !!thumbs && thumbs.size > 0;
   const COLS = hasThumbs ? 6 : 5;
-  type Row = (string | { content: string; colSpan?: number; styles?: Record<string, unknown> })[];
+  type Row = (
+    | string
+    | { content: string; colSpan?: number; rowSpan?: number; styles?: Record<string, unknown> }
+  )[];
   const body: Row[] = [];
-  const skuByRow = new Map<number, string>();
+  const photoByRow = new Map<number, string>();
+  const priceByRow = new Map<number, { unit: [string, string]; sub: [string, string] }>();
+
+  const INVISIBLE = "#ffffff";
+
   for (const sec of secoes) {
     body.push([
       {
