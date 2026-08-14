@@ -62,6 +62,18 @@ export function ConverterEmPedidoModal({
   const isMisto = itensFirmes.length > 0 && itensProvisao.length > 0;
   const apenasProvisao = itensFirmes.length === 0 && itensProvisao.length > 0;
 
+  // Recalcula as bases de cálculo sobre os itens firmes reais (o catálogo pode ter
+  // mudado desde a criação da cotação). Decisões comerciais são preservadas.
+  const comercialFirme = useMemo(() => {
+    if (!cotacao.commercial || itensFirmes.length === 0) return undefined;
+    return recalcularComercialParaItens(cotacao.commercial, itensFirmes);
+  }, [cotacao.commercial, itensFirmes]);
+
+  const totalFirme = comercialFirme?.totalFinal ?? 0;
+  const houveDiferenca =
+    !!comercialFirme && Math.abs(totalFirme - cotacao.total) > 0.05;
+
+
   const handleConvert = async () => {
     if (saving) return;
     setSaving(true);
