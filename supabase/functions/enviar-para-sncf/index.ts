@@ -282,22 +282,10 @@ Deno.serve(async (req) => {
     }
 
     const clienteSnapshot = pedido.cliente_snapshot as any;
-    const cnpj = clienteSnapshot?.cnpj;
-    if (!cnpj) {
-      return jsonResponse(400, { error: "Pedido sem CNPJ no snapshot do cliente" });
-    }
-
-    // Pedido bonificado bypassa validação (é sempre boleto sentinela).
-    const formaNormalizada = (pedido as any).bonificado ? "boleto" : normalizarForma(pedido.forma_pagamento);
-    if (!formaNormalizada) {
-      return jsonResponse(400, {
-        error: `Forma de pagamento inválida ou ausente: '${pedido.forma_pagamento}'. Aceita: pix, cartão, boleto.`,
-      });
-    }
 
     // Busca cadastro completo do cliente — o snapshot do pedido tem só dados
-    // resumidos; o SNCF precisa de razão social + endereço completo para não
-    // gravar o placeholder "A enriquecer via BrasilAPI".
+    // resumidos (e pode estar nulo em pedidos antigos); o SNCF precisa de
+    // razão social + endereço completo para não gravar o placeholder.
     let clienteFull: any = null;
     if (pedido.cliente_id) {
       const { data: cli } = await supabase
@@ -309,6 +297,23 @@ Deno.serve(async (req) => {
     }
     const c: any = clienteFull ?? {};
     const snap: any = clienteSnapshot ?? {};
+
+    // CNPJ: snapshot primeiro, cadastro como fallback.
+    const cnpj = snap?.cnpj ?? c?.cnpj ?? null;
+    if (!cnpj) {
+      return jsonResponse(400, {
+        error: "Pedido sem CNPJ: nem o snapshot nem o cadastro do cliente têm CNPJ.",
+      });
+    }
+
+    // Pedido bonificado bypassa validação (é sempre boleto sentinela).
+    const formaNormalizada = (pedido as any).bonificado ? "boleto" : normalizarForma(pedido.forma_pagamento);
+    if (!formaNormalizada) {
+      return jsonResponse(400, {
+        error: `Forma de pagamento inválida ou ausente: '${pedido.forma_pagamento}'. Aceita: pix, cartão, boleto.`,
+      });
+    }
+
 
     // Marca pendente antes da chamada
     await supabase
