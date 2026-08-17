@@ -6,6 +6,7 @@ import {
   CONDICAO_BONIFICADO_ID,
   CONDICOES_PAGAMENTO,
   DESCONTO_MASTER_MAX,
+  DESCONTO_REP_MAX,
   FAIXAS,
   JUSTIFICATIVAS_NEGOCIACAO,
   MOTIVOS_BONIFICACAO,
@@ -28,6 +29,10 @@ export interface CommercialState {
   condicao: CondicaoPagamento | null;
   podeFinalizar: boolean;
   motivoBloqueio: string | null;
+  /** Ajuste 1 — cálculo para COTAÇÃO (rascunho): ignora o pedido mínimo. */
+  calculoCotacao: CalculoPedido;
+  condicaoCotacao: CondicaoPagamento | null;
+  podeSalvarCotacao: boolean;
   bonificado?: boolean;
   motivoBonificacao?: string;
 }
@@ -59,6 +64,7 @@ export function CartCommercialPanel({
     setFreteAjusteModo,
     setFreteAjusteQtd,
     setLiberarTodasCondicoes,
+    ativarSemSenha,
     desativar,
   } = useNegotiation();
 
@@ -78,6 +84,12 @@ export function CartCommercialPanel({
     roles.includes("admin") ||
     roles.includes("master") ||
     (roles.includes("vendedor") && (profile?.tipo_vendedor ?? "interno") === "interno");
+  const isRepresentante =
+    !roles.includes("admin") &&
+    !roles.includes("master") &&
+    (profile?.tipo_vendedor ?? "interno") === "representante";
+  const tetoDesconto = isRepresentante ? DESCONTO_REP_MAX : DESCONTO_MASTER_MAX;
+  const descontoPctEfetivo = Math.min(descontoPct, tetoDesconto);
   const [bonificado, setBonificado] = useState(false);
   const [motivoBonif, setMotivoBonif] = useState<string>("");
   const [motivoOutroTxt, setMotivoOutroTxt] = useState<string>("");
@@ -170,7 +182,7 @@ export function CartCommercialPanel({
       calcularPedido({
         bruto,
         usarReservada: ativo && usarReservada,
-        descontoMasterPct: ativo ? descontoPct : 0,
+        descontoMasterPct: ativo ? descontoPctEfetivo : 0,
         condicao,
         premissas,
         freteGratisOverride: ativo && freteGratis,
@@ -186,6 +198,40 @@ export function CartCommercialPanel({
     [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, freteAjusteModo, freteAjusteQtd, ufDestino, bonificado, aplicarCelebra, aplicarNegociacao, aplicarPix, aplicarIsentoIE],
   );
 
+
+  // Ajuste 1 — cálculo paralelo para COTAÇÃO: ignora o pedido mínimo,
+  // permitindo salvar rascunho em qualquer valor.
+  const calculoCotacao = useMemo(
+    () =>
+      calcularPedido({
+        bruto,
+        usarReservada: ativo && usarReservada,
+        descontoMasterPct: ativo ? descontoPctEfetivo : 0,
+        condicao,
+        premissas,
+        freteGratisOverride: ativo && freteGratis,
+        ignorarPedidoMinimo: true,
+        uf: ufDestino,
+        aplicarDescontoCelebra: aplicarCelebra,
+        aplicarDescontoNegociacao: aplicarNegociacao,
+        aplicarBonusPix: aplicarPix,
+        aplicarAcrescimoIsentoIE: aplicarIsentoIE,
+        freteAjusteModo,
+        freteAjusteQtd: ativo ? freteAjusteQtd : 0,
+      }),
+    [bruto, ativo, usarReservada, descontoPctEfetivo, condicao, premissas, freteGratis, freteAjusteModo, freteAjusteQtd, ufDestino, aplicarCelebra, aplicarNegociacao, aplicarPix, aplicarIsentoIE],
+  );
+
+  const condicaoCotacao = useMemo<CondicaoPagamento | null>(() => {
+    if (condicao) return condicao;
+    const f = calculoCotacao.faixa;
+    const elegiveis = f
+      ? CONDICOES_PAGAMENTO.filter((c) => f.condicoesDisponiveis.includes(c.id))
+      : CONDICOES_PAGAMENTO;
+    return elegiveis[0] ?? CONDICOES_PAGAMENTO[0] ?? null;
+  }, [condicao, calculoCotacao.faixa]);
+
+  const podeSalvarCotacao = !!calculoCotacao.faixa && !!condicaoCotacao;
 
   const pedidoMinimo = calculo.pedidoMinimoEfetivo ?? 1500;
   const abaixoDoMinimoLiberado = ativo && bruto < pedidoMinimo && !!calculo.faixa;
@@ -214,10 +260,13 @@ export function CartCommercialPanel({
       condicao,
       podeFinalizar,
       motivoBloqueio,
+      calculoCotacao,
+      condicaoCotacao,
+      podeSalvarCotacao,
       bonificado,
       motivoBonificacao: bonificado ? motivoBonificacaoFinal : undefined,
     });
-  }, [calculo, condicao, podeFinalizar, motivoBloqueio, onChange, bonificado, motivoBonificacaoFinal]);
+  }, [calculo, condicao, podeFinalizar, motivoBloqueio, onChange, bonificado, motivoBonificacaoFinal, calculoCotacao, condicaoCotacao, podeSalvarCotacao]);
 
   const prox = premissas?.temFaixaFixa ? null : proximaFaixa(faixa);
   const faltaProx = prox ? prox.valorMin - bruto : 0;
@@ -598,12 +647,17 @@ export function CartCommercialPanel({
 
           <div>
             <label className="block text-[10px] uppercase tracking-wider text-text-muted mb-1">
-              Desconto adicional ({descontoPct}%) — máx. {DESCONTO_MASTER_MAX}%
+              Desconto adicional ({descontoPctEfetivo}%) — máx. {tetoDesconto}%
+              {isRepresentante && (
+                <span className="ml-1 normal-case tracking-normal text-gold-muted">
+                  (teto de representante)
+                </span>
+              )}
             </label>
             <input
               type="range"
               min={0}
-              max={DESCONTO_MASTER_MAX}
+              max={tetoDesconto}
               step={0.5}
               value={descontoPct}
               onChange={(e) => setDescontoPct(parseFloat(e.target.value))}
@@ -746,10 +800,11 @@ export function CartCommercialPanel({
       {/* Botão modo negociação */}
       {!ativo && (
         <button
-          onClick={() => setShowSenha(true)}
+          onClick={() => (isRepresentante ? ativarSemSenha() : setShowSenha(true))}
           className="w-full flex items-center justify-center gap-2 text-[11px] uppercase tracking-wider text-text-muted hover:text-gold py-2"
         >
-          <Settings2 className="h-3 w-3" /> Modo Negociação
+          <Settings2 className="h-3 w-3" />{" "}
+          {isRepresentante ? "Modo Negociação (sem senha)" : "Modo Negociação"}
         </button>
       )}
 
