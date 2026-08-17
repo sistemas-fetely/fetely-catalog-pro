@@ -25,6 +25,8 @@ interface SessionState {
 interface NegotiationStore extends PersistState, SessionState {
   ensureInitialHash: () => Promise<void>;
   tryActivate: (senha: string) => Promise<{ ok: boolean; bloqueado: boolean; erro?: string }>;
+  /** Ajuste 2 — representante abre o painel de negociação sem senha (teto próprio). */
+  ativarSemSenha: () => void;
   desativar: () => void;
   alterarSenha: (atual: string, nova: string) => Promise<{ ok: boolean; erro?: string }>;
   setDescontoPct: (v: number) => void;
