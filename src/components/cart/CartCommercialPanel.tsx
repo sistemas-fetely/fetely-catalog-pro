@@ -554,7 +554,11 @@ export function CartCommercialPanel({
               Pedido mínimo: {formatBRL(pedidoMinimo)}
             </div>
             <p className="text-xs text-text-muted mt-1">
-              Adicione mais produtos para prosseguir.
+              Adicione mais produtos para fechar o pedido.
+            </p>
+            <p className="text-xs text-gold-muted mt-1">
+              O mínimo vale só para o pedido efetivo — você pode salvar como
+              <strong className="text-gold"> cotação (rascunho)</strong> em qualquer valor.
             </p>
           </div>
         )}
