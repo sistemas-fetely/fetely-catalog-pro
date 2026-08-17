@@ -2625,6 +2625,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_master: { Args: { _user_id: string }; Returns: boolean }
+      is_representante: { Args: { _user_id: string }; Returns: boolean }
       is_vendedor_interno: { Args: { _user_id: string }; Returns: boolean }
       log_access_event: {
         Args: {
