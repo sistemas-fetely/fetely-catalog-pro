@@ -107,7 +107,21 @@ function ReunioesPage() {
     };
   }, [refresh, session]);
 
-  const { rows: sessoes } = useSessoesCatalogo(sessoesTick);
+  const { rows: sessoesRaw } = useSessoesCatalogo(sessoesTick);
+  const roles = useAuth((s) => s.roles);
+  // Ajuste 3 — representante só vê sessões do próprio link ou atribuídas a ele.
+  const isRepresentante =
+    !roles.includes("admin") &&
+    !roles.includes("master") &&
+    (profile?.tipo_vendedor ?? "interno") === "representante";
+  const sessoes = useMemo(() => {
+    if (!isRepresentante || !profile?.id) return sessoesRaw;
+    return sessoesRaw.filter(
+      (r) =>
+        (r.origem_tipo_snapshot === "representante" && r.origem_id_snapshot === profile.id) ||
+        r.vendedor_responsavel === profile.id,
+    );
+  }, [sessoesRaw, isRepresentante, profile?.id]);
 
   const todas = usePreSelecoesEscopo();
   const [panel, setPanel] = useState<"presel" | "sessoes">("presel");

@@ -164,6 +164,12 @@ export function usePreSelecoesEscopo(): PreSelecao[] {
   const isAdmin = roles.includes("admin") || roles.includes("master");
   if (isAdmin) return todas;
 
+  // Ajuste 3 — representante vê apenas o que veio do link dele ou foi
+  // atribuído a ele. Vendedor interno/SDR continuam vendo o pool completo
+  // (o back-end via RLS já limita o que chega até aqui).
+  const isRepresentante = (profile?.tipo_vendedor ?? "interno") === "representante";
+  if (!isRepresentante) return todas;
+
   const login = profile?.login_amigavel || profile?.codigo_vendedor || profile?.id || null;
   if (!login) return [];
   return todas.filter(
