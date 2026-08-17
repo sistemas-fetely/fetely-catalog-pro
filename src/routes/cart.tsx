@@ -522,17 +522,19 @@ function CartPage() {
       });
       return;
     }
-    if (!commercial?.calculo.faixa || !commercial.condicao) {
-      return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
+    // Ajuste 1 — cotação é rascunho: usa o cálculo que ignora o pedido mínimo.
+    if (!commercial?.podeSalvarCotacao || !commercial.calculoCotacao.faixa || !commercial.condicaoCotacao) {
+      return alert("Não foi possível montar a cotação. Revise os itens do carrinho.");
     }
-    const c = commercial.calculo;
+    const c = commercial.calculoCotacao;
+    const condicaoCot = commercial.condicaoCotacao;
     const faixa = c.faixa!;
     const orderCommercial: OrderCommercial = {
       faixaId: faixa.id,
       faixaNome: faixa.nome,
       frete: c.freteEfetivo ?? faixa.frete,
-      condicaoId: commercial.condicao.id,
-      condicaoDescricao: commercial.condicao.descricao,
+      condicaoId: condicaoCot.id,
+      condicaoDescricao: condicaoCot.descricao,
       bruto: c.bruto,
       descontoCelebraPct: faixa.descontoCelebra,
       descontoCelebraValor: c.descontoCelebraValor,
@@ -566,7 +568,7 @@ function CartPage() {
     const metaCompleto = {
       ...meta,
       clienteSnapshot: snapshot,
-      condicaoPagamento: commercial.condicao.descricao,
+      condicaoPagamento: condicaoCot.descricao,
     };
     const cotacaoItems = [...itensFirmes, ...itensProvisao];
     const totalCotacao = orderCommercial.totalFinal + totalProvisaoRef;
@@ -1152,6 +1154,17 @@ function CartPage() {
                 >
                   <Trash2 className="h-3 w-3" /> Limpar carrinho
                 </button>
+                <button
+                  onClick={handleSalvarCotacao}
+                  disabled={items.length === 0 || salvandoPedido || !commercial?.podeSalvarCotacao}
+                  className="mt-2 w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-gold/60 bg-gold/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-gold hover:bg-gold/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Save className="h-3 w-3" /> Salvar como cotação (rascunho)
+                </button>
+                <p className="mt-1 text-[10px] leading-snug text-text-muted">
+                  Cotação é rascunho: sem mínimo de {formatBRL(commercial?.calculo.pedidoMinimoEfetivo ?? 1500)},
+                  não compromete estoque nem faturamento até virar pedido.
+                </p>
                 <button
                   onClick={() => setShowSalvarModelo(true)}
                   disabled={items.length === 0}
