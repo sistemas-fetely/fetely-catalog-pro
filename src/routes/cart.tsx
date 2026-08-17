@@ -1135,6 +1135,29 @@ function CartPage() {
                       : commercial.motivoBloqueio}
                   </p>
                 )}
+
+                {/* Ajuste 1 — cotação (rascunho) sempre disponível, sem mínimo */}
+                <div
+                  className={`mb-3 rounded-md border p-3 ${
+                    commercial?.podeFinalizar
+                      ? "border-border bg-background/40"
+                      : "border-gold/60 bg-gold/10"
+                  }`}
+                >
+                  <button
+                    onClick={handleSalvarCotacao}
+                    disabled={items.length === 0 || salvandoPedido}
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-gold/70 bg-gold/15 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gold hover:bg-gold/25 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Save className="h-3.5 w-3.5" /> Salvar como cotação (rascunho)
+                  </button>
+                  <p className="mt-1.5 text-[10px] leading-snug text-text-muted">
+                    Cotação é rascunho: pode ser salva em qualquer valor, sem o mínimo de{" "}
+                    {formatBRL(commercial?.calculo.pedidoMinimoEfetivo ?? 1500)} — não compromete
+                    estoque nem faturamento até virar pedido.
+                  </p>
+                </div>
+
                 <button
                   onClick={handleConfirm}
                   disabled={!commercial?.podeFinalizar || salvandoPedido}
@@ -1154,17 +1177,6 @@ function CartPage() {
                 >
                   <Trash2 className="h-3 w-3" /> Limpar carrinho
                 </button>
-                <button
-                  onClick={handleSalvarCotacao}
-                  disabled={items.length === 0 || salvandoPedido || !commercial?.podeSalvarCotacao}
-                  className="mt-2 w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-gold/60 bg-gold/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-gold hover:bg-gold/20 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Save className="h-3 w-3" /> Salvar como cotação (rascunho)
-                </button>
-                <p className="mt-1 text-[10px] leading-snug text-text-muted">
-                  Cotação é rascunho: sem mínimo de {formatBRL(commercial?.calculo.pedidoMinimoEfetivo ?? 1500)},
-                  não compromete estoque nem faturamento até virar pedido.
-                </p>
                 <button
                   onClick={() => setShowSalvarModelo(true)}
                   disabled={items.length === 0}
