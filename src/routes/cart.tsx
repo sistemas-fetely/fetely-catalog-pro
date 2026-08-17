@@ -523,7 +523,7 @@ function CartPage() {
       return;
     }
     // Ajuste 1 — cotação é rascunho: usa o cálculo que ignora o pedido mínimo.
-    if (!commercial?.podeSalvarCotacao || !commercial.calculoCotacao.faixa || !commercial.condicaoCotacao) {
+    if (!commercial?.calculoCotacao?.faixa || !commercial.condicaoCotacao) {
       return alert("Não foi possível montar a cotação. Revise os itens do carrinho.");
     }
     const c = commercial.calculoCotacao;
