@@ -88,6 +88,8 @@ export const useNegotiation = create<NegotiationStore>()(
         };
       },
 
+      ativarSemSenha: () => set({ ativo: true, tentativas: 0 }),
+
       desativar: () =>
         set({
           ativo: false,
