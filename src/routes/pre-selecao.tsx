@@ -11,6 +11,10 @@ import {
   emitEvento,
   loadGateIdentidade,
   saveGateIdentidade,
+  wishlistKey,
+  loadWishlist,
+  saveWishlist,
+  migrateWishlist,
 } from "@/lib/tracking";
 import { useFeatureFlags } from "@/lib/featureFlags";
 import { GateEntradaDialog } from "@/components/catalog/GateEntradaDialog";
