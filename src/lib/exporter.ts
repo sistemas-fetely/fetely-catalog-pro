@@ -131,6 +131,8 @@ export interface PedidoExportavel {
   totalDescontoCelebra: number;
   totalDescontoNegociacao: number;
   totalDescontoBonusPix: number;
+  acrescimoIsentoIEValor: number;
+  acrescimoIsentoIEPercent: number;
   totalDescontoGeral: number;
   totalDescontoPercentual: number;
   totalLiquido: number;
