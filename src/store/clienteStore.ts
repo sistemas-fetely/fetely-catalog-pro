@@ -251,12 +251,18 @@ export const useClientes = create<ClienteState>()(
 export function useVisibleClientes(): Cliente[] {
   const clientes = useClientes((s) => s.clientes);
   const user = useAuth((s) => s.user);
+  const profile = useAuth((s) => s.profile);
   const roles = useAuth((s) => s.roles);
   const admin = roles.includes("admin") || roles.includes("master");
   if (admin) return clientes;
   if (!user) return [];
-  return clientes.filter((c) => c.cadastradoPorVendedorId === user.id);
+  // Representante: carteira exclusiva. Vendedor interno: pode apoiar todos.
+  if (profile?.tipo_vendedor === "representante") {
+    return clientes.filter((c) => c.cadastradoPorVendedorId === user.id);
+  }
+  return clientes;
 }
+
 
 /** True quando o usuário logado é representante (carteira exclusiva). */
 export function isRepresentanteAtual(): boolean {
