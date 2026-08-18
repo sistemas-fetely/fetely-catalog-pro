@@ -95,21 +95,44 @@ function PreSelecaoPage() {
     }
   }, []);
 
-  // Restaura o carrinho salvo antes de qualquer outra coisa.
+  // Restaura o carrinho salvo antes de qualquer outra coisa (local + servidor).
   useEffect(() => {
+    let cancel = false;
     const gateSaved = loadGateIdentidade();
     const key = wishlistKey(gateSaved);
     wishKeyRef.current = key;
     const saved = loadWishlist(key);
     if (Object.keys(saved).length > 0) setCart(saved);
-    cartRestoredRef.current = true;
+    (async () => {
+      const remoto = await loadWishlistRemote(key);
+      if (cancel || Object.keys(remoto).length === 0) return;
+      setCart((prev) => {
+        const merged = { ...remoto, ...prev };
+        saveWishlist(key, merged);
+        return merged;
+      });
+      if (Object.keys(saved).length === 0) {
+        toast.success("Recuperamos sua lista de desejos anterior.");
+      }
+    })().finally(() => {
+      cartRestoredRef.current = true;
+    });
+    return () => {
+      cancel = true;
+    };
   }, []);
 
   // Persiste o carrinho a cada alteração (após a restauração inicial).
   useEffect(() => {
     if (!cartRestoredRef.current || !wishKeyRef.current) return;
-    saveWishlist(wishKeyRef.current, cart);
+    const key = wishKeyRef.current;
+    saveWishlist(key, cart);
+    const t = setTimeout(() => {
+      void saveWishlistRemote(key, cart, loadGateIdentidade());
+    }, 600);
+    return () => clearTimeout(t);
   }, [cart]);
+
 
   // Bootstrap da sessão: cria/reutiliza session_id, resolve link_instance
   // via ?v=<login> (RPC), grava sessão e emite portal_acessado.
