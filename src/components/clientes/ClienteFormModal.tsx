@@ -149,7 +149,7 @@ export function ClienteFormModal({
       const own = await checkCnpjOwnership(d);
       if (own.existe && !own.isMine && own.clienteId !== cliente.id) {
         if (repAtual) {
-          setBloqueio(own);
+          setBloqueio({ ...own, cnpjDigits: d });
           setCnpjLoading(false);
           return;
         }
