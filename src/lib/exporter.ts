@@ -131,6 +131,8 @@ export interface PedidoExportavel {
   totalDescontoCelebra: number;
   totalDescontoNegociacao: number;
   totalDescontoBonusPix: number;
+  acrescimoIsentoIEValor: number;
+  acrescimoIsentoIEPercent: number;
   totalDescontoGeral: number;
   totalDescontoPercentual: number;
   totalLiquido: number;
@@ -259,6 +261,8 @@ export function buildPedidoExportavel(order: SavedOrder): PedidoExportavel {
     totalDescontoCelebra: c?.descontoCelebraValor ?? 0,
     totalDescontoNegociacao: c?.descontoMasterValor ?? 0,
     totalDescontoBonusPix: c?.bonusPixValor ?? 0,
+    acrescimoIsentoIEValor: c?.acrescimoIsentoIEAplicado ? (c?.acrescimoIsentoIEValor ?? 0) : 0,
+    acrescimoIsentoIEPercent: c?.acrescimoIsentoIEPercent ?? 0,
     totalDescontoGeral,
     totalDescontoPercentual,
     totalLiquido,
@@ -540,6 +544,12 @@ export async function exportarPDF(
     totaisBody.push([`Frete CIF (incluso · faixa ${pedido.faixaNome})`, "Grátis"]);
   } else if (pedido.frete === "FOB") {
     totaisBody.push([`Frete FOB`, `+ ${fmtBRL(pedido.freteValor)}`]);
+  }
+  if (pedido.acrescimoIsentoIEValor > 0.01) {
+    totaisBody.push([
+      `Acréscimo isento de IE (${pedido.acrescimoIsentoIEPercent}%)`,
+      `+ ${fmtBRL(pedido.acrescimoIsentoIEValor)}`,
+    ]);
   }
   totaisBody.push(["TOTAL DO PEDIDO", fmtBRL(pedido.totalLiquido)]);
 
@@ -897,6 +907,8 @@ function _buildPdfInternal(pedido: PedidoExportavel, tipo: "cliente" | "interno"
   } else if (pedido.frete === "FOB") {
     totaisBody.push([`Frete FOB`, `+ ${fmtBRL(pedido.freteValor)}`]);
   }
+  if (pedido.acrescimoIsentoIEValor > 0.01)
+    totaisBody.push([`Acréscimo isento de IE (${pedido.acrescimoIsentoIEPercent}%)`, `+ ${fmtBRL(pedido.acrescimoIsentoIEValor)}`]);
   totaisBody.push(["TOTAL DO PEDIDO", fmtBRL(pedido.totalLiquido)]);
   autoTable(doc, {
     startY: (doc as any).lastAutoTable.finalY + 4, body: totaisBody,
