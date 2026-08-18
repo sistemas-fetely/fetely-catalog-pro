@@ -15,6 +15,9 @@ import {
   loadWishlist,
   saveWishlist,
   migrateWishlist,
+  loadWishlistRemote,
+  saveWishlistRemote,
+
 } from "@/lib/tracking";
 import { useFeatureFlags } from "@/lib/featureFlags";
 import { GateEntradaDialog } from "@/components/catalog/GateEntradaDialog";
