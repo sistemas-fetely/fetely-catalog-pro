@@ -5,7 +5,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { fetchCNPJ, formatCNPJ, isValidCNPJLength, onlyDigits } from "@/lib/cnpj";
-import { useClientes } from "@/store/clienteStore";
+import {
+  useClientes,
+  isRepresentanteAtual,
+  checkCnpjOwnership,
+  solicitarMigracaoCnpj,
+  type CnpjOwnership,
+} from "@/store/clienteStore";
 import { useAuth } from "@/store/authStore";
 import { PremissasComercialTab } from "@/components/clientes/PremissasComercialTab";
 import { diffPremissas } from "@/lib/premissas";
@@ -102,6 +108,12 @@ export function ClienteFormModal({
   const [duplicateWarn, setDuplicateWarn] = useState<Cliente | null>(null);
   const [tagInput, setTagInput] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const repAtual = isRepresentanteAtual();
+  const [bloqueio, setBloqueio] = useState<
+    (CnpjOwnership & { cnpjDigits: string }) | null
+  >(null);
+  const [justificativa, setJustificativa] = useState("");
+  const [enviandoMigracao, setEnviandoMigracao] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -112,6 +124,8 @@ export function ClienteFormModal({
       setTab("fiscal");
       setCnpjError(null);
       setDuplicateWarn(null);
+      setBloqueio(null);
+      setJustificativa("");
       setTagInput("");
     }
   }, [open, initial, user, profile]);
@@ -127,10 +141,24 @@ export function ClienteFormModal({
     }
     setCnpjLoading(true);
     setCnpjError(null);
+    setBloqueio(null);
     try {
       const existing = findByCnpj(d);
       if (existing && existing.id !== cliente.id) {
         setDuplicateWarn(existing);
+      }
+      // Carteira: representante não pode cadastrar CNPJ de outro representante
+      const own = await checkCnpjOwnership(d);
+      if (own.existe && !own.isMine && own.clienteId !== cliente.id) {
+        if (repAtual) {
+          setBloqueio({ ...own, cnpjDigits: d });
+          setCnpjLoading(false);
+          return;
+        }
+        setDuplicateWarn({
+          ...(existing ?? ({} as Cliente)),
+          razaoSocial: own.razaoSocial ?? existing?.razaoSocial ?? "cliente existente",
+        } as Cliente);
       }
       const r = await fetchCNPJ(d);
       update({
@@ -155,6 +183,23 @@ export function ClienteFormModal({
       setCnpjLoading(false);
     }
   };
+
+  const handleSolicitarMigracao = async () => {
+    if (!bloqueio) return;
+    setEnviandoMigracao(true);
+    try {
+      await solicitarMigracaoCnpj(bloqueio.cnpjDigits, justificativa);
+      toast.success(
+        "Solicitação enviada. Nossa equipe vai avaliar a migração deste CNPJ para a sua carteira.",
+      );
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Não foi possível enviar a solicitação.");
+    } finally {
+      setEnviandoMigracao(false);
+    }
+  };
+
 
   const podeSalvar = useMemo(() => {
     const base =
@@ -193,6 +238,21 @@ export function ClienteFormModal({
       toast.error("Sua sessão ainda está carregando. Atualize a página antes de continuar.");
       return;
     }
+
+    // Carteira exclusiva: representante não salva CNPJ de outro representante
+    if (repAtual && !cliente.isInternacional && cliente.cnpj) {
+      if (bloqueio) {
+        toast.error("Este CNPJ está em outra carteira. Solicite a migração para continuar.");
+        return;
+      }
+      const own = await checkCnpjOwnership(cliente.cnpj);
+      if (own.existe && !own.isMine && own.clienteId !== cliente.id) {
+        setBloqueio({ ...own, cnpjDigits: onlyDigits(cliente.cnpj) });
+        toast.error("Este CNPJ está em outra carteira. Solicite a migração para continuar.");
+        return;
+      }
+    }
+
     let premissasComerciais = cliente.premissasComerciais;
     if (premissasComerciais) {
       const alterados = diffPremissas(initial?.premissasComerciais, premissasComerciais);
@@ -276,6 +336,7 @@ export function ClienteFormModal({
                       const v = formatCNPJ(e.target.value);
                       update({ cnpjFormatado: v, cnpj: onlyDigits(v) });
                       setDuplicateWarn(null);
+                      setBloqueio(null);
                       setCnpjError(null);
                     }}
                   />
@@ -301,12 +362,44 @@ export function ClienteFormModal({
                     Situação: {cliente.situacaoCadastral}
                   </p>
                 )}
-                {duplicateWarn && (
+                {duplicateWarn && !bloqueio && (
                   <p className="mt-1 text-[11px] text-stock-out">
                     CNPJ já cadastrado como{" "}
                     <span className="font-medium">{duplicateWarn.razaoSocial}</span>.
                   </p>
                 )}
+                {bloqueio && (
+                  <div className="mt-2 rounded-md border border-stock-out/50 bg-surface-2 p-3 space-y-2">
+                    <div className="text-[10px] uppercase tracking-[0.2em] text-stock-out">
+                      CNPJ em outra carteira
+                    </div>
+                    <p className="text-xs text-text-secondary">
+                      Este CNPJ{" "}
+                      {bloqueio.razaoSocial ? (
+                        <span className="text-text-primary">({bloqueio.razaoSocial})</span>
+                      ) : null}{" "}
+                      já está atendido por outro representante. Para evitar sobreposição de
+                      atendimento e comissão, solicite a migração para a sua carteira — nossa
+                      equipe interna avalia e libera.
+                    </p>
+                    <textarea
+                      className="input w-full text-xs"
+                      rows={2}
+                      placeholder="Justificativa (histórico de atendimento, contato, etc.)"
+                      value={justificativa}
+                      onChange={(e) => setJustificativa(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSolicitarMigracao}
+                      disabled={enviandoMigracao}
+                      className="w-full px-3 py-2 rounded-md bg-gold text-background text-xs font-semibold uppercase tracking-wider hover:bg-gold-light disabled:opacity-40"
+                    >
+                      {enviandoMigracao ? "Enviando..." : "Solicitar migração deste CNPJ"}
+                    </button>
+                  </div>
+                )}
+
               </Field>
             ) : null}
 

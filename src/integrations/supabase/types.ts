@@ -144,6 +144,65 @@ export type Database = {
           },
         ]
       }
+      cliente_migracao_solicitacoes: {
+        Row: {
+          cliente_id: string | null
+          cnpj: string
+          criado_em: string
+          id: string
+          justificativa: string | null
+          owner_anterior_id: string | null
+          owner_anterior_nome: string | null
+          razao_social: string | null
+          resolvido_em: string | null
+          resolvido_por: string | null
+          resposta: string | null
+          solicitante_id: string
+          solicitante_nome: string | null
+          status: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          cnpj: string
+          criado_em?: string
+          id?: string
+          justificativa?: string | null
+          owner_anterior_id?: string | null
+          owner_anterior_nome?: string | null
+          razao_social?: string | null
+          resolvido_em?: string | null
+          resolvido_por?: string | null
+          resposta?: string | null
+          solicitante_id: string
+          solicitante_nome?: string | null
+          status?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          cnpj?: string
+          criado_em?: string
+          id?: string
+          justificativa?: string | null
+          owner_anterior_id?: string | null
+          owner_anterior_nome?: string | null
+          razao_social?: string | null
+          resolvido_em?: string | null
+          resolvido_por?: string | null
+          resposta?: string | null
+          solicitante_id?: string
+          solicitante_nome?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_migracao_solicitacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           ativo: boolean
@@ -2630,6 +2689,17 @@ export type Database = {
           id: string
         }[]
       }
+      cliente_cnpj_status: {
+        Args: { p_cnpj: string }
+        Returns: {
+          cliente_id: string
+          existe: boolean
+          is_mine: boolean
+          owner_id: string
+          owner_nome: string
+          razao_social: string
+        }[]
+      }
       ensure_link_instance_for_login: {
         Args: { p_login: string }
         Returns: {
@@ -2692,6 +2762,14 @@ export type Database = {
         Returns: undefined
       }
       record_login: { Args: never; Returns: undefined }
+      resolver_migracao_cliente: {
+        Args: { p_aprovar: boolean; p_id: string; p_resposta?: string }
+        Returns: undefined
+      }
+      solicitar_migracao_cliente: {
+        Args: { p_cnpj: string; p_justificativa?: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "master" | "admin" | "vendedor" | "cliente"
