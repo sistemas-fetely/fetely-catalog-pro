@@ -172,12 +172,20 @@ function PreSelecaoPage() {
     // Migra/recupera o carrinho para a chave da identidade informada.
     const novaKey = wishlistKey(value);
     const antigaKey = wishKeyRef.current ?? novaKey;
-    const merged = migrateWishlist(antigaKey, novaKey);
+    const local = migrateWishlist(antigaKey, novaKey);
     wishKeyRef.current = novaKey;
+    const remoto = await loadWishlistRemote(novaKey);
+    const merged = { ...remoto, ...local };
     if (Object.keys(merged).length > 0) {
-      setCart((prev) => ({ ...merged, ...prev }));
+      setCart((prev) => {
+        const final = { ...merged, ...prev };
+        saveWishlist(novaKey, final);
+        void saveWishlistRemote(novaKey, final, value);
+        return final;
+      });
       toast.success("Encontramos sua lista de desejos anterior — ela está no carrinho.");
     }
+
     const sid = sessionIdRef.current;
     if (sid) {
       await upsertSessao(sid, {
