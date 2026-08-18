@@ -5,7 +5,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { fetchCNPJ, formatCNPJ, isValidCNPJLength, onlyDigits } from "@/lib/cnpj";
-import { useClientes } from "@/store/clienteStore";
+import {
+  useClientes,
+  isRepresentanteAtual,
+  checkCnpjOwnership,
+  solicitarMigracaoCnpj,
+  type CnpjOwnership,
+} from "@/store/clienteStore";
 import { useAuth } from "@/store/authStore";
 import { PremissasComercialTab } from "@/components/clientes/PremissasComercialTab";
 import { diffPremissas } from "@/lib/premissas";
