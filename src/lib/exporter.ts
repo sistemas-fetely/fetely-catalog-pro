@@ -261,6 +261,8 @@ export function buildPedidoExportavel(order: SavedOrder): PedidoExportavel {
     totalDescontoCelebra: c?.descontoCelebraValor ?? 0,
     totalDescontoNegociacao: c?.descontoMasterValor ?? 0,
     totalDescontoBonusPix: c?.bonusPixValor ?? 0,
+    acrescimoIsentoIEValor: c?.acrescimoIsentoIEAplicado ? (c?.acrescimoIsentoIEValor ?? 0) : 0,
+    acrescimoIsentoIEPercent: c?.acrescimoIsentoIEPercent ?? 0,
     totalDescontoGeral,
     totalDescontoPercentual,
     totalLiquido,
