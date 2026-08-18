@@ -108,6 +108,12 @@ export function ClienteFormModal({
   const [duplicateWarn, setDuplicateWarn] = useState<Cliente | null>(null);
   const [tagInput, setTagInput] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const repAtual = isRepresentanteAtual();
+  const [bloqueio, setBloqueio] = useState<
+    (CnpjOwnership & { cnpjDigits: string }) | null
+  >(null);
+  const [justificativa, setJustificativa] = useState("");
+  const [enviandoMigracao, setEnviandoMigracao] = useState(false);
 
   useEffect(() => {
     if (open) {
