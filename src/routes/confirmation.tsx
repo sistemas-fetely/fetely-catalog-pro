@@ -103,6 +103,11 @@ function formatOrderText(order: SavedOrder): string {
         lines.push(`Frete FOB (${fretePct.toFixed(1).replace(".", ",")}%):              + ${formatBRL(freteVal)}`);
       }
     }
+    if (c.acrescimoIsentoIEAplicado && (c.acrescimoIsentoIEValor ?? 0) > 0.01) {
+      lines.push(
+        `Acréscimo isento de IE (${c.acrescimoIsentoIEPercent ?? 15}%): + ${formatBRL(c.acrescimoIsentoIEValor ?? 0)}`,
+      );
+    }
     lines.push(sub);
     lines.push(`TOTAL FINAL:                   ${formatBRL(c.totalFinal)}`);
     lines.push("");
