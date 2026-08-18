@@ -258,8 +258,75 @@ export function useVisibleClientes(): Cliente[] {
   return clientes.filter((c) => c.cadastradoPorVendedorId === user.id);
 }
 
+/** True quando o usuário logado é representante (carteira exclusiva). */
+export function isRepresentanteAtual(): boolean {
+  const { profile, roles } = useAuth.getState();
+  if (roles.includes("admin") || roles.includes("master")) return false;
+  return profile?.tipo_vendedor === "representante";
+}
+
+export interface CnpjOwnership {
+  existe: boolean;
+  clienteId: string | null;
+  razaoSocial: string | null;
+  ownerId: string | null;
+  ownerNome: string | null;
+  isMine: boolean;
+}
+
+/** Consulta se o CNPJ já existe na base e de quem é a carteira. */
+export async function checkCnpjOwnership(cnpj: string): Promise<CnpjOwnership> {
+  const digits = (cnpj ?? "").replace(/\D/g, "");
+  const vazio: CnpjOwnership = {
+    existe: false,
+    clienteId: null,
+    razaoSocial: null,
+    ownerId: null,
+    ownerNome: null,
+    isMine: false,
+  };
+  if (digits.length < 11) return vazio;
+  try {
+    const { data, error } = await supabase.rpc("cliente_cnpj_status" as never, {
+      p_cnpj: digits,
+    } as never);
+    if (error) throw error;
+    const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined;
+    if (!row || row.existe !== true) return vazio;
+    return {
+      existe: true,
+      clienteId: (row.cliente_id as string) ?? null,
+      razaoSocial: (row.razao_social as string) ?? null,
+      ownerId: (row.owner_id as string) ?? null,
+      ownerNome: (row.owner_nome as string) ?? null,
+      isMine: Boolean(row.is_mine),
+    };
+  } catch (err) {
+    console.error("[clienteStore] checkCnpjOwnership falhou:", err);
+    return vazio;
+  }
+}
+
+/** Abre solicitação de migração do CNPJ para a carteira do usuário logado. */
+export async function solicitarMigracaoCnpj(
+  cnpj: string,
+  justificativa?: string,
+): Promise<void> {
+  const digits = (cnpj ?? "").replace(/\D/g, "");
+  const { error } = await supabase.rpc("solicitar_migracao_cliente" as never, {
+    p_cnpj: digits,
+    p_justificativa: justificativa ?? null,
+  } as never);
+  if (error) throw new Error(error.message);
+}
+
 export function searchClientesForOrder(query: string, limit = 8): Cliente[] {
-  const all = useClientes.getState().clientes;
+  const state = useClientes.getState();
+  const userId = useAuth.getState().user?.id;
+  const all = isRepresentanteAtual()
+    ? state.clientes.filter((c) => c.cadastradoPorVendedorId === userId)
+    : state.clientes;
+
   const q = query.trim().toLowerCase();
   if (!q) return all.slice(0, limit);
   const digits = q.replace(/\D/g, "");
