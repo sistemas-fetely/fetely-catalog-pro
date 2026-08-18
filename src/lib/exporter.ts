@@ -545,6 +545,12 @@ export async function exportarPDF(
   } else if (pedido.frete === "FOB") {
     totaisBody.push([`Frete FOB`, `+ ${fmtBRL(pedido.freteValor)}`]);
   }
+  if (pedido.acrescimoIsentoIEValor > 0.01) {
+    totaisBody.push([
+      `Acréscimo isento de IE (${pedido.acrescimoIsentoIEPercent}%)`,
+      `+ ${fmtBRL(pedido.acrescimoIsentoIEValor)}`,
+    ]);
+  }
   totaisBody.push(["TOTAL DO PEDIDO", fmtBRL(pedido.totalLiquido)]);
 
   autoTable(doc, {
