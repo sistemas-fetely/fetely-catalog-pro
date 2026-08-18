@@ -238,6 +238,21 @@ export function ClienteFormModal({
       toast.error("Sua sessão ainda está carregando. Atualize a página antes de continuar.");
       return;
     }
+
+    // Carteira exclusiva: representante não salva CNPJ de outro representante
+    if (repAtual && !cliente.isInternacional && cliente.cnpj) {
+      if (bloqueio) {
+        toast.error("Este CNPJ está em outra carteira. Solicite a migração para continuar.");
+        return;
+      }
+      const own = await checkCnpjOwnership(cliente.cnpj);
+      if (own.existe && !own.isMine && own.clienteId !== cliente.id) {
+        setBloqueio({ ...own, cnpjDigits: onlyDigits(cliente.cnpj) });
+        toast.error("Este CNPJ está em outra carteira. Solicite a migração para continuar.");
+        return;
+      }
+    }
+
     let premissasComerciais = cliente.premissasComerciais;
     if (premissasComerciais) {
       const alterados = diffPremissas(initial?.premissasComerciais, premissasComerciais);
