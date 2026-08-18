@@ -321,6 +321,7 @@ export function ClienteFormModal({
                       const v = formatCNPJ(e.target.value);
                       update({ cnpjFormatado: v, cnpj: onlyDigits(v) });
                       setDuplicateWarn(null);
+                      setBloqueio(null);
                       setCnpjError(null);
                     }}
                   />
