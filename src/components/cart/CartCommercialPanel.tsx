@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Award, Gift, Lock, Settings2, Sparkles, Truck, X } from "lucide-react";
+import { Award, ChevronDown, Gift, Lock, Settings2, Sparkles, X } from "lucide-react";
 import {
   ACRESCIMO_ISENTO_IE_PERCENT,
   CONDICAO_BONIFICADO,
