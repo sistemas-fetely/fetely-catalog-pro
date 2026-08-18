@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Award, Gift, Lock, Settings2, Sparkles, Truck, X } from "lucide-react";
+import { Award, ChevronDown, Gift, Lock, Settings2, Sparkles, X } from "lucide-react";
 import {
   ACRESCIMO_ISENTO_IE_PERCENT,
   CONDICAO_BONIFICADO,
@@ -276,351 +276,139 @@ export function CartCommercialPanel({
     : faixa?.bonusPix ?? 0;
   const freteEfetivo = calculo.freteEfetivo ?? faixa?.frete;
 
-  return (
-    <div className="space-y-4">
-      {/* Painel de faixa */}
-      <div className="rounded-lg gold-border bg-surface p-4 sm:p-5 space-y-3">
 
+  // ==== UI enxuta ====
+  const [showAvancado, setShowAvancado] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
+
+  const ajustesAtivos =
+    (aplicarIsentoIE ? 1 : 0) +
+    (bonificado ? 1 : 0) +
+    (ativo && descontoPct > 0 ? 1 : 0) +
+    (ativo && freteGratis ? 1 : 0) +
+    (ativo && !!freteAjusteQtd ? 1 : 0) +
+    (ativo && usarReservada ? 1 : 0) +
+    (ativo && liberarTodasCondicoes ? 1 : 0);
+
+  useEffect(() => {
+    if (ajustesAtivos > 0) setShowAvancado(true);
+  }, [ajustesAtivos > 0]);
+
+  const conteudo = (
+    <div className="space-y-3">
+      {/* ---------- RESUMO ---------- */}
+      <div className="rounded-lg gold-border bg-surface p-4 space-y-3">
         {faixa ? (
           <>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+              <div className="min-w-0">
                 <div className="text-[10px] uppercase tracking-[0.25em] text-gold-muted">
                   {premissas ? "Condições homologadas" : `Faixa ${faixa.id}`}
                 </div>
-                <div className="font-display text-xl sm:text-2xl text-gold flex items-center gap-2">
-                  {premissas ? (
-                    <>
-                      <Award className="h-4 w-4" /> Comerciais Homologadas
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4" /> {faixa.nome}
-                    </>
-                  )}
+                <div className="font-display text-xl text-gold flex items-center gap-2 truncate">
+                  {premissas ? <Award className="h-4 w-4 shrink-0" /> : <Sparkles className="h-4 w-4 shrink-0" />}
+                  <span className="truncate">{premissas ? "Comerciais Homologadas" : faixa.nome}</span>
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-1">
-                {premissas && (
-                  <span className="rounded-full bg-gold/20 px-3 py-1 text-[10px] uppercase tracking-wider text-gold border border-gold/50 inline-flex items-center gap-1">
-                    🏅 Homologadas
-                  </span>
-                )}
-                {ativo && (
-                  <span className="rounded-full bg-gold/15 px-3 py-1 text-[10px] uppercase tracking-wider text-gold border border-gold/40">
-                    Negociação
-                  </span>
-                )}
-              </div>
+              {ativo && (
+                <span className="shrink-0 rounded-full bg-gold/15 px-2.5 py-1 text-[10px] uppercase tracking-wider text-gold border border-gold/40">
+                  Negociação
+                </span>
+              )}
             </div>
 
-            {premissas && (
-              <p className="text-[11px] text-gold-muted">
-                Faixa-base: {faixa.nome}
-                {premissas.vigenciaFim
-                  ? ` · vigência até ${new Date(premissas.vigenciaFim).toLocaleDateString("pt-BR")}`
-                  : " · sem expiração"}
-              </p>
-            )}
-
-            {/* Descontos comerciais — controle independente por tipo */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-secondary">
-              <span className="uppercase tracking-wider text-[10px] text-gold-muted">Descontos:</span>
-              <label className="flex cursor-pointer items-center gap-1">
-                <input
-                  type="checkbox"
-                  checked={aplicarCelebra}
-                  onChange={(e) => setAplicarCelebra(e.target.checked)}
-                  className="h-3 w-3 accent-[var(--gold,#c9a227)]"
-                />
-                Celebra
-              </label>
-              <label className="flex cursor-pointer items-center gap-1">
-                <input
-                  type="checkbox"
-                  checked={aplicarNegociacao}
-                  onChange={(e) => setAplicarNegociacao(e.target.checked)}
-                  className="h-3 w-3 accent-[var(--gold,#c9a227)]"
-                />
-                Negociação
-              </label>
-              <label className="flex cursor-pointer items-center gap-1">
-                <input
-                  type="checkbox"
-                  checked={aplicarPix}
-                  onChange={(e) => setAplicarPix(e.target.checked)}
-                  className="h-3 w-3 accent-[var(--gold,#c9a227)]"
-                />
-                Bônus PIX
-              </label>
-            </div>
-
-            <ul className="text-sm space-y-1.5">
-              <Row label="Valor do pedido" value={formatBRL(bruto)} />
-              {aplicarCelebra ? (
-                <Row
-                  label={
-                    premissas?.temDescontoHomologado
-                      ? `Desconto homologado (${descontoEfetivoPct}%${premissas.descontoHomologadoSobrePos ? " · acumula" : " · substitui"})`
-                      : `Desconto Celebra (${descontoEfetivoPct}%)`
+            {/* Descontos como chips */}
+            <div className="flex flex-wrap gap-1.5">
+              <Chip
+                on={aplicarCelebra}
+                onClick={() => setAplicarCelebra(!aplicarCelebra)}
+                label={`Celebra ${descontoEfetivoPct}%`}
+                valor={aplicarCelebra ? `– ${formatBRL(calculo.descontoCelebraValor)}` : undefined}
+              />
+              <Chip
+                on={aplicarPix}
+                onClick={() => setAplicarPix(!aplicarPix)}
+                label={`Bônus PIX ${bonusPixEfetivoPct}%`}
+                valor={calculo.aplicouPix ? `– ${formatBRL(calculo.bonusPixValor)}` : undefined}
+              />
+              {ativo && (
+                <Chip
+                  on={aplicarNegociacao}
+                  onClick={() => setAplicarNegociacao(!aplicarNegociacao)}
+                  label={`Negociação ${descontoPctEfetivo}%`}
+                  valor={
+                    aplicarNegociacao && descontoPct > 0
+                      ? `– ${formatBRL(calculo.descontoMasterValor)}`
+                      : undefined
                   }
-                  value={`– ${formatBRL(calculo.descontoCelebraValor)}`}
-                  accent
                 />
-              ) : (
-                <Row label="Desconto Celebra" value="Desabilitado" />
               )}
-              {aplicarNegociacao && ativo && descontoPct > 0 && (
+            </div>
 
+            {/* Linhas — só o que existe */}
+            <ul className="text-sm space-y-1">
+              <Row label="Valor do pedido" value={formatBRL(bruto)} />
+              {(calculo.freteValor ?? 0) > 0 && (
                 <Row
-                  label={`Desconto negociação (${descontoPct}%)`}
-                  value={`– ${formatBRL(calculo.descontoMasterValor)}`}
+                  label={`Frete ${freteEfetivo}${calculo.fretePercent ? ` · ${calculo.fretePercent}%` : ""}`}
+                  value={`+ ${formatBRL(calculo.freteValor ?? 0)}`}
+                />
+              )}
+              {calculo.freteIsento && (
+                <Row
+                  label="Frete"
+                  value={calculo.freteGratisNegociado ? "Grátis (negociação)" : "Isento (CIF)"}
                   accent
                 />
               )}
-              {calculo.aplicouPix && (
+              {aplicarIsentoIE && (
                 <Row
-                  label={`Bônus PIX (${bonusPixEfetivoPct}%${premissas?.bonusPixPersonalizado ? " · personalizado" : ""})`}
-                  value={`– ${formatBRL(calculo.bonusPixValor)}`}
-                  accent
+                  label={`Acréscimo isento de IE (${ACRESCIMO_ISENTO_IE_PERCENT}%)`}
+                  value={`+ ${formatBRL(calculo.acrescimoIsentoIEValor ?? 0)}`}
                 />
               )}
+              {bonificado && <Row label="Pedido bonificado" value="Sem cobrança" accent />}
             </ul>
 
-
-            {/* Frete */}
-            {((calculo.freteBase ?? 0) > 0 || (calculo.freteValor ?? 0) > 0) && (
-              <div className="rounded-md border border-border bg-surface-2/60 px-3 py-2 text-xs space-y-1">
-                {calculo.freteGratisNegociado ? (
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-text-secondary">
-                      Frete — <span className="text-gold uppercase tracking-wider text-[10px]">Grátis (negociação)</span>
-                    </span>
-                    <span className="text-gold line-through opacity-70">{formatBRL(calculo.freteBase)}</span>
-                  </div>
-                ) : calculo.freteIsento ? (
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-text-secondary">
-                      Frete — <span className="text-gold uppercase tracking-wider text-[10px]">Isento (CIF)</span>
-                    </span>
-                    <span className="text-gold">{formatBRL(calculo.freteBase)}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-text-secondary">
-                      Frete FOB
-                      {calculo.freteUf ? ` — ${calculo.freteUf}` : ""}
-                      {calculo.fretePercent ? ` · ${calculo.fretePercent}%` : ""}
-                    </span>
-                    <span className="text-text-primary">+ {formatBRL(calculo.freteValor ?? 0)}</span>
-                  </div>
-                )}
-                {calculo.freteAjusteAplicado && (
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-text-secondary">
-                      Ajuste de frete (negociação)
-                      {calculo.freteAjusteModo === "percent" ? ` · ${freteAjusteQtd}%` : ""}
-                    </span>
-                    <span className={(calculo.freteAjusteValor ?? 0) < 0 ? "text-gold" : "text-text-primary"}>
-                      {(calculo.freteAjusteValor ?? 0) < 0 ? "– " : "+ "}
-                      {formatBRL(Math.abs(calculo.freteAjusteValor ?? 0))}
-                    </span>
-                  </div>
-                )}
-                {calculo.freteAjusteAplicado && (
-                  <div className="flex items-baseline justify-between border-t border-border pt-1">
-                    <span className="text-text-secondary">Frete final</span>
-                    <span className="text-text-primary">+ {formatBRL(calculo.freteValor ?? 0)}</span>
-                  </div>
-                )}
-                {!calculo.freteIsento && calculo.freteUsouFallback && calculo.freteUf && (
-                  <p className="text-[10px] text-amber-500">
-                    ⚠ Percentual padrão ({calculo.fretePercent}%) — UF {calculo.freteUf} sem tabela cadastrada.
-                  </p>
-                )}
-                {calculo.freteIsento && (
-                  <p className="text-[10px] text-text-muted">
-                    {calculo.freteGratisNegociado
-                      ? "Frete removido na negociação master."
-                      : "Frete não cobrado — Fetély entrega por conta da casa."}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* V21 — Acréscimo isento de Inscrição Estadual */}
-            <div className="rounded-md border border-border bg-surface-2/60 px-3 py-2 text-xs space-y-1">
-              <label className="flex cursor-pointer items-baseline justify-between gap-2">
-                <span className="flex items-center gap-2 text-text-secondary">
-                  <input
-                    type="checkbox"
-                    checked={aplicarIsentoIE}
-                    onChange={(e) => setAplicarIsentoIE(e.target.checked)}
-                    className="h-3 w-3 accent-[var(--gold,#c9a227)]"
-                  />
-                  Acréscimo isento de IE ({ACRESCIMO_ISENTO_IE_PERCENT}%)
-                </span>
-                <span className={aplicarIsentoIE ? "text-text-primary" : "text-text-muted"}>
-                  {aplicarIsentoIE
-                    ? `+ ${formatBRL(calculo.acrescimoIsentoIEValor ?? 0)}`
-                    : "Não aplicado"}
-                </span>
-              </label>
-              <p className="text-[10px] text-text-muted">
-                {clienteIsentoIE
-                  ? "Cliente cadastrado como isento de Inscrição Estadual — acréscimo sugerido automaticamente."
-                  : "Cliente possui Inscrição Estadual. Marque apenas se o acréscimo for devido."}
-              </p>
-            </div>
-
-
-
-
-            <div className="border-t border-border pt-3 space-y-1">
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs uppercase tracking-wider text-text-secondary">
-                  {calculo.aplicouPix ? "Valor com PIX" : "Valor final"}
-                </span>
-                <span className="font-display text-2xl sm:text-3xl text-gold">
-                  {formatBRL(calculo.total)}
-                </span>
-              </div>
-              {calculo.aplicouPix && (
-                <div className="flex items-baseline justify-between text-xs text-text-muted">
-                  <span>Sem PIX</span>
-                  <span>{formatBRL(calculo.totalSemPix)}</span>
-                </div>
-              )}
-            </div>
-
-
-            <div className="flex items-center gap-2 rounded-md bg-surface-2 px-3 py-2 text-xs">
-              <Truck className="h-4 w-4 text-gold" />
-              {freteEfetivo === "CIF" ? (
-                <span>
-                  Frete <strong className="text-gold">CIF</strong>
-                  {premissas?.freteFixo ? " — acordado (sempre)" : " — Fetély entrega ✨"}
-                </span>
-              ) : (
-                <span>
-                  Frete <strong>FOB</strong>
-                  {premissas?.freteFixo ? " — acordado (sempre)" : " — por conta do lojista"}
-                </span>
-              )}
+            <div className="border-t border-border pt-2.5 flex items-baseline justify-between">
+              <span className="text-xs uppercase tracking-wider text-text-secondary">
+                {calculo.aplicouPix ? "Valor com PIX" : "Valor final"}
+              </span>
+              <span className="font-display text-2xl text-gold">{formatBRL(calculo.total)}</span>
             </div>
 
             {prox && (
-              <div className="relative overflow-hidden rounded-lg border border-gold/40 bg-gradient-to-br from-gold/15 via-gold/5 to-transparent p-3 shadow-[0_0_20px_-8px_hsl(var(--gold)/0.5)]">
-                <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.15em] text-gold mb-2">
-                  <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-gold animate-pulse" />
-                    Próxima: {prox.nome}
-                  </span>
-                  <span className="text-text-primary font-bold tracking-normal normal-case text-sm">
-                    {formatBRL(bruto)} <span className="text-text-muted font-normal">/ {formatBRL(prox.valorMin)}</span>
+              <div className="rounded-md border border-gold/30 bg-gold/[0.06] px-3 py-2">
+                <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-gold mb-1.5">
+                  <span>Próxima: {prox.nome}</span>
+                  <span className="normal-case tracking-normal text-text-muted">
+                    faltam <strong className="text-gold">{formatBRL(faltaProx)}</strong>
                   </span>
                 </div>
-                <div className="relative h-2.5 rounded-full bg-surface-2 overflow-hidden ring-1 ring-gold/20">
+                <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-gold/70 via-gold to-gold/90 transition-all shadow-[0_0_12px_hsl(var(--gold)/0.7)]"
-                    style={{
-                      width: `${Math.min(100, (bruto / prox.valorMin) * 100)}%`,
-                    }}
+                    className="h-full bg-gold transition-all"
+                    style={{ width: `${Math.min(100, (bruto / prox.valorMin) * 100)}%` }}
                   />
                 </div>
-                {faltaProx > 0 && faltaProx <= prox.valorMin * 0.1 && (
-                  <p className="mt-2.5 text-sm font-medium text-gold">
-                    ✦ Adicione <strong>{formatBRL(faltaProx)}</strong> e ganhe mais{" "}
-                    <strong>{prox.descontoCelebra - faixa.descontoCelebra}% de desconto</strong>
-                    {prox.frete === "CIF" && faixa.frete === "FOB" ? " + frete grátis" : ""}.
-                  </p>
-                )}
-                {faltaProx > prox.valorMin * 0.1 && (
-                  <p className="mt-2 text-xs text-text-muted">
-                    Faltam <strong className="text-gold">{formatBRL(faltaProx)}</strong> para a próxima faixa.
-                  </p>
-                )}
               </div>
-            )}
-            {!prox && (
-              <p className="text-xs text-gold text-center">
-                ✦ Você está na faixa máxima.
-              </p>
             )}
           </>
         ) : (
-          <div className="text-center py-2">
-            <div className="text-sm text-stock-out">
-              Pedido mínimo: {formatBRL(pedidoMinimo)}
-            </div>
-            <p className="text-xs text-text-muted mt-1">
-              Adicione mais produtos para fechar o pedido.
-            </p>
-            <p className="text-xs text-gold-muted mt-1">
-              O mínimo vale só para o pedido efetivo — você pode salvar como
-              <strong className="text-gold"> cotação (rascunho)</strong> em qualquer valor.
+          <div className="text-center py-2 space-y-1">
+            <div className="text-sm text-stock-out">Pedido mínimo: {formatBRL(pedidoMinimo)}</div>
+            <p className="text-xs text-text-muted">
+              Adicione produtos, ative a negociação ou salve como{" "}
+              <strong className="text-gold">cotação (rascunho)</strong>.
             </p>
           </div>
         )}
       </div>
 
-      {/* Pedido bonificado (interno / admin / master) */}
-      {canBonificar && (
-        <div className={`rounded-lg border p-4 sm:p-5 space-y-3 ${bonificado ? "border-purple-500/60 bg-purple-500/10" : "gold-border bg-surface"}`}>
-          <label className="flex items-start gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={bonificado}
-              onChange={(e) => setBonificado(e.target.checked)}
-              className="mt-1 accent-purple-400"
-            />
-            <span className="text-sm">
-              <span className="inline-flex items-center gap-1.5 text-purple-300 font-semibold">
-                <Gift className="h-4 w-4" /> Pedido bonificado
-              </span>
-              <span className="block text-[11px] text-text-muted mt-0.5">
-                Ignora o pedido mínimo. Não conta em meta, pace nem comissão. Baixa de estoque normal.
-              </span>
-            </span>
-          </label>
-          {bonificado && (
-            <div className="space-y-2 pl-6">
-              <label className="block">
-                <span className="text-[10px] uppercase tracking-wider text-text-muted">
-                  Motivo <span className="text-stock-out">*</span>
-                </span>
-                <select
-                  value={motivoBonif}
-                  onChange={(e) => setMotivoBonif(e.target.value)}
-                  className="mt-1 w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
-                >
-                  <option value="">Selecione…</option>
-                  {MOTIVOS_BONIFICACAO.map((m) => (
-                    <option key={m.id} value={m.id}>{m.label}</option>
-                  ))}
-                </select>
-              </label>
-              {motivoBonif === "outro" && (
-                <input
-                  type="text"
-                  value={motivoOutroTxt}
-                  onChange={(e) => setMotivoOutroTxt(e.target.value)}
-                  placeholder="Descreva o motivo…"
-                  maxLength={200}
-                  className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
-                />
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Seletor de pagamento */}
+      {/* ---------- PAGAMENTO ---------- */}
       {faixa && !bonificado && (
-        <div className="rounded-lg gold-border bg-surface p-4 sm:p-5 space-y-3">
-          <h3 className="text-xs uppercase tracking-[0.2em] text-gold-muted">
-            Forma de pagamento
-          </h3>
+        <div className="rounded-lg gold-border bg-surface p-4 space-y-2.5">
+          <h3 className="text-xs uppercase tracking-[0.2em] text-gold-muted">Forma de pagamento</h3>
           <PaymentSelector
             condicoes={condicoesDisponiveis}
             todas={ativo && liberarTodasCondicoes ? CONDICOES_PAGAMENTO : null}
@@ -630,192 +418,305 @@ export function CartCommercialPanel({
         </div>
       )}
 
-      {/* Modo negociação ativo */}
-      {ativo && faixa && (
-        <div className="rounded-lg border border-gold/50 bg-gold/5 p-4 sm:p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-gold">
-              <Lock className="h-4 w-4" />
-              <span className="text-xs uppercase tracking-[0.2em]">
-                Modo negociação ativo
+      {/* ---------- AJUSTES AVANÇADOS ---------- */}
+      <div className="rounded-lg gold-border bg-surface overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowAvancado((v) => !v)}
+          className="w-full grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 py-3 text-left hover:bg-surface-2/60"
+        >
+          <Settings2 className="h-4 w-4 text-gold shrink-0" />
+          <span className="min-w-0 text-xs uppercase tracking-[0.2em] text-gold-muted truncate">
+            Ajustes avançados
+          </span>
+          <span className="flex items-center gap-2 shrink-0">
+            {ajustesAtivos > 0 && (
+              <span className="rounded-full bg-gold/20 border border-gold/50 px-2 py-0.5 text-[10px] text-gold">
+                {ajustesAtivos}
               </span>
-            </div>
-            <button
-              onClick={desativar}
-              className="text-text-muted hover:text-stock-out"
-              aria-label="Desativar"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider text-text-muted mb-1">
-              Desconto adicional ({descontoPctEfetivo}%) — máx. {tetoDesconto}%
-              {isRepresentante && (
-                <span className="ml-1 normal-case tracking-normal text-gold-muted">
-                  (teto de representante)
-                </span>
-              )}
-            </label>
-            <input
-              type="range"
-              min={0}
-              max={tetoDesconto}
-              step={0.5}
-              value={descontoPct}
-              onChange={(e) => setDescontoPct(parseFloat(e.target.value))}
-              className="w-full accent-[var(--gold)]"
+            )}
+            <ChevronDown
+              className={`h-4 w-4 text-text-muted transition-transform ${showAvancado ? "rotate-180" : ""}`}
             />
-          </div>
+          </span>
+        </button>
 
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider text-text-muted mb-1">
-              Justificativa {descontoPct > 0 && <span className="text-stock-out">*</span>}
-            </label>
-            <select
-              value={justificativa}
-              onChange={(e) => setJustificativa(e.target.value)}
-              className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
-            >
-              <option value="">Selecione…</option>
-              {JUSTIFICATIVAS_NEGOCIACAO.map((j) => (
-                <option key={j} value={j}>
-                  {j}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {bruto >= 12000 && (
-            <label className="flex items-start gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={usarReservada}
-                onChange={(e) => setUsarReservada(e.target.checked)}
-                className="mt-0.5 accent-[var(--gold)]"
-              />
-              <span>
-                Aplicar <strong className="text-gold">Faixa 5 — Reservada</strong> (25% fixo)
-                <span className="block text-[11px] text-text-muted">
-                  Sem bônus PIX nesta faixa.
-                </span>
-              </span>
-            </label>
-          )}
-
-          <div className="rounded-md border border-gold/30 bg-background/30 p-3 space-y-2.5">
-            <div className="text-[10px] uppercase tracking-wider text-gold-muted">
-              Benefícios extras
-            </div>
-
-            <label className="flex items-start gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={freteGratis}
-                onChange={(e) => setFreteGratis(e.target.checked)}
-                className="mt-0.5 accent-[var(--gold)]"
-              />
-              <span>
-                <strong className="text-gold">Frete grátis</strong> (CIF) — Fetély entrega
-                <span className="block text-[11px] text-text-muted">
-                  Força frete CIF mesmo nas faixas FOB.
-                </span>
-              </span>
-            </label>
-
-            <div className="rounded-md border border-border bg-surface-2/50 p-2.5 space-y-2">
-              <div className="text-sm">
-                <strong className="text-gold">Ajuste de frete</strong>
-                <span className="block text-[11px] text-text-muted">
-                  Acréscimo (positivo) ou decréscimo (negativo) sobre o frete calculado.
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <select
-                  value={freteAjusteModo}
-                  onChange={(e) => setFreteAjusteModo(e.target.value as "percent" | "valor")}
-                  className="bg-surface-2 border border-border rounded-md px-2 py-1.5 text-sm"
-                >
-                  <option value="percent">%</option>
-                  <option value="valor">R$</option>
-                </select>
-                <input
-                  type="number"
-                  step={freteAjusteModo === "percent" ? 1 : 10}
-                  value={freteAjusteQtd === 0 ? "" : freteAjusteQtd}
-                  placeholder="0"
-                  onChange={(e) => setFreteAjusteQtd(parseFloat(e.target.value))}
-                  disabled={freteGratis}
-                  className="flex-1 bg-surface-2 border border-border rounded-md px-2 py-1.5 text-sm disabled:opacity-50"
-                />
-                {!!freteAjusteQtd && (
-                  <button
-                    type="button"
-                    onClick={() => setFreteAjusteQtd(0)}
-                    className="text-[11px] uppercase tracking-wider text-text-muted hover:text-gold"
-                  >
-                    Limpar
+        {showAvancado && (
+          <div className="border-t border-border p-4 space-y-3">
+            {/* Negociação */}
+            {!ativo ? (
+              <button
+                onClick={() => (isRepresentante ? ativarSemSenha() : setShowSenha(true))}
+                className="w-full flex items-center justify-center gap-2 rounded-md border border-gold/40 py-2 text-[11px] uppercase tracking-wider text-gold hover:bg-gold/10"
+              >
+                <Lock className="h-3 w-3" />
+                {isRepresentante ? "Abrir negociação" : "Abrir negociação (senha master)"}
+              </button>
+            ) : (
+              <div className="rounded-md border border-gold/40 bg-gold/5 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-gold">
+                    Negociação ativa
+                  </span>
+                  <button onClick={desativar} className="text-text-muted hover:text-stock-out" aria-label="Desativar">
+                    <X className="h-4 w-4" />
                   </button>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wider text-text-muted mb-1">
+                    Desconto adicional {descontoPctEfetivo}% — máx. {tetoDesconto}%
+                  </label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={tetoDesconto}
+                    step={0.5}
+                    value={descontoPct}
+                    onChange={(e) => setDescontoPct(parseFloat(e.target.value))}
+                    className="w-full accent-[var(--gold)]"
+                  />
+                </div>
+
+                <select
+                  value={justificativa}
+                  onChange={(e) => setJustificativa(e.target.value)}
+                  className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="">Justificativa…</option>
+                  {JUSTIFICATIVAS_NEGOCIACAO.map((j) => (
+                    <option key={j} value={j}>{j}</option>
+                  ))}
+                </select>
+
+                <div className="grid gap-2 text-sm">
+                  <Toggle
+                    checked={freteGratis}
+                    onChange={setFreteGratis}
+                    label="Frete grátis (CIF)"
+                  />
+                  {bruto >= 12000 && (
+                    <Toggle
+                      checked={usarReservada}
+                      onChange={setUsarReservada}
+                      label="Faixa Reservada — 25% fixo (sem PIX)"
+                    />
+                  )}
+                  <Toggle
+                    checked={liberarTodasCondicoes}
+                    onChange={setLiberarTodasCondicoes}
+                    label="Liberar todas as formas de pagamento"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-text-muted shrink-0">
+                    Frete ±
+                  </span>
+                  <select
+                    value={freteAjusteModo}
+                    onChange={(e) => setFreteAjusteModo(e.target.value as "percent" | "valor")}
+                    className="bg-surface-2 border border-border rounded-md px-2 py-1.5 text-sm"
+                  >
+                    <option value="percent">%</option>
+                    <option value="valor">R$</option>
+                  </select>
+                  <input
+                    type="number"
+                    step={freteAjusteModo === "percent" ? 1 : 10}
+                    value={freteAjusteQtd === 0 ? "" : freteAjusteQtd}
+                    placeholder="0"
+                    onChange={(e) => setFreteAjusteQtd(parseFloat(e.target.value))}
+                    disabled={freteGratis}
+                    className="min-w-0 flex-1 bg-surface-2 border border-border rounded-md px-2 py-1.5 text-sm disabled:opacity-50"
+                  />
+                </div>
+
+                <textarea
+                  value={observacaoInterna}
+                  onChange={(e) => setObservacaoInterna(e.target.value)}
+                  rows={2}
+                  placeholder="Observação interna (não vai para o cliente)"
+                  className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm resize-none"
+                />
+              </div>
+            )}
+
+            {/* Acréscimo IE */}
+            <Toggle
+              checked={aplicarIsentoIE}
+              onChange={setAplicarIsentoIE}
+              label={`Acréscimo isento de IE (${ACRESCIMO_ISENTO_IE_PERCENT}%)`}
+              hint={
+                clienteIsentoIE
+                  ? "Cliente isento de IE — sugerido automaticamente."
+                  : "Cliente possui IE. Marque só se devido."
+              }
+              valor={aplicarIsentoIE ? `+ ${formatBRL(calculo.acrescimoIsentoIEValor ?? 0)}` : undefined}
+            />
+
+            {/* Bonificado */}
+            {canBonificar && (
+              <div className="space-y-2">
+                <Toggle
+                  checked={bonificado}
+                  onChange={setBonificado}
+                  label="Pedido bonificado"
+                  hint="Ignora mínimo. Não conta em meta, pace nem comissão."
+                  icon={<Gift className="h-3.5 w-3.5 text-purple-300" />}
+                />
+                {bonificado && (
+                  <div className="pl-6 space-y-2">
+                    <select
+                      value={motivoBonif}
+                      onChange={(e) => setMotivoBonif(e.target.value)}
+                      className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+                    >
+                      <option value="">Motivo da bonificação…</option>
+                      {MOTIVOS_BONIFICACAO.map((m) => (
+                        <option key={m.id} value={m.id}>{m.label}</option>
+                      ))}
+                    </select>
+                    {motivoBonif === "outro" && (
+                      <input
+                        type="text"
+                        value={motivoOutroTxt}
+                        onChange={(e) => setMotivoOutroTxt(e.target.value)}
+                        placeholder="Descreva o motivo…"
+                        maxLength={200}
+                        className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+                      />
+                    )}
+                  </div>
                 )}
               </div>
-              {freteGratis ? (
-                <p className="text-[10px] text-text-muted">
-                  Frete grátis ativo — desmarque para ajustar o valor.
-                </p>
-              ) : (
-                <p className="text-[10px] text-text-muted">
-                  Frete base: {formatBRL(calculo.freteBase ?? 0)} → final:{" "}
-                  <strong className="text-text-primary">{formatBRL(calculo.freteValor ?? 0)}</strong>
-                </p>
-              )}
-            </div>
-
-            <label className="flex items-start gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={liberarTodasCondicoes}
-                onChange={(e) => setLiberarTodasCondicoes(e.target.checked)}
-                className="mt-0.5 accent-[var(--gold)]"
-              />
-              <span>
-                <strong className="text-gold">Liberar todas as formas de pagamento</strong>
-                <span className="block text-[11px] text-text-muted">
-                  Ignora restrições de faixa e valor mínimo das condições.
-                </span>
-              </span>
-            </label>
+            )}
           </div>
+        )}
+      </div>
 
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider text-text-muted mb-1">
-              Observação interna (não vai no resumo do cliente)
-            </label>
-            <textarea
-              value={observacaoInterna}
-              onChange={(e) => setObservacaoInterna(e.target.value)}
-              rows={2}
-              className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm resize-none"
-            />
-          </div>
-        </div>
+      {/* ---------- AVISO ÚNICO ---------- */}
+      {motivoBloqueio && (
+        <p className="rounded-md border border-stock-out/40 bg-stock-out/5 px-3 py-2 text-xs text-stock-out">
+          {motivoBloqueio}
+        </p>
       )}
-
-      {/* Botão modo negociação */}
-      {!ativo && (
-        <button
-          onClick={() => (isRepresentante ? ativarSemSenha() : setShowSenha(true))}
-          className="w-full flex items-center justify-center gap-2 text-[11px] uppercase tracking-wider text-text-muted hover:text-gold py-2"
-        >
-          <Settings2 className="h-3 w-3" />{" "}
-          {isRepresentante ? "Modo Negociação (sem senha)" : "Modo Negociação"}
-        </button>
-      )}
-
-      {showSenha && <MasterPasswordModal onClose={() => setShowSenha(false)} />}
     </div>
   );
+
+  return (
+    <>
+      {/* Desktop */}
+      <div className="hidden lg:block">{conteudo}</div>
+
+      {/* Mobile — resumo fixo + drawer */}
+      <div className="lg:hidden">
+        <button
+          type="button"
+          onClick={() => setShowDrawer(true)}
+          className="sticky bottom-2 z-30 w-full grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg gold-border bg-surface px-4 py-3 text-left shadow-lg"
+        >
+          <span className="min-w-0">
+            <span className="block text-[10px] uppercase tracking-[0.2em] text-gold-muted truncate">
+              {faixa ? (premissas ? "Homologadas" : faixa.nome) : "Abaixo do mínimo"}
+              {ajustesAtivos > 0 ? ` · ${ajustesAtivos} ajuste(s)` : ""}
+            </span>
+            <span className="block font-display text-xl text-gold">{formatBRL(calculo.total)}</span>
+          </span>
+          <span className="shrink-0 text-[10px] uppercase tracking-wider text-text-muted">
+            Detalhes
+          </span>
+        </button>
+        {showDrawer && (
+          <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-sm">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <span className="text-xs uppercase tracking-[0.2em] text-gold-muted">
+                Resumo comercial
+              </span>
+              <button onClick={() => setShowDrawer(false)} className="text-text-muted hover:text-text-primary">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">{conteudo}</div>
+            <div className="border-t border-border p-4">
+              <button
+                onClick={() => setShowDrawer(false)}
+                className="w-full rounded-md bg-gold py-2.5 text-xs uppercase tracking-wider text-background font-semibold"
+              >
+                Aplicar e voltar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {showSenha && <MasterPasswordModal onClose={() => setShowSenha(false)} />}
+    </>
+  );
 }
+
+function Chip({
+  on,
+  onClick,
+  label,
+  valor,
+}: {
+  on: boolean;
+  onClick: () => void;
+  label: string;
+  valor?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full border px-3 py-1 text-[11px] transition ${
+        on
+          ? "border-gold bg-gold/15 text-gold"
+          : "border-border text-text-muted hover:border-gold/40 hover:text-text-primary"
+      }`}
+    >
+      {label}
+      {on && valor ? <span className="ml-1.5 font-medium">{valor}</span> : null}
+    </button>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+  label,
+  hint,
+  valor,
+  icon,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  hint?: string;
+  valor?: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <label className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2 cursor-pointer text-sm">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-1 h-3.5 w-3.5 accent-[var(--gold,#c9a227)]"
+      />
+      <span className="min-w-0">
+        <span className="flex items-center gap-1.5">
+          {icon}
+          {label}
+        </span>
+        {hint && <span className="block text-[10px] text-text-muted">{hint}</span>}
+      </span>
+      {valor && <span className="shrink-0 text-xs text-text-primary">{valor}</span>}
+    </label>
+  );
+}
+
 
 function Row({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
