@@ -124,6 +124,8 @@ export function ClienteFormModal({
       setTab("fiscal");
       setCnpjError(null);
       setDuplicateWarn(null);
+      setBloqueio(null);
+      setJustificativa("");
       setTagInput("");
     }
   }, [open, initial, user, profile]);
