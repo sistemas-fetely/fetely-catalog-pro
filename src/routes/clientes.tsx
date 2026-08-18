@@ -208,6 +208,12 @@ function ClientesPage() {
         <GruposListPage />
       ) : (
         <>
+          {isAdminOrMaster && (
+            <div className="mb-4">
+              <MigracoesCarteiraPanel />
+            </div>
+          )}
+
 
 
 
