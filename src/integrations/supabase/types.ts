@@ -2492,6 +2492,33 @@ export type Database = {
         }
         Relationships: []
       }
+      wishlist_carrinho: {
+        Row: {
+          atualizado_em: string
+          chave: string
+          device_id: string | null
+          itens: Json
+          nome: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          chave: string
+          device_id?: string | null
+          itens?: Json
+          nome?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          chave?: string
+          device_id?: string | null
+          itens?: Json
+          nome?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       gate_ab_metrics: {
@@ -2646,6 +2673,17 @@ export type Database = {
           p_sessao_id: string
           p_tipo: string
           p_valor_parcial?: number
+        }
+        Returns: undefined
+      }
+      public_get_wishlist: { Args: { p_chave: string }; Returns: Json }
+      public_save_wishlist: {
+        Args: {
+          p_chave: string
+          p_device_id?: string
+          p_itens: Json
+          p_nome?: string
+          p_whatsapp?: string
         }
         Returns: undefined
       }

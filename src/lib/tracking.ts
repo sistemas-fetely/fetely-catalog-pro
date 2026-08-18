@@ -141,6 +141,52 @@ export function migrateWishlist(fromKey: string, toKey: string): Record<string, 
   return merged;
 }
 
+// --- Carrinho no servidor (retomada em qualquer dispositivo) --------------
+
+/** Salva o carrinho no banco para a chave informada. */
+export async function saveWishlistRemote(
+  key: string,
+  cart: Record<string, number>,
+  g?: GateIdentidade | null,
+): Promise<void> {
+  if (!key) return;
+  try {
+    const { error } = await supabase.rpc("public_save_wishlist" as never, {
+      p_chave: key,
+      p_itens: cart,
+      p_nome: g?.nome ?? null,
+      p_whatsapp: g?.whatsapp ?? null,
+      p_device_id: getOrCreateDeviceId(),
+    } as never);
+    if (error) throw error;
+  } catch (e) {
+    console.warn("[tracking] saveWishlistRemote falhou", e);
+  }
+}
+
+/** Recupera o carrinho salvo no banco para a chave informada. */
+export async function loadWishlistRemote(key: string): Promise<Record<string, number>> {
+  if (!key) return {};
+  try {
+    const { data, error } = await supabase.rpc("public_get_wishlist" as never, {
+      p_chave: key,
+    } as never);
+    if (error) throw error;
+    const obj = (data ?? {}) as Record<string, unknown>;
+    const out: Record<string, number> = {};
+    for (const [sku, qty] of Object.entries(obj)) {
+      const n = Number(qty);
+      if (Number.isFinite(n) && n > 0) out[sku] = n;
+    }
+    return out;
+  } catch (e) {
+    console.warn("[tracking] loadWishlistRemote falhou", e);
+    return {};
+  }
+}
+
+
+
 
 interface EnsureLinkResult {
   id: string | null;
