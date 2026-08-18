@@ -60,7 +60,6 @@ function buildClienteSnapshot(c: Cliente): ClienteSnapshot {
 function ItemPriceCell({
   precoTabela,
   precoEfetivo,
-  subtotal,
   quantity,
   negociado,
   descontoItemPct,
@@ -68,14 +67,18 @@ function ItemPriceCell({
 }: {
   precoTabela: number;
   precoEfetivo: number;
-  subtotal: number;
+  subtotal?: number;
   quantity: number;
   negociado: boolean;
   descontoItemPct?: number;
   fatorGlobal: number;
 }) {
-  const unitFinal = Math.round(precoEfetivo * fatorGlobal * 100) / 100;
+  const pctItem = descontoItemPct ?? 0;
+  // preço unitário realmente negociado: override (ou tabela) − desconto do item − desconto global
+  const unitFinal =
+    Math.round(precoEfetivo * (1 - pctItem / 100) * fatorGlobal * 100) / 100;
   const subFinal = Math.round(unitFinal * quantity * 100) / 100;
+  const subTabela = Math.round(precoTabela * quantity * 100) / 100;
   const temDesconto = negociado || fatorGlobal < 1;
   const pctTotal =
     precoTabela > 0 ? Math.round((1 - unitFinal / precoTabela) * 1000) / 10 : 0;
@@ -83,7 +86,7 @@ function ItemPriceCell({
   if (!temDesconto) {
     return (
       <div className="text-right">
-        <div className="text-gold font-medium">{formatBRL(subtotal)}</div>
+        <div className="text-gold font-medium">{formatBRL(subFinal)}</div>
         <div className="text-[10px] text-text-muted">{formatBRL(precoTabela)} un.</div>
       </div>
     );
@@ -92,7 +95,7 @@ function ItemPriceCell({
   return (
     <div className="text-right">
       <div className="flex items-center justify-end gap-1.5">
-        <span className="text-[11px] text-text-muted/70 line-through">{formatBRL(subtotal)}</span>
+        <span className="text-[11px] text-text-muted/70 line-through">{formatBRL(subTabela)}</span>
         {pctTotal > 0.05 && (
           <span className="rounded-full border border-gold/40 bg-gold/10 px-1.5 py-[1px] text-[9px] font-semibold tracking-wide text-gold">
             −{formatPercentBR(pctTotal)}%
@@ -107,12 +110,13 @@ function ItemPriceCell({
         <span className="mx-1 text-text-muted/50">→</span>
         <span className="text-gold/90">{formatBRL(unitFinal)}</span> un.
       </div>
-      {(descontoItemPct ?? 0) > 0 && (
-        <div className="text-[9px] text-gold/80">item −{descontoItemPct}%</div>
+      {pctItem > 0 && (
+        <div className="text-[9px] text-gold/80">item −{formatPercentBR(pctItem)}%</div>
       )}
     </div>
   );
 }
+
 
 function toItemProvisao(i: CartItem): ItemProvisao {
   return {
