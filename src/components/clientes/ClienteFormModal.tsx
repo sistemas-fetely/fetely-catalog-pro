@@ -127,10 +127,24 @@ export function ClienteFormModal({
     }
     setCnpjLoading(true);
     setCnpjError(null);
+    setBloqueio(null);
     try {
       const existing = findByCnpj(d);
       if (existing && existing.id !== cliente.id) {
         setDuplicateWarn(existing);
+      }
+      // Carteira: representante não pode cadastrar CNPJ de outro representante
+      const own = await checkCnpjOwnership(d);
+      if (own.existe && !own.isMine && own.clienteId !== cliente.id) {
+        if (repAtual) {
+          setBloqueio(own);
+          setCnpjLoading(false);
+          return;
+        }
+        setDuplicateWarn({
+          ...(existing ?? ({} as Cliente)),
+          razaoSocial: own.razaoSocial ?? existing?.razaoSocial ?? "cliente existente",
+        } as Cliente);
       }
       const r = await fetchCNPJ(d);
       update({
@@ -155,6 +169,23 @@ export function ClienteFormModal({
       setCnpjLoading(false);
     }
   };
+
+  const handleSolicitarMigracao = async () => {
+    if (!bloqueio) return;
+    setEnviandoMigracao(true);
+    try {
+      await solicitarMigracaoCnpj(bloqueio.cnpjDigits, justificativa);
+      toast.success(
+        "Solicitação enviada. Nossa equipe vai avaliar a migração deste CNPJ para a sua carteira.",
+      );
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Não foi possível enviar a solicitação.");
+    } finally {
+      setEnviandoMigracao(false);
+    }
+  };
+
 
   const podeSalvar = useMemo(() => {
     const base =
