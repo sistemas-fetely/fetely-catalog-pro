@@ -22,6 +22,7 @@ import { PortalAccessTab } from "@/components/clientes/PortalAccessTab";
 import { PremissasComercialTab } from "@/components/clientes/PremissasComercialTab";
 import { statusPremissas, diasParaExpirar, diffPremissas } from "@/lib/premissas";
 import { GruposListPage } from "@/components/grupos/GruposListPage";
+import { MigracoesCarteiraPanel } from "@/components/clientes/MigracoesCarteiraPanel";
 
 export const Route = createFileRoute("/clientes")({
   head: () => ({
