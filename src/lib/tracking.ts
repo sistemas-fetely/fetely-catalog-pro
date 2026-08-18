@@ -94,6 +94,54 @@ export function saveGateIdentidade(g: GateIdentidade): void {
   safeLocalStorage.setItem(LS_GATE, JSON.stringify(g));
 }
 
+// --- Carrinho (wishlist) persistido por identidade -----------------------
+const LS_WISHLIST = "fetely_wishlist"; // { [chave]: { [sku]: qty } }
+
+/** Chave da wishlist: whatsapp (dígitos) quando identificado, senão o device. */
+export function wishlistKey(g?: GateIdentidade | null): string {
+  const digits = (g?.whatsapp ?? "").replace(/\D/g, "");
+  if (digits.length >= 8) return `w:${digits}`;
+  return `d:${getOrCreateDeviceId()}`;
+}
+
+type WishlistStore = Record<string, Record<string, number>>;
+
+function readWishlistStore(): WishlistStore {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(LS_WISHLIST);
+    return raw ? (JSON.parse(raw) as WishlistStore) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function loadWishlist(key: string): Record<string, number> {
+  return readWishlistStore()[key] ?? {};
+}
+
+export function saveWishlist(key: string, cart: Record<string, number>): void {
+  if (typeof window === "undefined") return;
+  const store = readWishlistStore();
+  if (Object.keys(cart).length === 0) delete store[key];
+  else store[key] = cart;
+  safeLocalStorage.setItem(LS_WISHLIST, JSON.stringify(store));
+}
+
+/** Move o carrinho anônimo (device) para a chave da identidade recém-informada. */
+export function migrateWishlist(fromKey: string, toKey: string): Record<string, number> {
+  if (fromKey === toKey) return loadWishlist(toKey);
+  const store = readWishlistStore();
+  const from = store[fromKey] ?? {};
+  const to = store[toKey] ?? {};
+  const merged = { ...from, ...to };
+  delete store[fromKey];
+  if (Object.keys(merged).length > 0) store[toKey] = merged;
+  safeLocalStorage.setItem(LS_WISHLIST, JSON.stringify(store));
+  return merged;
+}
+
+
 interface EnsureLinkResult {
   id: string | null;
   origem_tipo: string | null;

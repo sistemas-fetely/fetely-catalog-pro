@@ -11,6 +11,10 @@ import {
   emitEvento,
   loadGateIdentidade,
   saveGateIdentidade,
+  wishlistKey,
+  loadWishlist,
+  saveWishlist,
+  migrateWishlist,
 } from "@/lib/tracking";
 import { useFeatureFlags } from "@/lib/featureFlags";
 import { GateEntradaDialog } from "@/components/catalog/GateEntradaDialog";
@@ -80,12 +84,32 @@ function PreSelecaoPage() {
   const montagemEmitidaRef = useRef(false);
   const formularioEmitidaRef = useRef(false);
 
+  // Carrinho persistido (retomada): chave por WhatsApp identificado, senão device.
+  const wishKeyRef = useRef<string | null>(null);
+  const cartRestoredRef = useRef(false);
+
   // Garante hidratação do catálogo (mesmo padrão do /catalog público).
   useEffect(() => {
     if (!useCatalog.getState().hidratado) {
       useCatalog.getState().hydrate();
     }
   }, []);
+
+  // Restaura o carrinho salvo antes de qualquer outra coisa.
+  useEffect(() => {
+    const gateSaved = loadGateIdentidade();
+    const key = wishlistKey(gateSaved);
+    wishKeyRef.current = key;
+    const saved = loadWishlist(key);
+    if (Object.keys(saved).length > 0) setCart(saved);
+    cartRestoredRef.current = true;
+  }, []);
+
+  // Persiste o carrinho a cada alteração (após a restauração inicial).
+  useEffect(() => {
+    if (!cartRestoredRef.current || !wishKeyRef.current) return;
+    saveWishlist(wishKeyRef.current, cart);
+  }, [cart]);
 
   // Bootstrap da sessão: cria/reutiliza session_id, resolve link_instance
   // via ?v=<login> (RPC), grava sessão e emite portal_acessado.
@@ -119,6 +143,15 @@ function PreSelecaoPage() {
 
   async function handleGateSubmit(value: { nome: string; whatsapp: string }) {
     saveGateIdentidade(value);
+    // Migra/recupera o carrinho para a chave da identidade informada.
+    const novaKey = wishlistKey(value);
+    const antigaKey = wishKeyRef.current ?? novaKey;
+    const merged = migrateWishlist(antigaKey, novaKey);
+    wishKeyRef.current = novaKey;
+    if (Object.keys(merged).length > 0) {
+      setCart((prev) => ({ ...merged, ...prev }));
+      toast.success("Encontramos sua lista de desejos anterior — ela está no carrinho.");
+    }
     const sid = sessionIdRef.current;
     if (sid) {
       await upsertSessao(sid, {
@@ -129,6 +162,7 @@ function PreSelecaoPage() {
     }
     setGateOpen(false);
   }
+
 
 
 
