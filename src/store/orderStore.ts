@@ -269,11 +269,15 @@ export const useOrder = create<OrderState>()(
           const history = (orderRows ?? []).map((r) =>
             rowToOrder(r as Record<string, unknown>, itemsByOrder[(r as Record<string, unknown>).id as string] ?? []),
           );
-          set({ history, hidratado: true });
+          set({ history, hidratado: true, lastSyncAt: Date.now() });
         } catch (err) {
           console.error("[orderStore] hydrate falhou:", err);
           set({ hidratado: true });
+        } finally {
+          inflightHydrate = null;
         }
+        })();
+        return inflightHydrate;
       },
       hydrateOrderById: async (orderId) => {
         try {
