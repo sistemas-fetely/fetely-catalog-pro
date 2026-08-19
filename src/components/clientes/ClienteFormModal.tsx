@@ -10,6 +10,8 @@ import {
   isRepresentanteAtual,
   checkCnpjOwnership,
   solicitarMigracaoCnpj,
+  listVendedoresCarteira,
+  type VendedorCarteira,
   type CnpjOwnership,
 } from "@/store/clienteStore";
 import { useAuth } from "@/store/authStore";
