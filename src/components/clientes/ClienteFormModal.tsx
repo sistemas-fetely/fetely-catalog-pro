@@ -232,7 +232,7 @@ export function ClienteFormModal({
       toast.success(
         "Solicitação enviada. Nossa equipe vai avaliar a migração deste CNPJ para a sua carteira.",
       );
-      onOpenChange(false);
+      setMigracaoEnviada(true);
     } catch (err: any) {
       toast.error(err?.message ?? "Não foi possível enviar a solicitação.");
     } finally {
