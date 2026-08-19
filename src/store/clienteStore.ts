@@ -362,3 +362,33 @@ export function calcClienteStats(clienteId: string) {
     pedidos,
   };
 }
+
+// --- Carteira: vendedores/representantes disponíveis para direcionamento ------
+
+export interface VendedorCarteira {
+  id: string;
+  nome: string;
+  tipo: "interno" | "representante" | null;
+}
+
+/** Lista vendedores ativos (internos e representantes) para atribuir carteira. */
+export async function listVendedoresCarteira(): Promise<VendedorCarteira[]> {
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, nome_completo, email, tipo_vendedor, ativo")
+      .eq("ativo", true)
+      .order("nome_completo", { ascending: true });
+    if (error) throw error;
+    return (data ?? [])
+      .map((r: Record<string, unknown>) => ({
+        id: r.id as string,
+        nome: ((r.nome_completo as string) || (r.email as string) || "—").trim(),
+        tipo: (r.tipo_vendedor as VendedorCarteira["tipo"]) ?? null,
+      }))
+      .filter((v) => Boolean(v.id));
+  } catch (err) {
+    console.error("[clienteStore] listVendedoresCarteira falhou:", err);
+    return [];
+  }
+}

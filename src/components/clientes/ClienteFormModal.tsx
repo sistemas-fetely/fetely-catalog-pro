@@ -10,6 +10,8 @@ import {
   isRepresentanteAtual,
   checkCnpjOwnership,
   solicitarMigracaoCnpj,
+  listVendedoresCarteira,
+  type VendedorCarteira,
   type CnpjOwnership,
 } from "@/store/clienteStore";
 import { useAuth } from "@/store/authStore";
@@ -114,6 +116,11 @@ export function ClienteFormModal({
   >(null);
   const [justificativa, setJustificativa] = useState("");
   const [enviandoMigracao, setEnviandoMigracao] = useState(false);
+  const [migracaoEnviada, setMigracaoEnviada] = useState(false);
+  const [checandoCnpj, setChecandoCnpj] = useState(false);
+  // Direcionamento de carteira (só admin/master/interno)
+  const podeDirecionar = !repAtual;
+  const [vendedores, setVendedores] = useState<VendedorCarteira[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -126,12 +133,44 @@ export function ClienteFormModal({
       setDuplicateWarn(null);
       setBloqueio(null);
       setJustificativa("");
+      setMigracaoEnviada(false);
       setTagInput("");
     }
   }, [open, initial, user, profile]);
 
+  useEffect(() => {
+    if (!open || !podeDirecionar || vendedores.length > 0) return;
+    void listVendedoresCarteira().then(setVendedores);
+  }, [open, podeDirecionar, vendedores.length]);
+
+
   const update = (patch: Partial<Cliente>) =>
     setCliente((c) => ({ ...c, ...patch }));
+
+  // Checagem automática: assim que o CNPJ chega a 14 dígitos já avisamos se o
+  // cliente existe na base (e de quem é a carteira), sem esperar o botão buscar.
+  const cnpjDigitsAtual = onlyDigits(cliente.cnpjFormatado || cliente.cnpj);
+  useEffect(() => {
+    if (!open || cliente.isInternacional) return;
+    if (cnpjDigitsAtual.length !== 14) return;
+    if (initial && onlyDigits(initial.cnpj) === cnpjDigitsAtual) return;
+    let cancelado = false;
+    setChecandoCnpj(true);
+    const t = setTimeout(async () => {
+      const own = await checkCnpjOwnership(cnpjDigitsAtual);
+      if (cancelado) return;
+      setChecandoCnpj(false);
+      if (own.existe && own.clienteId !== cliente.id && !own.isMine) {
+        setBloqueio({ ...own, cnpjDigits: cnpjDigitsAtual });
+      }
+    }, 450);
+    return () => {
+      cancelado = true;
+      setChecandoCnpj(false);
+      clearTimeout(t);
+    };
+  }, [open, cnpjDigitsAtual, cliente.isInternacional, cliente.id, initial]);
+
 
   const handleCnpjLookup = async () => {
     const d = onlyDigits(cliente.cnpjFormatado || cliente.cnpj);
@@ -192,7 +231,7 @@ export function ClienteFormModal({
       toast.success(
         "Solicitação enviada. Nossa equipe vai avaliar a migração deste CNPJ para a sua carteira.",
       );
-      onOpenChange(false);
+      setMigracaoEnviada(true);
     } catch (err: any) {
       toast.error(err?.message ?? "Não foi possível enviar a solicitação.");
     } finally {
@@ -239,19 +278,24 @@ export function ClienteFormModal({
       return;
     }
 
-    // Carteira exclusiva: representante não salva CNPJ de outro representante
-    if (repAtual && !cliente.isInternacional && cliente.cnpj) {
-      if (bloqueio) {
-        toast.error("Este CNPJ está em outra carteira. Solicite a migração para continuar.");
-        return;
-      }
-      const own = await checkCnpjOwnership(cliente.cnpj);
-      if (own.existe && !own.isMine && own.clienteId !== cliente.id) {
+    // Nunca duplicar CNPJ já existente na base.
+    if (!cliente.isInternacional && cliente.cnpj) {
+      const own = bloqueio ?? (await checkCnpjOwnership(cliente.cnpj));
+      const conflito = own.existe && own.clienteId !== cliente.id;
+      if (conflito && repAtual && !own.isMine) {
         setBloqueio({ ...own, cnpjDigits: onlyDigits(cliente.cnpj) });
         toast.error("Este CNPJ está em outra carteira. Solicite a migração para continuar.");
         return;
       }
+      if (conflito && !repAtual) {
+        setBloqueio({ ...own, cnpjDigits: onlyDigits(cliente.cnpj) });
+        toast.error(
+          "Este CNPJ já está cadastrado. Edite o cliente existente e ajuste a carteira em vez de criar outro.",
+        );
+        return;
+      }
     }
+
 
     let premissasComerciais = cliente.premissasComerciais;
     if (premissasComerciais) {
@@ -362,6 +406,11 @@ export function ClienteFormModal({
                     Situação: {cliente.situacaoCadastral}
                   </p>
                 )}
+                {checandoCnpj && !bloqueio && (
+                  <p className="mt-1 text-[11px] text-text-secondary">
+                    Verificando se este CNPJ já está na base…
+                  </p>
+                )}
                 {duplicateWarn && !bloqueio && (
                   <p className="mt-1 text-[11px] text-stock-out">
                     CNPJ já cadastrado como{" "}
@@ -371,34 +420,55 @@ export function ClienteFormModal({
                 {bloqueio && (
                   <div className="mt-2 rounded-md border border-stock-out/50 bg-surface-2 p-3 space-y-2">
                     <div className="text-[10px] uppercase tracking-[0.2em] text-stock-out">
-                      CNPJ em outra carteira
+                      Cliente já cadastrado
                     </div>
                     <p className="text-xs text-text-secondary">
                       Este CNPJ{" "}
                       {bloqueio.razaoSocial ? (
                         <span className="text-text-primary">({bloqueio.razaoSocial})</span>
                       ) : null}{" "}
-                      já está atendido por outro representante. Para evitar sobreposição de
-                      atendimento e comissão, solicite a migração para a sua carteira — nossa
-                      equipe interna avalia e libera.
+                      já existe na base
+                      {bloqueio.ownerNome ? (
+                        <>
+                          {" "}
+                          — carteira de{" "}
+                          <span className="text-text-primary">{bloqueio.ownerNome}</span>
+                        </>
+                      ) : null}
+                      .{" "}
+                      {repAtual
+                        ? "Para evitar sobreposição de atendimento e comissão, solicite a migração para a sua carteira — a equipe interna avalia e libera."
+                        : "Use o campo “Carteira / responsável” na aba Comercial para direcionar este cliente a outro representante."}
                     </p>
-                    <textarea
-                      className="input w-full text-xs"
-                      rows={2}
-                      placeholder="Justificativa (histórico de atendimento, contato, etc.)"
-                      value={justificativa}
-                      onChange={(e) => setJustificativa(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSolicitarMigracao}
-                      disabled={enviandoMigracao}
-                      className="w-full px-3 py-2 rounded-md bg-gold text-background text-xs font-semibold uppercase tracking-wider hover:bg-gold-light disabled:opacity-40"
-                    >
-                      {enviandoMigracao ? "Enviando..." : "Solicitar migração deste CNPJ"}
-                    </button>
+                    {repAtual &&
+                      (migracaoEnviada ? (
+                        <p className="text-xs text-gold">
+                          Solicitação enviada — você será avisado após a aprovação.
+                        </p>
+                      ) : (
+                        <>
+                          <textarea
+                            className="input w-full text-xs"
+                            rows={2}
+                            placeholder="Justificativa (histórico de atendimento, contato, etc.)"
+                            value={justificativa}
+                            onChange={(e) => setJustificativa(e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleSolicitarMigracao}
+                            disabled={enviandoMigracao}
+                            className="w-full px-3 py-2 rounded-md bg-gold text-background text-xs font-semibold uppercase tracking-wider hover:bg-gold-light disabled:opacity-40"
+                          >
+                            {enviandoMigracao
+                              ? "Enviando..."
+                              : "Solicitar migração para minha carteira"}
+                          </button>
+                        </>
+                      ))}
                   </div>
                 )}
+
 
               </Field>
             ) : null}
@@ -772,7 +842,40 @@ export function ClienteFormModal({
                 </select>
               </Field>
             </div>
+            {podeDirecionar && (
+              <Field label="Carteira / responsável">
+                <select
+                  className="input"
+                  value={cliente.cadastradoPorVendedorId ?? ""}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    const v = vendedores.find((x) => x.id === id);
+                    update({
+                      cadastradoPorVendedorId: id,
+                      cadastradoPorVendedorNome:
+                        v?.nome ?? cliente.cadastradoPorVendedorNome ?? "",
+                    });
+                  }}
+                >
+                  {!vendedores.some((v) => v.id === cliente.cadastradoPorVendedorId) && (
+                    <option value={cliente.cadastradoPorVendedorId ?? ""}>
+                      {cliente.cadastradoPorVendedorNome || "Selecione…"}
+                    </option>
+                  )}
+                  {vendedores.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.nome}
+                      {v.tipo === "representante" ? " · Representante" : v.tipo === "interno" ? " · Interno" : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[10px] uppercase tracking-wider text-gold-muted">
+                  Direciona o cliente para a carteira do vendedor/representante escolhido
+                </p>
+              </Field>
+            )}
             <Field label="Região de atuação">
+
               <input
                 className="input"
                 value={cliente.regiaoAtuacao ?? ""}
