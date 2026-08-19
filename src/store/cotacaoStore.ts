@@ -107,6 +107,7 @@ export const useCotacao = create<CotacaoState>()((set, get) => ({
       cotacoes: (data as CotacaoRow[]).map(fromRow),
       loading: false,
       loaded: true,
+      lastSyncAt: Date.now(),
     });
   },
 
