@@ -51,10 +51,15 @@ function CotacoesPage() {
   const [busca, setBusca] = useState("");
   const [selecionada, setSelecionada] = useState<string | null>(null);
 
+  // Cache-first: a lista já carregada aparece na hora; a revalidação roda
+  // em background (com TTL no store) e a expiração só uma vez por sessão.
   useEffect(() => {
     void (async () => {
       await fetchAll();
-      await expirarVencidas();
+      if (!expiracaoJaRodou) {
+        expiracaoJaRodou = true;
+        await expirarVencidas();
+      }
     })();
   }, [fetchAll, expirarVencidas]);
 
