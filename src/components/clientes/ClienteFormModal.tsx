@@ -427,15 +427,7 @@ export function ClienteFormModal({
                       {bloqueio.razaoSocial ? (
                         <span className="text-text-primary">({bloqueio.razaoSocial})</span>
                       ) : null}{" "}
-                      já existe na base
-                      {bloqueio.ownerNome ? (
-                        <>
-                          {" "}
-                          — carteira de{" "}
-                          <span className="text-text-primary">{bloqueio.ownerNome}</span>
-                        </>
-                      ) : null}
-                      .{" "}
+                      já está ativo na base.{" "}
                       {repAtual
                         ? "Para evitar sobreposição de atendimento e comissão, solicite a migração para a sua carteira — a equipe interna avalia e libera."
                         : "Use o campo “Carteira / responsável” na aba Comercial para direcionar este cliente a outro representante."}
