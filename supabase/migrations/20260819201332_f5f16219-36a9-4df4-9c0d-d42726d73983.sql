@@ -1,0 +1,2 @@
+DELETE FROM public.lead_historico WHERE lead_id IN (SELECT id FROM public.leads_qualificados WHERE nome IN ('TESTE LIVE 1910','TESTE PW 1910','TESTE DIAGNOSTICO LOVABLE'));
+DELETE FROM public.leads_qualificados WHERE nome IN ('TESTE LIVE 1910','TESTE PW 1910','TESTE DIAGNOSTICO LOVABLE');
