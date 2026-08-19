@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { useNegotiation } from "@/store/negotiationStore";
 import { useAuth } from "@/store/authStore";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import type { OrderCommercial } from "@/types";
 
 function formatData(iso: string): string {
   const d = new Date(iso);
@@ -24,6 +26,9 @@ function formatData(iso: string): string {
   return `${dd}/${mo} ${hh}h${mm}`;
 }
 
+const BRL = (v: number) =>
+  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
 const BASE =
   "flex items-center justify-center rounded-md border w-8 h-8 transition";
 
@@ -32,8 +37,32 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
   const [reenvioOpen, setReenvioOpen] = useState(false);
   const [senha, setSenha] = useState("");
   const [verificando, setVerificando] = useState(false);
+  const [aprovacaoOpen, setAprovacaoOpen] = useState(false);
+  const [carregandoResumo, setCarregandoResumo] = useState(false);
+  const [comercial, setComercial] = useState<Partial<OrderCommercial> | null>(null);
   const tryActivate = useNegotiation((s) => s.tryActivate);
   const canLiberar = useAuth((s) => s.roles.includes("admin") || s.roles.includes("master"));
+
+  async function abrirAprovacao() {
+    setAprovacaoOpen(true);
+    setCarregandoResumo(true);
+    try {
+      const { data } = await supabase
+        .from("orders")
+        .select("commercial")
+        .eq("id", orderId)
+        .maybeSingle();
+      setComercial((data?.commercial as Partial<OrderCommercial> | null) ?? null);
+    } finally {
+      setCarregandoResumo(false);
+    }
+  }
+
+  const bruto = Number(comercial?.bruto ?? 0);
+  const descCelebra = Number(comercial?.descontoCelebraValor ?? 0);
+  const descMaster = Number(comercial?.descontoMasterValor ?? 0);
+  const descontoValor = descCelebra + descMaster;
+  const descontoPct = bruto > 0 ? (descontoValor / bruto) * 100 : 0;
 
   if (!canLiberar) {
     return (
@@ -47,6 +76,69 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
     );
   }
 
+  const dialogAprovacao = (
+    <Dialog open={aprovacaoOpen} onOpenChange={setAprovacaoOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Aprovar desconto antes de sincronizar</DialogTitle>
+          <DialogDescription>
+            Confira o desconto aplicado neste pedido. A sincronização com o SNCF
+            só acontece após a aprovação.
+          </DialogDescription>
+        </DialogHeader>
+        {carregandoResumo ? (
+          <p className="text-xs text-text-secondary">Carregando resumo…</p>
+        ) : (
+          <div className="space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-text-secondary">Bruto</span>
+              <span>{BRL(bruto)}</span>
+            </div>
+            {descCelebra > 0 && (
+              <div className="flex justify-between">
+                <span className="text-text-secondary">
+                  Desconto Celebra ({Number(comercial?.descontoCelebraPct ?? 0)}%)
+                </span>
+                <span>-{BRL(descCelebra)}</span>
+              </div>
+            )}
+            {descMaster > 0 && (
+              <div className="flex justify-between">
+                <span className="text-text-secondary">
+                  Desconto negociação ({Number(comercial?.descontoMasterPct ?? 0)}%)
+                </span>
+                <span>-{BRL(descMaster)}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-semibold">
+              <span>Desconto total</span>
+              <span>
+                {descontoPct.toFixed(2)}% · {BRL(descontoValor)}
+              </span>
+            </div>
+            <div className="flex justify-between border-t border-border/60 pt-1.5 font-semibold">
+              <span>Total final</span>
+              <span>{BRL(Number(comercial?.totalFinal ?? 0))}</span>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setAprovacaoOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={carregandoResumo}
+            onClick={async () => {
+              setAprovacaoOpen(false);
+              await enviar();
+            }}
+          >
+            Aprovar e sincronizar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
   async function confirmarReenvio() {
     if (!senha.trim()) {
@@ -62,7 +154,7 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
       }
       setReenvioOpen(false);
       setSenha("");
-      await enviar();
+      await abrirAprovacao();
     } finally {
       setVerificando(false);
     }
@@ -85,13 +177,16 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
   // pra reenviar em vez de girar pra sempre.
   if (status === "pendente" && !isEnviando) {
     return (
-      <button
-        onClick={() => enviar()}
-        title="Preso em 'pendente' — clique pra reenviar"
-        className={`${BASE} border-amber-500/40 text-amber-500 hover:bg-amber-500/10`}
-      >
-        <Send className="h-3.5 w-3.5" />
-      </button>
+      <>
+        <button
+          onClick={() => void abrirAprovacao()}
+          title="Preso em 'pendente' — clique pra reenviar"
+          className={`${BASE} border-amber-500/40 text-amber-500 hover:bg-amber-500/10`}
+        >
+          <Send className="h-3.5 w-3.5" />
+        </button>
+        {dialogAprovacao}
+      </>
     );
   }
 
@@ -135,19 +230,23 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        {dialogAprovacao}
       </>
     );
   }
 
   if (status === "erro_persistente") {
     return (
-      <button
-        onClick={() => enviar()}
-        title={`Falhou: ${erro ?? "erro"} (clique pra tentar de novo)`}
-        className={`${BASE} border-amber-500/40 text-amber-500 hover:bg-amber-500/10`}
-      >
-        <AlertTriangle className="h-3.5 w-3.5" />
-      </button>
+      <>
+        <button
+          onClick={() => void abrirAprovacao()}
+          title={`Falhou: ${erro ?? "erro"} (clique pra tentar de novo)`}
+          className={`${BASE} border-amber-500/40 text-amber-500 hover:bg-amber-500/10`}
+        >
+          <AlertTriangle className="h-3.5 w-3.5" />
+        </button>
+        {dialogAprovacao}
+      </>
     );
   }
 
@@ -164,12 +263,15 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
   }
 
   return (
-    <button
-      onClick={() => enviar()}
-      title="Enviar pra SNCF"
-      className={`${BASE} gold-border text-gold hover:bg-gold/10`}
-    >
-      <Send className="h-3.5 w-3.5" />
-    </button>
+    <>
+      <button
+        onClick={() => void abrirAprovacao()}
+        title="Enviar pra SNCF"
+        className={`${BASE} gold-border text-gold hover:bg-gold/10`}
+      >
+        <Send className="h-3.5 w-3.5" />
+      </button>
+      {dialogAprovacao}
+    </>
   );
 }

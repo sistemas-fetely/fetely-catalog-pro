@@ -193,11 +193,10 @@ export let PEDIDO_MINIMO = REGRAS_ATUAIS.pedidoMinimo;
 export let DESCONTO_MASTER_MAX = REGRAS_ATUAIS.descontoMasterMax;
 
 /**
- * Ajuste 2 — teto de desconto para pedidos de REPRESENTANTE.
- * O rep abre o painel de negociação sem senha, mas o desconto continua
- * limitado a este teto (não vira desconto livre).
+ * Teto de desconto livre (sem senha) — vale para representantes e vendedores
+ * internos que abrem o painel de negociação sem senha master.
  */
-export const DESCONTO_REP_MAX = 5;
+export const DESCONTO_REP_MAX = 15;
 
 /**
  * Replace in-place os arrays/regras vigentes. Chamado pelo cartilhasStore.
