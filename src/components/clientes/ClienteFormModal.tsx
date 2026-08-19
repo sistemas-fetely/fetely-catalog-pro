@@ -119,7 +119,6 @@ export function ClienteFormModal({
   const [migracaoEnviada, setMigracaoEnviada] = useState(false);
   const [checandoCnpj, setChecandoCnpj] = useState(false);
   // Direcionamento de carteira (só admin/master/interno)
-  const roles = useAuth((s) => s.roles);
   const podeDirecionar = !repAtual;
   const [vendedores, setVendedores] = useState<VendedorCarteira[]>([]);
 
