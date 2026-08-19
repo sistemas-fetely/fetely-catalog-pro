@@ -18,11 +18,15 @@ interface CreateProvisaoInput {
   observacoes?: string;
 }
 
+/** Dedup de hidratação de provisões. */
+let inflightProvHydrate: Promise<void> | null = null;
+
 interface ProvisaoState {
   provisoes: ProvisaoFutura[];
   counter: number;
   hidratado: boolean;
-  hydrate: () => Promise<void>;
+  lastSyncAt: number;
+  hydrate: (opts?: { force?: boolean }) => Promise<void>;
   setProvisoesFromRows: (p: ProvisaoFutura[], maxCounter: number) => void;
   createProvisao: (input: CreateProvisaoInput) => Promise<ProvisaoFutura>;
   updateStatus: (id: string, status: StatusProvisao, extra?: Partial<ProvisaoFutura>) => void;
