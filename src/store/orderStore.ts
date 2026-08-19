@@ -248,7 +248,15 @@ export const useOrder = create<OrderState>()(
       meta: defaultMeta,
       history: [],
       hidratado: false,
-      hydrate: async () => {
+      lastSyncAt: 0,
+      hydrate: async (opts) => {
+        // Cache-first: se já temos histórico recente em memória/cache, não
+        // bloqueia a navegação — só revalida se passou do TTL ou se forçado.
+        const st = get();
+        const TTL = 90_000;
+        if (!opts?.force && st.hidratado && Date.now() - st.lastSyncAt < TTL) return;
+        if (inflightHydrate) return inflightHydrate;
+        inflightHydrate = (async () => {
         try {
           const { data: orderRows, error: err1 } = await supabase
             .from("orders")
