@@ -148,6 +148,31 @@ export function ClienteFormModal({
   const update = (patch: Partial<Cliente>) =>
     setCliente((c) => ({ ...c, ...patch }));
 
+  // Checagem automática: assim que o CNPJ chega a 14 dígitos já avisamos se o
+  // cliente existe na base (e de quem é a carteira), sem esperar o botão buscar.
+  const cnpjDigitsAtual = onlyDigits(cliente.cnpjFormatado || cliente.cnpj);
+  useEffect(() => {
+    if (!open || cliente.isInternacional) return;
+    if (cnpjDigitsAtual.length !== 14) return;
+    if (initial && onlyDigits(initial.cnpj) === cnpjDigitsAtual) return;
+    let cancelado = false;
+    setChecandoCnpj(true);
+    const t = setTimeout(async () => {
+      const own = await checkCnpjOwnership(cnpjDigitsAtual);
+      if (cancelado) return;
+      setChecandoCnpj(false);
+      if (own.existe && own.clienteId !== cliente.id && !own.isMine) {
+        setBloqueio({ ...own, cnpjDigits: cnpjDigitsAtual });
+      }
+    }, 450);
+    return () => {
+      cancelado = true;
+      setChecandoCnpj(false);
+      clearTimeout(t);
+    };
+  }, [open, cnpjDigitsAtual, cliente.isInternacional, cliente.id, initial]);
+
+
   const handleCnpjLookup = async () => {
     const d = onlyDigits(cliente.cnpjFormatado || cliente.cnpj);
     if (!isValidCNPJLength(d)) {
