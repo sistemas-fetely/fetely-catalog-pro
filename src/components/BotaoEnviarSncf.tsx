@@ -177,13 +177,16 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
   // pra reenviar em vez de girar pra sempre.
   if (status === "pendente" && !isEnviando) {
     return (
-      <button
-        onClick={() => enviar()}
-        title="Preso em 'pendente' — clique pra reenviar"
-        className={`${BASE} border-amber-500/40 text-amber-500 hover:bg-amber-500/10`}
-      >
-        <Send className="h-3.5 w-3.5" />
-      </button>
+      <>
+        <button
+          onClick={() => void abrirAprovacao()}
+          title="Preso em 'pendente' — clique pra reenviar"
+          className={`${BASE} border-amber-500/40 text-amber-500 hover:bg-amber-500/10`}
+        >
+          <Send className="h-3.5 w-3.5" />
+        </button>
+        {dialogAprovacao}
+      </>
     );
   }
 
