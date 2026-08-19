@@ -843,7 +843,40 @@ export function ClienteFormModal({
                 </select>
               </Field>
             </div>
+            {podeDirecionar && (
+              <Field label="Carteira / responsável">
+                <select
+                  className="input"
+                  value={cliente.cadastradoPorVendedorId ?? ""}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    const v = vendedores.find((x) => x.id === id);
+                    update({
+                      cadastradoPorVendedorId: id,
+                      cadastradoPorVendedorNome:
+                        v?.nome ?? cliente.cadastradoPorVendedorNome ?? "",
+                    });
+                  }}
+                >
+                  {!vendedores.some((v) => v.id === cliente.cadastradoPorVendedorId) && (
+                    <option value={cliente.cadastradoPorVendedorId ?? ""}>
+                      {cliente.cadastradoPorVendedorNome || "Selecione…"}
+                    </option>
+                  )}
+                  {vendedores.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.nome}
+                      {v.tipo === "representante" ? " · Representante" : v.tipo === "interno" ? " · Interno" : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[10px] uppercase tracking-wider text-gold-muted">
+                  Direciona o cliente para a carteira do vendedor/representante escolhido
+                </p>
+              </Field>
+            )}
             <Field label="Região de atuação">
+
               <input
                 className="input"
                 value={cliente.regiaoAtuacao ?? ""}
