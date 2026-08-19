@@ -116,6 +116,12 @@ export function ClienteFormModal({
   >(null);
   const [justificativa, setJustificativa] = useState("");
   const [enviandoMigracao, setEnviandoMigracao] = useState(false);
+  const [migracaoEnviada, setMigracaoEnviada] = useState(false);
+  const [checandoCnpj, setChecandoCnpj] = useState(false);
+  // Direcionamento de carteira (só admin/master/interno)
+  const roles = useAuth((s) => s.roles);
+  const podeDirecionar = !repAtual;
+  const [vendedores, setVendedores] = useState<VendedorCarteira[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -128,9 +134,16 @@ export function ClienteFormModal({
       setDuplicateWarn(null);
       setBloqueio(null);
       setJustificativa("");
+      setMigracaoEnviada(false);
       setTagInput("");
     }
   }, [open, initial, user, profile]);
+
+  useEffect(() => {
+    if (!open || !podeDirecionar || vendedores.length > 0) return;
+    void listVendedoresCarteira().then(setVendedores);
+  }, [open, podeDirecionar, vendedores.length]);
+
 
   const update = (patch: Partial<Cliente>) =>
     setCliente((c) => ({ ...c, ...patch }));
