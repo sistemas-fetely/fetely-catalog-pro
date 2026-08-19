@@ -41,6 +41,8 @@ const STATUS_ICON: Record<StatusCotacao, string> = {
 
 type Filtro = "abertas" | "em_negociacao" | "aprovadas" | "convertidas" | "todas";
 
+let expiracaoJaRodou = false;
+
 function CotacoesPage() {
   const cotacoes = useVisibleCotacoes();
   const fetchAll = useCotacao((s) => s.fetchAll);
