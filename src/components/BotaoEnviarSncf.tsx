@@ -230,19 +230,23 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        {dialogAprovacao}
       </>
     );
   }
 
   if (status === "erro_persistente") {
     return (
-      <button
-        onClick={() => enviar()}
-        title={`Falhou: ${erro ?? "erro"} (clique pra tentar de novo)`}
-        className={`${BASE} border-amber-500/40 text-amber-500 hover:bg-amber-500/10`}
-      >
-        <AlertTriangle className="h-3.5 w-3.5" />
-      </button>
+      <>
+        <button
+          onClick={() => void abrirAprovacao()}
+          title={`Falhou: ${erro ?? "erro"} (clique pra tentar de novo)`}
+          className={`${BASE} border-amber-500/40 text-amber-500 hover:bg-amber-500/10`}
+        >
+          <AlertTriangle className="h-3.5 w-3.5" />
+        </button>
+        {dialogAprovacao}
+      </>
     );
   }
 
@@ -259,12 +263,15 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
   }
 
   return (
-    <button
-      onClick={() => enviar()}
-      title="Enviar pra SNCF"
-      className={`${BASE} gold-border text-gold hover:bg-gold/10`}
-    >
-      <Send className="h-3.5 w-3.5" />
-    </button>
+    <>
+      <button
+        onClick={() => void abrirAprovacao()}
+        title="Enviar pra SNCF"
+        className={`${BASE} gold-border text-gold hover:bg-gold/10`}
+      >
+        <Send className="h-3.5 w-3.5" />
+      </button>
+      {dialogAprovacao}
+    </>
   );
 }
