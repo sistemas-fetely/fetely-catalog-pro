@@ -133,6 +133,14 @@ function ProvisoesPage() {
   const clientes = useClientes((s) => s.clientes);
   const condicoes = useCartilhas((s) => s.condicoes);
 
+  // Cache-first: mostra o que já está salvo e revalida em background.
+  useEffect(() => {
+    void useProvisao.getState().hydrate();
+    void useOrder.getState().hydrate();
+    void useCotacao.getState().fetchAll();
+  }, []);
+
+
   const bucketBySku = useMemo(() => {
     const m = new Map<string, string>();
     products.forEach((p) => m.set(p.sku, bucketPorProduto(p)));
