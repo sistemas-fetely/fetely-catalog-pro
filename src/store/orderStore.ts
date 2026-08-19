@@ -261,12 +261,20 @@ export const useOrder = create<OrderState>()(
         if (inflightHydrate) return inflightHydrate;
         inflightHydrate = (async () => {
         try {
-          const { data: orderRows, error: err1 } = await supabase
-            .from("orders")
-            .select("*")
-            .order("created_at", { ascending: false })
-            .limit(200);
-          if (err1) throw err1;
+          // Pagina TODOS os pedidos visíveis (RLS decide o escopo). Um limite
+          // fixo escondia pedidos antigos de quem enxerga a base inteira.
+          const PAGE = 1000;
+          const orderRows: Record<string, unknown>[] = [];
+          for (let from = 0; ; from += PAGE) {
+            const { data: page, error: err1 } = await supabase
+              .from("orders")
+              .select("*")
+              .order("created_at", { ascending: false })
+              .range(from, from + PAGE - 1);
+            if (err1) throw err1;
+            orderRows.push(...((page ?? []) as Record<string, unknown>[]));
+            if (!page || page.length < PAGE) break;
+          }
           const ids = (orderRows ?? []).map((r) => r.id as string);
           const itemsByOrder = await fetchOrderItemRowsByOrderIds(ids);
           const history = (orderRows ?? []).map((r) =>
@@ -297,7 +305,7 @@ export const useOrder = create<OrderState>()(
             await fetchOrderItemsByOrderId(orderId),
           );
           set((s) => ({
-            history: [order, ...s.history.filter((o) => o.id !== order.id)].slice(0, 200),
+            history: [order, ...s.history.filter((o) => o.id !== order.id)],
             hidratado: true,
           }));
           return order;
