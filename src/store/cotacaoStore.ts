@@ -85,8 +85,14 @@ export const useCotacao = create<CotacaoState>()((set, get) => ({
   cotacoes: [],
   loading: false,
   loaded: false,
+  lastSyncAt: 0,
 
-  fetchAll: async () => {
+  fetchAll: async (opts) => {
+    // Cache-first: lista já carregada continua na tela; só revalida se ficou velha.
+    const st = get();
+    const TTL = 60_000;
+    if (!opts?.force && st.loaded && Date.now() - st.lastSyncAt < TTL) return;
+    if (st.loading) return;
     set({ loading: true });
     const { data, error } = await supabase
       .from("cotacoes")
