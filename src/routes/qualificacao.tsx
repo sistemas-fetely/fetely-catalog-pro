@@ -292,8 +292,16 @@ function QualificacaoPage() {
             <Textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={3} maxLength={2000} />
           </div>
 
-          <Button type="submit" className="w-full" disabled={mut.isPending}>
-            {mut.isPending ? "Enviando..." : "Enviar cadastro"}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={mut.isPending || !pronto}
+          >
+            {!pronto
+              ? "Carregando formulário..."
+              : mut.isPending
+                ? "Enviando..."
+                : "Enviar cadastro"}
           </Button>
         </form>
       </div>
