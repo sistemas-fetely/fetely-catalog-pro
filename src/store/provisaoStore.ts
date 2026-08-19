@@ -478,7 +478,12 @@ export function useVisibleProvisoes(opts?: { includeReprovados?: boolean }): Pro
     if (!cid) return [];
     return filterReprovados(provisoes.filter((p) => p.clienteId === cid));
   }
+  // Vendedor interno: visão total (inclui provisões de representantes).
+  if ((profile?.tipo_vendedor ?? "interno") !== "representante") {
+    return filterReprovados(provisoes);
+  }
   const meusClienteIds = new Set(
+
     clientes.filter((c) => c.cadastradoPorVendedorId === user.id).map((c) => c.id),
   );
   return filterReprovados(

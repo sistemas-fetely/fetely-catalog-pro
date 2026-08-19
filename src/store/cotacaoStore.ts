@@ -285,8 +285,12 @@ export function useVisibleCotacoes(): Cotacao[] {
   if (admin) return cotacoes;
   if (!user) return [];
 
-  // Vendedor (interno ou representante): próprias cotações + de clientes seus.
+  // Vendedor interno: visão total (inclui cotações de representantes).
+  if ((profile?.tipo_vendedor ?? "interno") !== "representante") return cotacoes;
+
+  // Representante: próprias cotações + de clientes da sua carteira.
   const meusClienteIds = new Set(
+
     clientes.filter((c) => c.cadastradoPorVendedorId === user.id).map((c) => c.id),
   );
   return cotacoes.filter(
