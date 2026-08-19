@@ -84,10 +84,9 @@ export function CartCommercialPanel({
     roles.includes("admin") ||
     roles.includes("master") ||
     (roles.includes("vendedor") && (profile?.tipo_vendedor ?? "interno") === "interno");
-  const isRepresentante =
-    !roles.includes("admin") &&
-    !roles.includes("master") &&
-    (profile?.tipo_vendedor ?? "interno") === "representante";
+  // Representante (ou qualquer vendedor não admin/master): entra no modo
+  // negociação sem senha, respeitando o teto de desconto próprio.
+  const isRepresentante = !roles.includes("admin") && !roles.includes("master");
   const tetoDesconto = isRepresentante ? DESCONTO_REP_MAX : DESCONTO_MASTER_MAX;
   const descontoPctEfetivo = Math.min(descontoPct, tetoDesconto);
   const [bonificado, setBonificado] = useState(false);
