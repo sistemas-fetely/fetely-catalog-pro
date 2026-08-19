@@ -168,11 +168,15 @@ export const useProvisao = create<ProvisaoState>()(
             }
             return max;
           }, 0);
-          set({ provisoes, counter: maxCounter, hidratado: true });
+          set({ provisoes, counter: maxCounter, hidratado: true, lastSyncAt: Date.now() });
         } catch (err) {
           console.error("[provisaoStore] hydrate falhou:", err);
           set({ hidratado: true });
+        } finally {
+          inflightProvHydrate = null;
         }
+        })();
+        return inflightProvHydrate;
       },
       setProvisoesFromRows: (p, maxCounter) => set({ provisoes: p, counter: maxCounter }),
       createProvisao: async (input) => {
