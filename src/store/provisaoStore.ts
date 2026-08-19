@@ -119,7 +119,13 @@ export const useProvisao = create<ProvisaoState>()(
       provisoes: [],
       counter: 0,
       hidratado: false,
-      hydrate: async () => {
+      lastSyncAt: 0,
+      hydrate: async (opts) => {
+        const st = get();
+        const TTL = 90_000;
+        if (!opts?.force && st.hidratado && Date.now() - st.lastSyncAt < TTL) return;
+        if (inflightProvHydrate) return inflightProvHydrate;
+        inflightProvHydrate = (async () => {
         try {
           const { data: provRows, error: err1 } = await supabase
             .from("provisoes")
