@@ -270,12 +270,13 @@ Deno.serve(async (req) => {
       .select(`
         id, created_at, cliente_id, cliente_snapshot, commercial, meta, forma_pagamento, bonificado, motivo_bonificacao,
         valor_bruto, valor_liquido, total,
-        vendedor_nome,
+        vendedor_id, vendedor_nome, vendedor_login, vendedor_tipo,
         sncf_enviado_em, sncf_tentativas,
         order_items (sku, quantity, preco_unit_atacado, subtotal_bruto, product_snapshot)
       `)
       .eq("id", orderId)
       .single();
+
 
     if (errPedido || !pedido) {
       return jsonResponse(404, { error: "Pedido não encontrado", details: errPedido?.message });
