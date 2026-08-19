@@ -41,6 +41,8 @@ const STATUS_ICON: Record<StatusCotacao, string> = {
 
 type Filtro = "abertas" | "em_negociacao" | "aprovadas" | "convertidas" | "todas";
 
+let expiracaoJaRodou = false;
+
 function CotacoesPage() {
   const cotacoes = useVisibleCotacoes();
   const fetchAll = useCotacao((s) => s.fetchAll);
@@ -51,10 +53,15 @@ function CotacoesPage() {
   const [busca, setBusca] = useState("");
   const [selecionada, setSelecionada] = useState<string | null>(null);
 
+  // Cache-first: a lista já carregada aparece na hora; a revalidação roda
+  // em background (com TTL no store) e a expiração só uma vez por sessão.
   useEffect(() => {
     void (async () => {
       await fetchAll();
-      await expirarVencidas();
+      if (!expiracaoJaRodou) {
+        expiracaoJaRodou = true;
+        await expirarVencidas();
+      }
     })();
   }, [fetchAll, expirarVencidas]);
 

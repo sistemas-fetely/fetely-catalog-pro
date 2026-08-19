@@ -75,7 +75,11 @@ function OrdersPage() {
   });
   const badges: Record<string, number> = badgesData ?? {};
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
-  useEffect(() => setHydrated(true), []);
+  useEffect(() => {
+    setHydrated(true);
+    // Revalidação em background (o store ignora se o cache ainda está fresco).
+    void useOrder.getState().hydrate();
+  }, []);
 
   const toggleSelected = (id: string) =>
     setSelectedIds((prev) => {

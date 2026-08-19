@@ -66,7 +66,8 @@ interface CotacaoState {
   cotacoes: Cotacao[];
   loading: boolean;
   loaded: boolean;
-  fetchAll: () => Promise<void>;
+  lastSyncAt: number;
+  fetchAll: (opts?: { force?: boolean }) => Promise<void>;
   criarCotacao: (input: CreateCotacaoInput) => Promise<Cotacao>;
   atualizarCotacao: (id: string, input: CreateCotacaoInput) => Promise<Cotacao | null>;
   atualizarStatus: (
@@ -84,8 +85,14 @@ export const useCotacao = create<CotacaoState>()((set, get) => ({
   cotacoes: [],
   loading: false,
   loaded: false,
+  lastSyncAt: 0,
 
-  fetchAll: async () => {
+  fetchAll: async (opts) => {
+    // Cache-first: lista já carregada continua na tela; só revalida se ficou velha.
+    const st = get();
+    const TTL = 60_000;
+    if (!opts?.force && st.loaded && Date.now() - st.lastSyncAt < TTL) return;
+    if (st.loading) return;
     set({ loading: true });
     const { data, error } = await supabase
       .from("cotacoes")
@@ -100,6 +107,7 @@ export const useCotacao = create<CotacaoState>()((set, get) => ({
       cotacoes: (data as CotacaoRow[]).map(fromRow),
       loading: false,
       loaded: true,
+      lastSyncAt: Date.now(),
     });
   },
 

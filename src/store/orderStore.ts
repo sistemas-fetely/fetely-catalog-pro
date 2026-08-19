@@ -17,12 +17,16 @@ import { formatBRL } from "@/lib/format";
 
 
 
+/** Dedup de hidratação: evita várias buscas simultâneas do histórico. */
+let inflightHydrate: Promise<void> | null = null;
+
 interface OrderState {
   items: CartItem[];
   meta: OrderMeta;
   history: SavedOrder[];
   hidratado: boolean;
-  hydrate: () => Promise<void>;
+  lastSyncAt: number;
+  hydrate: (opts?: { force?: boolean }) => Promise<void>;
   hydrateOrderById: (orderId: string) => Promise<SavedOrder | null>;
   setHistoryFromRows: (orders: SavedOrder[]) => void;
   addItem: (product: Product, quantity: number) => void;
@@ -247,7 +251,15 @@ export const useOrder = create<OrderState>()(
       meta: defaultMeta,
       history: [],
       hidratado: false,
-      hydrate: async () => {
+      lastSyncAt: 0,
+      hydrate: async (opts) => {
+        // Cache-first: se já temos histórico recente em memória/cache, não
+        // bloqueia a navegação — só revalida se passou do TTL ou se forçado.
+        const st = get();
+        const TTL = 90_000;
+        if (!opts?.force && st.hidratado && Date.now() - st.lastSyncAt < TTL) return;
+        if (inflightHydrate) return inflightHydrate;
+        inflightHydrate = (async () => {
         try {
           const { data: orderRows, error: err1 } = await supabase
             .from("orders")
@@ -260,11 +272,15 @@ export const useOrder = create<OrderState>()(
           const history = (orderRows ?? []).map((r) =>
             rowToOrder(r as Record<string, unknown>, itemsByOrder[(r as Record<string, unknown>).id as string] ?? []),
           );
-          set({ history, hidratado: true });
+          set({ history, hidratado: true, lastSyncAt: Date.now() });
         } catch (err) {
           console.error("[orderStore] hydrate falhou:", err);
           set({ hidratado: true });
+        } finally {
+          inflightHydrate = null;
         }
+        })();
+        return inflightHydrate;
       },
       hydrateOrderById: async (orderId) => {
         try {

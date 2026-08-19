@@ -18,11 +18,15 @@ interface CreateProvisaoInput {
   observacoes?: string;
 }
 
+/** Dedup de hidratação de provisões. */
+let inflightProvHydrate: Promise<void> | null = null;
+
 interface ProvisaoState {
   provisoes: ProvisaoFutura[];
   counter: number;
   hidratado: boolean;
-  hydrate: () => Promise<void>;
+  lastSyncAt: number;
+  hydrate: (opts?: { force?: boolean }) => Promise<void>;
   setProvisoesFromRows: (p: ProvisaoFutura[], maxCounter: number) => void;
   createProvisao: (input: CreateProvisaoInput) => Promise<ProvisaoFutura>;
   updateStatus: (id: string, status: StatusProvisao, extra?: Partial<ProvisaoFutura>) => void;
@@ -115,7 +119,13 @@ export const useProvisao = create<ProvisaoState>()(
       provisoes: [],
       counter: 0,
       hidratado: false,
-      hydrate: async () => {
+      lastSyncAt: 0,
+      hydrate: async (opts) => {
+        const st = get();
+        const TTL = 90_000;
+        if (!opts?.force && st.hidratado && Date.now() - st.lastSyncAt < TTL) return;
+        if (inflightProvHydrate) return inflightProvHydrate;
+        inflightProvHydrate = (async () => {
         try {
           const { data: provRows, error: err1 } = await supabase
             .from("provisoes")
@@ -158,11 +168,15 @@ export const useProvisao = create<ProvisaoState>()(
             }
             return max;
           }, 0);
-          set({ provisoes, counter: maxCounter, hidratado: true });
+          set({ provisoes, counter: maxCounter, hidratado: true, lastSyncAt: Date.now() });
         } catch (err) {
           console.error("[provisaoStore] hydrate falhou:", err);
           set({ hidratado: true });
+        } finally {
+          inflightProvHydrate = null;
         }
+        })();
+        return inflightProvHydrate;
       },
       setProvisoesFromRows: (p, maxCounter) => set({ provisoes: p, counter: maxCounter }),
       createProvisao: async (input) => {

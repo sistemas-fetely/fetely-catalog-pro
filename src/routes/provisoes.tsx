@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { CheckCircle2, Clock, Package, X, AlertTriangle, ChevronRight, ChevronDown, XCircle, Trash2, RotateCcw, FileDown, Edit, LayoutDashboard, Search } from "lucide-react";
@@ -132,6 +132,14 @@ function ProvisoesPage() {
   const cotacoes = useCotacao((s) => s.cotacoes);
   const clientes = useClientes((s) => s.clientes);
   const condicoes = useCartilhas((s) => s.condicoes);
+
+  // Cache-first: mostra o que já está salvo e revalida em background.
+  useEffect(() => {
+    void useProvisao.getState().hydrate();
+    void useOrder.getState().hydrate();
+    void useCotacao.getState().fetchAll();
+  }, []);
+
 
   const bucketBySku = useMemo(() => {
     const m = new Map<string, string>();
