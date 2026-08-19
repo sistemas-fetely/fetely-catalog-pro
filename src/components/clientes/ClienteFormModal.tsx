@@ -279,19 +279,24 @@ export function ClienteFormModal({
       return;
     }
 
-    // Carteira exclusiva: representante não salva CNPJ de outro representante
-    if (repAtual && !cliente.isInternacional && cliente.cnpj) {
-      if (bloqueio) {
-        toast.error("Este CNPJ está em outra carteira. Solicite a migração para continuar.");
-        return;
-      }
-      const own = await checkCnpjOwnership(cliente.cnpj);
-      if (own.existe && !own.isMine && own.clienteId !== cliente.id) {
+    // Nunca duplicar CNPJ já existente na base.
+    if (!cliente.isInternacional && cliente.cnpj) {
+      const own = bloqueio ?? (await checkCnpjOwnership(cliente.cnpj));
+      const conflito = own.existe && own.clienteId !== cliente.id;
+      if (conflito && repAtual && !own.isMine) {
         setBloqueio({ ...own, cnpjDigits: onlyDigits(cliente.cnpj) });
         toast.error("Este CNPJ está em outra carteira. Solicite a migração para continuar.");
         return;
       }
+      if (conflito && !repAtual) {
+        setBloqueio({ ...own, cnpjDigits: onlyDigits(cliente.cnpj) });
+        toast.error(
+          "Este CNPJ já está cadastrado. Edite o cliente existente e ajuste a carteira em vez de criar outro.",
+        );
+        return;
+      }
     }
+
 
     let premissasComerciais = cliente.premissasComerciais;
     if (premissasComerciais) {
