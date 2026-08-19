@@ -305,7 +305,7 @@ export const useOrder = create<OrderState>()(
             await fetchOrderItemsByOrderId(orderId),
           );
           set((s) => ({
-            history: [order, ...s.history.filter((o) => o.id !== order.id)].slice(0, 200),
+            history: [order, ...s.history.filter((o) => o.id !== order.id)],
             hidratado: true,
           }));
           return order;
