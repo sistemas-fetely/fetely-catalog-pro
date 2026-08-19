@@ -118,6 +118,10 @@ function QualificacaoPage() {
       toast.error("Informe seu WhatsApp");
       return;
     }
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("E-mail inválido — corrija ou deixe em branco");
+      return;
+    }
     mut.mutate();
   }
 
