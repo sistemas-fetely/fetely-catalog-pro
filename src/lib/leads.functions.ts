@@ -178,12 +178,21 @@ export const listarLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const { data, error } = await supabase
-      .from("leads_qualificados")
-      .select("*")
-      .order("criado_em", { ascending: false });
-    if (error) throw new Error(error.message);
-    return (data as DbRow[]).map(rowToLead);
+    // Pagina explicitamente: sem range, a API corta em 1000 linhas e leads
+    // antigos desaparecem silenciosamente da base de gestão.
+    const PAGE = 1000;
+    const rows: DbRow[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from("leads_qualificados")
+        .select("*")
+        .order("criado_em", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      rows.push(...((data ?? []) as DbRow[]));
+      if (!data || data.length < PAGE) break;
+    }
+    return rows.map(rowToLead);
   });
 
 // ============= ADMIN: atualizar CRM =============
