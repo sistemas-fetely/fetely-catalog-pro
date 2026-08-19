@@ -60,6 +60,10 @@ const UFS = [
 function QualificacaoPage() {
   const criar = useServerFn(criarLeadPublico);
   const [enviado, setEnviado] = useState(false);
+  // Antes da hidratação o onSubmit React não existe: o navegador fazia um
+  // submit nativo (GET) e o cadastro era perdido silenciosamente.
+  const [pronto, setPronto] = useState(false);
+  useEffect(() => setPronto(true), []);
 
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
