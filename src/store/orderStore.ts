@@ -1106,7 +1106,12 @@ export function useVisibleOrders(opts?: { includeReprovados?: boolean }): SavedO
     if (!cid) return [];
     return filterReprovados(history.filter((o) => o.meta.clienteId === cid));
   }
-  // Vendedor: próprios pedidos + pedidos de clientes que ele cadastrou
+  // Vendedor interno: visão total (inclui pedidos de representantes).
+  if ((profile?.tipo_vendedor ?? "interno") !== "representante") {
+    return filterReprovados(history);
+  }
+  // Representante: apenas próprios pedidos + clientes da sua carteira
+
   const meusClienteIds = new Set(
     clientes.filter((c) => c.cadastradoPorVendedorId === user.id).map((c) => c.id),
   );
