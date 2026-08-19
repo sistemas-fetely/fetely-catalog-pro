@@ -402,6 +402,11 @@ export function ClienteFormModal({
                     Situação: {cliente.situacaoCadastral}
                   </p>
                 )}
+                {checandoCnpj && !bloqueio && (
+                  <p className="mt-1 text-[11px] text-text-secondary">
+                    Verificando se este CNPJ já está na base…
+                  </p>
+                )}
                 {duplicateWarn && !bloqueio && (
                   <p className="mt-1 text-[11px] text-stock-out">
                     CNPJ já cadastrado como{" "}
@@ -411,34 +416,55 @@ export function ClienteFormModal({
                 {bloqueio && (
                   <div className="mt-2 rounded-md border border-stock-out/50 bg-surface-2 p-3 space-y-2">
                     <div className="text-[10px] uppercase tracking-[0.2em] text-stock-out">
-                      CNPJ em outra carteira
+                      Cliente já cadastrado
                     </div>
                     <p className="text-xs text-text-secondary">
                       Este CNPJ{" "}
                       {bloqueio.razaoSocial ? (
                         <span className="text-text-primary">({bloqueio.razaoSocial})</span>
                       ) : null}{" "}
-                      já está atendido por outro representante. Para evitar sobreposição de
-                      atendimento e comissão, solicite a migração para a sua carteira — nossa
-                      equipe interna avalia e libera.
+                      já existe na base
+                      {bloqueio.ownerNome ? (
+                        <>
+                          {" "}
+                          — carteira de{" "}
+                          <span className="text-text-primary">{bloqueio.ownerNome}</span>
+                        </>
+                      ) : null}
+                      .{" "}
+                      {repAtual
+                        ? "Para evitar sobreposição de atendimento e comissão, solicite a migração para a sua carteira — a equipe interna avalia e libera."
+                        : "Use o campo “Carteira / responsável” na aba Comercial para direcionar este cliente a outro representante."}
                     </p>
-                    <textarea
-                      className="input w-full text-xs"
-                      rows={2}
-                      placeholder="Justificativa (histórico de atendimento, contato, etc.)"
-                      value={justificativa}
-                      onChange={(e) => setJustificativa(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSolicitarMigracao}
-                      disabled={enviandoMigracao}
-                      className="w-full px-3 py-2 rounded-md bg-gold text-background text-xs font-semibold uppercase tracking-wider hover:bg-gold-light disabled:opacity-40"
-                    >
-                      {enviandoMigracao ? "Enviando..." : "Solicitar migração deste CNPJ"}
-                    </button>
+                    {repAtual &&
+                      (migracaoEnviada ? (
+                        <p className="text-xs text-gold">
+                          Solicitação enviada — você será avisado após a aprovação.
+                        </p>
+                      ) : (
+                        <>
+                          <textarea
+                            className="input w-full text-xs"
+                            rows={2}
+                            placeholder="Justificativa (histórico de atendimento, contato, etc.)"
+                            value={justificativa}
+                            onChange={(e) => setJustificativa(e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleSolicitarMigracao}
+                            disabled={enviandoMigracao}
+                            className="w-full px-3 py-2 rounded-md bg-gold text-background text-xs font-semibold uppercase tracking-wider hover:bg-gold-light disabled:opacity-40"
+                          >
+                            {enviandoMigracao
+                              ? "Enviando..."
+                              : "Solicitar migração para minha carteira"}
+                          </button>
+                        </>
+                      ))}
                   </div>
                 )}
+
 
               </Field>
             ) : null}
