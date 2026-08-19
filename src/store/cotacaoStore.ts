@@ -66,7 +66,8 @@ interface CotacaoState {
   cotacoes: Cotacao[];
   loading: boolean;
   loaded: boolean;
-  fetchAll: () => Promise<void>;
+  lastSyncAt: number;
+  fetchAll: (opts?: { force?: boolean }) => Promise<void>;
   criarCotacao: (input: CreateCotacaoInput) => Promise<Cotacao>;
   atualizarCotacao: (id: string, input: CreateCotacaoInput) => Promise<Cotacao | null>;
   atualizarStatus: (
