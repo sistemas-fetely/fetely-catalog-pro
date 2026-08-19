@@ -282,7 +282,19 @@ Deno.serve(async (req) => {
       return jsonResponse(404, { error: "Pedido não encontrado", details: errPedido?.message });
     }
 
+    // E-mail canônico do vendedor para o SNCF (id estável já vem no pedido)
+    let vendedor_email: string | null = null;
+    if (pedido.vendedor_id) {
+      const { data: vendedorProfile } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("id", pedido.vendedor_id)
+        .maybeSingle();
+      vendedor_email = vendedorProfile?.email ?? null;
+    }
+
     const clienteSnapshot = pedido.cliente_snapshot as any;
+
 
     // Busca cadastro completo do cliente — o snapshot do pedido tem só dados
     // resumidos (e pode estar nulo em pedidos antigos); o SNCF precisa de
