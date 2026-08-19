@@ -17,6 +17,9 @@ import { formatBRL } from "@/lib/format";
 
 
 
+/** Dedup de hidratação: evita várias buscas simultâneas do histórico. */
+let inflightHydrate: Promise<void> | null = null;
+
 interface OrderState {
   items: CartItem[];
   meta: OrderMeta;
