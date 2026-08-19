@@ -22,7 +22,8 @@ interface OrderState {
   meta: OrderMeta;
   history: SavedOrder[];
   hidratado: boolean;
-  hydrate: () => Promise<void>;
+  lastSyncAt: number;
+  hydrate: (opts?: { force?: boolean }) => Promise<void>;
   hydrateOrderById: (orderId: string) => Promise<SavedOrder | null>;
   setHistoryFromRows: (orders: SavedOrder[]) => void;
   addItem: (product: Product, quantity: number) => void;
