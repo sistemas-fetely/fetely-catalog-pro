@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -60,6 +60,10 @@ const UFS = [
 function QualificacaoPage() {
   const criar = useServerFn(criarLeadPublico);
   const [enviado, setEnviado] = useState(false);
+  // Antes da hidratação o onSubmit React não existe: o navegador fazia um
+  // submit nativo (GET) e o cadastro era perdido silenciosamente.
+  const [pronto, setPronto] = useState(false);
+  useEffect(() => setPronto(true), []);
 
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -114,6 +118,10 @@ function QualificacaoPage() {
       toast.error("Informe seu WhatsApp");
       return;
     }
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("E-mail inválido — corrija ou deixe em branco");
+      return;
+    }
     mut.mutate();
   }
 
@@ -154,6 +162,8 @@ function QualificacaoPage() {
 
         <form
           onSubmit={submit}
+          method="post"
+          action=""
           className="space-y-6 rounded-2xl border border-border bg-surface p-6 md:p-8"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -286,8 +296,16 @@ function QualificacaoPage() {
             <Textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={3} maxLength={2000} />
           </div>
 
-          <Button type="submit" className="w-full" disabled={mut.isPending}>
-            {mut.isPending ? "Enviando..." : "Enviar cadastro"}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={mut.isPending || !pronto}
+          >
+            {!pronto
+              ? "Carregando formulário..."
+              : mut.isPending
+                ? "Enviando..."
+                : "Enviar cadastro"}
           </Button>
         </form>
       </div>
