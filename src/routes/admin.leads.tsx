@@ -41,6 +41,13 @@ import {
   type LeadPotencial,
   type LeadStatusCrm,
   type LeadOrigem,
+  DESTAQUE_LABEL,
+  DESTAQUE_COLOR,
+  INTENCAO_LABEL,
+  ACEITE_LABEL,
+  type LeadDestaque,
+  type LeadIntencaoSequencia,
+  type LeadAceiteCondicoes,
 } from "@/types/lead";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -147,6 +154,9 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
   const [fPot, setFPot] = useState<string>("all");
   const [fStat, setFStat] = useState<string>("all");
   const [fOri, setFOri] = useState<string>("all");
+  const [fDest, setFDest] = useState<string>("all");
+  const [fInt, setFInt] = useState<string>("all");
+  const [fAce, setFAce] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
@@ -156,13 +166,16 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
       if (fPot !== "all" && l.potencial !== fPot) return false;
       if (fStat !== "all" && l.statusCrm !== fStat) return false;
       if (fOri !== "all" && l.origem !== fOri) return false;
+      if (fDest !== "all" && (l.destaque ?? "") !== fDest) return false;
+      if (fInt !== "all" && (l.intencaoSequencia ?? "") !== fInt) return false;
+      if (fAce !== "all" && (l.aceiteCondicoes ?? "") !== fAce) return false;
       if (s) {
         const hay = `${l.nome} ${l.whatsapp} ${l.instagram ?? ""} ${l.email ?? ""}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
     });
-  }, [leads, search, fSeg, fPot, fStat, fOri]);
+  }, [leads, search, fSeg, fPot, fStat, fOri, fDest, fInt, fAce]);
 
   const kpis = useMemo(() => {
     const total = leads.length;
@@ -184,12 +197,16 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
   function exportCsv() {
     const header = [
       "Nome","WhatsApp","Instagram","Email","Cidade","UF","Segmento","Potencial","Score",
-      "Status","Origem","Frequência","Volume","Urgência","Produtos","Responsável","Tags","Criado em",
+      "Status","Destaque","Intenção","Condições","Origem","Frequência","Volume","Urgência","Produtos","Responsável","Tags","Criado em",
     ];
     const rows = filtered.map((l) => [
       l.nome, l.whatsapp, l.instagram ?? "", l.email ?? "", l.cidade ?? "", l.uf ?? "",
       SEGMENTO_LABEL[l.segmento], POTENCIAL_LABEL[l.potencial], String(l.score),
-      STATUS_CRM_LABEL[l.statusCrm], ORIGEM_LABEL[l.origem],
+      STATUS_CRM_LABEL[l.statusCrm],
+      l.destaque && l.destaque in DESTAQUE_LABEL ? DESTAQUE_LABEL[l.destaque as LeadDestaque] : "",
+      l.intencaoSequencia ? INTENCAO_LABEL[l.intencaoSequencia as LeadIntencaoSequencia] : "",
+      l.aceiteCondicoes ? ACEITE_LABEL[l.aceiteCondicoes as LeadAceiteCondicoes] : "",
+      ORIGEM_LABEL[l.origem],
       l.frequencia ? FREQUENCIA_LABEL[l.frequencia] : "",
       l.volumeEstimado ? VOLUME_LABEL[l.volumeEstimado] : "",
       l.urgencia?.toString() ?? "",
@@ -263,8 +280,15 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
             options={[["all", "Todos os status"], ...Object.entries(STATUS_CRM_LABEL)]} />
           <FilterSelect value={fOri} onChange={setFOri} placeholder="Origem"
             options={[["all", "Todas as origens"], ...Object.entries(ORIGEM_LABEL)]} />
+          <FilterSelect value={fDest} onChange={setFDest} placeholder="Destaque"
+            options={[["all", "Todos os destaques"], ...Object.entries(DESTAQUE_LABEL)]} />
+          <FilterSelect value={fInt} onChange={setFInt} placeholder="Intenção"
+            options={[["all", "Todas as intenções"], ...Object.entries(INTENCAO_LABEL)]} />
+          <FilterSelect value={fAce} onChange={setFAce} placeholder="Condições"
+            options={[["all", "Todos os aceites"], ...Object.entries(ACEITE_LABEL)]} />
           <Button variant="ghost" size="sm" onClick={() => {
             setSearch(""); setFSeg("all"); setFPot("all"); setFStat("all"); setFOri("all");
+            setFDest("all"); setFInt("all"); setFAce("all");
           }}>
             Limpar
           </Button>
@@ -286,6 +310,8 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
               <tr>
                 <th className="px-4 py-3 text-left">Nome</th>
                 <th className="px-4 py-3 text-left">Segmento</th>
+                <th className="px-4 py-3 text-left">Destaque</th>
+                <th className="px-4 py-3 text-left">Intenção</th>
                 <th className="px-4 py-3 text-left">Potencial</th>
                 <th className="px-4 py-3 text-left">Origem</th>
                 <th className="px-4 py-3 text-left">Status</th>
@@ -296,9 +322,9 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={8} className="px-4 py-8 text-center text-text-secondary">Carregando...</td></tr>
+                <tr><td colSpan={10} className="px-4 py-8 text-center text-text-secondary">Carregando...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-8 text-center text-text-secondary">
+                <tr><td colSpan={10} className="px-4 py-8 text-center text-text-secondary">
                   Nenhum lead encontrado.
                 </td></tr>
               ) : (
@@ -313,6 +339,17 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
                       <div className="text-xs text-text-secondary">{l.whatsapp}</div>
                     </td>
                     <td className="px-4 py-3 text-text-secondary">{SEGMENTO_LABEL[l.segmento]}</td>
+                    <td className="px-4 py-3"><DestaqueBadge d={l.destaque} /></td>
+                    <td className="px-4 py-3 text-xs text-text-secondary max-w-[190px]">
+                      {l.intencaoSequencia
+                        ? INTENCAO_LABEL[l.intencaoSequencia as LeadIntencaoSequencia]
+                        : "—"}
+                      {l.aceiteCondicoes === "agora_nao" && (
+                        <div className="mt-1 text-[10px] uppercase tracking-wide text-rose-600">
+                          declinou o mínimo
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3"><PotencialBadge p={l.potencial} /></td>
                     <td className="px-4 py-3 text-text-secondary">{ORIGEM_LABEL[l.origem]}</td>
                     <td className="px-4 py-3"><StatusBadge s={l.statusCrm} /></td>
@@ -385,6 +422,18 @@ function PotencialBadge({ p }: { p: LeadPotencial }) {
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-medium ${cfg.cls}`}>
       {cfg.icon} {POTENCIAL_LABEL[p]}
+    </span>
+  );
+}
+
+function DestaqueBadge({ d }: { d: string | null }) {
+  if (!d || !(d in DESTAQUE_LABEL)) {
+    return <span className="text-xs text-text-secondary">—</span>;
+  }
+  const k = d as LeadDestaque;
+  return (
+    <span className={`inline-flex px-2 py-0.5 rounded-full border text-xs font-medium ${DESTAQUE_COLOR[k]}`}>
+      {DESTAQUE_LABEL[k]}
     </span>
   );
 }

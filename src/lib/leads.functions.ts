@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { calcularScoreLead } from "./leadScore";
+import { INTENCAO_TO_DESTAQUE, TAG_DECLINOU_MINIMO } from "@/types/lead";
 import type {
   LeadFrequencia,
   LeadOrigem,
@@ -67,6 +68,10 @@ const novoLeadSchema = z.object({
   produtosInteresse: z.array(z.string().max(80)).max(30),
   origem: origemSchema,
   observacoes: z.string().max(2000).optional().nullable(),
+  intencaoSequencia: z
+    .enum(["pedido_agora", "precisa_ajuda", "conhecendo", "acompanhar"])
+    .optional()
+    .nullable(),
 });
 
 type DbRow = {
@@ -96,6 +101,9 @@ type DbRow = {
   cliente_b2b_id: string | null;
   cotacao_origem_id: string | null;
   catalogo_liberado: boolean;
+  intencao_sequencia: string | null;
+  aceite_condicoes: string | null;
+  destaque: string | null;
 };
 
 function rowToLead(r: DbRow): LeadQualificado {
@@ -126,6 +134,9 @@ function rowToLead(r: DbRow): LeadQualificado {
     clienteB2bId: r.cliente_b2b_id,
     cotacaoOrigemId: r.cotacao_origem_id,
     catalogoLiberado: r.catalogo_liberado ?? false,
+    intencaoSequencia: r.intencao_sequencia ?? null,
+    aceiteCondicoes: r.aceite_condicoes ?? null,
+    destaque: r.destaque ?? null,
   };
 }
 
@@ -158,6 +169,10 @@ export const criarLeadPublico = createServerFn({ method: "POST" })
         observacoes: data.observacoes || null,
         score,
         potencial,
+        intencao_sequencia: data.intencaoSequencia ?? null,
+        destaque: data.intencaoSequencia
+          ? INTENCAO_TO_DESTAQUE[data.intencaoSequencia]
+          : null,
       })
       .select("id")
       .single();
@@ -315,6 +330,10 @@ export const criarLeadManual = createServerFn({ method: "POST" })
         observacoes: data.observacoes || null,
         score,
         potencial,
+        intencao_sequencia: data.intencaoSequencia ?? null,
+        destaque: data.intencaoSequencia
+          ? INTENCAO_TO_DESTAQUE[data.intencaoSequencia]
+          : null,
       })
       .select("id")
       .single();
@@ -375,5 +394,79 @@ export const liberarCatalogoLead = createServerFn({ method: "POST" })
       descricao: data.liberar ? "Acesso ao catálogo liberado" : "Acesso ao catálogo revogado",
     });
 
+    return { ok: true };
+  });
+
+// ============= PÚBLICO: aceite das condições (etapa 2) =============
+export const registrarAceiteCondicoes = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        aceite: z.enum(["seguir", "agora_nao"]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { data: atual } = await supabaseAdmin
+      .from("leads_qualificados")
+      .select("tags, destaque")
+      .eq("id", data.id)
+      .maybeSingle();
+
+    const tags: string[] = (atual?.tags as string[]) ?? [];
+    const patch: {
+      aceite_condicoes: string;
+      tags?: string[];
+      destaque?: string;
+    } = { aceite_condicoes: data.aceite };
+
+    if (data.aceite === "agora_nao") {
+      if (!tags.includes(TAG_DECLINOU_MINIMO)) {
+        patch.tags = [...tags, TAG_DECLINOU_MINIMO];
+      }
+      // Destaque atenuado quando o lead declina o mínimo neste momento.
+      patch.destaque = "frio";
+    }
+
+    const { error } = await supabaseAdmin
+      .from("leads_qualificados")
+      .update(patch)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin.from("lead_historico").insert({
+      lead_id: data.id,
+      usuario_nome: "Formulário público",
+      descricao:
+        data.aceite === "seguir"
+          ? "Ciente do mínimo de R$ 1.500 — quer seguir com o atendimento"
+          : "Ciente do mínimo de R$ 1.500 — declinou no momento",
+    });
+
+    return { ok: true };
+  });
+
+// ============= PÚBLICO: rascunho silencioso do formulário =============
+export const salvarRascunhoFormulario = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        sessaoId: z.string().uuid(),
+        dados: z.record(z.string(), z.unknown()),
+        campos: z.number().int().min(0).max(200),
+        userAgent: z.string().max(400).optional().nullable(),
+        enviado: z.boolean().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    await supabaseAdmin.rpc("public_upsert_lead_rascunho", {
+      p_sessao_id: data.sessaoId,
+      p_dados: data.dados as never,
+      p_campos: data.campos,
+      p_user_agent: data.userAgent ?? undefined,
+      p_enviado: data.enviado ?? false,
+    });
     return { ok: true };
   });

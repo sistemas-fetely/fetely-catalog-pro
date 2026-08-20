@@ -77,6 +77,9 @@ export interface LeadQualificado {
   clienteB2bId: string | null;
   cotacaoOrigemId: string | null;
   catalogoLiberado: boolean;
+  intencaoSequencia: string | null;
+  aceiteCondicoes: string | null;
+  destaque: string | null;
 }
 
 export interface LeadHistoricoItem {
@@ -160,3 +163,59 @@ export const VOLUME_LABEL: Record<LeadVolumeEstimado, string> = {
   acima_50k: "Acima de R$ 50k",
   nao_sei: "Não sei estimar",
 };
+
+// ===== Sequência de atendimento (fase de captura: só grava + destaca) =====
+export type LeadIntencaoSequencia =
+  | "pedido_agora"
+  | "precisa_ajuda"
+  | "conhecendo"
+  | "acompanhar";
+
+export type LeadAceiteCondicoes = "seguir" | "agora_nao";
+
+export type LeadDestaque = "quente" | "quente_morno" | "morno" | "frio";
+
+export const INTENCAO_LABEL: Record<LeadIntencaoSequencia, string> = {
+  pedido_agora: "Quero fazer um pedido agora",
+  precisa_ajuda: "Quero comprar, mas preciso de ajuda pra escolher",
+  conhecendo: "Ainda estou conhecendo, quero ver o catálogo primeiro",
+  acompanhar: "Só quero acompanhar por enquanto",
+};
+
+export const INTENCAO_TO_DESTAQUE: Record<LeadIntencaoSequencia, LeadDestaque> = {
+  pedido_agora: "quente",
+  precisa_ajuda: "quente_morno",
+  conhecendo: "morno",
+  acompanhar: "frio",
+};
+
+export const DESTAQUE_LABEL: Record<LeadDestaque, string> = {
+  quente: "Quente",
+  quente_morno: "Quente-morno",
+  morno: "Morno",
+  frio: "Frio",
+};
+
+export const DESTAQUE_COLOR: Record<LeadDestaque, string> = {
+  quente: "bg-rose-700/15 text-rose-700 border-rose-700/30",
+  quente_morno: "bg-gold/15 text-gold border-gold/30",
+  morno: "bg-muted text-text-secondary border-border",
+  frio: "bg-slate-500/10 text-slate-500 border-slate-500/25",
+};
+
+export const ACEITE_LABEL: Record<LeadAceiteCondicoes, string> = {
+  seguir: "Sim, quero seguir",
+  agora_nao: "Agora não",
+};
+
+export const TAG_DECLINOU_MINIMO = "ciente do mínimo · declinou no momento";
+
+/** Segmentos exibidos no formulário público (atacado apenas). */
+export const SEGMENTOS_FORMULARIO: LeadSegmento[] = [
+  "lojista",
+  "decoradora",
+  "buffet",
+  "cerimonialista",
+  "atacadista",
+  "outro",
+];
