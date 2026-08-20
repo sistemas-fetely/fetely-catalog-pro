@@ -31,7 +31,6 @@ import {
   type LeadSegmento,
   INTENCAO_LABEL,
   SEGMENTOS_FORMULARIO,
-  type LeadFrequencia as _LF,
   type LeadIntencaoSequencia,
   type LeadVolumeEstimado,
 } from "@/types/lead";
