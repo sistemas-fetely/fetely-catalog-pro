@@ -56,6 +56,7 @@ import { Route as AdminGateAbRouteImport } from './routes/admin.gate-ab'
 import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
 import { Route as AdminAccessLogsRouteImport } from './routes/admin.access-logs'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
+import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
 
 const StandRoute = StandRouteImport.update({
   id: '/stand',
@@ -293,6 +294,11 @@ const CatalogCategoriaCategoriaRoute =
     path: '/catalog/categoria/$categoria',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
+  id: '/api/public/img',
+  path: '/api/public/img',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -341,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/stand/leads': typeof StandLeadsRoute
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
+  '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
 export interface FileRoutesByTo {
@@ -389,6 +396,7 @@ export interface FileRoutesByTo {
   '/stand/leads': typeof StandLeadsRoute
   '/catalog': typeof CatalogIndexRoute
   '/portal': typeof PortalIndexRoute
+  '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
 export interface FileRoutesById {
@@ -439,6 +447,7 @@ export interface FileRoutesById {
   '/stand/leads': typeof StandLeadsRoute
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
+  '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
 export interface FileRouteTypes {
@@ -490,6 +499,7 @@ export interface FileRouteTypes {
     | '/stand/leads'
     | '/catalog/'
     | '/portal/'
+    | '/api/public/img'
     | '/catalog/categoria/$categoria'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -538,6 +548,7 @@ export interface FileRouteTypes {
     | '/stand/leads'
     | '/catalog'
     | '/portal'
+    | '/api/public/img'
     | '/catalog/categoria/$categoria'
   id:
     | '__root__'
@@ -587,6 +598,7 @@ export interface FileRouteTypes {
     | '/stand/leads'
     | '/catalog/'
     | '/portal/'
+    | '/api/public/img'
     | '/catalog/categoria/$categoria'
   fileRoutesById: FileRoutesById
 }
@@ -630,6 +642,7 @@ export interface RootRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   CatalogTodosRoute: typeof CatalogTodosRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
+  ApiPublicImgRoute: typeof ApiPublicImgRoute
   CatalogCategoriaCategoriaRoute: typeof CatalogCategoriaCategoriaRoute
 }
 
@@ -964,6 +977,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CatalogCategoriaCategoriaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/img': {
+      id: '/api/public/img'
+      path: '/api/public/img'
+      fullPath: '/api/public/img'
+      preLoaderRoute: typeof ApiPublicImgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1048,6 +1068,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   CatalogTodosRoute: CatalogTodosRoute,
   CatalogIndexRoute: CatalogIndexRoute,
+  ApiPublicImgRoute: ApiPublicImgRoute,
   CatalogCategoriaCategoriaRoute: CatalogCategoriaCategoriaRoute,
 }
 export const routeTree = rootRouteImport
