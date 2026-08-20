@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -16,7 +16,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { criarLeadPublico } from "@/lib/leads.functions";
+import {
+  criarLeadPublico,
+  registrarAceiteCondicoes,
+  salvarRascunhoFormulario,
+} from "@/lib/leads.functions";
 import {
   FREQUENCIA_LABEL,
   ORIGEM_LABEL,
@@ -25,6 +29,10 @@ import {
   type LeadFrequencia,
   type LeadOrigem,
   type LeadSegmento,
+  INTENCAO_LABEL,
+  SEGMENTOS_FORMULARIO,
+  type LeadFrequencia as _LF,
+  type LeadIntencaoSequencia,
   type LeadVolumeEstimado,
 } from "@/types/lead";
 
@@ -59,7 +67,18 @@ const UFS = [
 
 function QualificacaoPage() {
   const criar = useServerFn(criarLeadPublico);
-  const [enviado, setEnviado] = useState(false);
+  const aceitar = useServerFn(registrarAceiteCondicoes);
+  const rascunho = useServerFn(salvarRascunhoFormulario);
+  const [etapa, setEtapa] = useState<"form" | "condicoes" | "fim">("form");
+  const [leadId, setLeadId] = useState<string | null>(null);
+  const [aceite, setAceite] = useState<"seguir" | "agora_nao" | null>(null);
+  const sessaoId = useMemo(
+    () =>
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-0000-4000-8000-000000000000`,
+    [],
+  );
   // Antes da hidratação o onSubmit React não existe: o navegador fazia um
   // submit nativo (GET) e o cadastro era perdido silenciosamente.
   const [pronto, setPronto] = useState(false);
@@ -78,6 +97,36 @@ function QualificacaoPage() {
   const [produtos, setProdutos] = useState<string[]>([]);
   const [origem, setOrigem] = useState<LeadOrigem>("instagram");
   const [obs, setObs] = useState("");
+  const [intencao, setIntencao] = useState<LeadIntencaoSequencia | "">("");
+
+  // Registro silencioso do preenchimento em andamento (sem feedback na tela).
+  const snapshot = useMemo(
+    () => ({
+      nome, whatsapp, instagram, email, cidade, uf, segmento,
+      frequencia, volume, urgencia, produtos, origem, obs, intencao,
+    }),
+    [nome, whatsapp, instagram, email, cidade, uf, segmento, frequencia,
+      volume, urgencia, produtos, origem, obs, intencao],
+  );
+  useEffect(() => {
+    if (!pronto) return;
+    const preenchidos = Object.values(snapshot).filter((v) =>
+      Array.isArray(v) ? v.length > 0 : v !== "" && v !== null && v !== undefined,
+    ).length;
+    if (preenchidos === 0) return;
+    const t = setTimeout(() => {
+      void rascunho({
+        data: {
+          sessaoId,
+          dados: snapshot as Record<string, unknown>,
+          campos: preenchidos,
+          userAgent:
+            typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 400) : null,
+        },
+      }).catch(() => {});
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [snapshot, pronto, rascunho, sessaoId]);
 
   const mut = useMutation({
     mutationFn: () =>
@@ -96,9 +145,22 @@ function QualificacaoPage() {
           produtosInteresse: produtos,
           origem,
           observacoes: obs || null,
+          intencaoSequencia: (intencao || null) as LeadIntencaoSequencia | null,
         },
       }),
-    onSuccess: () => setEnviado(true),
+    onSuccess: (res) => {
+      setLeadId(res.id);
+      setEtapa("condicoes");
+      void rascunho({
+        data: {
+          sessaoId,
+          dados: snapshot as Record<string, unknown>,
+          campos: 99,
+          userAgent: null,
+          enviado: true,
+        },
+      }).catch(() => {});
+    },
     onError: (e: Error) => toast.error(e.message || "Erro ao enviar"),
   });
 
@@ -122,10 +184,61 @@ function QualificacaoPage() {
       toast.error("E-mail inválido — corrija ou deixe em branco");
       return;
     }
+    if (!intencao) {
+      toast.error("Escolha como você quer dar sequência no atendimento");
+      return;
+    }
     mut.mutate();
   }
 
-  if (enviado) {
+  const aceiteMut = useMutation({
+    mutationFn: (v: "seguir" | "agora_nao") =>
+      aceitar({ data: { id: leadId!, aceite: v } }),
+    onSuccess: (_d, v) => {
+      setAceite(v);
+      setEtapa("fim");
+    },
+    onError: (e: Error) => toast.error(e.message || "Erro ao registrar"),
+  });
+
+  if (etapa === "condicoes") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="w-full max-w-lg rounded-2xl border border-border bg-surface p-6 md:p-8 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-gold/30 bg-gold/5 text-gold text-xs uppercase tracking-[0.25em] mb-4">
+            <Sparkles className="h-3 w-3" /> Fetély
+          </div>
+          <h1 className="font-display text-2xl md:text-3xl text-text-primary">
+            Cadastro recebido! Só mais uma coisa antes de seguirmos.
+          </h1>
+          <p className="mt-4 text-text-secondary text-sm">
+            Nossos pedidos de atacado têm valor mínimo de{" "}
+            <strong className="text-text-primary">R$ 1.500</strong>. Você
+            gostaria de seguir com o atendimento?
+          </p>
+          <div className="mt-7 flex flex-col sm:flex-row gap-3">
+            <Button
+              className="flex-1"
+              disabled={aceiteMut.isPending}
+              onClick={() => aceiteMut.mutate("seguir")}
+            >
+              Sim, quero seguir
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              disabled={aceiteMut.isPending}
+              onClick={() => aceiteMut.mutate("agora_nao")}
+            >
+              Agora não
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (etapa === "fim") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="max-w-md text-center">
@@ -136,8 +249,9 @@ function QualificacaoPage() {
             Obrigado!
           </h1>
           <p className="mt-3 text-text-secondary">
-            Recebemos seus dados. Em breve nosso time entrará em contato pelo
-            WhatsApp.
+            {aceite === "agora_nao"
+              ? "Obrigado por avisar! Quando quiser retomar, estaremos por aqui."
+              : "Recebemos seus dados. Em breve nosso time entrará em contato pelo WhatsApp."}
           </p>
         </div>
       </div>
@@ -220,8 +334,8 @@ function QualificacaoPage() {
               <Select value={segmento} onValueChange={(v) => { setSegmento(v as LeadSegmento); setVolume(""); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(SEGMENTO_LABEL).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  {SEGMENTOS_FORMULARIO.map((k) => (
+                    <SelectItem key={k} value={k}>{SEGMENTO_LABEL[k]}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -294,6 +408,34 @@ function QualificacaoPage() {
           <div>
             <Label>Algo a mais que queira nos contar?</Label>
             <Textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={3} maxLength={2000} />
+          </div>
+
+          <div>
+            <Label className="mb-2 block">
+              Como você gostaria de dar sequência no seu atendimento? *
+            </Label>
+            <div className="space-y-2">
+              {(Object.keys(INTENCAO_LABEL) as LeadIntencaoSequencia[]).map((k) => (
+                <label
+                  key={k}
+                  className={`flex items-center gap-3 text-sm cursor-pointer rounded-lg border px-3 py-2.5 transition ${
+                    intencao === k
+                      ? "border-gold bg-gold/5 text-text-primary"
+                      : "border-border hover:bg-muted/40"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="intencao_sequencia"
+                    value={k}
+                    checked={intencao === k}
+                    onChange={() => setIntencao(k)}
+                    className="accent-[var(--color-gold,#caa55a)]"
+                  />
+                  <span>{INTENCAO_LABEL[k]}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <Button
