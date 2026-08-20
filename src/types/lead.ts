@@ -77,6 +77,9 @@ export interface LeadQualificado {
   clienteB2bId: string | null;
   cotacaoOrigemId: string | null;
   catalogoLiberado: boolean;
+  intencaoSequencia: string | null;
+  aceiteCondicoes: string | null;
+  destaque: string | null;
 }
 
 export interface LeadHistoricoItem {
