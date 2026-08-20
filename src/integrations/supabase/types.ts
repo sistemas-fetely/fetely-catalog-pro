@@ -745,6 +745,50 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_form_rascunho: {
+        Row: {
+          atualizado_em: string
+          campos_preenchidos: number
+          criado_em: string
+          dados: Json
+          enviado: boolean
+          id: string
+          lead_id: string | null
+          sessao_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          campos_preenchidos?: number
+          criado_em?: string
+          dados?: Json
+          enviado?: boolean
+          id?: string
+          lead_id?: string | null
+          sessao_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          campos_preenchidos?: number
+          criado_em?: string
+          dados?: Json
+          enviado?: boolean
+          id?: string
+          lead_id?: string | null
+          sessao_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_form_rascunho_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_qualificados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_grupos_campanha: {
         Row: {
           criado_em: string
@@ -854,16 +898,19 @@ export type Database = {
       }
       leads_qualificados: {
         Row: {
+          aceite_condicoes: string | null
           atualizado_em: string
           catalogo_liberado: boolean
           cidade: string | null
           cliente_b2b_id: string | null
           cotacao_origem_id: string | null
           criado_em: string
+          destaque: string | null
           email: string | null
           frequencia: Database["public"]["Enums"]["lead_frequencia"] | null
           id: string
           instagram: string | null
+          intencao_sequencia: string | null
           ip_origem: string | null
           nome: string
           notas_internas: string | null
@@ -886,16 +933,19 @@ export type Database = {
           whatsapp: string
         }
         Insert: {
+          aceite_condicoes?: string | null
           atualizado_em?: string
           catalogo_liberado?: boolean
           cidade?: string | null
           cliente_b2b_id?: string | null
           cotacao_origem_id?: string | null
           criado_em?: string
+          destaque?: string | null
           email?: string | null
           frequencia?: Database["public"]["Enums"]["lead_frequencia"] | null
           id?: string
           instagram?: string | null
+          intencao_sequencia?: string | null
           ip_origem?: string | null
           nome: string
           notas_internas?: string | null
@@ -918,16 +968,19 @@ export type Database = {
           whatsapp: string
         }
         Update: {
+          aceite_condicoes?: string | null
           atualizado_em?: string
           catalogo_liberado?: boolean
           cidade?: string | null
           cliente_b2b_id?: string | null
           cotacao_origem_id?: string | null
           criado_em?: string
+          destaque?: string | null
           email?: string | null
           frequencia?: Database["public"]["Enums"]["lead_frequencia"] | null
           id?: string
           instagram?: string | null
+          intencao_sequencia?: string | null
           ip_origem?: string | null
           nome?: string
           notas_internas?: string | null
@@ -2754,6 +2807,16 @@ export type Database = {
           p_itens: Json
           p_nome?: string
           p_whatsapp?: string
+        }
+        Returns: undefined
+      }
+      public_upsert_lead_rascunho: {
+        Args: {
+          p_campos?: number
+          p_dados?: Json
+          p_enviado?: boolean
+          p_sessao_id: string
+          p_user_agent?: string
         }
         Returns: undefined
       }
