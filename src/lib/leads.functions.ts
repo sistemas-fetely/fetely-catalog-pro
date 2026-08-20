@@ -415,7 +415,11 @@ export const registrarAceiteCondicoes = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const tags: string[] = (atual?.tags as string[]) ?? [];
-    const patch: Record<string, unknown> = { aceite_condicoes: data.aceite };
+    const patch: {
+      aceite_condicoes: string;
+      tags?: string[];
+      destaque?: string;
+    } = { aceite_condicoes: data.aceite };
 
     if (data.aceite === "agora_nao") {
       if (!tags.includes(TAG_DECLINOU_MINIMO)) {
@@ -459,9 +463,9 @@ export const salvarRascunhoFormulario = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await supabaseAdmin.rpc("public_upsert_lead_rascunho", {
       p_sessao_id: data.sessaoId,
-      p_dados: data.dados,
+      p_dados: data.dados as never,
       p_campos: data.campos,
-      p_user_agent: data.userAgent ?? null,
+      p_user_agent: data.userAgent ?? undefined,
       p_enviado: data.enviado ?? false,
     });
     return { ok: true };
