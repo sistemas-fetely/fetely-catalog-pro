@@ -311,7 +311,7 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
             options={[["all", "Todos os aceites"], ...Object.entries(ACEITE_LABEL)]} />
           <Button variant="ghost" size="sm" onClick={() => {
             setSearch(""); setFSeg("all"); setFPot("all"); setFStat("all"); setFOri("all");
-            setFDest("all"); setFInt("all"); setFAce("all");
+            setFDest("all"); setFInt("all"); setFAce("all"); setFProds([]); setProdModo("qualquer");
           }}>
             Limpar
           </Button>
@@ -323,6 +323,71 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
             </Can>
           </div>
         </div>
+
+        {/* Produtos de interesse (múltipla escolha) */}
+        {produtoOpcoes.length > 0 && (
+          <div className="border-t border-border pt-3">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className="text-xs uppercase tracking-wider text-text-secondary">
+                Produtos de interesse
+              </span>
+              {fProds.length > 0 && (
+                <>
+                  <span className="text-xs text-text-secondary">
+                    {fProds.length} selecionado{fProds.length > 1 ? "s" : ""}
+                  </span>
+                  <div className="inline-flex rounded-full border border-border overflow-hidden">
+                    {(["qualquer", "todos"] as const).map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setProdModo(m)}
+                        className={`px-2.5 py-0.5 text-[11px] transition ${
+                          prodModo === m
+                            ? "bg-gold/15 text-gold"
+                            : "text-text-secondary hover:bg-muted/50"
+                        }`}
+                      >
+                        {m === "qualquer" ? "Qualquer um" : "Todos"}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFProds([])}
+                    className="text-[11px] uppercase tracking-wide text-text-secondary hover:text-text-primary"
+                  >
+                    limpar produtos
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {produtoOpcoes.map(([p, n]) => {
+                const active = fProds.includes(p);
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() =>
+                      setFProds((prev) =>
+                        prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p],
+                      )
+                    }
+                    className={`rounded-full border px-2.5 py-1 text-[11px] transition ${
+                      active
+                        ? "border-gold bg-gold/15 text-gold"
+                        : "border-border text-text-secondary hover:border-gold/40"
+                    }`}
+                  >
+                    {p} <span className="opacity-60">· {n}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* Tabela */}
