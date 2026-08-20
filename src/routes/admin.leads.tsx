@@ -157,7 +157,21 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
   const [fDest, setFDest] = useState<string>("all");
   const [fInt, setFInt] = useState<string>("all");
   const [fAce, setFAce] = useState<string>("all");
+  const [fProds, setFProds] = useState<string[]>([]);
+  const [prodModo, setProdModo] = useState<"qualquer" | "todos">("qualquer");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const produtoOpcoes = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of leads)
+      for (const p of l.produtosInteresse ?? []) {
+        const k = p.trim();
+        if (k) m.set(k, (m.get(k) ?? 0) + 1);
+      }
+    return Array.from(m.entries()).sort(
+      (a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"),
+    );
+  }, [leads]);
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
@@ -169,13 +183,22 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
       if (fDest !== "all" && (l.destaque ?? "") !== fDest) return false;
       if (fInt !== "all" && (l.intencaoSequencia ?? "") !== fInt) return false;
       if (fAce !== "all" && (l.aceiteCondicoes ?? "") !== fAce) return false;
+      if (fProds.length > 0) {
+        const set = new Set((l.produtosInteresse ?? []).map((p) => p.trim()));
+        const ok =
+          prodModo === "todos"
+            ? fProds.every((p) => set.has(p))
+            : fProds.some((p) => set.has(p));
+        if (!ok) return false;
+      }
       if (s) {
         const hay = `${l.nome} ${l.whatsapp} ${l.instagram ?? ""} ${l.email ?? ""}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
     });
-  }, [leads, search, fSeg, fPot, fStat, fOri, fDest, fInt, fAce]);
+  }, [leads, search, fSeg, fPot, fStat, fOri, fDest, fInt, fAce, fProds, prodModo]);
+
 
   const kpis = useMemo(() => {
     const total = leads.length;
