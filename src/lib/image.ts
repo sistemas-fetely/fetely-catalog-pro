@@ -41,3 +41,17 @@ export function estimateBytes(str: string): number {
   // base64 ~ 3/4 do tamanho
   return Math.round(str.length * 0.75);
 }
+
+/**
+ * Converte a URL pública do storage em uma URL do próprio domínio do app.
+ * Necessário porque algumas redes/computadores bloqueiam o domínio do storage,
+ * deixando as fotos invisíveis.
+ */
+export function proxiedPhotoUrl(url: string | undefined | null): string | undefined {
+  if (!url) return undefined;
+  const marker = "/storage/v1/object/public/";
+  const i = url.indexOf(marker);
+  if (i === -1) return url;
+  const path = url.slice(i + marker.length);
+  return `/api/public/img?path=${encodeURIComponent(path)}`;
+}

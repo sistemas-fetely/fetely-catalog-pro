@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { normalizeKey } from "@/lib/image";
+import { normalizeKey, proxiedPhotoUrl } from "@/lib/image";
 import { supabase } from "@/integrations/supabase/client";
 
 const BUCKET = "product-photos";
@@ -52,12 +52,12 @@ export const usePhotos = create<PhotoState>()((set, get) => ({
     for (const row of data ?? []) {
       if (row.kind === "colecao") {
         const k = colKey(row.colecao, (row as any).categoria);
-        colecoes[k] = row.url;
+        colecoes[k] = proxiedPhotoUrl(row.url)!;
         paths[`c:${k}`] = row.path;
       } else if (row.kind === "produto" && row.cor) {
         const nc = normalizeKey(row.colecao);
         const key = `${nc}__${normalizeKey(row.cor)}`;
-        produtos[key] = row.url;
+        produtos[key] = proxiedPhotoUrl(row.url)!;
         paths[`p:${key}`] = row.path;
       }
     }
@@ -95,7 +95,7 @@ export const usePhotos = create<PhotoState>()((set, get) => ({
     }
 
     set((s) => ({
-      colecoes: { ...s.colecoes, [k]: url },
+      colecoes: { ...s.colecoes, [k]: proxiedPhotoUrl(url)! },
       paths: { ...s.paths, [`c:${k}`]: path },
     }));
   },
@@ -151,7 +151,7 @@ export const usePhotos = create<PhotoState>()((set, get) => ({
     }
 
     set((s) => ({
-      produtos: { ...s.produtos, [key]: url },
+      produtos: { ...s.produtos, [key]: proxiedPhotoUrl(url)! },
       paths: { ...s.paths, [`p:${key}`]: path },
     }));
   },
