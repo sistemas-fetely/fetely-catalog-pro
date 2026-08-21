@@ -386,7 +386,31 @@ function compareItensPdf(a: ItemExportavel, b: ItemExportavel): number {
   return normalizeExportKey(a.nomeComercial || a.sku).localeCompare(normalizeExportKey(b.nomeComercial || b.sku), "pt-BR", { numeric: true });
 }
 
+// Desconto por item nos PDFs: mostra "de → por" no unitário e no subtotal.
+function descontoPctPedido(pedido: PedidoExportavel): number {
+  const pct = pedido.itens[0]?.descontoPercent ?? 0;
+  return pct > 0.05 ? Math.round(pct * 10) / 10 : 0;
+}
+
+function precoCellsItem(item: ItemExportavel, pct: number): { unit: string; sub: string } {
+  if (pct <= 0) {
+    return { unit: fmtBRL(item.precoAtacadoUnit), sub: fmtBRL(item.subtotalBruto) };
+  }
+  const unitLiq = Math.round(item.precoAtacadoUnit * (1 - pct / 100) * 100) / 100;
+  const subLiq = Math.round(unitLiq * item.quantidade * 100) / 100;
+  return {
+    unit: `${fmtBRL(item.precoAtacadoUnit)}\n${fmtBRL(unitLiq)}`,
+    sub: `${fmtBRL(item.subtotalBruto)}\n${fmtBRL(subLiq)}`,
+  };
+}
+
+function labelComDesconto(base: string, pct: number): string {
+  if (pct <= 0) return base;
+  return `${base}\n(−${String(pct).replace(".", ",")}%)`;
+}
+
 // ===== PDF =====
+
 export async function exportarPDF(
   pedido: PedidoExportavel,
   tipo: "cliente" | "interno",
@@ -461,13 +485,16 @@ export async function exportarPDF(
   // Itens
   const showVarejo = tipo === "interno";
   const hasThumbs = thumbs.size > 0;
+  const pctItem = descontoPctPedido(pedido);
+  const lblUnit = labelComDesconto(showVarejo ? "Atacado" : "Unit.", pctItem);
+  const lblSub = labelComDesconto("Subtotal", pctItem);
   const head = hasThumbs
     ? (showVarejo
-        ? [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
-        : [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]])
+        ? [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Varejo", lblUnit, lblSub]]
+        : [["#", "Foto", "PRODUTO", "Qtd", "Cx", lblUnit, lblSub]])
     : (showVarejo
-        ? [["#", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
-        : [["#", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]]);
+        ? [["#", "PRODUTO", "Qtd", "Cx", "Varejo", lblUnit, lblSub]]
+        : [["#", "PRODUTO", "Qtd", "Cx", lblUnit, lblSub]]);
 
   const skuByRowIdx = new Map<number, string>();
   const orderedItens = [...pedido.itens].sort(compareItensPdf);
@@ -482,9 +509,11 @@ export async function exportarPDF(
     if (hasThumbs) base.push("");
     base.push(desc, String(item.quantidade), String(item.quantidadeCaixas));
     if (showVarejo) base.push(fmtBRL(item.precoVarejoUnit));
-    base.push(fmtBRL(item.precoAtacadoUnit), fmtBRL(item.subtotalBruto));
+    const precos = precoCellsItem(item, pctItem);
+    base.push(precos.unit, precos.sub);
     return base;
   });
+
 
   const colStylesNoThumb: Record<number, Record<string, unknown>> = showVarejo
     ? { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 78 }, 2: { cellWidth: 12, halign: "center" }, 3: { cellWidth: 12, halign: "center" }, 4: { cellWidth: 22, halign: "right" }, 5: { cellWidth: 22, halign: "right" }, 6: { cellWidth: 26, halign: "right" } }
@@ -845,13 +874,16 @@ function _buildPdfInternal(pedido: PedidoExportavel, tipo: "cliente" | "interno"
 
   const showVarejo = tipo === "interno";
   const hasThumbs = thumbs.size > 0;
+  const pctItem = descontoPctPedido(pedido);
+  const lblUnit = labelComDesconto(showVarejo ? "Atacado" : "Unit.", pctItem);
+  const lblSub = labelComDesconto("Subtotal", pctItem);
   const head = hasThumbs
     ? (showVarejo
-        ? [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
-        : [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]])
+        ? [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Varejo", lblUnit, lblSub]]
+        : [["#", "Foto", "PRODUTO", "Qtd", "Cx", lblUnit, lblSub]])
     : (showVarejo
-        ? [["#", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
-        : [["#", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]]);
+        ? [["#", "PRODUTO", "Qtd", "Cx", "Varejo", lblUnit, lblSub]]
+        : [["#", "PRODUTO", "Qtd", "Cx", lblUnit, lblSub]]);
   const skuByRowIdx = new Map<number, string>();
   const orderedItens = [...pedido.itens].sort(compareItensPdf);
   const rows = orderedItens.map((item, i) => {
@@ -865,9 +897,11 @@ function _buildPdfInternal(pedido: PedidoExportavel, tipo: "cliente" | "interno"
     if (hasThumbs) base.push("");
     base.push(desc, String(item.quantidade), String(item.quantidadeCaixas));
     if (showVarejo) base.push(fmtBRL(item.precoVarejoUnit));
-    base.push(fmtBRL(item.precoAtacadoUnit), fmtBRL(item.subtotalBruto));
+    const precos = precoCellsItem(item, pctItem);
+    base.push(precos.unit, precos.sub);
     return base;
   });
+
   const colStylesWithThumb: Record<number, Record<string, unknown>> = showVarejo
     ? { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 18, minCellHeight: 18 }, 2: { cellWidth: 60 }, 3: { cellWidth: 12, halign: "center" }, 4: { cellWidth: 12, halign: "center" }, 5: { cellWidth: 20, halign: "right" }, 6: { cellWidth: 20, halign: "right" }, 7: { cellWidth: 24, halign: "right" } }
     : { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 18, minCellHeight: 18 }, 2: { cellWidth: 82 }, 3: { cellWidth: 14, halign: "center" }, 4: { cellWidth: 14, halign: "center" }, 5: { cellWidth: 22, halign: "right" }, 6: { cellWidth: 22, halign: "right" } };
