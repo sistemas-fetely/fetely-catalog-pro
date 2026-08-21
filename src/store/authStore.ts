@@ -28,6 +28,9 @@ export interface Profile {
   login_count: number | null;
 }
 
+const MSG_INATIVO =
+  "Seu acesso está inativo. Fale com o administrador para reativar sua conta.";
+
 interface AuthState {
   initialized: boolean;
   loading: boolean;
@@ -35,6 +38,7 @@ interface AuthState {
   user: User | null;
   profile: Profile | null;
   roles: AppRole[];
+  blockedReason: string | null;
   init: () => void;
   refreshProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -44,6 +48,7 @@ interface AuthState {
   isAdminOrMaster: () => boolean;
   isCliente: () => boolean;
 }
+
 
 async function loadProfileAndRoles(userId: string): Promise<{ profile: Profile | null; roles: AppRole[] }> {
   const [{ data: profile }, { data: rolesData }] = await Promise.all([
