@@ -485,13 +485,16 @@ export async function exportarPDF(
   // Itens
   const showVarejo = tipo === "interno";
   const hasThumbs = thumbs.size > 0;
+  const pctItem = descontoPctPedido(pedido);
+  const lblUnit = labelComDesconto(showVarejo ? "Atacado" : "Unit.", pctItem);
+  const lblSub = labelComDesconto("Subtotal", pctItem);
   const head = hasThumbs
     ? (showVarejo
-        ? [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
-        : [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]])
+        ? [["#", "Foto", "PRODUTO", "Qtd", "Cx", "Varejo", lblUnit, lblSub]]
+        : [["#", "Foto", "PRODUTO", "Qtd", "Cx", lblUnit, lblSub]])
     : (showVarejo
-        ? [["#", "PRODUTO", "Qtd", "Cx", "Varejo", "Atacado", "Subtotal"]]
-        : [["#", "PRODUTO", "Qtd", "Cx", "Unit.", "Subtotal"]]);
+        ? [["#", "PRODUTO", "Qtd", "Cx", "Varejo", lblUnit, lblSub]]
+        : [["#", "PRODUTO", "Qtd", "Cx", lblUnit, lblSub]]);
 
   const skuByRowIdx = new Map<number, string>();
   const orderedItens = [...pedido.itens].sort(compareItensPdf);
@@ -506,9 +509,11 @@ export async function exportarPDF(
     if (hasThumbs) base.push("");
     base.push(desc, String(item.quantidade), String(item.quantidadeCaixas));
     if (showVarejo) base.push(fmtBRL(item.precoVarejoUnit));
-    base.push(fmtBRL(item.precoAtacadoUnit), fmtBRL(item.subtotalBruto));
+    const precos = precoCellsItem(item, pctItem);
+    base.push(precos.unit, precos.sub);
     return base;
   });
+
 
   const colStylesNoThumb: Record<number, Record<string, unknown>> = showVarejo
     ? { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 78 }, 2: { cellWidth: 12, halign: "center" }, 3: { cellWidth: 12, halign: "center" }, 4: { cellWidth: 22, halign: "right" }, 5: { cellWidth: 22, halign: "right" }, 6: { cellWidth: 26, halign: "right" } }
