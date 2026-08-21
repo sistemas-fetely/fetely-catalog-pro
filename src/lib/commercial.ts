@@ -176,7 +176,7 @@ export const CONDICOES_DEFAULT: CondicaoPagamento[] = [
 
 export const REGRAS_DEFAULT: RegrasGerais = {
   pedidoMinimo: 1500,
-  descontoMasterMax: 15,
+  descontoMasterMax: 30,
   tentativasSenhaMaster: 3,
   bloqueioSenhaMasterMinutos: 30,
   provisaoExpirarDias: 90,
