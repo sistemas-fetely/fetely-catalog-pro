@@ -1,0 +1,1 @@
+UPDATE public.regras_gerais SET desconto_master_max = 30, atualizado_em = now();
