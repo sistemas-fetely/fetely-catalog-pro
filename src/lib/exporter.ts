@@ -386,7 +386,31 @@ function compareItensPdf(a: ItemExportavel, b: ItemExportavel): number {
   return normalizeExportKey(a.nomeComercial || a.sku).localeCompare(normalizeExportKey(b.nomeComercial || b.sku), "pt-BR", { numeric: true });
 }
 
+// Desconto por item nos PDFs: mostra "de → por" no unitário e no subtotal.
+function descontoPctPedido(pedido: PedidoExportavel): number {
+  const pct = pedido.itens[0]?.descontoPercent ?? 0;
+  return pct > 0.05 ? Math.round(pct * 10) / 10 : 0;
+}
+
+function precoCellsItem(item: ItemExportavel, pct: number): { unit: string; sub: string } {
+  if (pct <= 0) {
+    return { unit: fmtBRL(item.precoAtacadoUnit), sub: fmtBRL(item.subtotalBruto) };
+  }
+  const unitLiq = Math.round(item.precoAtacadoUnit * (1 - pct / 100) * 100) / 100;
+  const subLiq = Math.round(unitLiq * item.quantidade * 100) / 100;
+  return {
+    unit: `${fmtBRL(item.precoAtacadoUnit)}\n${fmtBRL(unitLiq)}`,
+    sub: `${fmtBRL(item.subtotalBruto)}\n${fmtBRL(subLiq)}`,
+  };
+}
+
+function labelComDesconto(base: string, pct: number): string {
+  if (pct <= 0) return base;
+  return `${base}\n(−${String(pct).replace(".", ",")}%)`;
+}
+
 // ===== PDF =====
+
 export async function exportarPDF(
   pedido: PedidoExportavel,
   tipo: "cliente" | "interno",
