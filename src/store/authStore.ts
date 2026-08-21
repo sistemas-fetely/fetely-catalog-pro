@@ -68,6 +68,8 @@ export const useAuth = create<AuthState>((set, get) => ({
   user: null,
   profile: null,
   roles: [],
+  blockedReason: null,
+
 
   init: () => {
     if (get().initialized) return;
