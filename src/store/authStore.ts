@@ -100,6 +100,15 @@ export const useAuth = create<AuthState>((set, get) => ({
         set({ session, user: session.user, loading: !jaTemPerfil });
         // Defer pra evitar deadlock com o próprio listener.
         setTimeout(async () => {
+          const { profile, roles } = await loadProfileAndRoles(session.user.id);
+
+          // Usuário inativo não acessa o sistema: encerra a sessão na hora.
+          if (profile && profile.ativo === false) {
+            set({ blockedReason: MSG_INATIVO, loading: false });
+            await get().signOut();
+            return;
+          }
+
           // Registra acesso APENAS no SIGNED_IN real (login interativo).
           // INITIAL_SESSION (reabrir aba com sessão persistida) não conta.
           if (event === "SIGNED_IN") {
@@ -109,8 +118,7 @@ export const useAuth = create<AuthState>((set, get) => ({
               /* não bloqueia o login se a RPC falhar */
             }
           }
-          const { profile, roles } = await loadProfileAndRoles(session.user.id);
-          set({ profile, roles, loading: false });
+          set({ profile, roles, loading: false, blockedReason: null });
         }, 0);
       } else {
         // INITIAL_SESSION sem sessão persistida = visitante.
@@ -125,14 +133,37 @@ export const useAuth = create<AuthState>((set, get) => ({
     const u = get().user;
     if (!u) return;
     const { profile, roles } = await loadProfileAndRoles(u.id);
+    if (profile && profile.ativo === false) {
+      set({ blockedReason: MSG_INATIVO });
+      await get().signOut();
+      return;
+    }
     set({ profile, roles });
   },
 
   signIn: async (email, password) => {
-    set({ loading: true, profile: null, roles: [] });
+    set({ loading: true, profile: null, roles: [], blockedReason: null });
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) set({ loading: false });
-    return { error: error?.message ?? null };
+    if (error) {
+      set({ loading: false });
+      return { error: error.message };
+    }
+    // Confere o status do perfil antes de liberar a navegação.
+    const { data: sess } = await supabase.auth.getSession();
+    const uid = sess.session?.user.id;
+    if (uid) {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("ativo")
+        .eq("id", uid)
+        .maybeSingle();
+      if (prof && prof.ativo === false) {
+        set({ blockedReason: MSG_INATIVO, loading: false });
+        await get().signOut();
+        return { error: MSG_INATIVO };
+      }
+    }
+    return { error: null };
   },
 
   signOut: async () => {
@@ -142,6 +173,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     const { usePermissoesStore } = await import("@/store/permissoesStore");
     usePermissoesStore.getState().reset();
   },
+
 
   isMaster: () => get().roles.includes("master"),
   isAdmin: () => get().roles.includes("admin"),
