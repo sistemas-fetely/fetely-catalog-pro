@@ -13,6 +13,8 @@ function LoginPage() {
   const loading = useAuth((s) => s.loading);
   const roles = useAuth((s) => s.roles);
   const signIn = useAuth((s) => s.signIn);
+  const blockedReason = useAuth((s) => s.blockedReason);
+
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -86,11 +88,12 @@ function LoginPage() {
             />
           </div>
 
-          {error && (
+          {(error || blockedReason) && (
             <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              {error}
+              {error || blockedReason}
             </div>
           )}
+
 
           <button
             type="submit"
