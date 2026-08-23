@@ -1,4 +1,5 @@
 // Academia Inteligente — chunking, embeddings e FAQ com IA (SOMENTE servidor).
+// Trechos com modulo_id NULL vêm da base de conhecimento manual (faq_conhecimento).
 // A chave da IA (LOVABLE_API_KEY) nunca sai daqui; o front chama os server fns.
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
@@ -10,7 +11,12 @@ const EMBED_LOTE = 50;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { FaqFonte, FaqPerguntaRow, FaqResposta } from "./academia";
+import type {
+  FaqConhecimentoRow,
+  FaqFonte,
+  FaqPerguntaRow,
+  FaqResposta,
+} from "./academia";
 
 function gatewayKey(): string {
   const key = process.env["LOVABLE_API_KEY"];
