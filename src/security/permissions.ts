@@ -81,6 +81,9 @@ export const TELAS_SISTEMA: TelaDefinicao[] = [
   { id: "negociacao_desconto", nome: "↳ Aplicar Desconto Extra", grupo: "Comercial", acoes: V },
   { id: "negociacao_faixa_res", nome: "↳ Ativar Faixa Reservada", grupo: "Comercial", acoes: V },
 
+  // ACADEMIA
+  { id: "academia", nome: "Academia Fetély", grupo: "Academia", acoes: CRUD },
+
   // CONFIGURAÇÕES — PRODUTOS
   { id: "cfg_produtos", nome: "Gestão de Produtos", grupo: "Configurações", acoes: CRUDE },
   { id: "cfg_produtos_criar", nome: "↳ Criar Produto", grupo: "Configurações", acoes: ["criar"] },
@@ -160,6 +163,7 @@ export const PERMISSOES_PADRAO: Record<
     { telaId: "clientes_editar", acoes: ["editar"] },
     { telaId: "modo_negociacao", acoes: V },
     { telaId: "negociacao_desconto", acoes: V },
+    { telaId: "academia", acoes: V },
   ],
 
   cliente: [
@@ -193,6 +197,7 @@ export const TELAS_REPRESENTANTE: string[] = [
   "clientes_detalhe",
   "clientes_criar",
   "clientes_editar",
+  "academia",
 ];
 
 /** True quando a tela é permitida para o perfil representante. */

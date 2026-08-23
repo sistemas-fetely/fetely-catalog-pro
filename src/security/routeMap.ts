@@ -21,6 +21,7 @@ const ROTAS: RotaProtegida[] = [
   { prefix: "/admin/precos", telaId: "cfg_produtos" },
   { prefix: "/admin/users", telaId: "cfg_vendedores" },
   { prefix: "/admin/sincronizacao-sncf", telaId: "cfg_produtos" },
+  { prefix: "/admin/academia", telaId: "academia", acao: "editar" },
 
   // PORTAL CLIENTE
   { prefix: "/portal/pedidos", telaId: "portal_pedidos" },
@@ -41,6 +42,7 @@ const ROTAS: RotaProtegida[] = [
   { prefix: "/new-order", telaId: "pedidos_novo", acao: "criar" },
   { prefix: "/cotacoes", telaId: "cotacoes_lista" },
   { prefix: "/provisoes", telaId: "provisoes_lista" },
+  { prefix: "/academia", telaId: "academia" },
   { prefix: "/clientes", telaId: "clientes_lista" },
   { prefix: "/commercial", telaId: "cfg_cartilhas" },
   { prefix: "/condicoes-pagamento", telaId: "cfg_condicoes_editar" },
