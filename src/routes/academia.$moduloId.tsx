@@ -308,24 +308,14 @@ function ModuloPage() {
 function BlocoView({
   bloco,
   urls,
+  seek,
 }: {
   bloco: TreinamentoBloco;
   urls: Record<string, string>;
+  seek?: number | null;
 }) {
   if (bloco.tipo === "video" && bloco.youtube_id) {
-    return (
-      <div className="overflow-hidden rounded-xl border border-border bg-black">
-        <div className="aspect-video w-full">
-          <iframe
-            src={`https://www.youtube.com/embed/${bloco.youtube_id}`}
-            title="Vídeo da aula"
-            className="h-full w-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      </div>
-    );
+    return <VideoBloco bloco={bloco} initialSeek={seek ?? null} />;
   }
 
   if (bloco.tipo === "texto" && bloco.conteudo_texto) {
