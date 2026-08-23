@@ -13,10 +13,15 @@ import { perguntarAcademia } from "@/lib/academiaAi.functions";
 import { renderRichText } from "@/lib/academia";
 import type { FaqResposta } from "@/lib/academia";
 
+interface ConversaItem {
+  pergunta: string;
+  resultado: FaqResposta;
+}
+
 export function AcademiaFaq() {
   const [pergunta, setPergunta] = useState("");
   const [carregando, setCarregando] = useState(false);
-  const [resultado, setResultado] = useState<FaqResposta | null>(null);
+  const [historico, setHistorico] = useState<ConversaItem[]>([]);
   const perguntar = useServerFn(perguntarAcademia);
 
   async function enviar() {
@@ -25,7 +30,8 @@ export function AcademiaFaq() {
     setCarregando(true);
     try {
       const r = await perguntar({ data: { pergunta: p } });
-      setResultado(r);
+      setHistorico((h) => [...h, { pergunta: p, resultado: r }]);
+      setPergunta("");
     } catch (e) {
       toast.error("Não foi possível responder agora", {
         description: e instanceof Error ? e.message : undefined,
