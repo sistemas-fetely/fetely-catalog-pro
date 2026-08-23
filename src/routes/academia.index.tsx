@@ -130,6 +130,7 @@ function ModuloCard({
     <Link
       to="/academia/$moduloId"
       params={{ moduloId: modulo.id }}
+      search={{ aula: undefined, t: undefined }}
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-surface transition hover:border-gold/60"
     >
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface-2">
