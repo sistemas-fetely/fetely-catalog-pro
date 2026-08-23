@@ -276,8 +276,242 @@ function AdminAcademiaPage() {
         </ul>
       )}
 
+      <FaqBaseSection />
       <DuvidasSection />
     </main>
+  );
+}
+
+// ------------------------------------------- Base de conhecimento do FAQ
+// Informações soltas (sem aula/módulo) que só alimentam as respostas da IA.
+
+function FaqBaseSection() {
+  const [itens, setItens] = useState<FaqConhecimentoRow[] | null>(null);
+  const [editandoId, setEditandoId] = useState<string | "novo" | null>(null);
+  const [titulo, setTitulo] = useState("");
+  const [conteudo, setConteudo] = useState("");
+  const [ativo, setAtivo] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+
+  const carregar = useCallback(async () => {
+    try {
+      const r = await listarFaqConhecimento();
+      setItens(r.itens);
+    } catch {
+      setItens([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void carregar();
+  }, [carregar]);
+
+  function abrirNovo() {
+    setEditandoId("novo");
+    setTitulo("");
+    setConteudo("");
+    setAtivo(true);
+  }
+
+  function abrirEdicao(it: FaqConhecimentoRow) {
+    setEditandoId(it.id);
+    setTitulo(it.titulo);
+    setConteudo(it.conteudo);
+    setAtivo(it.ativo);
+  }
+
+  async function salvar() {
+    if (titulo.trim().length < 2 || conteudo.trim().length < 10) {
+      toast.error("Preencha o título e um conteúdo com pelo menos 10 caracteres");
+      return;
+    }
+    setSalvando(true);
+    try {
+      const r = await salvarFaqConhecimento({
+        data: {
+          id: editandoId === "novo" ? undefined : (editandoId ?? undefined),
+          titulo: titulo.trim(),
+          conteudo: conteudo.trim(),
+          ativo,
+        },
+      });
+      toast.success("Informação salva", {
+        description: `FAQ reindexado: ${r.chunks} trecho(s) ativo(s) na base.`,
+      });
+      setEditandoId(null);
+      await carregar();
+    } catch (e) {
+      toast.error("Falha ao salvar informação", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  async function alternarAtivo(it: FaqConhecimentoRow) {
+    try {
+      await salvarFaqConhecimento({
+        data: {
+          id: it.id,
+          titulo: it.titulo,
+          conteudo: it.conteudo,
+          ativo: !it.ativo,
+        },
+      });
+      await carregar();
+    } catch (e) {
+      toast.error("Falha ao atualizar", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
+  async function excluir(it: FaqConhecimentoRow) {
+    if (!window.confirm(`Excluir "${it.titulo}" da base do FAQ?`)) return;
+    try {
+      await excluirFaqConhecimento({ data: { id: it.id } });
+      toast.success("Informação excluída da base do FAQ");
+      await carregar();
+    } catch (e) {
+      toast.error("Falha ao excluir", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
+  return (
+    <section className="mt-10 rounded-xl border border-border bg-surface p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Lightbulb className="h-5 w-5 text-gold" />
+          <h2 className="font-display text-xl">Base de conhecimento do FAQ</h2>
+          {itens && itens.length > 0 && (
+            <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-text-muted">
+              {itens.filter((i) => i.ativo).length} ativa(s)
+            </span>
+          )}
+        </div>
+        <button
+          onClick={abrirNovo}
+          className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-background hover:bg-gold-light"
+        >
+          <Plus className="h-3.5 w-3.5" /> Nova informação
+        </button>
+      </div>
+      <p className="mt-1 text-xs text-text-muted">
+        Informações soltas (regras comerciais, prazos, políticas) que só alimentam
+        as respostas da IA — não aparecem em nenhuma aula.
+      </p>
+
+      {editandoId !== null && (
+        <div className="mt-4 space-y-2 rounded-lg border border-gold/40 bg-background p-4">
+          <input
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
+            placeholder="Título — ex.: Política de trocas"
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-gold"
+          />
+          <textarea
+            value={conteudo}
+            onChange={(e) => setConteudo(e.target.value)}
+            rows={6}
+            placeholder="Escreva a informação completa. O FAQ usa este texto para responder, mas ele nunca é exibido nas aulas."
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-gold"
+          />
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
+              <input
+                type="checkbox"
+                checked={ativo}
+                onChange={(e) => setAtivo(e.target.checked)}
+                className="accent-gold"
+              />
+              Ativa (alimenta o FAQ)
+            </label>
+            <button
+              onClick={() => void salvar()}
+              disabled={salvando}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-gold px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-background hover:bg-gold-light disabled:opacity-50"
+            >
+              {salvando ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+              {salvando ? "Salvando..." : "Salvar e indexar"}
+            </button>
+            <button
+              onClick={() => setEditandoId(null)}
+              disabled={salvando}
+              className="rounded-md border border-border px-3 py-1.5 text-xs uppercase tracking-wider text-text-secondary hover:border-gold hover:text-gold"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {itens === null ? (
+        <p className="mt-4 text-sm text-text-muted">Carregando...</p>
+      ) : itens.length === 0 ? (
+        <p className="mt-4 text-sm text-text-muted">
+          Nenhuma informação cadastrada ainda.
+        </p>
+      ) : (
+        <ul className="mt-4 space-y-2">
+          {itens.map((it) => (
+            <li
+              key={it.id}
+              className="rounded-lg border border-border bg-background p-3"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${
+                    it.ativo
+                      ? "bg-gold/15 text-gold"
+                      : "bg-surface-2 text-text-muted"
+                  }`}
+                >
+                  {it.ativo ? "Ativa" : "Inativa"}
+                </span>
+                <span className="text-sm font-medium text-text-primary">
+                  {it.titulo}
+                </span>
+                <span className="text-[11px] text-text-muted">
+                  · atualizada {new Date(it.atualizado_em).toLocaleString("pt-BR")}
+                </span>
+                <div className="ml-auto flex items-center gap-1">
+                  <button
+                    onClick={() => void alternarAtivo(it)}
+                    className="rounded-md border border-border px-2.5 py-1 text-[11px] uppercase tracking-wider text-text-secondary hover:border-gold hover:text-gold"
+                  >
+                    {it.ativo ? "Desativar" : "Ativar"}
+                  </button>
+                  <button
+                    onClick={() => abrirEdicao(it)}
+                    className="rounded-md border border-border p-1.5 text-text-muted hover:border-gold hover:text-gold"
+                    aria-label="Editar informação"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => void excluir(it)}
+                    className="rounded-md border border-border p-1.5 text-text-muted hover:border-red-500/60 hover:text-red-400"
+                    aria-label="Excluir informação"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+              <p className="mt-1.5 line-clamp-2 text-xs text-text-muted">
+                {it.conteudo}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
