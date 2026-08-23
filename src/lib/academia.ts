@@ -45,17 +45,26 @@ export interface TreinamentoBloco {
   arquivo_url: string | null; // path no bucket
   arquivo_nome: string | null;
   descritivo: DescritivoSegmento[] | null; // só blocos de vídeo
+  faq_conhecimento: string | null; // conhecimento oculto: alimenta o FAQ, nunca renderiza
 }
 
 // ------------------------------------------------------------- FAQ (tipos)
 
 export interface FaqFonte {
-  modulo_id: string;
+  modulo_id: string | null; // null = veio da base de conhecimento manual
   modulo_titulo: string;
   aula_id: string | null;
   aula_titulo: string | null;
   timestamp: string | null;
   trecho: string;
+}
+
+export interface FaqConhecimentoRow {
+  id: string;
+  titulo: string;
+  conteudo: string;
+  ativo: boolean;
+  atualizado_em: string;
 }
 
 export interface FaqResposta {
