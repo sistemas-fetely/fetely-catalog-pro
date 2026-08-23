@@ -66,6 +66,23 @@ function AdminAcademiaPage() {
   const isAdmin = useAuth((s) => s.isAdminOrMaster)();
   const [modulos, setModulos] = useState<ModuloResumo[] | null>(null);
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [reindexando, setReindexando] = useState(false);
+
+  async function reindexarTudoClick() {
+    setReindexando(true);
+    try {
+      const r = await reindexAcademiaTudo();
+      toast.success(
+        `FAQ reindexado: ${r.chunks} trechos em ${r.modulos} módulo(s)`,
+      );
+    } catch (e) {
+      toast.error("Falha ao reindexar a base do FAQ", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setReindexando(false);
+    }
+  }
 
   const recarregar = useCallback(async () => {
     try {
@@ -165,12 +182,26 @@ function AdminAcademiaPage() {
             Crie módulos, organize aulas e publique para o time.
           </p>
         </div>
-        <button
-          onClick={novoModulo}
-          className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-[0.15em] text-background hover:bg-gold-light"
-        >
-          <Plus className="h-4 w-4" /> Novo módulo
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => void reindexarTudoClick()}
+            disabled={reindexando}
+            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-xs uppercase tracking-[0.15em] text-text-secondary hover:border-gold hover:text-gold disabled:opacity-50"
+          >
+            {reindexando ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Reindexar FAQ
+          </button>
+          <button
+            onClick={novoModulo}
+            className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-[0.15em] text-background hover:bg-gold-light"
+          >
+            <Plus className="h-4 w-4" /> Novo módulo
+          </button>
+        </div>
       </header>
 
       {modulos === null ? (
@@ -239,7 +270,94 @@ function AdminAcademiaPage() {
           ))}
         </ul>
       )}
+
+      <DuvidasSection />
     </main>
+  );
+}
+
+// ------------------------------------------------------------- Dúvidas FAQ
+
+function DuvidasSection() {
+  const [dados, setDados] = useState<FaqPerguntaRow[] | null>(null);
+  const [soSemResposta, setSoSemResposta] = useState(false);
+
+  useEffect(() => {
+    listarDuvidasAcademia()
+      .then((r) => setDados(r.perguntas))
+      .catch(() => setDados([]));
+  }, []);
+
+  if (dados === null) return null;
+  const semResposta = dados.filter((d) => !d.encontrou_resposta);
+  const exibidas = (soSemResposta ? semResposta : dados).slice(0, 15);
+
+  return (
+    <section className="mt-10 rounded-xl border border-border bg-surface p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <MessageCircleQuestion className="h-5 w-5 text-gold" />
+          <h2 className="font-display text-xl">Dúvidas do FAQ</h2>
+          <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-text-muted">
+            {dados.length} perguntas
+          </span>
+          {semResposta.length > 0 && (
+            <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-amber-400">
+              {semResposta.length} sem resposta
+            </span>
+          )}
+        </div>
+        <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={soSemResposta}
+            onChange={(e) => setSoSemResposta(e.target.checked)}
+            className="accent-gold"
+          />
+          Só sem resposta
+        </label>
+      </div>
+      <p className="mt-1 text-xs text-text-muted">
+        Perguntas recorrentes sem boa resposta são candidatas a novos conteúdos.
+      </p>
+
+      {exibidas.length === 0 ? (
+        <p className="mt-4 text-sm text-text-muted">
+          Nenhuma pergunta registrada ainda.
+        </p>
+      ) : (
+        <ul className="mt-4 space-y-2">
+          {exibidas.map((d) => (
+            <li
+              key={d.id}
+              className="rounded-lg border border-border bg-background p-3"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${
+                    d.encontrou_resposta
+                      ? "bg-gold/15 text-gold"
+                      : "bg-amber-500/15 text-amber-400"
+                  }`}
+                >
+                  {d.encontrou_resposta ? "Respondida" : "Sem resposta"}
+                </span>
+                <span className="text-[11px] text-text-muted">
+                  {new Date(d.criado_em).toLocaleString("pt-BR")}
+                  {d.usuario_nome ? ` · ${d.usuario_nome}` : ""}
+                </span>
+              </div>
+              <p className="mt-1.5 text-sm text-text-primary">{d.pergunta}</p>
+              {!d.encontrou_resposta && d.resposta && (
+                <p className="mt-1 line-clamp-2 text-xs text-text-muted">
+                  {d.resposta}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -296,6 +414,11 @@ function ModuloEditor({
     );
   }
 
+  // Reindexa a base do FAQ em segundo plano após qualquer edição de conteúdo.
+  function reindexar() {
+    void reindexAcademiaModulo({ data: { moduloId } }).catch(() => undefined);
+  }
+
   async function salvarCabecalho(patch: Partial<TreinamentoModulo>) {
     if (!modulo) return;
     setSalvando(true);
@@ -303,6 +426,7 @@ function ModuloEditor({
       await salvarModulo({ ...modulo, ...patch });
       setModulo({ ...modulo, ...patch });
       toast.success("Módulo salvo");
+      reindexar();
     } catch (e) {
       toast.error("Falha ao salvar", {
         description: e instanceof Error ? e.message : undefined,
@@ -444,6 +568,7 @@ function ModuloEditor({
         <BlocosPanel
           aula={aulas.find((a) => a.id === aulaSelId) ?? null}
           onChanged={recarregar}
+          onIndex={reindexar}
         />
       </section>
     </main>
@@ -605,9 +730,11 @@ const TIPOS: { tipo: TipoBloco; label: string; Icon: typeof Play }[] = [
 function BlocosPanel({
   aula,
   onChanged,
+  onIndex,
 }: {
   aula: AulaComBlocos | null;
   onChanged: () => Promise<void>;
+  onIndex?: () => void;
 }) {
   if (!aula) {
     return (
@@ -677,6 +804,7 @@ function BlocosPanel({
             onMover={(dir) => void mover(i, dir)}
             onExcluir={() => void remover(b)}
             onChanged={onChanged}
+            onIndex={onIndex}
           />
         ))}
         {aula.blocos.length === 0 && (
@@ -708,6 +836,7 @@ function BlocoCard({
   onMover,
   onExcluir,
   onChanged,
+  onIndex,
 }: {
   bloco: TreinamentoBloco;
   primeiro: boolean;
@@ -715,6 +844,7 @@ function BlocoCard({
   onMover: (dir: -1 | 1) => void;
   onExcluir: () => void;
   onChanged: () => Promise<void>;
+  onIndex?: () => void;
 }) {
   const meta = TIPOS.find((t) => t.tipo === bloco.tipo);
   const Icon = meta?.Icon ?? FileText;
@@ -753,8 +883,12 @@ function BlocoCard({
         </div>
       </div>
       <div className="mt-2.5">
-        {bloco.tipo === "video" && <VideoEditor bloco={bloco} onChanged={onChanged} />}
-        {bloco.tipo === "texto" && <TextoEditor bloco={bloco} onChanged={onChanged} />}
+        {bloco.tipo === "video" && (
+          <VideoEditor bloco={bloco} onChanged={onChanged} onIndex={onIndex} />
+        )}
+        {bloco.tipo === "texto" && (
+          <TextoEditor bloco={bloco} onChanged={onChanged} onIndex={onIndex} />
+        )}
         {(bloco.tipo === "imagem" || bloco.tipo === "anexo") && (
           <ArquivoEditor bloco={bloco} onChanged={onChanged} />
         )}
