@@ -87,10 +87,11 @@ interface BlocoRow {
   tipo: string;
   conteudo_texto: string | null;
   descritivo: { tempo: string; fala: string }[] | null;
+  faq_conhecimento: string | null;
 }
 
 interface ChunkMontado {
-  origem_tipo: "titulo" | "texto" | "descritivo";
+  origem_tipo: "titulo" | "texto" | "descritivo" | "faq";
   aula_id: string | null;
   bloco_id: string | null;
   texto: string;
@@ -149,6 +150,18 @@ function montarChunks(
           });
         }
       }
+      // Conhecimento oculto do bloco: alimenta o FAQ, nunca aparece na aula.
+      if (b.faq_conhecimento) {
+        for (const p of quebrarTexto(b.faq_conhecimento)) {
+          chunks.push({
+            origem_tipo: "faq",
+            aula_id: aula.id,
+            bloco_id: b.id,
+            texto: `${modulo.titulo} · ${aula.titulo} (nota interna): ${p}`,
+            timestamp_video: null,
+          });
+        }
+      }
     }
   }
   return chunks;
@@ -182,7 +195,7 @@ export async function reindexarModulo(
   if (aulaIds.length > 0) {
     const { data: b, error: e3 } = await db
       .from("treinamento_bloco")
-      .select("id,aula_id,tipo,conteudo_texto,descritivo")
+      .select("id,aula_id,tipo,conteudo_texto,descritivo,faq_conhecimento")
       .in("aula_id", aulaIds);
     if (e3) throw new Error(e3.message);
     blocos = b ?? [];
