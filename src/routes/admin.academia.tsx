@@ -13,6 +13,7 @@ import {
   Play,
   Plus,
   RefreshCw,
+  Save,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -680,7 +681,11 @@ function AulasPanel({
                 defaultValue={a.titulo}
                 key={a.id + a.titulo}
                 onFocus={() => onSelect(a.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                }}
                 onBlur={(e) => void renomear(a, e.target.value)}
+                title="Enter ou clicar fora salva o nome"
                 className="min-w-0 flex-1 rounded bg-transparent px-1.5 py-1 text-sm outline-none focus:bg-background"
               />
               <button
