@@ -70,13 +70,31 @@ function ModuloPage() {
         }
         setModulo(data.modulo);
         setAulas(data.aulas);
+        // Deep link vindo do FAQ: abre a aula certa e posiciona o vídeo.
+        let deepLinked = false;
+        if (search.aula) {
+          const idx = data.aulas.findIndex((a) => a.id === search.aula);
+          if (idx >= 0) {
+            deepLinked = true;
+            setSelIdx(idx);
+            if (search.t) {
+              const sec = tempoParaSegundos(search.t);
+              const vb = data.aulas[idx].blocos.find(
+                (b) => b.tipo === "video" && b.youtube_id,
+              );
+              if (vb) setDeepSeek({ blocoId: vb.id, sec });
+            }
+          }
+        }
         if (user) {
           const prog = await meuProgresso(user.id);
           if (!alive) return;
           setProgresso(prog);
-          // Abre na primeira aula não concluída
-          const firstOpen = data.aulas.findIndex((a) => !prog.has(a.id));
-          setSelIdx(firstOpen >= 0 ? firstOpen : 0);
+          // Abre na primeira aula não concluída (exceto quando veio deep link)
+          if (!deepLinked) {
+            const firstOpen = data.aulas.findIndex((a) => !prog.has(a.id));
+            setSelIdx(firstOpen >= 0 ? firstOpen : 0);
+          }
         }
         // Assina capa + todos os arquivos dos blocos
         const paths: string[] = [];
@@ -238,7 +256,12 @@ function ModuloPage() {
                     </p>
                   )}
                   {aula.blocos.map((b) => (
-                    <BlocoView key={b.id} bloco={b} urls={urls} />
+                    <BlocoView
+                      key={b.id}
+                      bloco={b}
+                      urls={urls}
+                      seek={deepSeek?.blocoId === b.id ? deepSeek.sec : null}
+                    />
                   ))}
                 </div>
 
