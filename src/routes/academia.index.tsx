@@ -3,7 +3,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { GraduationCap, Lock, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  assinarPaths,
+  urlsAcademia,
   listarModulos,
   meuProgresso,
   type ModuloResumo,
@@ -41,7 +41,7 @@ function AcademiaPage() {
         setModulos(lista);
         if (user) setProgresso(await meuProgresso(user.id));
         const paths = lista.map((m) => m.capa_url).filter(Boolean) as string[];
-        if (paths.length > 0 && alive) setCapas(await assinarPaths(paths));
+        if (paths.length > 0 && alive) setCapas(await urlsAcademia(paths));
       } catch (e) {
         toast.error("Não foi possível carregar os treinamentos", {
           description: e instanceof Error ? e.message : undefined,

@@ -60,6 +60,7 @@ import { Route as AdminAcademiaRouteImport } from './routes/admin.academia'
 import { Route as AcademiaModuloIdRouteImport } from './routes/academia.$moduloId'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
+import { Route as ApiPublicAcademiaFileRouteImport } from './routes/api/public/academia-file'
 
 const StandRoute = StandRouteImport.update({
   id: '/stand',
@@ -317,6 +318,11 @@ const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
   path: '/api/public/img',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAcademiaFileRoute = ApiPublicAcademiaFileRouteImport.update({
+  id: '/api/public/academia-file',
+  path: '/api/public/academia-file',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -368,6 +374,7 @@ export interface FileRoutesByFullPath {
   '/academia/': typeof AcademiaIndexRoute
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
+  '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -420,6 +427,7 @@ export interface FileRoutesByTo {
   '/academia': typeof AcademiaIndexRoute
   '/catalog': typeof CatalogIndexRoute
   '/portal': typeof PortalIndexRoute
+  '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -474,6 +482,7 @@ export interface FileRoutesById {
   '/academia/': typeof AcademiaIndexRoute
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
+  '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -529,6 +538,7 @@ export interface FileRouteTypes {
     | '/academia/'
     | '/catalog/'
     | '/portal/'
+    | '/api/public/academia-file'
     | '/api/public/img'
     | '/catalog/categoria/$categoria'
   fileRoutesByTo: FileRoutesByTo
@@ -581,6 +591,7 @@ export interface FileRouteTypes {
     | '/academia'
     | '/catalog'
     | '/portal'
+    | '/api/public/academia-file'
     | '/api/public/img'
     | '/catalog/categoria/$categoria'
   id:
@@ -634,6 +645,7 @@ export interface FileRouteTypes {
     | '/academia/'
     | '/catalog/'
     | '/portal/'
+    | '/api/public/academia-file'
     | '/api/public/img'
     | '/catalog/categoria/$categoria'
   fileRoutesById: FileRoutesById
@@ -681,6 +693,7 @@ export interface RootRouteChildren {
   CatalogTodosRoute: typeof CatalogTodosRoute
   AcademiaIndexRoute: typeof AcademiaIndexRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
+  ApiPublicAcademiaFileRoute: typeof ApiPublicAcademiaFileRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
   CatalogCategoriaCategoriaRoute: typeof CatalogCategoriaCategoriaRoute
 }
@@ -1044,6 +1057,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImgRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/academia-file': {
+      id: '/api/public/academia-file'
+      path: '/api/public/academia-file'
+      fullPath: '/api/public/academia-file'
+      preLoaderRoute: typeof ApiPublicAcademiaFileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1131,6 +1151,7 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogTodosRoute: CatalogTodosRoute,
   AcademiaIndexRoute: AcademiaIndexRoute,
   CatalogIndexRoute: CatalogIndexRoute,
+  ApiPublicAcademiaFileRoute: ApiPublicAcademiaFileRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
   CatalogCategoriaCategoriaRoute: CatalogCategoriaCategoriaRoute,
 }

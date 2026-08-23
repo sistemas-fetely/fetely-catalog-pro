@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  assinarPaths,
+  urlsAcademia,
   marcarAula,
   meuProgresso,
   obterModulo,
@@ -101,7 +101,7 @@ function ModuloPage() {
         if (data.modulo.capa_url) paths.push(data.modulo.capa_url);
         for (const a of data.aulas)
           for (const b of a.blocos) if (b.arquivo_url) paths.push(b.arquivo_url);
-        if (paths.length > 0 && alive) setUrls(await assinarPaths(paths));
+        if (paths.length > 0 && alive) setUrls(await urlsAcademia(paths));
       } catch (e) {
         toast.error("Não foi possível abrir o módulo", {
           description: e instanceof Error ? e.message : undefined,
@@ -364,7 +364,7 @@ function BlocoView({
             {bloco.arquivo_nome ?? "Material de apoio"}
           </span>
           <span className="block text-xs text-text-muted">
-            {href ? "Clique para baixar" : "Carregando link..."}
+            {href ? "Clique para abrir ou baixar" : "Carregando link..."}
           </span>
         </span>
         <Download className="h-4 w-4 shrink-0 text-gold" />
