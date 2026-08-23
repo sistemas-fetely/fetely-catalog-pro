@@ -8,6 +8,7 @@ import {
   meuProgresso,
   type ModuloResumo,
 } from "@/lib/academia";
+import { AcademiaFaq } from "@/components/academia/AcademiaFaq";
 import { useAuth } from "@/store/authStore";
 
 export const Route = createFileRoute("/academia/")({
@@ -75,6 +76,8 @@ function AcademiaPage() {
           </Link>
         )}
       </header>
+
+      {user && <AcademiaFaq />}
 
       {modulos === null ? (
         <div className="mt-16 flex justify-center text-sm text-text-muted">

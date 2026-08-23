@@ -92,6 +92,31 @@ export function extrairYoutubeId(url: string): string | null {
   return m ? m[1] : null;
 }
 
+// ------------------------------------------------------------- Descritivo
+
+/** "mm:ss" | "hh:mm:ss" | segundos puros → segundos. */
+export function tempoParaSegundos(t: string): number {
+  const parts = t.trim().split(":").map(Number);
+  if (parts.length === 0 || parts.some((n) => Number.isNaN(n))) return 0;
+  return parts.reduce((acc, p) => acc * 60 + p, 0);
+}
+
+/** Parse do texto do admin: uma linha por segmento, "mm:ss fala". */
+export function parseDescritivo(texto: string): DescritivoSegmento[] {
+  const out: DescritivoSegmento[] = [];
+  for (const line of texto.split(/\r?\n/)) {
+    const m = line.match(/^\s*(\d{1,3}(?::\d{2}){1,2})\s+(.+)$/);
+    if (m) out.push({ tempo: m[1], fala: m[2].trim() });
+  }
+  return out;
+}
+
+export function descritivoParaTexto(
+  seg: DescritivoSegmento[] | null | undefined,
+): string {
+  return (seg ?? []).map((s) => `${s.tempo} ${s.fala}`).join("\n");
+}
+
 // ------------------------------------------------------- Texto rico (markdown-lite)
 // Suporta: # ## ### títulos, **negrito**, *itálico*, - listas, [texto](https://...)
 // O HTML é escapado antes da formatação — seguro contra injeção.
