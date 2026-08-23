@@ -19,6 +19,7 @@ import {
   meuProgresso,
   obterModulo,
   renderRichText,
+  tempoParaSegundos,
   type AulaComBlocos,
   type TreinamentoBloco,
   type TreinamentoModulo,
@@ -26,6 +27,13 @@ import {
 import { useAuth } from "@/store/authStore";
 
 export const Route = createFileRoute("/academia/$moduloId")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    aula: typeof s.aula === "string" ? s.aula : undefined,
+    t:
+      typeof s.t === "string" || typeof s.t === "number"
+        ? String(s.t)
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Academia Fetély — Módulo" },
@@ -37,6 +45,7 @@ export const Route = createFileRoute("/academia/$moduloId")({
 
 function ModuloPage() {
   const { moduloId } = Route.useParams();
+  const search = Route.useSearch();
   const user = useAuth((s) => s.user);
   const [modulo, setModulo] = useState<TreinamentoModulo | null>(null);
   const [aulas, setAulas] = useState<AulaComBlocos[]>([]);
@@ -45,6 +54,9 @@ function ModuloPage() {
   const [progresso, setProgresso] = useState<Set<string>>(new Set());
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [salvando, setSalvando] = useState(false);
+  const [deepSeek, setDeepSeek] = useState<{ blocoId: string; sec: number } | null>(
+    null,
+  );
 
   useEffect(() => {
     let alive = true;
