@@ -682,6 +682,33 @@ export type Database = {
         }
         Relationships: []
       }
+      faq_conhecimento: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          conteudo: string
+          criado_em: string
+          id: string
+          titulo: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          conteudo: string
+          criado_em?: string
+          id?: string
+          titulo: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          conteudo?: string
+          criado_em?: string
+          id?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
       faq_pergunta: {
         Row: {
           criado_em: string
@@ -782,7 +809,7 @@ export type Database = {
           bloco_id: string | null
           embedding: string | null
           id: string
-          modulo_id: string
+          modulo_id: string | null
           origem_tipo: string
           texto: string
           timestamp_video: string | null
@@ -793,7 +820,7 @@ export type Database = {
           bloco_id?: string | null
           embedding?: string | null
           id?: string
-          modulo_id: string
+          modulo_id?: string | null
           origem_tipo: string
           texto: string
           timestamp_video?: string | null
@@ -804,7 +831,7 @@ export type Database = {
           bloco_id?: string | null
           embedding?: string | null
           id?: string
-          modulo_id?: string
+          modulo_id?: string | null
           origem_tipo?: string
           texto?: string
           timestamp_video?: string | null
@@ -2707,6 +2734,7 @@ export type Database = {
           aula_id: string
           conteudo_texto: string | null
           descritivo: Json
+          faq_conhecimento: string | null
           id: string
           ordem: number
           tipo: string
@@ -2718,6 +2746,7 @@ export type Database = {
           aula_id: string
           conteudo_texto?: string | null
           descritivo?: Json
+          faq_conhecimento?: string | null
           id?: string
           ordem?: number
           tipo: string
@@ -2729,6 +2758,7 @@ export type Database = {
           aula_id?: string
           conteudo_texto?: string | null
           descritivo?: Json
+          faq_conhecimento?: string | null
           id?: string
           ordem?: number
           tipo?: string

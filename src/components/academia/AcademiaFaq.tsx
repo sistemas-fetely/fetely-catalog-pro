@@ -105,31 +105,45 @@ export function AcademiaFaq() {
               <ul className="space-y-2">
                 {resultado.fontes.map((f, i) => (
                   <li key={i}>
-                    <Link
-                      to="/academia/$moduloId"
-                      params={{ moduloId: f.modulo_id }}
-                      search={{
-                        aula: f.aula_id ?? undefined,
-                        t: f.timestamp ?? undefined,
-                      }}
-                      className="flex items-start gap-3 rounded-lg border border-border bg-background p-3 transition hover:border-gold/60"
-                    >
-                      <PlayCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium text-text-primary">
-                          {f.modulo_titulo}
-                          {f.aula_titulo ? ` · ${f.aula_titulo}` : ""}
-                          {f.timestamp && (
-                            <span className="ml-2 rounded bg-gold/15 px-1.5 py-0.5 font-mono text-[11px] text-gold">
-                              {f.timestamp}
-                            </span>
-                          )}
+                    {f.modulo_id ? (
+                      <Link
+                        to="/academia/$moduloId"
+                        params={{ moduloId: f.modulo_id }}
+                        search={{
+                          aula: f.aula_id ?? undefined,
+                          t: f.timestamp ?? undefined,
+                        }}
+                        className="flex items-start gap-3 rounded-lg border border-border bg-background p-3 transition hover:border-gold/60"
+                      >
+                        <PlayCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-medium text-text-primary">
+                            {f.modulo_titulo}
+                            {f.aula_titulo ? ` · ${f.aula_titulo}` : ""}
+                            {f.timestamp && (
+                              <span className="ml-2 rounded bg-gold/15 px-1.5 py-0.5 font-mono text-[11px] text-gold">
+                                {f.timestamp}
+                              </span>
+                            )}
+                          </span>
+                          <span className="mt-0.5 block line-clamp-2 text-xs text-text-muted">
+                            {f.trecho}
+                          </span>
                         </span>
-                        <span className="mt-0.5 block line-clamp-2 text-xs text-text-muted">
-                          {f.trecho}
+                      </Link>
+                    ) : (
+                      <div className="flex items-start gap-3 rounded-lg border border-border bg-background p-3">
+                        <PlayCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-medium text-text-primary">
+                            {f.modulo_titulo}
+                          </span>
+                          <span className="mt-0.5 block line-clamp-2 text-xs text-text-muted">
+                            {f.trecho}
+                          </span>
                         </span>
-                      </span>
-                    </Link>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

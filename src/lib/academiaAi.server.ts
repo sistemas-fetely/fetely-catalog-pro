@@ -1,4 +1,5 @@
 // Academia Inteligente — chunking, embeddings e FAQ com IA (SOMENTE servidor).
+// Trechos com modulo_id NULL vêm da base de conhecimento manual (faq_conhecimento).
 // A chave da IA (LOVABLE_API_KEY) nunca sai daqui; o front chama os server fns.
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
@@ -10,7 +11,12 @@ const EMBED_LOTE = 50;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { FaqFonte, FaqPerguntaRow, FaqResposta } from "./academia";
+import type {
+  FaqConhecimentoRow,
+  FaqFonte,
+  FaqPerguntaRow,
+  FaqResposta,
+} from "./academia";
 
 function gatewayKey(): string {
   const key = process.env["LOVABLE_API_KEY"];
@@ -87,10 +93,11 @@ interface BlocoRow {
   tipo: string;
   conteudo_texto: string | null;
   descritivo: { tempo: string; fala: string }[] | null;
+  faq_conhecimento: string | null;
 }
 
 interface ChunkMontado {
-  origem_tipo: "titulo" | "texto" | "descritivo";
+  origem_tipo: "titulo" | "texto" | "descritivo" | "faq";
   aula_id: string | null;
   bloco_id: string | null;
   texto: string;
@@ -149,6 +156,18 @@ function montarChunks(
           });
         }
       }
+      // Conhecimento oculto do bloco: alimenta o FAQ, nunca aparece na aula.
+      if (b.faq_conhecimento) {
+        for (const p of quebrarTexto(b.faq_conhecimento)) {
+          chunks.push({
+            origem_tipo: "faq",
+            aula_id: aula.id,
+            bloco_id: b.id,
+            texto: `${modulo.titulo} · ${aula.titulo} (nota interna): ${p}`,
+            timestamp_video: null,
+          });
+        }
+      }
     }
   }
   return chunks;
@@ -182,7 +201,7 @@ export async function reindexarModulo(
   if (aulaIds.length > 0) {
     const { data: b, error: e3 } = await db
       .from("treinamento_bloco")
-      .select("id,aula_id,tipo,conteudo_texto,descritivo")
+      .select("id,aula_id,tipo,conteudo_texto,descritivo,faq_conhecimento")
       .in("aula_id", aulaIds);
     if (e3) throw new Error(e3.message);
     blocos = b ?? [];
@@ -225,7 +244,111 @@ export async function reindexarTudo(): Promise<{
     const r = await reindexarModulo(m.id as string);
     total += r.chunks;
   }
-  return { modulos: (data ?? []).length, chunks: total };
+  const faq = await reindexarFaqBase();
+  return { modulos: (data ?? []).length, chunks: total + faq.chunks };
+}
+
+// ------------------------------------------- Base de conhecimento manual
+// Entradas soltas (sem módulo/aula) que só alimentam o FAQ. Ficam em kb_chunk
+// com modulo_id NULL e origem_tipo 'faq_manual' — o match as trata como
+// visíveis para todos os perfis.
+
+export interface FaqConhecimentoInput {
+  id?: string;
+  titulo: string;
+  conteudo: string;
+  ativo: boolean;
+}
+
+export async function reindexarFaqBase(): Promise<{ chunks: number }> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const db: any = supabaseAdmin;
+
+  await db.from("kb_chunk").delete().eq("origem_tipo", "faq_manual");
+
+  const { data: itens, error } = await db
+    .from("faq_conhecimento")
+    .select("id,titulo,conteudo")
+    .eq("ativo", true)
+    .order("criado_em", { ascending: true });
+  if (error) throw new Error(error.message);
+
+  const chunks: { texto: string }[] = [];
+  for (const it of itens ?? []) {
+    for (const p of quebrarTexto(`${it.titulo}\n\n${it.conteudo}`)) {
+      chunks.push({ texto: `Base de conhecimento · ${it.titulo}: ${p}` });
+    }
+  }
+  let inseridos = 0;
+  for (let i = 0; i < chunks.length; i += EMBED_LOTE) {
+    const lote = chunks.slice(i, i + EMBED_LOTE);
+    const embs = await embedTexts(lote.map((c) => c.texto));
+    const rows = lote.map((c, j) => ({
+      origem_tipo: "faq_manual",
+      modulo_id: null,
+      aula_id: null,
+      bloco_id: null,
+      texto: c.texto,
+      timestamp_video: null,
+      embedding: JSON.stringify(embs[j]),
+      atualizado_em: new Date().toISOString(),
+    }));
+    const { error: eIns } = await db.from("kb_chunk").insert(rows);
+    if (eIns) throw new Error(eIns.message);
+    inseridos += rows.length;
+  }
+  return { chunks: inseridos };
+}
+
+export async function listarFaqBase(
+  supabase: any,
+): Promise<{ itens: FaqConhecimentoRow[] }> {
+  const { data, error } = await supabase
+    .from("faq_conhecimento")
+    .select("id,titulo,conteudo,ativo,atualizado_em")
+    .order("criado_em", { ascending: false });
+  if (error) throw new Error(error.message);
+  return { itens: (data ?? []) as FaqConhecimentoRow[] };
+}
+
+export async function salvarFaqBase(
+  supabase: any,
+  input: FaqConhecimentoInput,
+): Promise<{ id: string; chunks: number }> {
+  if (input.id) {
+    const { error } = await supabase
+      .from("faq_conhecimento")
+      .update({
+        titulo: input.titulo,
+        conteudo: input.conteudo,
+        ativo: input.ativo,
+      })
+      .eq("id", input.id);
+    if (error) throw new Error(error.message);
+    const r = await reindexarFaqBase();
+    return { id: input.id, chunks: r.chunks };
+  }
+  const { data, error } = await supabase
+    .from("faq_conhecimento")
+    .insert({
+      titulo: input.titulo,
+      conteudo: input.conteudo,
+      ativo: input.ativo,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  const r = await reindexarFaqBase();
+  return { id: data.id as string, chunks: r.chunks };
+}
+
+export async function excluirFaqBase(
+  supabase: any,
+  id: string,
+): Promise<{ chunks: number }> {
+  const { error } = await supabase.from("faq_conhecimento").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  return reindexarFaqBase();
 }
 
 // ------------------------------------------------------------- FAQ
@@ -262,8 +385,10 @@ export async function responderPergunta(
   const lista = (matches ?? []) as any[];
   const relevantes = lista.filter((m) => (m.similaridade ?? 0) >= LIMIAR_SIMILARIDADE);
 
-  // Títulos para citação
-  const moduloIds = [...new Set(lista.map((m) => m.modulo_id as string))];
+  // Títulos para citação (trechos da base manual têm modulo_id NULL)
+  const moduloIds = [
+    ...new Set(lista.map((m) => m.modulo_id as string | null).filter(Boolean)),
+  ] as string[];
   const aulaIds = [
     ...new Set(lista.map((m) => m.aula_id as string | null).filter(Boolean)),
   ] as string[];
@@ -292,8 +417,10 @@ export async function responderPergunta(
       if (seen.has(key)) continue;
       seen.add(key);
       out.push({
-        modulo_id: m.modulo_id,
-        modulo_titulo: modMap.get(m.modulo_id) ?? "Módulo",
+        modulo_id: m.modulo_id ?? null,
+        modulo_titulo: m.modulo_id
+          ? (modMap.get(m.modulo_id) ?? "Módulo")
+          : "Base de conhecimento",
         aula_id: m.aula_id ?? null,
         aula_titulo: m.aula_id ? (aulaMap.get(m.aula_id) ?? null) : null,
         timestamp: m.timestamp_video ?? null,
@@ -319,8 +446,9 @@ export async function responderPergunta(
   } else {
     const contexto = relevantes
       .map((m, i) => {
-        const origem =
-          m.origem_tipo === "descritivo"
+        const origem = !m.modulo_id
+          ? "Base de conhecimento (nota interna do time)"
+          : m.origem_tipo === "descritivo"
             ? `Módulo "${modMap.get(m.modulo_id) ?? ""}" · Aula "${aulaMap.get(m.aula_id) ?? ""}" · vídeo em ${m.timestamp_video}`
             : `Módulo "${modMap.get(m.modulo_id) ?? ""}"${m.aula_id ? ` · Aula "${aulaMap.get(m.aula_id) ?? ""}"` : ""}`;
         return `[${i + 1}] ${origem}\n"${m.texto}"`;
