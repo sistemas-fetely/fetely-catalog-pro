@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   ArrowLeft,
   ArrowDown,
@@ -7,27 +9,32 @@ import {
   FileText,
   Image as ImageIcon,
   Loader2,
+  MessageCircleQuestion,
   Paperclip,
   Pencil,
   Play,
   Plus,
+  RefreshCw,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   assinarPaths,
+  descritivoParaTexto,
   excluirAula,
   excluirBloco,
   excluirModulo,
   extrairYoutubeId,
   listarModulos,
   obterModulo,
+  parseDescritivo,
   salvarAula,
   salvarBloco,
   salvarModulo,
   trocarOrdem,
   uploadAcademia,
   type AulaComBlocos,
+  type FaqPerguntaRow,
   type ModuloResumo,
   type TipoBloco,
   type TreinamentoBloco,
@@ -35,6 +42,11 @@ import {
   type VisibilidadeModulo,
   type StatusModulo,
 } from "@/lib/academia";
+import {
+  listarDuvidasAcademia,
+  reindexAcademiaModulo,
+  reindexAcademiaTudo,
+} from "@/lib/academiaAi.functions";
 import { useAuth } from "@/store/authStore";
 
 export const Route = createFileRoute("/admin/academia")({
