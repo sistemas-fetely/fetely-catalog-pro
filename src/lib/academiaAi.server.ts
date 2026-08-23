@@ -385,8 +385,10 @@ export async function responderPergunta(
   const lista = (matches ?? []) as any[];
   const relevantes = lista.filter((m) => (m.similaridade ?? 0) >= LIMIAR_SIMILARIDADE);
 
-  // Títulos para citação
-  const moduloIds = [...new Set(lista.map((m) => m.modulo_id as string))];
+  // Títulos para citação (trechos da base manual têm modulo_id NULL)
+  const moduloIds = [
+    ...new Set(lista.map((m) => m.modulo_id as string | null).filter(Boolean)),
+  ] as string[];
   const aulaIds = [
     ...new Set(lista.map((m) => m.aula_id as string | null).filter(Boolean)),
   ] as string[];
@@ -415,8 +417,10 @@ export async function responderPergunta(
       if (seen.has(key)) continue;
       seen.add(key);
       out.push({
-        modulo_id: m.modulo_id,
-        modulo_titulo: modMap.get(m.modulo_id) ?? "Módulo",
+        modulo_id: m.modulo_id ?? null,
+        modulo_titulo: m.modulo_id
+          ? (modMap.get(m.modulo_id) ?? "Módulo")
+          : "Base de conhecimento",
         aula_id: m.aula_id ?? null,
         aula_titulo: m.aula_id ? (aulaMap.get(m.aula_id) ?? null) : null,
         timestamp: m.timestamp_video ?? null,
