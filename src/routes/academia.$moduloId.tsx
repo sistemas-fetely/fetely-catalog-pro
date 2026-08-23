@@ -381,3 +381,62 @@ function BlocoView({
   }
   return null;
 }
+
+// Player de vídeo com descritivo (tempos + falas) e seek por timestamp.
+function VideoBloco({
+  bloco,
+  initialSeek,
+}: {
+  bloco: TreinamentoBloco;
+  initialSeek?: number | null;
+}) {
+  const [start, setStart] = useState<number | null>(
+    initialSeek && initialSeek > 0 ? initialSeek : null,
+  );
+  const id = bloco.youtube_id as string;
+  const src =
+    start != null && start > 0
+      ? `https://www.youtube.com/embed/${id}?start=${start}&autoplay=1`
+      : `https://www.youtube.com/embed/${id}`;
+  const descritivo = bloco.descritivo ?? [];
+
+  return (
+    <div>
+      <div className="overflow-hidden rounded-xl border border-border bg-black">
+        <div className="aspect-video w-full">
+          <iframe
+            key={start ?? 0}
+            src={src}
+            title="Vídeo da aula"
+            className="h-full w-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      </div>
+
+      {descritivo.length > 0 && (
+        <div className="mt-3 rounded-xl border border-border bg-surface p-4">
+          <p className="mb-2 text-[11px] uppercase tracking-[0.2em] text-text-muted">
+            Neste vídeo
+          </p>
+          <ul className="space-y-1">
+            {descritivo.map((s, i) => (
+              <li key={i}>
+                <button
+                  onClick={() => setStart(tempoParaSegundos(s.tempo))}
+                  className="flex w-full items-start gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition hover:bg-surface-2"
+                >
+                  <span className="shrink-0 rounded bg-gold/15 px-1.5 py-0.5 font-mono text-[11px] text-gold">
+                    {s.tempo}
+                  </span>
+                  <span className="text-text-secondary">{s.fala}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
