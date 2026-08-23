@@ -36,6 +36,7 @@ import { Route as CommercialRouteImport } from './routes/commercial'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as AcademiaRouteImport } from './routes/academia'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
@@ -55,6 +56,7 @@ import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminGateAbRouteImport } from './routes/admin.gate-ab'
 import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
 import { Route as AdminAccessLogsRouteImport } from './routes/admin.access-logs'
+import { Route as AcademiaModuloIdRouteImport } from './routes/academia.$moduloId'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
 
@@ -193,6 +195,11 @@ const AnalyticsRoute = AnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcademiaRoute = AcademiaRouteImport.update({
+  id: '/academia',
+  path: '/academia',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -288,6 +295,11 @@ const AdminAccessLogsRoute = AdminAccessLogsRouteImport.update({
   path: '/admin/access-logs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcademiaModuloIdRoute = AcademiaModuloIdRouteImport.update({
+  id: '/$moduloId',
+  path: '/$moduloId',
+  getParentRoute: () => AcademiaRoute,
+} as any)
 const CatalogCategoriaCategoriaRoute =
   CatalogCategoriaCategoriaRouteImport.update({
     id: '/catalog/categoria/$categoria',
@@ -302,6 +314,7 @@ const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/academia': typeof AcademiaRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
   '/clientes': typeof ClientesRoute
@@ -329,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/reunioes': typeof ReunioesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
+  '/academia/$moduloId': typeof AcademiaModuloIdRoute
   '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/gate-ab': typeof AdminGateAbRoute
@@ -352,6 +366,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/academia': typeof AcademiaRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
   '/clientes': typeof ClientesRoute
@@ -378,6 +393,7 @@ export interface FileRoutesByTo {
   '/reunioes': typeof ReunioesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
+  '/academia/$moduloId': typeof AcademiaModuloIdRoute
   '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/gate-ab': typeof AdminGateAbRoute
@@ -402,6 +418,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/academia': typeof AcademiaRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
   '/clientes': typeof ClientesRoute
@@ -429,6 +446,7 @@ export interface FileRoutesById {
   '/reunioes': typeof ReunioesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
+  '/academia/$moduloId': typeof AcademiaModuloIdRoute
   '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/gate-ab': typeof AdminGateAbRoute
@@ -454,6 +472,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/academia'
     | '/analytics'
     | '/cart'
     | '/clientes'
@@ -481,6 +500,7 @@ export interface FileRouteTypes {
     | '/reunioes'
     | '/settings'
     | '/stand'
+    | '/academia/$moduloId'
     | '/admin/access-logs'
     | '/admin/cartilhas'
     | '/admin/gate-ab'
@@ -504,6 +524,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/academia'
     | '/analytics'
     | '/cart'
     | '/clientes'
@@ -530,6 +551,7 @@ export interface FileRouteTypes {
     | '/reunioes'
     | '/settings'
     | '/stand'
+    | '/academia/$moduloId'
     | '/admin/access-logs'
     | '/admin/cartilhas'
     | '/admin/gate-ab'
@@ -553,6 +575,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/academia'
     | '/analytics'
     | '/cart'
     | '/clientes'
@@ -580,6 +603,7 @@ export interface FileRouteTypes {
     | '/reunioes'
     | '/settings'
     | '/stand'
+    | '/academia/$moduloId'
     | '/admin/access-logs'
     | '/admin/cartilhas'
     | '/admin/gate-ab'
@@ -604,6 +628,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcademiaRoute: typeof AcademiaRouteWithChildren
   AnalyticsRoute: typeof AnalyticsRoute
   CartRoute: typeof CartRoute
   ClientesRoute: typeof ClientesRoute
@@ -837,6 +862,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/academia': {
+      id: '/academia'
+      path: '/academia'
+      fullPath: '/academia'
+      preLoaderRoute: typeof AcademiaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -970,6 +1002,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAccessLogsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/academia/$moduloId': {
+      id: '/academia/$moduloId'
+      path: '/$moduloId'
+      fullPath: '/academia/$moduloId'
+      preLoaderRoute: typeof AcademiaModuloIdRouteImport
+      parentRoute: typeof AcademiaRoute
+    }
     '/catalog/categoria/$categoria': {
       id: '/catalog/categoria/$categoria'
       path: '/catalog/categoria/$categoria'
@@ -986,6 +1025,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AcademiaRouteChildren {
+  AcademiaModuloIdRoute: typeof AcademiaModuloIdRoute
+}
+
+const AcademiaRouteChildren: AcademiaRouteChildren = {
+  AcademiaModuloIdRoute: AcademiaModuloIdRoute,
+}
+
+const AcademiaRouteWithChildren = AcademiaRoute._addFileChildren(
+  AcademiaRouteChildren,
+)
 
 interface PortalRouteChildren {
   PortalContaRoute: typeof PortalContaRoute
@@ -1030,6 +1081,7 @@ const StandRouteWithChildren = StandRoute._addFileChildren(StandRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcademiaRoute: AcademiaRouteWithChildren,
   AnalyticsRoute: AnalyticsRoute,
   CartRoute: CartRoute,
   ClientesRoute: ClientesRoute,
