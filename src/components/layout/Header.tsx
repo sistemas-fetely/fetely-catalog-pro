@@ -155,6 +155,11 @@ export function Header() {
                   Clientes
                 </Link>
               )}
+              {temPermissao("academia", "ver") && (
+                <Link to="/academia" className={navLinkClass(pathname.startsWith("/academia"))}>
+                  Academia
+                </Link>
+              )}
             </nav>
           )}
 
