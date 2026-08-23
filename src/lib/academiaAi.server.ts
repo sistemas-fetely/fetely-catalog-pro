@@ -446,8 +446,9 @@ export async function responderPergunta(
   } else {
     const contexto = relevantes
       .map((m, i) => {
-        const origem =
-          m.origem_tipo === "descritivo"
+        const origem = !m.modulo_id
+          ? "Base de conhecimento (nota interna do time)"
+          : m.origem_tipo === "descritivo"
             ? `Módulo "${modMap.get(m.modulo_id) ?? ""}" · Aula "${aulaMap.get(m.aula_id) ?? ""}" · vídeo em ${m.timestamp_video}`
             : `Módulo "${modMap.get(m.modulo_id) ?? ""}"${m.aula_id ? ` · Aula "${aulaMap.get(m.aula_id) ?? ""}"` : ""}`;
         return `[${i + 1}] ${origem}\n"${m.texto}"`;
