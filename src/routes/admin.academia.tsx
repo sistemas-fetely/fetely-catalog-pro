@@ -928,6 +928,21 @@ function VideoEditor({
       toast.error("Cole um link válido do YouTube");
       return;
     }
+    const mudouDesc = descritivo !== descOriginal;
+    const linhasTexto = descritivo.split(/\r?\n/).filter((l) => l.trim()).length;
+    let parsed: ReturnType<typeof parseDescritivo> | undefined;
+    if (mudouDesc) {
+      parsed = parseDescritivo(descritivo);
+      // Texto preenchido mas nenhuma linha no formato "mm:ss fala":
+      // salvaria um descritivo vazio e o selo de "não salvo" ficaria preso.
+      if (linhasTexto > 0 && parsed.length === 0) {
+        toast.error("Nenhuma linha tem tempo válido", {
+          description:
+            "Cada linha precisa começar com mm:ss — ex.: 02:35 Como cadastrar o cliente.",
+        });
+        return;
+      }
+    }
     const patch: {
       id: string;
       aula_id: string;
@@ -936,11 +951,31 @@ function VideoEditor({
       descritivo?: ReturnType<typeof parseDescritivo>;
     } = { id: bloco.id, aula_id: bloco.aula_id, tipo: "video" };
     if (url !== urlOriginal) patch.youtube_id = id ?? "";
-    if (descritivo !== descOriginal) patch.descritivo = parseDescritivo(descritivo);
+    if (parsed !== undefined) patch.descritivo = parsed;
     if (patch.youtube_id === undefined && patch.descritivo === undefined) return;
     setSalvando(true);
     try {
       await salvarBloco(patch);
+      // Sincroniza o estado local com o que foi realmente salvo — sem isso o
+      // texto digitado (com linhas ignoradas) nunca bate com o descritivo
+      // normalizado vindo do banco e o selo "não salvas" nunca some.
+      if (patch.youtube_id !== undefined) {
+        setUrl(
+          patch.youtube_id
+            ? `https://www.youtube.com/watch?v=${patch.youtube_id}`
+            : "",
+        );
+      }
+      if (parsed !== undefined) {
+        setDescritivo(descritivoParaTexto(parsed));
+        const ignoradas = linhasTexto - parsed.length;
+        if (ignoradas > 0) {
+          toast.warning(`${ignoradas} linha(s) ignorada(s)`, {
+            description:
+              "Linhas sem tempo no formato mm:ss não entram no descritivo.",
+          });
+        }
+      }
       toast.success("Alterações salvas — base do FAQ atualizada");
       if (patch.descritivo !== undefined) onIndex?.();
       await onChanged();
