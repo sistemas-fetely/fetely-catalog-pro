@@ -900,12 +900,17 @@ function BlocoCard({
 function VideoEditor({
   bloco,
   onChanged,
+  onIndex,
 }: {
   bloco: TreinamentoBloco;
   onChanged: () => Promise<void>;
+  onIndex?: () => void;
 }) {
   const [url, setUrl] = useState(
     bloco.youtube_id ? `https://www.youtube.com/watch?v=${bloco.youtube_id}` : "",
+  );
+  const [descritivo, setDescritivo] = useState(
+    descritivoParaTexto(bloco.descritivo),
   );
   const id = extrairYoutubeId(url);
 
@@ -921,6 +926,25 @@ function VideoEditor({
       await onChanged();
     } catch (e) {
       toast.error("Falha ao salvar vídeo", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
+  async function salvarDescritivo() {
+    if (descritivo === descritivoParaTexto(bloco.descritivo)) return;
+    try {
+      await salvarBloco({
+        id: bloco.id,
+        aula_id: bloco.aula_id,
+        tipo: "video",
+        descritivo: parseDescritivo(descritivo),
+      });
+      toast.success("Descritivo salvo — base do FAQ atualizada");
+      onIndex?.();
+      await onChanged();
+    } catch (e) {
+      toast.error("Falha ao salvar descritivo", {
         description: e instanceof Error ? e.message : undefined,
       });
     }
@@ -942,6 +966,23 @@ function VideoEditor({
           className="h-24 rounded-md border border-border object-cover"
         />
       )}
+      <label className="block">
+        <span className="text-[11px] uppercase tracking-wider text-text-muted">
+          Descritivo do vídeo (alimenta o FAQ)
+        </span>
+        <textarea
+          value={descritivo}
+          onChange={(e) => setDescritivo(e.target.value)}
+          onBlur={() => void salvarDescritivo()}
+          rows={5}
+          placeholder={"Uma linha por trecho: mm:ss fala\n00:00 Abertura e apresentação\n02:35 Como cadastrar o cliente\n05:10 Aplicando o desconto"}
+          className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-xs outline-none focus:border-gold"
+        />
+        <span className="text-[10px] text-text-muted">
+          Formato: <span className="font-mono">mm:ss texto da fala</span> — um
+          por linha. Clicável para o aluno e usado nas respostas do FAQ.
+        </span>
+      </label>
     </div>
   );
 }
@@ -949,9 +990,11 @@ function VideoEditor({
 function TextoEditor({
   bloco,
   onChanged,
+  onIndex,
 }: {
   bloco: TreinamentoBloco;
   onChanged: () => Promise<void>;
+  onIndex?: () => void;
 }) {
   const [texto, setTexto] = useState(bloco.conteudo_texto ?? "");
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -978,6 +1021,7 @@ function TextoEditor({
         conteudo_texto: texto,
       });
       toast.success("Texto salvo");
+      onIndex?.();
       await onChanged();
     } catch (e) {
       toast.error("Falha ao salvar texto", {
