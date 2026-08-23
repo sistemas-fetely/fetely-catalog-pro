@@ -6,6 +6,7 @@ import {
   ArrowUp,
   FileText,
   Image as ImageIcon,
+  Lightbulb,
   Loader2,
   MessageCircleQuestion,
   Paperclip,
@@ -34,6 +35,7 @@ import {
   trocarOrdem,
   uploadAcademia,
   type AulaComBlocos,
+  type FaqConhecimentoRow,
   type FaqPerguntaRow,
   type ModuloResumo,
   type TipoBloco,
@@ -43,9 +45,12 @@ import {
   type StatusModulo,
 } from "@/lib/academia";
 import {
+  excluirFaqConhecimento,
   listarDuvidasAcademia,
+  listarFaqConhecimento,
   reindexAcademiaModulo,
   reindexAcademiaTudo,
+  salvarFaqConhecimento,
 } from "@/lib/academiaAi.functions";
 import { useAuth } from "@/store/authStore";
 
@@ -901,7 +906,94 @@ function BlocoCard({
           <ArquivoEditor bloco={bloco} onChanged={onChanged} />
         )}
       </div>
+      <FaqBlocoField bloco={bloco} onChanged={onChanged} onIndex={onIndex} />
     </div>
+  );
+}
+
+// Campo de conhecimento oculto: alimenta o FAQ com IA, nunca aparece na aula.
+function FaqBlocoField({
+  bloco,
+  onChanged,
+  onIndex,
+}: {
+  bloco: TreinamentoBloco;
+  onChanged: () => Promise<void>;
+  onIndex?: () => void;
+}) {
+  const [salvo, setSalvo] = useState(bloco.faq_conhecimento ?? "");
+  const [texto, setTexto] = useState(bloco.faq_conhecimento ?? "");
+  const [salvando, setSalvando] = useState(false);
+  const sujo = texto !== salvo;
+
+  async function salvar() {
+    if (!sujo || salvando) return;
+    setSalvando(true);
+    try {
+      await salvarBloco({
+        id: bloco.id,
+        aula_id: bloco.aula_id,
+        tipo: bloco.tipo,
+        faq_conhecimento: texto,
+      });
+      setSalvo(texto);
+      toast.success("Conhecimento do FAQ salvo — base atualizada");
+      onIndex?.();
+      await onChanged();
+    } catch (e) {
+      toast.error("Falha ao salvar conhecimento", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <details className="mt-2 rounded-md border border-dashed border-border bg-background/50 px-3 py-2">
+      <summary className="cursor-pointer select-none text-[11px] uppercase tracking-wider text-text-muted hover:text-gold">
+        Conhecimento para o FAQ (invisível ao aluno)
+        {salvo.trim() && <span className="ml-2 text-gold">●</span>}
+      </summary>
+      <div className="mt-2 space-y-1.5">
+        <textarea
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          rows={3}
+          placeholder="Regras, exceções e respostas prontas sobre este conteúdo. Esse texto NÃO aparece na aula — só alimenta as respostas do FAQ."
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+        />
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => void salvar()}
+            disabled={salvando || !sujo}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11px] font-semibold uppercase tracking-wider transition ${
+              sujo
+                ? "bg-gold text-background hover:bg-gold-light"
+                : "cursor-default border border-border text-text-muted"
+            }`}
+          >
+            {salvando ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Save className="h-3 w-3" />
+            )}
+            {salvando ? "Salvando..." : "Salvar FAQ"}
+          </button>
+          <span
+            className={`text-[10px] uppercase tracking-wider ${
+              sujo ? "font-medium text-gold" : "text-text-muted"
+            }`}
+          >
+            {sujo
+              ? "Não salvo"
+              : salvo.trim()
+                ? "Alimentando o FAQ"
+                : "Vazio"}
+          </span>
+        </div>
+      </div>
+    </details>
   );
 }
 
