@@ -48,8 +48,9 @@ export function AcademiaFaq() {
         <h2 className="font-display text-xl">Perguntas</h2>
       </div>
       <p className="mt-1 text-sm text-text-secondary">
-        Tire sua dúvida em linguagem natural — a resposta vem do conteúdo
-        publicado na Academia, com indicação do vídeo e do minuto exato.
+        Inteligência artificial alimentada pela base de conhecimento da
+        Academia — respostas estruturadas, com fonte do vídeo e do minuto
+        exato.
       </p>
 
       <div className="mt-4 flex gap-2">
@@ -78,8 +79,9 @@ export function AcademiaFaq() {
       </div>
 
       {carregando && (
-        <p className="mt-4 text-sm text-text-muted">
-          Buscando nos treinamentos...
+        <p className="mt-4 inline-flex items-center gap-2 text-sm text-text-muted">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          Consultando a base de conhecimento...
         </p>
       )}
 
