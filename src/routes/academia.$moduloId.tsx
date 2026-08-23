@@ -364,7 +364,7 @@ function BlocoView({
             {bloco.arquivo_nome ?? "Material de apoio"}
           </span>
           <span className="block text-xs text-text-muted">
-            {href ? "Clique para baixar" : "Carregando link..."}
+            {href ? "Clique para abrir ou baixar" : "Carregando link..."}
           </span>
         </span>
         <Download className="h-4 w-4 shrink-0 text-gold" />
