@@ -1022,7 +1022,9 @@ function TextoEditor({
   onIndex?: () => void;
 }) {
   const [texto, setTexto] = useState(bloco.conteudo_texto ?? "");
+  const [salvando, setSalvando] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
+  const sujo = texto !== (bloco.conteudo_texto ?? "");
 
   function inserir(prefix: string, suffix = "") {
     const el = ref.current;
@@ -1037,7 +1039,8 @@ function TextoEditor({
   }
 
   async function salvar() {
-    if (texto === (bloco.conteudo_texto ?? "")) return;
+    if (!sujo || salvando) return;
+    setSalvando(true);
     try {
       await salvarBloco({
         id: bloco.id,
@@ -1052,6 +1055,8 @@ function TextoEditor({
       toast.error("Falha ao salvar texto", {
         description: e instanceof Error ? e.message : undefined,
       });
+    } finally {
+      setSalvando(false);
     }
   }
 
@@ -1074,9 +1079,22 @@ function TextoEditor({
             {b.label}
           </button>
         ))}
-        <span className="ml-auto self-center text-[10px] text-text-muted">
-          Salva ao sair do campo
-        </span>
+        <button
+          onClick={() => void salvar()}
+          disabled={salvando || !sujo}
+          className={`ml-auto inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11px] font-semibold uppercase tracking-wider transition ${
+            sujo
+              ? "bg-gold text-background hover:bg-gold-light"
+              : "cursor-default border border-border text-text-muted"
+          }`}
+        >
+          {salvando ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Save className="h-3 w-3" />
+          )}
+          {salvando ? "Salvando..." : "Salvar texto"}
+        </button>
       </div>
       <textarea
         ref={ref}
@@ -1087,6 +1105,15 @@ function TextoEditor({
         placeholder="Escreva o conteúdo... Use ## título, **negrito**, *itálico*, - lista, [texto](https://link)"
         className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm outline-none focus:border-gold"
       />
+      <p
+        className={`text-[10px] uppercase tracking-wider ${
+          sujo ? "font-medium text-gold" : "text-text-muted"
+        }`}
+      >
+        {sujo
+          ? "Há alterações não salvas — clique em Salvar texto (ou saia do campo)."
+          : "Tudo salvo."}
+      </p>
     </div>
   );
 }
