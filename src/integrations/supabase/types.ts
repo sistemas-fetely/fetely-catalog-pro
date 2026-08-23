@@ -2583,6 +2583,151 @@ export type Database = {
           },
         ]
       }
+      treinamento_aula: {
+        Row: {
+          id: string
+          modulo_id: string
+          ordem: number
+          titulo: string
+        }
+        Insert: {
+          id?: string
+          modulo_id: string
+          ordem?: number
+          titulo: string
+        }
+        Update: {
+          id?: string
+          modulo_id?: string
+          ordem?: number
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treinamento_aula_modulo_id_fkey"
+            columns: ["modulo_id"]
+            isOneToOne: false
+            referencedRelation: "treinamento_modulo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treinamento_bloco: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_url: string | null
+          aula_id: string
+          conteudo_texto: string | null
+          id: string
+          ordem: number
+          tipo: string
+          youtube_id: string | null
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          aula_id: string
+          conteudo_texto?: string | null
+          id?: string
+          ordem?: number
+          tipo: string
+          youtube_id?: string | null
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          aula_id?: string
+          conteudo_texto?: string | null
+          id?: string
+          ordem?: number
+          tipo?: string
+          youtube_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treinamento_bloco_aula_id_fkey"
+            columns: ["aula_id"]
+            isOneToOne: false
+            referencedRelation: "treinamento_aula"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treinamento_modulo: {
+        Row: {
+          capa_url: string | null
+          criado_em: string
+          criado_por: string | null
+          descricao: string | null
+          id: string
+          ordem: number
+          status: string
+          titulo: string
+          visibilidade: string
+        }
+        Insert: {
+          capa_url?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          ordem?: number
+          status?: string
+          titulo: string
+          visibilidade?: string
+        }
+        Update: {
+          capa_url?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          ordem?: number
+          status?: string
+          titulo?: string
+          visibilidade?: string
+        }
+        Relationships: []
+      }
+      treinamento_progresso: {
+        Row: {
+          aula_id: string
+          concluida: boolean
+          concluida_em: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          aula_id: string
+          concluida?: boolean
+          concluida_em?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          aula_id?: string
+          concluida?: boolean
+          concluida_em?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treinamento_progresso_aula_id_fkey"
+            columns: ["aula_id"]
+            isOneToOne: false
+            referencedRelation: "treinamento_aula"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treinamento_progresso_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
