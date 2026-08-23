@@ -30,6 +30,11 @@ export interface TreinamentoAula {
   ordem: number;
 }
 
+export interface DescritivoSegmento {
+  tempo: string; // "mm:ss" ou "hh:mm:ss"
+  fala: string;
+}
+
 export interface TreinamentoBloco {
   id: string;
   aula_id: string;
@@ -39,6 +44,33 @@ export interface TreinamentoBloco {
   youtube_id: string | null;
   arquivo_url: string | null; // path no bucket
   arquivo_nome: string | null;
+  descritivo: DescritivoSegmento[] | null; // só blocos de vídeo
+}
+
+// ------------------------------------------------------------- FAQ (tipos)
+
+export interface FaqFonte {
+  modulo_id: string;
+  modulo_titulo: string;
+  aula_id: string | null;
+  aula_titulo: string | null;
+  timestamp: string | null;
+  trecho: string;
+}
+
+export interface FaqResposta {
+  resposta: string;
+  encontrou: boolean;
+  fontes: FaqFonte[];
+}
+
+export interface FaqPerguntaRow {
+  id: string;
+  pergunta: string;
+  resposta: string | null;
+  encontrou_resposta: boolean;
+  criado_em: string;
+  usuario_nome: string | null;
 }
 
 export interface AulaComBlocos extends TreinamentoAula {
