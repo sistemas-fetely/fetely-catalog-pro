@@ -201,7 +201,7 @@ export function renderRichText(src: string): string {
       out.push(`<p class="my-1 leading-relaxed">${inlineMd(line)}</p>`);
     }
   }
-  if (inList) out.push("</ul>");
+  fecharListas();
   return out.join("");
 }
 
