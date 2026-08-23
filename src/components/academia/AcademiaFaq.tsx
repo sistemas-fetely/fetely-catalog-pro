@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { perguntarAcademia } from "@/lib/academiaAi.functions";
+import { renderRichText } from "@/lib/academia";
 import type { FaqResposta } from "@/lib/academia";
 
 export function AcademiaFaq() {
@@ -90,9 +91,12 @@ export function AcademiaFaq() {
                 <AlertCircle className="h-3.5 w-3.5" /> Sem conteúdo direto
               </p>
             )}
-            <p className="whitespace-pre-line text-sm leading-relaxed text-text-primary">
-              {resultado.resposta}
-            </p>
+            <div
+              className="text-sm leading-relaxed text-text-primary [&_strong]:font-bold [&_h4]:text-gold"
+              dangerouslySetInnerHTML={{
+                __html: renderRichText(resultado.resposta),
+              }}
+            />
           </div>
 
           {resultado.fontes.length > 0 && (
