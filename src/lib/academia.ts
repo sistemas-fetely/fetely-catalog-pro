@@ -30,6 +30,11 @@ export interface TreinamentoAula {
   ordem: number;
 }
 
+export interface DescritivoSegmento {
+  tempo: string; // "mm:ss" ou "hh:mm:ss"
+  fala: string;
+}
+
 export interface TreinamentoBloco {
   id: string;
   aula_id: string;
@@ -39,6 +44,33 @@ export interface TreinamentoBloco {
   youtube_id: string | null;
   arquivo_url: string | null; // path no bucket
   arquivo_nome: string | null;
+  descritivo: DescritivoSegmento[] | null; // só blocos de vídeo
+}
+
+// ------------------------------------------------------------- FAQ (tipos)
+
+export interface FaqFonte {
+  modulo_id: string;
+  modulo_titulo: string;
+  aula_id: string | null;
+  aula_titulo: string | null;
+  timestamp: string | null;
+  trecho: string;
+}
+
+export interface FaqResposta {
+  resposta: string;
+  encontrou: boolean;
+  fontes: FaqFonte[];
+}
+
+export interface FaqPerguntaRow {
+  id: string;
+  pergunta: string;
+  resposta: string | null;
+  encontrou_resposta: boolean;
+  criado_em: string;
+  usuario_nome: string | null;
 }
 
 export interface AulaComBlocos extends TreinamentoAula {
@@ -58,6 +90,31 @@ export function extrairYoutubeId(url: string): string | null {
     /(?:youtube\.com\/(?:watch\?[^#]*v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,20})/,
   );
   return m ? m[1] : null;
+}
+
+// ------------------------------------------------------------- Descritivo
+
+/** "mm:ss" | "hh:mm:ss" | segundos puros → segundos. */
+export function tempoParaSegundos(t: string): number {
+  const parts = t.trim().split(":").map(Number);
+  if (parts.length === 0 || parts.some((n) => Number.isNaN(n))) return 0;
+  return parts.reduce((acc, p) => acc * 60 + p, 0);
+}
+
+/** Parse do texto do admin: uma linha por segmento, "mm:ss fala". */
+export function parseDescritivo(texto: string): DescritivoSegmento[] {
+  const out: DescritivoSegmento[] = [];
+  for (const line of texto.split(/\r?\n/)) {
+    const m = line.match(/^\s*(\d{1,3}(?::\d{2}){1,2})\s+(.+)$/);
+    if (m) out.push({ tempo: m[1], fala: m[2].trim() });
+  }
+  return out;
+}
+
+export function descritivoParaTexto(
+  seg: DescritivoSegmento[] | null | undefined,
+): string {
+  return (seg ?? []).map((s) => `${s.tempo} ${s.fala}`).join("\n");
 }
 
 // ------------------------------------------------------- Texto rico (markdown-lite)

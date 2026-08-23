@@ -19,6 +19,7 @@ import {
   meuProgresso,
   obterModulo,
   renderRichText,
+  tempoParaSegundos,
   type AulaComBlocos,
   type TreinamentoBloco,
   type TreinamentoModulo,
@@ -26,6 +27,13 @@ import {
 import { useAuth } from "@/store/authStore";
 
 export const Route = createFileRoute("/academia/$moduloId")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    aula: typeof s.aula === "string" ? s.aula : undefined,
+    t:
+      typeof s.t === "string" || typeof s.t === "number"
+        ? String(s.t)
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Academia Fetély — Módulo" },
@@ -37,6 +45,7 @@ export const Route = createFileRoute("/academia/$moduloId")({
 
 function ModuloPage() {
   const { moduloId } = Route.useParams();
+  const search = Route.useSearch();
   const user = useAuth((s) => s.user);
   const [modulo, setModulo] = useState<TreinamentoModulo | null>(null);
   const [aulas, setAulas] = useState<AulaComBlocos[]>([]);
@@ -45,6 +54,9 @@ function ModuloPage() {
   const [progresso, setProgresso] = useState<Set<string>>(new Set());
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [salvando, setSalvando] = useState(false);
+  const [deepSeek, setDeepSeek] = useState<{ blocoId: string; sec: number } | null>(
+    null,
+  );
 
   useEffect(() => {
     let alive = true;
@@ -58,13 +70,31 @@ function ModuloPage() {
         }
         setModulo(data.modulo);
         setAulas(data.aulas);
+        // Deep link vindo do FAQ: abre a aula certa e posiciona o vídeo.
+        let deepLinked = false;
+        if (search.aula) {
+          const idx = data.aulas.findIndex((a) => a.id === search.aula);
+          if (idx >= 0) {
+            deepLinked = true;
+            setSelIdx(idx);
+            if (search.t) {
+              const sec = tempoParaSegundos(search.t);
+              const vb = data.aulas[idx].blocos.find(
+                (b) => b.tipo === "video" && b.youtube_id,
+              );
+              if (vb) setDeepSeek({ blocoId: vb.id, sec });
+            }
+          }
+        }
         if (user) {
           const prog = await meuProgresso(user.id);
           if (!alive) return;
           setProgresso(prog);
-          // Abre na primeira aula não concluída
-          const firstOpen = data.aulas.findIndex((a) => !prog.has(a.id));
-          setSelIdx(firstOpen >= 0 ? firstOpen : 0);
+          // Abre na primeira aula não concluída (exceto quando veio deep link)
+          if (!deepLinked) {
+            const firstOpen = data.aulas.findIndex((a) => !prog.has(a.id));
+            setSelIdx(firstOpen >= 0 ? firstOpen : 0);
+          }
         }
         // Assina capa + todos os arquivos dos blocos
         const paths: string[] = [];
@@ -226,7 +256,12 @@ function ModuloPage() {
                     </p>
                   )}
                   {aula.blocos.map((b) => (
-                    <BlocoView key={b.id} bloco={b} urls={urls} />
+                    <BlocoView
+                      key={b.id}
+                      bloco={b}
+                      urls={urls}
+                      seek={deepSeek?.blocoId === b.id ? deepSeek.sec : null}
+                    />
                   ))}
                 </div>
 
@@ -273,24 +308,14 @@ function ModuloPage() {
 function BlocoView({
   bloco,
   urls,
+  seek,
 }: {
   bloco: TreinamentoBloco;
   urls: Record<string, string>;
+  seek?: number | null;
 }) {
   if (bloco.tipo === "video" && bloco.youtube_id) {
-    return (
-      <div className="overflow-hidden rounded-xl border border-border bg-black">
-        <div className="aspect-video w-full">
-          <iframe
-            src={`https://www.youtube.com/embed/${bloco.youtube_id}`}
-            title="Vídeo da aula"
-            className="h-full w-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      </div>
-    );
+    return <VideoBloco bloco={bloco} initialSeek={seek ?? null} />;
   }
 
   if (bloco.tipo === "texto" && bloco.conteudo_texto) {
@@ -355,4 +380,63 @@ function BlocoView({
     );
   }
   return null;
+}
+
+// Player de vídeo com descritivo (tempos + falas) e seek por timestamp.
+function VideoBloco({
+  bloco,
+  initialSeek,
+}: {
+  bloco: TreinamentoBloco;
+  initialSeek?: number | null;
+}) {
+  const [start, setStart] = useState<number | null>(
+    initialSeek && initialSeek > 0 ? initialSeek : null,
+  );
+  const id = bloco.youtube_id as string;
+  const src =
+    start != null && start > 0
+      ? `https://www.youtube.com/embed/${id}?start=${start}&autoplay=1`
+      : `https://www.youtube.com/embed/${id}`;
+  const descritivo = bloco.descritivo ?? [];
+
+  return (
+    <div>
+      <div className="overflow-hidden rounded-xl border border-border bg-black">
+        <div className="aspect-video w-full">
+          <iframe
+            key={start ?? 0}
+            src={src}
+            title="Vídeo da aula"
+            className="h-full w-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      </div>
+
+      {descritivo.length > 0 && (
+        <div className="mt-3 rounded-xl border border-border bg-surface p-4">
+          <p className="mb-2 text-[11px] uppercase tracking-[0.2em] text-text-muted">
+            Neste vídeo
+          </p>
+          <ul className="space-y-1">
+            {descritivo.map((s, i) => (
+              <li key={i}>
+                <button
+                  onClick={() => setStart(tempoParaSegundos(s.tempo))}
+                  className="flex w-full items-start gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition hover:bg-surface-2"
+                >
+                  <span className="shrink-0 rounded bg-gold/15 px-1.5 py-0.5 font-mono text-[11px] text-gold">
+                    {s.tempo}
+                  </span>
+                  <span className="text-text-secondary">{s.fala}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }

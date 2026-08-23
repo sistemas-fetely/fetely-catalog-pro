@@ -8,6 +8,7 @@ import {
   meuProgresso,
   type ModuloResumo,
 } from "@/lib/academia";
+import { AcademiaFaq } from "@/components/academia/AcademiaFaq";
 import { useAuth } from "@/store/authStore";
 
 export const Route = createFileRoute("/academia/")({
@@ -76,6 +77,8 @@ function AcademiaPage() {
         )}
       </header>
 
+      {user && <AcademiaFaq />}
+
       {modulos === null ? (
         <div className="mt-16 flex justify-center text-sm text-text-muted">
           Carregando treinamentos...
@@ -127,6 +130,7 @@ function ModuloCard({
     <Link
       to="/academia/$moduloId"
       params={{ moduloId: modulo.id }}
+      search={{ aula: undefined, t: undefined }}
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-surface transition hover:border-gold/60"
     >
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface-2">

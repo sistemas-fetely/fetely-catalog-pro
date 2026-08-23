@@ -682,6 +682,36 @@ export type Database = {
         }
         Relationships: []
       }
+      faq_pergunta: {
+        Row: {
+          criado_em: string
+          encontrou_resposta: boolean
+          fontes: Json
+          id: string
+          pergunta: string
+          resposta: string | null
+          user_id: string | null
+        }
+        Insert: {
+          criado_em?: string
+          encontrou_resposta?: boolean
+          fontes?: Json
+          id?: string
+          pergunta: string
+          resposta?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          criado_em?: string
+          encontrou_resposta?: boolean
+          fontes?: Json
+          id?: string
+          pergunta?: string
+          resposta?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       feature_flags: {
         Row: {
           descricao: string | null
@@ -744,6 +774,64 @@ export type Database = {
           nome?: string
         }
         Relationships: []
+      }
+      kb_chunk: {
+        Row: {
+          atualizado_em: string
+          aula_id: string | null
+          bloco_id: string | null
+          embedding: string | null
+          id: string
+          modulo_id: string
+          origem_tipo: string
+          texto: string
+          timestamp_video: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          aula_id?: string | null
+          bloco_id?: string | null
+          embedding?: string | null
+          id?: string
+          modulo_id: string
+          origem_tipo: string
+          texto: string
+          timestamp_video?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          aula_id?: string | null
+          bloco_id?: string | null
+          embedding?: string | null
+          id?: string
+          modulo_id?: string
+          origem_tipo?: string
+          texto?: string
+          timestamp_video?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_chunk_aula_id_fkey"
+            columns: ["aula_id"]
+            isOneToOne: false
+            referencedRelation: "treinamento_aula"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_chunk_bloco_id_fkey"
+            columns: ["bloco_id"]
+            isOneToOne: false
+            referencedRelation: "treinamento_bloco"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_chunk_modulo_id_fkey"
+            columns: ["modulo_id"]
+            isOneToOne: false
+            referencedRelation: "treinamento_modulo"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lead_form_rascunho: {
         Row: {
@@ -2618,6 +2706,7 @@ export type Database = {
           arquivo_url: string | null
           aula_id: string
           conteudo_texto: string | null
+          descritivo: Json
           id: string
           ordem: number
           tipo: string
@@ -2628,6 +2717,7 @@ export type Database = {
           arquivo_url?: string | null
           aula_id: string
           conteudo_texto?: string | null
+          descritivo?: Json
           id?: string
           ordem?: number
           tipo: string
@@ -2638,6 +2728,7 @@ export type Database = {
           arquivo_url?: string | null
           aula_id?: string
           conteudo_texto?: string | null
+          descritivo?: Json
           id?: string
           ordem?: number
           tipo?: string
@@ -2930,6 +3021,19 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      match_kb_chunks: {
+        Args: { p_embedding: string; p_limit?: number; p_ver_interno?: boolean }
+        Returns: {
+          aula_id: string
+          bloco_id: string
+          id: string
+          modulo_id: string
+          origem_tipo: string
+          similaridade: number
+          texto: string
+          timestamp_video: string
+        }[]
       }
       next_cotacao_id: { Args: never; Returns: string }
       next_order_id: { Args: never; Returns: string }

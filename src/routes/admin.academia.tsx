@@ -7,27 +7,32 @@ import {
   FileText,
   Image as ImageIcon,
   Loader2,
+  MessageCircleQuestion,
   Paperclip,
   Pencil,
   Play,
   Plus,
+  RefreshCw,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   assinarPaths,
+  descritivoParaTexto,
   excluirAula,
   excluirBloco,
   excluirModulo,
   extrairYoutubeId,
   listarModulos,
   obterModulo,
+  parseDescritivo,
   salvarAula,
   salvarBloco,
   salvarModulo,
   trocarOrdem,
   uploadAcademia,
   type AulaComBlocos,
+  type FaqPerguntaRow,
   type ModuloResumo,
   type TipoBloco,
   type TreinamentoBloco,
@@ -35,6 +40,11 @@ import {
   type VisibilidadeModulo,
   type StatusModulo,
 } from "@/lib/academia";
+import {
+  listarDuvidasAcademia,
+  reindexAcademiaModulo,
+  reindexAcademiaTudo,
+} from "@/lib/academiaAi.functions";
 import { useAuth } from "@/store/authStore";
 
 export const Route = createFileRoute("/admin/academia")({
@@ -54,6 +64,23 @@ function AdminAcademiaPage() {
   const isAdmin = useAuth((s) => s.isAdminOrMaster)();
   const [modulos, setModulos] = useState<ModuloResumo[] | null>(null);
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [reindexando, setReindexando] = useState(false);
+
+  async function reindexarTudoClick() {
+    setReindexando(true);
+    try {
+      const r = await reindexAcademiaTudo();
+      toast.success(
+        `FAQ reindexado: ${r.chunks} trechos em ${r.modulos} módulo(s)`,
+      );
+    } catch (e) {
+      toast.error("Falha ao reindexar a base do FAQ", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setReindexando(false);
+    }
+  }
 
   const recarregar = useCallback(async () => {
     try {
@@ -153,12 +180,26 @@ function AdminAcademiaPage() {
             Crie módulos, organize aulas e publique para o time.
           </p>
         </div>
-        <button
-          onClick={novoModulo}
-          className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-[0.15em] text-background hover:bg-gold-light"
-        >
-          <Plus className="h-4 w-4" /> Novo módulo
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => void reindexarTudoClick()}
+            disabled={reindexando}
+            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-xs uppercase tracking-[0.15em] text-text-secondary hover:border-gold hover:text-gold disabled:opacity-50"
+          >
+            {reindexando ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Reindexar FAQ
+          </button>
+          <button
+            onClick={novoModulo}
+            className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs uppercase tracking-[0.15em] text-background hover:bg-gold-light"
+          >
+            <Plus className="h-4 w-4" /> Novo módulo
+          </button>
+        </div>
       </header>
 
       {modulos === null ? (
@@ -227,7 +268,94 @@ function AdminAcademiaPage() {
           ))}
         </ul>
       )}
+
+      <DuvidasSection />
     </main>
+  );
+}
+
+// ------------------------------------------------------------- Dúvidas FAQ
+
+function DuvidasSection() {
+  const [dados, setDados] = useState<FaqPerguntaRow[] | null>(null);
+  const [soSemResposta, setSoSemResposta] = useState(false);
+
+  useEffect(() => {
+    listarDuvidasAcademia()
+      .then((r) => setDados(r.perguntas))
+      .catch(() => setDados([]));
+  }, []);
+
+  if (dados === null) return null;
+  const semResposta = dados.filter((d) => !d.encontrou_resposta);
+  const exibidas = (soSemResposta ? semResposta : dados).slice(0, 15);
+
+  return (
+    <section className="mt-10 rounded-xl border border-border bg-surface p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <MessageCircleQuestion className="h-5 w-5 text-gold" />
+          <h2 className="font-display text-xl">Dúvidas do FAQ</h2>
+          <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-text-muted">
+            {dados.length} perguntas
+          </span>
+          {semResposta.length > 0 && (
+            <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-amber-400">
+              {semResposta.length} sem resposta
+            </span>
+          )}
+        </div>
+        <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={soSemResposta}
+            onChange={(e) => setSoSemResposta(e.target.checked)}
+            className="accent-gold"
+          />
+          Só sem resposta
+        </label>
+      </div>
+      <p className="mt-1 text-xs text-text-muted">
+        Perguntas recorrentes sem boa resposta são candidatas a novos conteúdos.
+      </p>
+
+      {exibidas.length === 0 ? (
+        <p className="mt-4 text-sm text-text-muted">
+          Nenhuma pergunta registrada ainda.
+        </p>
+      ) : (
+        <ul className="mt-4 space-y-2">
+          {exibidas.map((d) => (
+            <li
+              key={d.id}
+              className="rounded-lg border border-border bg-background p-3"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${
+                    d.encontrou_resposta
+                      ? "bg-gold/15 text-gold"
+                      : "bg-amber-500/15 text-amber-400"
+                  }`}
+                >
+                  {d.encontrou_resposta ? "Respondida" : "Sem resposta"}
+                </span>
+                <span className="text-[11px] text-text-muted">
+                  {new Date(d.criado_em).toLocaleString("pt-BR")}
+                  {d.usuario_nome ? ` · ${d.usuario_nome}` : ""}
+                </span>
+              </div>
+              <p className="mt-1.5 text-sm text-text-primary">{d.pergunta}</p>
+              {!d.encontrou_resposta && d.resposta && (
+                <p className="mt-1 line-clamp-2 text-xs text-text-muted">
+                  {d.resposta}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -284,6 +412,11 @@ function ModuloEditor({
     );
   }
 
+  // Reindexa a base do FAQ em segundo plano após qualquer edição de conteúdo.
+  function reindexar() {
+    void reindexAcademiaModulo({ data: { moduloId } }).catch(() => undefined);
+  }
+
   async function salvarCabecalho(patch: Partial<TreinamentoModulo>) {
     if (!modulo) return;
     setSalvando(true);
@@ -291,6 +424,7 @@ function ModuloEditor({
       await salvarModulo({ ...modulo, ...patch });
       setModulo({ ...modulo, ...patch });
       toast.success("Módulo salvo");
+      reindexar();
     } catch (e) {
       toast.error("Falha ao salvar", {
         description: e instanceof Error ? e.message : undefined,
@@ -432,6 +566,7 @@ function ModuloEditor({
         <BlocosPanel
           aula={aulas.find((a) => a.id === aulaSelId) ?? null}
           onChanged={recarregar}
+          onIndex={reindexar}
         />
       </section>
     </main>
@@ -593,9 +728,11 @@ const TIPOS: { tipo: TipoBloco; label: string; Icon: typeof Play }[] = [
 function BlocosPanel({
   aula,
   onChanged,
+  onIndex,
 }: {
   aula: AulaComBlocos | null;
   onChanged: () => Promise<void>;
+  onIndex?: () => void;
 }) {
   if (!aula) {
     return (
@@ -665,6 +802,7 @@ function BlocosPanel({
             onMover={(dir) => void mover(i, dir)}
             onExcluir={() => void remover(b)}
             onChanged={onChanged}
+            onIndex={onIndex}
           />
         ))}
         {aula.blocos.length === 0 && (
@@ -696,6 +834,7 @@ function BlocoCard({
   onMover,
   onExcluir,
   onChanged,
+  onIndex,
 }: {
   bloco: TreinamentoBloco;
   primeiro: boolean;
@@ -703,6 +842,7 @@ function BlocoCard({
   onMover: (dir: -1 | 1) => void;
   onExcluir: () => void;
   onChanged: () => Promise<void>;
+  onIndex?: () => void;
 }) {
   const meta = TIPOS.find((t) => t.tipo === bloco.tipo);
   const Icon = meta?.Icon ?? FileText;
@@ -741,8 +881,12 @@ function BlocoCard({
         </div>
       </div>
       <div className="mt-2.5">
-        {bloco.tipo === "video" && <VideoEditor bloco={bloco} onChanged={onChanged} />}
-        {bloco.tipo === "texto" && <TextoEditor bloco={bloco} onChanged={onChanged} />}
+        {bloco.tipo === "video" && (
+          <VideoEditor bloco={bloco} onChanged={onChanged} onIndex={onIndex} />
+        )}
+        {bloco.tipo === "texto" && (
+          <TextoEditor bloco={bloco} onChanged={onChanged} onIndex={onIndex} />
+        )}
         {(bloco.tipo === "imagem" || bloco.tipo === "anexo") && (
           <ArquivoEditor bloco={bloco} onChanged={onChanged} />
         )}
@@ -754,12 +898,17 @@ function BlocoCard({
 function VideoEditor({
   bloco,
   onChanged,
+  onIndex,
 }: {
   bloco: TreinamentoBloco;
   onChanged: () => Promise<void>;
+  onIndex?: () => void;
 }) {
   const [url, setUrl] = useState(
     bloco.youtube_id ? `https://www.youtube.com/watch?v=${bloco.youtube_id}` : "",
+  );
+  const [descritivo, setDescritivo] = useState(
+    descritivoParaTexto(bloco.descritivo),
   );
   const id = extrairYoutubeId(url);
 
@@ -775,6 +924,25 @@ function VideoEditor({
       await onChanged();
     } catch (e) {
       toast.error("Falha ao salvar vídeo", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
+  async function salvarDescritivo() {
+    if (descritivo === descritivoParaTexto(bloco.descritivo)) return;
+    try {
+      await salvarBloco({
+        id: bloco.id,
+        aula_id: bloco.aula_id,
+        tipo: "video",
+        descritivo: parseDescritivo(descritivo),
+      });
+      toast.success("Descritivo salvo — base do FAQ atualizada");
+      onIndex?.();
+      await onChanged();
+    } catch (e) {
+      toast.error("Falha ao salvar descritivo", {
         description: e instanceof Error ? e.message : undefined,
       });
     }
@@ -796,6 +964,23 @@ function VideoEditor({
           className="h-24 rounded-md border border-border object-cover"
         />
       )}
+      <label className="block">
+        <span className="text-[11px] uppercase tracking-wider text-text-muted">
+          Descritivo do vídeo (alimenta o FAQ)
+        </span>
+        <textarea
+          value={descritivo}
+          onChange={(e) => setDescritivo(e.target.value)}
+          onBlur={() => void salvarDescritivo()}
+          rows={5}
+          placeholder={"Uma linha por trecho: mm:ss fala\n00:00 Abertura e apresentação\n02:35 Como cadastrar o cliente\n05:10 Aplicando o desconto"}
+          className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-xs outline-none focus:border-gold"
+        />
+        <span className="text-[10px] text-text-muted">
+          Formato: <span className="font-mono">mm:ss texto da fala</span> — um
+          por linha. Clicável para o aluno e usado nas respostas do FAQ.
+        </span>
+      </label>
     </div>
   );
 }
@@ -803,9 +988,11 @@ function VideoEditor({
 function TextoEditor({
   bloco,
   onChanged,
+  onIndex,
 }: {
   bloco: TreinamentoBloco;
   onChanged: () => Promise<void>;
+  onIndex?: () => void;
 }) {
   const [texto, setTexto] = useState(bloco.conteudo_texto ?? "");
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -832,6 +1019,7 @@ function TextoEditor({
         conteudo_texto: texto,
       });
       toast.success("Texto salvo");
+      onIndex?.();
       await onChanged();
     } catch (e) {
       toast.error("Falha ao salvar texto", {
