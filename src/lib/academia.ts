@@ -147,14 +147,26 @@ export function renderRichText(src: string): string {
     .replace(/>/g, "&gt;");
   const out: string[] = [];
   let inList = false;
-  for (const rawLine of esc.split(/\r?\n/)) {
-    const line = rawLine.trimEnd();
-    const isItem = /^- /.test(line);
-    if (inList && !isItem) {
+  let inOList = false;
+  const fecharListas = () => {
+    if (inList) {
       out.push("</ul>");
       inList = false;
     }
+    if (inOList) {
+      out.push("</ol>");
+      inOList = false;
+    }
+  };
+  for (const rawLine of esc.split(/\r?\n/)) {
+    const line = rawLine.trimEnd();
+    const isItem = /^- /.test(line);
+    const isOItem = /^\d+[.)]\s+/.test(line);
     if (isItem) {
+      if (inOList) {
+        out.push("</ol>");
+        inOList = false;
+      }
       if (!inList) {
         out.push('<ul class="list-disc pl-5 space-y-1 my-2">');
         inList = true;
@@ -162,6 +174,19 @@ export function renderRichText(src: string): string {
       out.push(`<li>${inlineMd(line.slice(2))}</li>`);
       continue;
     }
+    if (isOItem) {
+      if (inList) {
+        out.push("</ul>");
+        inList = false;
+      }
+      if (!inOList) {
+        out.push('<ol class="list-decimal pl-5 space-y-1 my-2">');
+        inOList = true;
+      }
+      out.push(`<li>${inlineMd(line.replace(/^\d+[.)]\s+/, ""))}</li>`);
+      continue;
+    }
+    fecharListas();
     if (line === "") {
       out.push('<div class="h-3"></div>');
       continue;
