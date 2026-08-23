@@ -27,6 +27,7 @@ import {
   listarModulos,
   obterModulo,
   parseDescritivo,
+  renderRichText,
   salvarAula,
   salvarBloco,
   salvarModulo,
@@ -1144,6 +1145,17 @@ function TextoEditor({
         placeholder="Escreva o conteúdo... Use ## título, **negrito**, *itálico*, - lista, [texto](https://link)"
         className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm outline-none focus:border-gold"
       />
+      {texto.trim() && (
+        <div className="rounded-md border border-border bg-background p-4">
+          <p className="mb-3 text-[10px] uppercase tracking-wider text-text-muted">
+            Pré-visualização do conteúdo
+          </p>
+          <div
+            className="text-sm text-text-primary [&_strong]:font-bold"
+            dangerouslySetInnerHTML={{ __html: renderRichText(texto) }}
+          />
+        </div>
+      )}
       <p
         className={`text-[10px] uppercase tracking-wider ${
           sujo ? "font-medium text-gold" : "text-text-muted"

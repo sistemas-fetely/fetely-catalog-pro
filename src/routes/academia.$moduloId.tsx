@@ -321,7 +321,7 @@ function BlocoView({
   if (bloco.tipo === "texto" && bloco.conteudo_texto) {
     return (
       <div
-        className="rounded-xl border border-border bg-surface p-5 text-sm text-text-primary"
+        className="rounded-xl border border-border bg-surface p-5 text-sm text-text-primary [&_strong]:font-bold"
         dangerouslySetInnerHTML={{ __html: renderRichText(bloco.conteudo_texto) }}
       />
     );
