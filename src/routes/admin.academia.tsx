@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  assinarPaths,
+  urlsAcademia,
   descritivoParaTexto,
   excluirAula,
   excluirBloco,
@@ -630,7 +630,7 @@ function ModuloEditor({
         : (data.aulas[0]?.id ?? null),
     );
     if (data.modulo.capa_url) {
-      const urls = await assinarPaths([data.modulo.capa_url]);
+      const urls = await urlsAcademia([data.modulo.capa_url]);
       setCapaUrl(urls[data.modulo.capa_url] ?? null);
     } else {
       setCapaUrl(null);
@@ -679,7 +679,7 @@ function ModuloEditor({
     try {
       const path = await uploadAcademia(file, "capas");
       await salvarCabecalho({ capa_url: path });
-      const urls = await assinarPaths([path]);
+      const urls = await urlsAcademia([path]);
       setCapaUrl(urls[path] ?? null);
     } catch (e) {
       toast.error("Falha no upload da capa", {
