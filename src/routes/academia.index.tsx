@@ -10,7 +10,7 @@ import {
 } from "@/lib/academia";
 import { useAuth } from "@/store/authStore";
 
-export const Route = createFileRoute("/academia")({
+export const Route = createFileRoute("/academia/")({
   head: () => ({
     meta: [
       { title: "Academia Fetély — Central de Treinamento" },
