@@ -56,6 +56,7 @@ import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminGateAbRouteImport } from './routes/admin.gate-ab'
 import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
 import { Route as AdminAccessLogsRouteImport } from './routes/admin.access-logs'
+import { Route as AdminAcademiaRouteImport } from './routes/admin.academia'
 import { Route as AcademiaModuloIdRouteImport } from './routes/academia.$moduloId'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
@@ -295,6 +296,11 @@ const AdminAccessLogsRoute = AdminAccessLogsRouteImport.update({
   path: '/admin/access-logs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAcademiaRoute = AdminAcademiaRouteImport.update({
+  id: '/admin/academia',
+  path: '/admin/academia',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AcademiaModuloIdRoute = AcademiaModuloIdRouteImport.update({
   id: '/$moduloId',
   path: '/$moduloId',
@@ -343,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/academia/$moduloId': typeof AcademiaModuloIdRoute
+  '/admin/academia': typeof AdminAcademiaRoute
   '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/gate-ab': typeof AdminGateAbRoute
@@ -394,6 +401,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/academia/$moduloId': typeof AcademiaModuloIdRoute
+  '/admin/academia': typeof AdminAcademiaRoute
   '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/gate-ab': typeof AdminGateAbRoute
@@ -447,6 +455,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
   '/academia/$moduloId': typeof AcademiaModuloIdRoute
+  '/admin/academia': typeof AdminAcademiaRoute
   '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/gate-ab': typeof AdminGateAbRoute
@@ -501,6 +510,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/stand'
     | '/academia/$moduloId'
+    | '/admin/academia'
     | '/admin/access-logs'
     | '/admin/cartilhas'
     | '/admin/gate-ab'
@@ -552,6 +562,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/stand'
     | '/academia/$moduloId'
+    | '/admin/academia'
     | '/admin/access-logs'
     | '/admin/cartilhas'
     | '/admin/gate-ab'
@@ -604,6 +615,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/stand'
     | '/academia/$moduloId'
+    | '/admin/academia'
     | '/admin/access-logs'
     | '/admin/cartilhas'
     | '/admin/gate-ab'
@@ -656,6 +668,7 @@ export interface RootRouteChildren {
   ReunioesRoute: typeof ReunioesRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   StandRoute: typeof StandRouteWithChildren
+  AdminAcademiaRoute: typeof AdminAcademiaRoute
   AdminAccessLogsRoute: typeof AdminAccessLogsRoute
   AdminCartilhasRoute: typeof AdminCartilhasRoute
   AdminGateAbRoute: typeof AdminGateAbRoute
@@ -1002,6 +1015,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAccessLogsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/academia': {
+      id: '/admin/academia'
+      path: '/admin/academia'
+      fullPath: '/admin/academia'
+      preLoaderRoute: typeof AdminAcademiaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/academia/$moduloId': {
       id: '/academia/$moduloId'
       path: '/$moduloId'
@@ -1109,6 +1129,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReunioesRoute: ReunioesRouteWithChildren,
   SettingsRoute: SettingsRoute,
   StandRoute: StandRouteWithChildren,
+  AdminAcademiaRoute: AdminAcademiaRoute,
   AdminAccessLogsRoute: AdminAccessLogsRoute,
   AdminCartilhasRoute: AdminCartilhasRoute,
   AdminGateAbRoute: AdminGateAbRoute,
