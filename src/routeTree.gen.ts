@@ -36,10 +36,10 @@ import { Route as CommercialRouteImport } from './routes/commercial'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
-import { Route as AcademiaRouteImport } from './routes/academia'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
+import { Route as AcademiaIndexRouteImport } from './routes/academia.index'
 import { Route as StandLeadsRouteImport } from './routes/stand.leads'
 import { Route as ReunioesImportarRouteImport } from './routes/reunioes.importar'
 import { Route as PortalProvisoesRouteImport } from './routes/portal.provisoes'
@@ -196,11 +196,6 @@ const AnalyticsRoute = AnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AcademiaRoute = AcademiaRouteImport.update({
-  id: '/academia',
-  path: '/academia',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -214,6 +209,11 @@ const PortalIndexRoute = PortalIndexRouteImport.update({
 const CatalogIndexRoute = CatalogIndexRouteImport.update({
   id: '/catalog/',
   path: '/catalog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcademiaIndexRoute = AcademiaIndexRouteImport.update({
+  id: '/academia/',
+  path: '/academia/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StandLeadsRoute = StandLeadsRouteImport.update({
@@ -302,9 +302,9 @@ const AdminAcademiaRoute = AdminAcademiaRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AcademiaModuloIdRoute = AcademiaModuloIdRouteImport.update({
-  id: '/$moduloId',
-  path: '/$moduloId',
-  getParentRoute: () => AcademiaRoute,
+  id: '/academia/$moduloId',
+  path: '/academia/$moduloId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogCategoriaCategoriaRoute =
   CatalogCategoriaCategoriaRouteImport.update({
@@ -320,7 +320,6 @@ const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/academia': typeof AcademiaRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
   '/clientes': typeof ClientesRoute
@@ -366,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/portal/provisoes': typeof PortalProvisoesRoute
   '/reunioes/importar': typeof ReunioesImportarRoute
   '/stand/leads': typeof StandLeadsRoute
+  '/academia/': typeof AcademiaIndexRoute
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/api/public/img': typeof ApiPublicImgRoute
@@ -373,7 +373,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/academia': typeof AcademiaRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
   '/clientes': typeof ClientesRoute
@@ -418,6 +417,7 @@ export interface FileRoutesByTo {
   '/portal/provisoes': typeof PortalProvisoesRoute
   '/reunioes/importar': typeof ReunioesImportarRoute
   '/stand/leads': typeof StandLeadsRoute
+  '/academia': typeof AcademiaIndexRoute
   '/catalog': typeof CatalogIndexRoute
   '/portal': typeof PortalIndexRoute
   '/api/public/img': typeof ApiPublicImgRoute
@@ -426,7 +426,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/academia': typeof AcademiaRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
   '/clientes': typeof ClientesRoute
@@ -472,6 +471,7 @@ export interface FileRoutesById {
   '/portal/provisoes': typeof PortalProvisoesRoute
   '/reunioes/importar': typeof ReunioesImportarRoute
   '/stand/leads': typeof StandLeadsRoute
+  '/academia/': typeof AcademiaIndexRoute
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/api/public/img': typeof ApiPublicImgRoute
@@ -481,7 +481,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/academia'
     | '/analytics'
     | '/cart'
     | '/clientes'
@@ -527,6 +526,7 @@ export interface FileRouteTypes {
     | '/portal/provisoes'
     | '/reunioes/importar'
     | '/stand/leads'
+    | '/academia/'
     | '/catalog/'
     | '/portal/'
     | '/api/public/img'
@@ -534,7 +534,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/academia'
     | '/analytics'
     | '/cart'
     | '/clientes'
@@ -579,6 +578,7 @@ export interface FileRouteTypes {
     | '/portal/provisoes'
     | '/reunioes/importar'
     | '/stand/leads'
+    | '/academia'
     | '/catalog'
     | '/portal'
     | '/api/public/img'
@@ -586,7 +586,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/academia'
     | '/analytics'
     | '/cart'
     | '/clientes'
@@ -632,6 +631,7 @@ export interface FileRouteTypes {
     | '/portal/provisoes'
     | '/reunioes/importar'
     | '/stand/leads'
+    | '/academia/'
     | '/catalog/'
     | '/portal/'
     | '/api/public/img'
@@ -640,7 +640,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AcademiaRoute: typeof AcademiaRouteWithChildren
   AnalyticsRoute: typeof AnalyticsRoute
   CartRoute: typeof CartRoute
   ClientesRoute: typeof ClientesRoute
@@ -668,6 +667,7 @@ export interface RootRouteChildren {
   ReunioesRoute: typeof ReunioesRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   StandRoute: typeof StandRouteWithChildren
+  AcademiaModuloIdRoute: typeof AcademiaModuloIdRoute
   AdminAcademiaRoute: typeof AdminAcademiaRoute
   AdminAccessLogsRoute: typeof AdminAccessLogsRoute
   AdminCartilhasRoute: typeof AdminCartilhasRoute
@@ -679,6 +679,7 @@ export interface RootRouteChildren {
   AdminSincronizacaoSncfRoute: typeof AdminSincronizacaoSncfRoute
   AdminUsersRoute: typeof AdminUsersRoute
   CatalogTodosRoute: typeof CatalogTodosRoute
+  AcademiaIndexRoute: typeof AcademiaIndexRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
   CatalogCategoriaCategoriaRoute: typeof CatalogCategoriaCategoriaRoute
@@ -875,13 +876,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/academia': {
-      id: '/academia'
-      path: '/academia'
-      fullPath: '/academia'
-      preLoaderRoute: typeof AcademiaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -901,6 +895,13 @@ declare module '@tanstack/react-router' {
       path: '/catalog'
       fullPath: '/catalog/'
       preLoaderRoute: typeof CatalogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/academia/': {
+      id: '/academia/'
+      path: '/academia'
+      fullPath: '/academia/'
+      preLoaderRoute: typeof AcademiaIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/stand/leads': {
@@ -1024,10 +1025,10 @@ declare module '@tanstack/react-router' {
     }
     '/academia/$moduloId': {
       id: '/academia/$moduloId'
-      path: '/$moduloId'
+      path: '/academia/$moduloId'
       fullPath: '/academia/$moduloId'
       preLoaderRoute: typeof AcademiaModuloIdRouteImport
-      parentRoute: typeof AcademiaRoute
+      parentRoute: typeof rootRouteImport
     }
     '/catalog/categoria/$categoria': {
       id: '/catalog/categoria/$categoria'
@@ -1045,18 +1046,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface AcademiaRouteChildren {
-  AcademiaModuloIdRoute: typeof AcademiaModuloIdRoute
-}
-
-const AcademiaRouteChildren: AcademiaRouteChildren = {
-  AcademiaModuloIdRoute: AcademiaModuloIdRoute,
-}
-
-const AcademiaRouteWithChildren = AcademiaRoute._addFileChildren(
-  AcademiaRouteChildren,
-)
 
 interface PortalRouteChildren {
   PortalContaRoute: typeof PortalContaRoute
@@ -1101,7 +1090,6 @@ const StandRouteWithChildren = StandRoute._addFileChildren(StandRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AcademiaRoute: AcademiaRouteWithChildren,
   AnalyticsRoute: AnalyticsRoute,
   CartRoute: CartRoute,
   ClientesRoute: ClientesRoute,
@@ -1129,6 +1117,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReunioesRoute: ReunioesRouteWithChildren,
   SettingsRoute: SettingsRoute,
   StandRoute: StandRouteWithChildren,
+  AcademiaModuloIdRoute: AcademiaModuloIdRoute,
   AdminAcademiaRoute: AdminAcademiaRoute,
   AdminAccessLogsRoute: AdminAccessLogsRoute,
   AdminCartilhasRoute: AdminCartilhasRoute,
@@ -1140,6 +1129,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSincronizacaoSncfRoute: AdminSincronizacaoSncfRoute,
   AdminUsersRoute: AdminUsersRoute,
   CatalogTodosRoute: CatalogTodosRoute,
+  AcademiaIndexRoute: AcademiaIndexRoute,
   CatalogIndexRoute: CatalogIndexRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
   CatalogCategoriaCategoriaRoute: CatalogCategoriaCategoriaRoute,
