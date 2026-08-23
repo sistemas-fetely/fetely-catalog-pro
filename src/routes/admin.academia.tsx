@@ -490,10 +490,14 @@ function ModuloEditor({
               <input
                 defaultValue={modulo.titulo}
                 key={`t-${modulo.id}-${modulo.titulo}`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                }}
                 onBlur={(e) => {
                   const v = e.target.value.trim();
                   if (v && v !== modulo.titulo) void salvarCabecalho({ titulo: v });
                 }}
+                title="Enter ou clicar fora salva o título"
                 className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
               />
             </label>
