@@ -1,5 +1,7 @@
 // Academia Fetély — tipos, helpers e camada de dados (cliente browser, RLS aplica).
-// Bucket "academia" é privado: arquivos são servidos por URL assinada (1h).
+// Bucket "academia" é privado: arquivos são servidos pelo proxy autenticado
+// same-origin /api/public/academia-file (o domínio do storage é bloqueado em
+// algumas redes corporativas).
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -218,17 +220,18 @@ export async function uploadAcademia(
   return path;
 }
 
-/** Assina vários paths de uma vez. Devolve mapa path → URL temporária. */
-export async function assinarPaths(paths: string[]): Promise<Record<string, string>> {
+/**
+ * Monta URLs de arquivo via proxy autenticado no mesmo domínio do app.
+ * Devolve mapa path → URL. Requer sessão ativa (o token vai no parâmetro t).
+ */
+export async function urlsAcademia(paths: string[]): Promise<Record<string, string>> {
   const validos = [...new Set(paths.filter((p) => p && !/^https?:\/\//.test(p)))];
   if (validos.length === 0) return {};
-  const { data, error } = await supabase.storage
-    .from("academia")
-    .createSignedUrls(validos, 3600);
-  if (error) return {};
+  const { data } = await supabase.auth.getSession();
+  const t = data.session?.access_token ?? "";
   const mapa: Record<string, string> = {};
-  for (const row of data ?? []) {
-    if (row.path && row.signedUrl) mapa[row.path] = row.signedUrl;
+  for (const p of validos) {
+    mapa[p] = `/api/public/academia-file?path=${encodeURIComponent(p)}${t ? `&t=${encodeURIComponent(t)}` : ""}`;
   }
   return mapa;
 }
