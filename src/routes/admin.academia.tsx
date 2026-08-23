@@ -909,47 +909,43 @@ function VideoEditor({
   onChanged: () => Promise<void>;
   onIndex?: () => void;
 }) {
-  const [url, setUrl] = useState(
-    bloco.youtube_id ? `https://www.youtube.com/watch?v=${bloco.youtube_id}` : "",
-  );
-  const [descritivo, setDescritivo] = useState(
-    descritivoParaTexto(bloco.descritivo),
-  );
+  const urlOriginal = bloco.youtube_id
+    ? `https://www.youtube.com/watch?v=${bloco.youtube_id}`
+    : "";
+  const descOriginal = descritivoParaTexto(bloco.descritivo);
+  const [url, setUrl] = useState(urlOriginal);
+  const [descritivo, setDescritivo] = useState(descOriginal);
+  const [salvando, setSalvando] = useState(false);
   const id = extrairYoutubeId(url);
+  const sujo = url !== urlOriginal || descritivo !== descOriginal;
 
-  async function salvar() {
-    if (!id) {
-      if (url.trim()) toast.error("Cole um link válido do YouTube");
+  async function salvarTudo() {
+    if (sujo && url.trim() && !id) {
+      toast.error("Cole um link válido do YouTube");
       return;
     }
-    if (id === bloco.youtube_id) return;
+    const patch: {
+      id: string;
+      aula_id: string;
+      tipo: "video";
+      youtube_id?: string;
+      descritivo?: ReturnType<typeof parseDescritivo>;
+    } = { id: bloco.id, aula_id: bloco.aula_id, tipo: "video" };
+    if (url !== urlOriginal) patch.youtube_id = id ?? "";
+    if (descritivo !== descOriginal) patch.descritivo = parseDescritivo(descritivo);
+    if (patch.youtube_id === undefined && patch.descritivo === undefined) return;
+    setSalvando(true);
     try {
-      await salvarBloco({ id: bloco.id, aula_id: bloco.aula_id, tipo: "video", youtube_id: id });
-      toast.success("Vídeo vinculado");
+      await salvarBloco(patch);
+      toast.success("Alterações salvas — base do FAQ atualizada");
+      if (patch.descritivo !== undefined) onIndex?.();
       await onChanged();
     } catch (e) {
-      toast.error("Falha ao salvar vídeo", {
+      toast.error("Falha ao salvar", {
         description: e instanceof Error ? e.message : undefined,
       });
-    }
-  }
-
-  async function salvarDescritivo() {
-    if (descritivo === descritivoParaTexto(bloco.descritivo)) return;
-    try {
-      await salvarBloco({
-        id: bloco.id,
-        aula_id: bloco.aula_id,
-        tipo: "video",
-        descritivo: parseDescritivo(descritivo),
-      });
-      toast.success("Descritivo salvo — base do FAQ atualizada");
-      onIndex?.();
-      await onChanged();
-    } catch (e) {
-      toast.error("Falha ao salvar descritivo", {
-        description: e instanceof Error ? e.message : undefined,
-      });
+    } finally {
+      setSalvando(false);
     }
   }
 
@@ -958,7 +954,9 @@ function VideoEditor({
       <input
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        onBlur={() => void salvar()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") void salvarTudo();
+        }}
         placeholder="Cole o link do YouTube (watch, youtu.be, shorts...)"
         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
       />
@@ -976,7 +974,6 @@ function VideoEditor({
         <textarea
           value={descritivo}
           onChange={(e) => setDescritivo(e.target.value)}
-          onBlur={() => void salvarDescritivo()}
           rows={5}
           placeholder={"Uma linha por trecho: mm:ss fala\n00:00 Abertura e apresentação\n02:35 Como cadastrar o cliente\n05:10 Aplicando o desconto"}
           className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-xs outline-none focus:border-gold"
@@ -986,6 +983,31 @@ function VideoEditor({
           por linha. Clicável para o aluno e usado nas respostas do FAQ.
         </span>
       </label>
+      <div className="flex items-center gap-3 pt-1">
+        <button
+          onClick={() => void salvarTudo()}
+          disabled={salvando || !sujo}
+          className={`inline-flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition ${
+            sujo
+              ? "bg-gold text-background hover:bg-gold-light"
+              : "cursor-default border border-border text-text-muted"
+          }`}
+        >
+          {salvando ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Save className="h-3.5 w-3.5" />
+          )}
+          {salvando ? "Salvando..." : "Salvar alterações"}
+        </button>
+        {sujo ? (
+          <span className="text-[10px] font-medium uppercase tracking-wider text-gold">
+            Há alterações não salvas
+          </span>
+        ) : (
+          <span className="text-[10px] text-text-muted">Tudo salvo</span>
+        )}
+      </div>
     </div>
   );
 }
