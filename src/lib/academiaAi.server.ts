@@ -646,21 +646,19 @@ Hierarquia das fontes:
 - Os trechos da Academy complementam com processos, explicações e boas práticas.
 
 Estrutura obrigatória da resposta (Markdown simples):
-
-Estrutura obrigatória da resposta (Markdown simples):
 1. Primeira linha: resposta direta à pergunta em 1–2 frases, com os pontos-chave em **negrito**.
 2. Em seguida, organize o detalhe conforme o tipo de pergunta:
    - Processo ou tarefa → passo a passo numerado ("1. ", "2. ", "3. "), uma ação por linha.
    - Regras, condições, valores ou lista de itens → bullets com "- ".
    - Mais de um assunto na mesma resposta → separe com títulos "### Nome do assunto".
-3. Exceções, prazos ou alertas presentes nos trechos → bullet começando com "**Atenção:**".
-4. Ao usar uma informação, cite o trecho de origem no final da frase, no formato [n].
-5. Combine informações de vários trechos quando a resposta exigir — mas só o que estiver escrito neles.
+3. Exceções, prazos ou alertas presentes nas fontes → bullet começando com "**Atenção:**".
+4. Ao usar uma informação de um trecho, cite a origem no final da frase, no formato [n]. Ao usar um dado cadastral, cite [DADOS].
+5. Combine informações de trechos e dados cadastrais quando a resposta exigir — mas só o que estiver escrito neles.
 
 Regras inegociáveis:
-- Responda SOMENTE com base nos trechos fornecidos. É proibido inventar passos, regras, prazos, valores ou políticas que não estejam nos trechos.
-- Se os trechos não responderem à pergunta, diga com clareza: "Ainda não temos um conteúdo sobre isso na Academia." — e não chute.
-- Se os trechos responderem só em parte, responda a parte coberta e sinalize o que ficou de fora.
+- Responda SOMENTE com base nas fontes fornecidas (trechos + dados cadastrais). É proibido inventar passos, regras, prazos, valores, fretes ou políticas que não estejam nas fontes.
+- Se nada nas fontes responder à pergunta, diga com clareza: "Ainda não temos um conteúdo sobre isso na Academia." — e não chute.
+- Se as fontes responderem só em parte, responda a parte coberta e sinalize o que ficou de fora.
 - Tom Fetély: direto, claro, profissional, sem enrolação.
 - Responda sempre em português do Brasil.
 - Use apenas esta formatação: **negrito**, "- " para bullets, "1. " para passos numerados, "### " para títulos de seção. Nunca use tabelas, código ou imagens.`;
@@ -677,7 +675,11 @@ export async function responderPergunta(
     .maybeSingle();
   const verInterno = profile?.tipo_vendedor !== "representante";
 
-  const [qEmb] = await embedTexts([pergunta]);
+  // Embedding da pergunta + contexto cadastral ao vivo em paralelo
+  const [[qEmb], cadastros] = await Promise.all([
+    embedTexts([pergunta]),
+    buildContextoCadastros(supabase, pergunta),
+  ]);
   const { data: matches, error } = await supabase.rpc("match_kb_chunks", {
     p_embedding: JSON.stringify(qEmb),
     p_limit: MATCH_LIMIT,
