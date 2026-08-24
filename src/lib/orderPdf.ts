@@ -1,5 +1,20 @@
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+// jsPDF/autoTable (~400 KB) NÃO entram no bundle da rota — carregados sob
+// demanda só quando um PDF é efetivamente gerado.
+type JsPDFDoc = import("jspdf").jsPDF;
+type JsPDFClass = typeof import("jspdf").jsPDF;
+type AutoTableFn = typeof import("jspdf-autotable").default;
+
+let pdfLibsCache: { jsPDF: JsPDFClass; autoTable: AutoTableFn } | null = null;
+async function loadPdfLibs(): Promise<{ jsPDF: JsPDFClass; autoTable: AutoTableFn }> {
+  if (!pdfLibsCache) {
+    const [jspdfMod, autoTableMod] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable"),
+    ]);
+    pdfLibsCache = { jsPDF: jspdfMod.jsPDF, autoTable: autoTableMod.default };
+  }
+  return pdfLibsCache;
+}
 import type { CartItem, Product, SavedOrder } from "@/types";
 import type { Cotacao } from "@/types/cotacao";
 import type { ProvisaoFutura } from "@/types/provisao";
@@ -253,7 +268,7 @@ export interface OrderPDFResult {
   dataUrl: string;
 }
 
-function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): void {
+function renderOrderToDoc(doc: JsPDFDoc, order: SavedOrder, autoTableFn: AutoTableFn, thumbs?: ThumbMap): void {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   const contentWidth = pageWidth - margin * 2;
