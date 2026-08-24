@@ -151,10 +151,30 @@ export const Route = createFileRoute("/api/public/academia-file")({
           }
         }
 
-        const { data: file, error: dlErr } = await db.storage
+        // Streaming: o servidor assina a URL no storage (acessível do servidor,
+        // mesmo quando a rede do cliente bloqueia o domínio do storage) e
+        // repassa o corpo em fluxo — o PDF começa a abrir de imediato, sem
+        // precisar baixar o arquivo inteiro na memória antes de responder.
+        const { data: signed, error: signErr } = await db.storage
           .from(BUCKET)
-          .download(path);
-        if (dlErr || !file) {
+          .createSignedUrl(path, 300);
+        if (signErr || !signed?.signedUrl) {
+          return htmlErro(
+            404,
+            "Arquivo não encontrado. Ele pode ter sido substituído — recarregue a página da aula.",
+          );
+        }
+
+        let upstream: globalThis.Response;
+        try {
+          upstream = await fetch(signed.signedUrl);
+        } catch {
+          return htmlErro(
+            502,
+            "Não conseguimos alcançar o armazenamento agora. Tente novamente em instantes.",
+          );
+        }
+        if (!upstream.ok || !upstream.body) {
           return htmlErro(
             404,
             "Arquivo não encontrado. Ele pode ter sido substituído — recarregue a página da aula.",
@@ -166,14 +186,18 @@ export const Route = createFileRoute("/api/public/academia-file")({
           path.split("/").pop() ??
           "arquivo";
 
-        return new Response(file, {
-          status: 200,
-          headers: {
-            "content-type": contentTypeFor(path, file.type || null),
-            "content-disposition": contentDisposition(nome),
-            "cache-control": "private, max-age=300",
-          },
+        const headers = new Headers({
+          "content-type": contentTypeFor(
+            path,
+            upstream.headers.get("content-type"),
+          ),
+          "content-disposition": contentDisposition(nome),
+          "cache-control": "private, max-age=300",
         });
+        const len = upstream.headers.get("content-length");
+        if (len) headers.set("content-length", len);
+
+        return new Response(upstream.body, { status: 200, headers });
       },
     },
   },
