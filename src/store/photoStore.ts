@@ -1,8 +1,12 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { normalizeKey, proxiedPhotoUrl } from "@/lib/image";
 import { supabase } from "@/integrations/supabase/client";
+import { createSafeStorage } from "@/lib/safeStorage";
 
 const BUCKET = "product-photos";
+// Fotos mudam raramente — revalida no máximo a cada 10 min por sessão/dispositivo.
+const PHOTOS_TTL = 10 * 60_000;
 
 async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
   const res = await fetch(dataUrl);
@@ -21,7 +25,8 @@ interface PhotoState {
   paths: Record<string, string>;
   loaded: boolean;
   loading: boolean;
-  fetchAll: () => Promise<void>;
+  fetchedAt: number;
+  fetchAll: (force?: boolean) => Promise<void>;
   setColecaoPhoto: (colecao: string, categoria: string | null, dataUrl: string) => Promise<void>;
   removeColecaoPhoto: (colecao: string, categoria: string | null) => Promise<void>;
   setProdutoPhoto: (colecao: string, cor: string, dataUrl: string) => Promise<void>;
