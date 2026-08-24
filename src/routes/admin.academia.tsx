@@ -7,6 +7,7 @@ import {
   FileText,
   Image as ImageIcon,
   Lightbulb,
+  Link2,
   Loader2,
   MessageCircleQuestion,
   Paperclip,
@@ -972,6 +973,7 @@ const TIPOS: { tipo: TipoBloco; label: string; Icon: typeof Play }[] = [
   { tipo: "texto", label: "Texto", Icon: FileText },
   { tipo: "imagem", label: "Imagem", Icon: ImageIcon },
   { tipo: "anexo", label: "Anexo (PDF...)", Icon: Paperclip },
+  { tipo: "link", label: "Link com capa", Icon: Link2 },
 ];
 
 function BlocosPanel({
@@ -997,8 +999,9 @@ function BlocosPanel({
       await salvarBloco({
         aula_id: aula.id,
         tipo,
-        conteudo_texto: tipo === "texto" ? "" : null,
+        conteudo_texto: tipo === "texto" || tipo === "link" ? "" : null,
         youtube_id: tipo === "video" ? "" : null,
+        arquivo_nome: tipo === "link" ? "" : null,
       });
       await onChanged();
     } catch (e) {
@@ -1138,6 +1141,9 @@ function BlocoCard({
         )}
         {(bloco.tipo === "imagem" || bloco.tipo === "anexo") && (
           <ArquivoEditor bloco={bloco} onChanged={onChanged} />
+        )}
+        {bloco.tipo === "link" && (
+          <LinkEditor bloco={bloco} onChanged={onChanged} />
         )}
       </div>
       <FaqBlocoField bloco={bloco} onChanged={onChanged} onIndex={onIndex} />
@@ -1550,6 +1556,172 @@ function ArquivoEditor({
       </label>
       {bloco.arquivo_nome && (
         <span className="truncate text-sm text-text-secondary">{bloco.arquivo_nome}</span>
+      )}
+    </div>
+  );
+}
+
+// Bloco de link externo com imagem de capa. Mapeamento de campos:
+// conteudo_texto = URL · arquivo_nome = título do cartão · arquivo_url = capa (bucket).
+function LinkEditor({
+  bloco,
+  onChanged,
+}: {
+  bloco: TreinamentoBloco;
+  onChanged: () => Promise<void>;
+}) {
+  const [url, setUrl] = useState(bloco.conteudo_texto ?? "");
+  const [titulo, setTitulo] = useState(bloco.arquivo_nome ?? "");
+  const [capaSrc, setCapaSrc] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    if (bloco.arquivo_url) {
+      const p = bloco.arquivo_url;
+      void urlsAcademia([p]).then((m) => {
+        if (alive) setCapaSrc(m[p] ?? null);
+      });
+    } else {
+      setCapaSrc(null);
+    }
+    return () => {
+      alive = false;
+    };
+  }, [bloco.arquivo_url]);
+
+  const urlLimpa = url.trim();
+  const urlValida = /^https?:\/\/\S+$/.test(urlLimpa);
+  const sujo =
+    url !== (bloco.conteudo_texto ?? "") || titulo !== (bloco.arquivo_nome ?? "");
+
+  async function salvar() {
+    if (!sujo || salvando) return;
+    if (urlLimpa && !urlValida) {
+      toast.error("Cole um link válido começando com http:// ou https://");
+      return;
+    }
+    setSalvando(true);
+    try {
+      await salvarBloco({
+        id: bloco.id,
+        aula_id: bloco.aula_id,
+        tipo: "link",
+        conteudo_texto: urlLimpa,
+        arquivo_nome: titulo.trim(),
+      });
+      toast.success("Link salvo");
+      await onChanged();
+    } catch (e) {
+      toast.error("Falha ao salvar link", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  async function enviarCapa(file: File) {
+    setEnviando(true);
+    try {
+      const path = await uploadAcademia(file, "blocos");
+      await salvarBloco({
+        id: bloco.id,
+        aula_id: bloco.aula_id,
+        tipo: "link",
+        arquivo_url: path,
+      });
+      toast.success("Capa do link enviada");
+      await onChanged();
+    } catch (e) {
+      toast.error("Falha no upload da capa", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <input
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") void salvar();
+        }}
+        placeholder="Cole o link (https://...)"
+        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+      />
+      <input
+        value={titulo}
+        onChange={(e) => setTitulo(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") void salvar();
+        }}
+        placeholder="Título do cartão (ex.: Catálogo completo)"
+        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+      />
+
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-xs uppercase tracking-wider text-text-secondary hover:border-gold hover:text-gold">
+          {enviando ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ImageIcon className="h-4 w-4" />
+          )}
+          {bloco.arquivo_url ? "Trocar imagem de capa" : "Enviar imagem de capa"}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={enviando}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void enviarCapa(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {capaSrc && (
+          <img
+            src={capaSrc}
+            alt="Capa do link"
+            className="h-16 w-28 rounded-md border border-border object-cover"
+          />
+        )}
+      </div>
+
+      <div className="flex items-center gap-3 pt-1">
+        <button
+          onClick={() => void salvar()}
+          disabled={salvando || !sujo}
+          className={`inline-flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition ${
+            sujo
+              ? "bg-gold text-background hover:bg-gold-light"
+              : "cursor-default border border-border text-text-muted"
+          }`}
+        >
+          {salvando ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Save className="h-3.5 w-3.5" />
+          )}
+          {salvando ? "Salvando..." : "Salvar alterações"}
+        </button>
+        {sujo ? (
+          <span className="text-[10px] font-medium uppercase tracking-wider text-gold">
+            Há alterações não salvas
+          </span>
+        ) : (
+          <span className="text-[10px] text-text-muted">Tudo salvo</span>
+        )}
+      </div>
+      {!urlLimpa && (
+        <p className="text-[10px] uppercase tracking-wider text-text-muted">
+          Sem link, o cartão não aparece para o aluno.
+        </p>
       )}
     </div>
   );

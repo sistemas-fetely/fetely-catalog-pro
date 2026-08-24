@@ -11,7 +11,7 @@ const db: any = supabase;
 
 export type VisibilidadeModulo = "todos" | "interno";
 export type StatusModulo = "rascunho" | "publicado";
-export type TipoBloco = "video" | "texto" | "imagem" | "anexo";
+export type TipoBloco = "video" | "texto" | "imagem" | "anexo" | "link";
 
 export interface TreinamentoModulo {
   id: string;
