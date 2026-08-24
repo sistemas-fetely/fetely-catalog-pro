@@ -1,4 +1,5 @@
-import ExcelJS from "exceljs";
+// ExcelJS (~500 KB) carregado sob demanda, só ao gerar a planilha do catálogo.
+import type ExcelJSType from "exceljs";
 import type { Product } from "@/types";
 import { getProdutoPhoto } from "@/store/photoStore";
 import {
@@ -123,6 +124,7 @@ export async function buildCatalogXLSX(opts: BuildOpts): Promise<Blob> {
   } = opts;
   const fieldSet = new Set<CatalogFieldKey>(fields);
 
+  const { default: ExcelJS } = await import("exceljs");
   const wb = new ExcelJS.Workbook();
   wb.creator = "Fetély B2B";
   wb.created = new Date();
