@@ -1,9 +1,19 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { Product } from "@/types";
-import { PRODUCTS as DEFAULT_PRODUCTS, NUMERIC_CANDLE_COLLECTIONS } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeStorage } from "@/lib/safeStorage";
+
+// O JSON default do catálogo (1,2 MB) NÃO é importado estaticamente — fica num
+// chunk separado carregado sob demanda (banco vazio, reset ou seed inicial).
+let defaultProductsCache: Product[] | null = null;
+async function loadDefaultProducts(): Promise<Product[]> {
+  if (!defaultProductsCache) {
+    const mod = await import("@/data/products");
+    defaultProductsCache = mod.PRODUCTS;
+  }
+  return defaultProductsCache;
+}
 
 
 export type AuditAcao =
@@ -37,7 +47,8 @@ interface CatalogState {
   source: "default" | "imported" | "banco";
   importedAt: string | null;
   hidratado: boolean;
-  hydrate: () => Promise<void>;
+  lastSyncAt: number;
+  hydrate: (opts?: { force?: boolean }) => Promise<void>;
   setProducts: (products: Product[], meta?: AuditMeta) => Promise<void>;
   resetToDefault: () => void;
   upsertProduct: (p: Product, meta: AuditMeta) => { ok: true } | { ok: false; error: string };
