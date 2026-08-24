@@ -89,6 +89,8 @@ export function GlobalSearch() {
               >
                 {img ? (
                   <img
+                    loading="lazy"
+                    decoding="async"
                     src={img}
                     alt=""
                     className="h-10 w-10 rounded object-cover flex-shrink-0"

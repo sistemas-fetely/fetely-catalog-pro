@@ -545,7 +545,7 @@ function EmptyStatePublic({ vendedor }: { vendedor: string }) {
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
                   {img ? (
-                    <img src={img} alt={c.nome} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <img loading="lazy" decoding="async" src={img} alt={c.nome} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700" />
                   ) : (
                     <PhotoPlaceholder colecao={c.nome} className="h-full w-full" />
                   )}
@@ -604,7 +604,7 @@ function EmptyStatePublic({ vendedor }: { vendedor: string }) {
               >
                 <div className="relative aspect-square overflow-hidden">
                   {img ? (
-                    <img src={img} alt={c.colecao} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img loading="lazy" decoding="async" src={img} alt={c.colecao} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
                     <PhotoPlaceholder colecao={c.colecao} className="h-full w-full" />
                   )}
@@ -961,7 +961,7 @@ function WishlistSheet({
                         <li key={p.sku} className="flex gap-3 items-start rounded-md bg-surface-2/50 p-2">
                           <div className="w-16 h-16 shrink-0 rounded overflow-hidden bg-surface">
                             {img ? (
-                              <img src={img} alt={p.nomeComercial} className="w-full h-full object-cover" />
+                              <img loading="lazy" decoding="async" src={img} alt={p.nomeComercial} className="w-full h-full object-cover" />
                             ) : (
                               <PhotoPlaceholder colecao={p.colecao} className="w-full h-full" showIcon={false} />
                             )}

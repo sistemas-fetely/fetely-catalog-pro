@@ -136,6 +136,8 @@ function ModuloCard({
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface-2">
         {capaUrl ? (
           <img
+            loading="lazy"
+            decoding="async"
             src={capaUrl}
             alt={`Capa do módulo ${modulo.titulo}`}
             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"

@@ -67,6 +67,8 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
       >
         {photo ? (
           <img
+            loading="lazy"
+            decoding="async"
             src={photo}
             alt={`${product.nomeComercial} — ${product.corNome}`}
             className="h-full w-full object-cover transition group-hover:scale-[1.02]"

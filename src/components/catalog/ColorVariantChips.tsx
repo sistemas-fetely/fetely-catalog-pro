@@ -54,7 +54,7 @@ export function ColorVariantChips({ colecao, colors, active, onSelect, size = 40
                   style={{ height: size, width: size }}
                   aria-label={`Ampliar foto ${c}`}
                 >
-                  <img src={photo} alt={c} className="h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={photo} alt={c} className="h-full w-full object-cover" />
                 </button>
               ) : (
                 <PhotoPlaceholder

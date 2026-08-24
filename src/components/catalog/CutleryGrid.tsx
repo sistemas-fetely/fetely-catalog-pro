@@ -89,6 +89,8 @@ export function CutleryGrid({ products, colecao, onColorChange }: Props) {
               >
                 {photo ? (
                   <img
+                    loading="lazy"
+                    decoding="async"
                     src={photo}
                     alt={c}
                     className="h-8 w-8 rounded-full object-cover flex-shrink-0"

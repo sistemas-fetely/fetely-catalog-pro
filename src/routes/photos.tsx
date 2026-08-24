@@ -149,7 +149,7 @@ function ColecaoTab({
             >
               <div className="relative aspect-[4/3]">
                 {img ? (
-                  <img src={img} alt={`${c.nome} — ${c.categoria}`} className="h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={img} alt={`${c.nome} — ${c.categoria}`} className="h-full w-full object-cover" />
                 ) : (
                   <PhotoPlaceholder colecao={c.nome} className="h-full w-full" />
                 )}
@@ -320,7 +320,7 @@ function CorTab({
               >
                 <div className="relative aspect-square">
                   {img ? (
-                    <img src={img} alt={p.corNome} className="h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={img} alt={p.corNome} className="h-full w-full object-cover" />
                   ) : (
                     <PhotoPlaceholder
                       colecao={colecao}
