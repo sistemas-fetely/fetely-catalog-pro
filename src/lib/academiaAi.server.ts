@@ -353,7 +353,299 @@ export async function excluirFaqBase(
 
 // ------------------------------------------------------------- FAQ
 
-const SYSTEM_PROMPT = `Você é a IA da Academy Fetély — assistente de conhecimento do time comercial da Fetély (velas e artigos de celebração, B2B). Você é alimentada EXCLUSIVAMENTE pela base de conhecimento fornecida (trechos de treinamentos, transcrições de vídeos e notas internas do time).
+// ------------------------------------- Contexto cadastral (tempo real)
+// O FAQ responde também com os cadastros oficiais do sistema (produtos,
+// preços, estoque/previsões, cartilhas comerciais, fretes, regras gerais),
+// consultados ao vivo no banco a cada pergunta — nunca ficam desatualizados.
+
+const STOPWORDS = new Set([
+  "de","da","do","das","dos","e","ou","o","a","os","as","um","uma","uns","umas",
+  "para","pra","com","sem","por","pelo","pela","qual","quais","quanto","quanta",
+  "quantos","quantas","como","onde","quando","que","tem","temos","ter","voce",
+  "voces","sobre","entre","esta","este","esse","essa","isso","na","no","nas",
+  "nos","em","ao","aos","se","ja","mais","menos","muito","meu","minha","nosso",
+  "nossa","ser","sao","foi","vai","vou","pode","podem","quero","preciso",
+  "gostaria","fala","fale","me","nos","diz","oi","ola","bom","boa","dia",
+  "tarde","noite","valor","valores","preco","precos","item","itens","produto",
+  "produtos","colecao","colecoes","linha","fetely","vela","velas","cliente",
+]);
+
+function normTxt(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+function extrairTermos(pergunta: string): string[] {
+  const brutos = normTxt(pergunta).split(/[^a-z0-9]+/).filter(Boolean);
+  const termos: string[] = [];
+  for (const t of brutos) {
+    if (t.length < 3 && !/^\d+$/.test(t)) continue;
+    if (STOPWORDS.has(t)) continue;
+    if (!termos.includes(t)) termos.push(t);
+    if (termos.length >= 8) break;
+  }
+  return termos;
+}
+
+const brl = (n: number | null | undefined): string =>
+  n == null || !Number.isFinite(n)
+    ? "-"
+    : n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+interface ContextoCadastral {
+  texto: string;
+  produtosEncontrados: number;
+}
+
+async function buildContextoCadastros(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  pergunta: string,
+): Promise<ContextoCadastral> {
+  const vazio: ContextoCadastral = { texto: "", produtosEncontrados: 0 };
+  const secoes: string[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const seguro = async (p: PromiseLike<{ data: any; error: any }>): Promise<any> => {
+    try {
+      const { data, error } = await p;
+      return error ? null : data;
+    } catch {
+      return null;
+    }
+  };
+
+  try {
+    const [regras, faixas, condicoes, regioes, fretes, produtos] =
+      await Promise.all([
+        seguro(
+          supabase
+            .from("regras_gerais")
+            .select(
+              "pedido_minimo,desconto_master_max,bonus_pix_padrao,faixa_reservada_nome,provisao_expirar_dias,frete_fallback_percent",
+            )
+            .limit(1)
+            .maybeSingle(),
+        ),
+        seguro(
+          supabase
+            .from("faixas")
+            .select(
+              "nome,valor_min,valor_max,frete,desconto_celebra,bonus_pix,bonus_pix_aplicavel,cartao_ate,boleto_ate,prazo_medio_boleto,requer_senha_master,frete_observacao",
+            )
+            .eq("ativa", true)
+            .order("ordem", { ascending: true }),
+        ),
+        seguro(
+          supabase
+            .from("condicoes_pagamento")
+            .select(
+              "descricao,tipo,valor_minimo,numero_parcelas,dias_parcelas,sem_juros,tem_bonus_pix",
+            )
+            .eq("ativa", true)
+            .order("ordem", { ascending: true }),
+        ),
+        seguro(
+          supabase
+            .from("regioes")
+            .select("nome")
+            .eq("ativo", true)
+            .order("ordem", { ascending: true }),
+        ),
+        seguro(
+          supabase
+            .from("frete_uf")
+            .select("uf,percentual,ativo")
+            .order("uf", { ascending: true }),
+        ),
+        seguro(
+          supabase
+            .from("products")
+            .select(
+              "sku,nome_comercial,colecao,categoria,grupo,cor_nome,tamanho_numero,preco_atacado,preco_varejo,multiplos,estoque_disponivel,status_estoque,pronta_entrega,created_at",
+            )
+            .eq("ativo", true),
+        ),
+      ]);
+
+    if (regras) {
+      secoes.push(
+        `### Regras comerciais gerais\n` +
+          `- Pedido mínimo: ${brl(Number(regras.pedido_minimo))}\n` +
+          `- Desconto master máximo (com senha master): ${Number(regras.desconto_master_max)}%\n` +
+          `- Bônus PIX padrão: ${Number(regras.bonus_pix_padrao)}%\n` +
+          `- Faixa reservada (senha master): ${regras.faixa_reservada_nome}\n` +
+          `- Provisões expiram em ${regras.provisao_expirar_dias} dias`,
+      );
+    }
+
+    if (Array.isArray(faixas) && faixas.length > 0) {
+      const linhas = faixas.map(
+        (f: any) =>
+          `- ${f.nome}: pedido de ${brl(Number(f.valor_min))}` +
+          `${f.valor_max != null ? ` a ${brl(Number(f.valor_max))}` : " ou mais"}` +
+          ` · frete ${f.frete} · desconto Celebra ${Number(f.desconto_celebra)}%` +
+          ` · bônus PIX ${f.bonus_pix_aplicavel ? `${Number(f.bonus_pix)}%` : "não aplicável"}` +
+          ` · cartão até ${f.cartao_ate} · boleto até ${f.boleto_ate} (prazo médio ${f.prazo_medio_boleto} dias)` +
+          `${f.requer_senha_master ? " · REQUER SENHA MASTER" : ""}` +
+          `${f.frete_observacao ? ` · obs: ${f.frete_observacao}` : ""}`,
+      );
+      secoes.push(`### Faixas comerciais ativas (cartilha)\n${linhas.join("\n")}`);
+    }
+
+    if (Array.isArray(condicoes) && condicoes.length > 0) {
+      const linhas = condicoes.map(
+        (c: any) =>
+          `- ${c.descricao} (${c.tipo})` +
+          `${c.numero_parcelas ? ` · ${c.numero_parcelas}x${Array.isArray(c.dias_parcelas) && c.dias_parcelas.length ? ` em ${c.dias_parcelas.join("/")} dias` : ""}${c.sem_juros ? " sem juros" : ""}` : ""}` +
+          ` · pedido mínimo ${brl(Number(c.valor_minimo))}` +
+          `${c.tem_bonus_pix ? " · tem bônus PIX" : ""}`,
+      );
+      secoes.push(`### Condições de pagamento ativas\n${linhas.join("\n")}`);
+    }
+
+    if (Array.isArray(fretes) && fretes.length > 0) {
+      const ativos = fretes.filter((f: any) => f.ativo);
+      const linha = ativos
+        .map((f: any) => `${f.uf} ${Number(f.percentual)}%`)
+        .join(" · ");
+      const fallback = Number(regras?.frete_fallback_percent ?? 5);
+      secoes.push(
+        `### Frete FOB por UF (tabela oficial)\n` +
+          `- ${linha}\n` +
+          `- UF sem tabela cadastrada: ${fallback}% (percentual padrão de fallback)\n` +
+          `- Frete CIF (definido pela faixa ou por premissa do cliente) e frete grátis negociado têm prioridade sobre esta tabela.`,
+      );
+    }
+
+    if (Array.isArray(regioes) && regioes.length > 0) {
+      secoes.push(
+        `### Regiões de atuação cadastradas\n- ${regioes.map((r: any) => r.nome).join(", ")}`,
+      );
+    }
+
+    // ------------------------------------------------ Catálogo de produtos
+    let produtosEncontrados = 0;
+    const prods = (Array.isArray(produtos) ? produtos : []) as any[];
+    if (prods.length > 0) {
+      const porColecao = new Map<
+        string,
+        {
+          skus: number;
+          pronta: number;
+          min: number;
+          max: number;
+          status: Set<string>;
+          cats: Set<string>;
+        }
+      >();
+      for (const p of prods) {
+        const c = porColecao.get(p.colecao) ?? {
+          skus: 0,
+          pronta: 0,
+          min: Infinity,
+          max: -Infinity,
+          status: new Set<string>(),
+          cats: new Set<string>(),
+        };
+        c.skus += 1;
+        if (p.pronta_entrega) c.pronta += 1;
+        c.min = Math.min(c.min, Number(p.preco_atacado));
+        c.max = Math.max(c.max, Number(p.preco_atacado));
+        if (p.status_estoque) c.status.add(String(p.status_estoque));
+        if (p.categoria) c.cats.add(String(p.categoria));
+        porColecao.set(p.colecao, c);
+      }
+      const linhasCol = [...porColecao.entries()]
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([nome, c]) => {
+          const status = [...c.status].join(", ") || "sem status";
+          return (
+            `- ${nome} (${[...c.cats].join("/")}): ${c.skus} SKUs` +
+            ` · atacado ${brl(c.min)}–${brl(c.max)}` +
+            ` · pronta entrega: ${c.pronta > 0 ? `${c.pronta} de ${c.skus} SKUs` : "não (sob encomenda/previsão)"}` +
+            ` · estoque/previsão: ${status}`
+          );
+        });
+      secoes.push(
+        `### Coleções do catálogo (resumo ao vivo — ${prods.length} produtos ativos)\n${linhasCol.join("\n")}`,
+      );
+
+      const termos = extrairTermos(pergunta);
+      if (termos.length > 0) {
+        const marcados = prods
+          .map((p) => {
+            const hay = normTxt(
+              [
+                p.nome_comercial,
+                p.colecao,
+                p.categoria,
+                p.grupo,
+                p.cor_nome,
+                p.tamanho_numero,
+              ]
+                .filter(Boolean)
+                .join(" "),
+            );
+            const skuNorm = normTxt(String(p.sku ?? ""));
+            let score = 0;
+            for (const t of termos) {
+              if (/^\d+$/.test(t)) {
+                if (skuNorm.includes(t)) score += 3;
+                else if (hay.includes(t)) score += 1;
+              } else if (hay.includes(t)) {
+                score += t.length >= 5 ? 2 : 1;
+              }
+            }
+            return { p, score };
+          })
+          .filter((x) => x.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 15);
+        produtosEncontrados = marcados.length;
+        if (marcados.length > 0) {
+          const linhasP = marcados.map(({ p }) => {
+            const cadastro = p.created_at
+              ? new Date(p.created_at).toLocaleDateString("pt-BR")
+              : "-";
+            return (
+              `- SKU ${p.sku} · ${p.nome_comercial} · Coleção ${p.colecao}` +
+              `${p.cor_nome ? ` · Cor ${p.cor_nome}` : ""}` +
+              ` · atacado ${brl(Number(p.preco_atacado))} · varejo sugerido ${brl(Number(p.preco_varejo))}` +
+              ` · múltiplo de ${p.multiplos} · estoque disponível: ${p.estoque_disponivel ?? 0}` +
+              ` · status: ${p.status_estoque}${p.pronta_entrega ? " · PRONTA ENTREGA" : " · sob previsão/encomenda"}` +
+              ` · cadastrado em ${cadastro}`
+            );
+          });
+          secoes.push(
+            `### Produtos do catálogo relacionados à pergunta (dados ao vivo)\n${linhasP.join("\n")}`,
+          );
+        }
+      }
+      return { texto: secoes.join("\n\n"), produtosEncontrados };
+    }
+
+    return { texto: secoes.join("\n\n"), produtosEncontrados };
+  } catch {
+    return vazio;
+  }
+}
+
+const FONTE_CADASTROS: FaqFonte = {
+  modulo_id: null,
+  modulo_titulo: "Cadastros do sistema (tempo real)",
+  aula_id: null,
+  aula_titulo: null,
+  timestamp: null,
+  trecho:
+    "Produtos, preços, estoque/previsões, cartilhas comerciais, condições de pagamento e frete por UF — consultados ao vivo no banco de dados.",
+};
+
+const SYSTEM_PROMPT = `Você é a IA da Academy Fetély — assistente de conhecimento do time comercial da Fetély (velas e artigos de celebração, B2B). Você é alimentada por DUAS fontes fornecidas a cada pergunta: (1) DADOS CADASTRAIS AO VIVO do sistema — catálogo de produtos, preços, estoque e previsões, cartilhas comerciais/faixas, condições de pagamento, frete por UF e regras gerais; e (2) TRECHOS da base de conhecimento — treinamentos, transcrições de vídeos e notas internas do time.
+
+Hierarquia das fontes:
+- Para valores, percentuais, preços, fretes, condições de pagamento, estoque, previsões de lançamento e regras comerciais, os DADOS CADASTRAIS são a fonte OFICIAL e mais atualizada. Se um trecho de treinamento conflitar com eles, prevalecem os dados cadastrais.
+- Os trechos da Academy complementam com processos, explicações e boas práticas.
+
+Estrutura obrigatória da resposta (Markdown simples):
 
 Estrutura obrigatória da resposta (Markdown simples):
 1. Primeira linha: resposta direta à pergunta em 1–2 frases, com os pontos-chave em **negrito**.
