@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { COLLECTION_ACCENT } from "@/data/products";
+import { COLLECTION_ACCENT } from "@/data/productConstants";
 import { formatBRL } from "@/lib/format";
 import { ColorVariantChips } from "@/components/catalog/ColorVariantChips";
 import type { Product } from "@/types";
