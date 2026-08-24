@@ -7,7 +7,6 @@ import { useCatalog, upsertProductsChunked, productToRow } from "@/store/catalog
 import { usePermissoesStore } from "@/store/permissoesStore";
 import { useGrupos } from "@/store/grupoStore";
 import { useModelos } from "@/store/modeloStore";
-import { PRODUCTS as DEFAULT_PRODUCTS } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import type { SavedOrder } from "@/types";
 import type { Cliente } from "@/types/cliente";
@@ -147,6 +146,8 @@ async function maybeSeedCatalog(roles: AppRole[]): Promise<void> {
       localStorage.setItem(CATALOG_SEED_FLAG, "done");
       return;
     }
+    // JSON default (1,2 MB) carregado sob demanda — só no seed inicial de admin
+    const { PRODUCTS: DEFAULT_PRODUCTS } = await import("@/data/products");
     console.info(`[fopBootstrap] populando ${DEFAULT_PRODUCTS.length} produtos default no banco...`);
     await upsertProductsChunked(DEFAULT_PRODUCTS.map(productToRow));
     await useCatalog.getState().hydrate();

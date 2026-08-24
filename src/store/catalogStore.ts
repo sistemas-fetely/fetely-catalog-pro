@@ -1,9 +1,19 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { Product } from "@/types";
-import { PRODUCTS as DEFAULT_PRODUCTS, NUMERIC_CANDLE_COLLECTIONS } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeStorage } from "@/lib/safeStorage";
+
+// O JSON default do catálogo (1,2 MB) NÃO é importado estaticamente — fica num
+// chunk separado carregado sob demanda (banco vazio, reset ou seed inicial).
+let defaultProductsCache: Product[] | null = null;
+async function loadDefaultProducts(): Promise<Product[]> {
+  if (!defaultProductsCache) {
+    const mod = await import("@/data/products");
+    defaultProductsCache = mod.PRODUCTS;
+  }
+  return defaultProductsCache;
+}
 
 
 export type AuditAcao =
@@ -37,7 +47,8 @@ interface CatalogState {
   source: "default" | "imported" | "banco";
   importedAt: string | null;
   hidratado: boolean;
-  hydrate: () => Promise<void>;
+  lastSyncAt: number;
+  hydrate: (opts?: { force?: boolean }) => Promise<void>;
   setProducts: (products: Product[], meta?: AuditMeta) => Promise<void>;
   resetToDefault: () => void;
   upsertProduct: (p: Product, meta: AuditMeta) => { ok: true } | { ok: false; error: string };
@@ -246,13 +257,22 @@ function logAudit(entry: AuditEntry): void {
 export const useCatalog = create<CatalogState>()(
   persist(
     (set, get) => ({
-      products: DEFAULT_PRODUCTS,
+      products: [],
       audit: [],
       source: "default",
       importedAt: null,
       hidratado: false,
+      lastSyncAt: 0,
 
-      hydrate: async () => {
+      hydrate: async (opts) => {
+        // Cache-first: catálogo muda raramente — só revalida após o TTL (5 min)
+        // ou quando forçado. Em reloads, usa o cache persistido instantaneamente.
+        const st = get();
+        const TTL = 300_000;
+        if (!opts?.force && st.products.length > 0 && Date.now() - st.lastSyncAt < TTL) {
+          if (!st.hidratado) set({ hidratado: true });
+          return;
+        }
         try {
           const { data, error } = await supabase
             .from("products")
@@ -266,12 +286,24 @@ export const useCatalog = create<CatalogState>()(
               source: "banco",
               importedAt: null,
               hidratado: true,
+              lastSyncAt: Date.now(),
             });
           } else {
-            set({ hidratado: true });
+            // Banco vazio — cai pro catálogo default embutido (chunk sob demanda)
+            const defaults = await loadDefaultProducts();
+            set({ products: defaults, source: "default", hidratado: true, lastSyncAt: Date.now() });
           }
         } catch (err) {
           console.error("[catalogStore] hydrate falhou:", err);
+          // Sem rede e sem cache: tenta o catálogo default embutido
+          if (get().products.length === 0) {
+            try {
+              const defaults = await loadDefaultProducts();
+              set({ products: defaults, source: "default" });
+            } catch {
+              /* ignora — hidrata mesmo assim */
+            }
+          }
           set({ hidratado: true });
         }
       },
@@ -281,6 +313,7 @@ export const useCatalog = create<CatalogState>()(
           products,
           source: "imported",
           importedAt: new Date().toISOString(),
+          lastSyncAt: Date.now(),
         });
         (async () => {
           try {
@@ -303,7 +336,9 @@ export const useCatalog = create<CatalogState>()(
       },
 
       resetToDefault: () => {
-        set({ products: DEFAULT_PRODUCTS, source: "default", importedAt: null });
+        void loadDefaultProducts().then((defaults) => {
+          set({ products: defaults, source: "default", importedAt: null });
+        });
         console.warn(
           "[catalogStore] resetToDefault aplicado só no estado local; o banco mantém o catálogo atual",
         );
@@ -396,17 +431,19 @@ export const useCatalog = create<CatalogState>()(
     {
       name: "fetely-catalog",
       storage: createJSONStorage(createSafeStorage),
-      version: 12,
+      version: 13,
       partialize: (state) => ({
         products: state.products,
         source: state.source,
         importedAt: state.importedAt,
+        lastSyncAt: state.lastSyncAt,
       }) as never,
       migrate: (_persisted: unknown, _version) => {
         return {
-          products: DEFAULT_PRODUCTS,
+          products: [],
           source: "default" as const,
           importedAt: null,
+          lastSyncAt: 0,
         };
       },
     },
@@ -452,5 +489,8 @@ export function getProductsBy(
 }
 
 export function isNumericCollection(colecao: string): boolean {
-  return (NUMERIC_CANDLE_COLLECTIONS as readonly string[]).includes(colecao);
+  // Derivado do catálogo atual (banco/cache) — sem depender do JSON estático
+  return useCatalog.getState().products.some(
+    (p) => p.colecao === colecao && p.grupo === "Vela" && p.tipo === "Numérica",
+  );
 }

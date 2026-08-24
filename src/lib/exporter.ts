@@ -1,9 +1,23 @@
 // Exportação completa de pedidos — PDF, CSV, JSON, ZIP (lote)
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import JSZip from "jszip";
+// jsPDF/autoTable/JSZip (~600 KB) carregados sob demanda, só na exportação.
 import FileSaver from "file-saver";
 const { saveAs } = FileSaver;
+
+type JsPDFDoc = import("jspdf").jsPDF;
+type JsPDFClass = typeof import("jspdf").jsPDF;
+type AutoTableFn = typeof import("jspdf-autotable").default;
+
+let pdfLibsCache: { jsPDF: JsPDFClass; autoTable: AutoTableFn } | null = null;
+async function loadPdfLibs(): Promise<{ jsPDF: JsPDFClass; autoTable: AutoTableFn }> {
+  if (!pdfLibsCache) {
+    const [jspdfMod, autoTableMod] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable"),
+    ]);
+    pdfLibsCache = { jsPDF: jspdfMod.jsPDF, autoTable: autoTableMod.default };
+  }
+  return pdfLibsCache;
+}
 import type { SavedOrder, CartItem } from "@/types";
 import { FAIXAS, FRETE_PERCENT } from "@/lib/commercial";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
@@ -416,6 +430,7 @@ export async function exportarPDF(
   tipo: "cliente" | "interno",
   opts: ExportOptions = DEFAULT_OPTIONS,
 ): Promise<void> {
+  const { jsPDF, autoTable } = await loadPdfLibs();
   const thumbs = await loadThumbsForItens(pedido.itens);
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const GOLD: [number, number, number] = [201, 168, 76];
@@ -814,6 +829,7 @@ export async function exportarZIP(
   opts: ExportOptions = DEFAULT_OPTIONS,
   tipoPdf: "cliente" | "interno" = "cliente",
 ): Promise<void> {
+  const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   for (const pedido of pedidos) {
     if (formato === "pdf") {
@@ -833,13 +849,14 @@ export async function exportarZIP(
 }
 
 // PDF builder retornando doc (para ZIP)
-async function buildPdfDoc(pedido: PedidoExportavel, tipo: "cliente" | "interno", opts: ExportOptions): Promise<jsPDF> {
+async function buildPdfDoc(pedido: PedidoExportavel, tipo: "cliente" | "interno", opts: ExportOptions): Promise<JsPDFDoc> {
   const thumbs = await loadThumbsForItens(pedido.itens);
   return _buildPdfInternal(pedido, tipo, opts, thumbs);
 }
 
-function _buildPdfInternal(pedido: PedidoExportavel, tipo: "cliente" | "interno", opts: ExportOptions, thumbs: ThumbMap = new Map()): jsPDF {
+async function _buildPdfInternal(pedido: PedidoExportavel, tipo: "cliente" | "interno", opts: ExportOptions, thumbs: ThumbMap = new Map()): Promise<JsPDFDoc> {
   // Versão idêntica a exportarPDF, sem doc.save
+  const { jsPDF, autoTable } = await loadPdfLibs();
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const GOLD: [number, number, number] = [201, 168, 76];
   doc.setFont("helvetica", "bold"); doc.setFontSize(22);

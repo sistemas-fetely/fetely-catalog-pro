@@ -1,4 +1,4 @@
-import { COLLECTION_ACCENT } from "@/data/products";
+import { COLLECTION_ACCENT } from "@/data/productConstants";
 import { Camera } from "lucide-react";
 
 interface Props {

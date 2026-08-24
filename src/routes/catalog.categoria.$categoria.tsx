@@ -105,6 +105,8 @@ function CategoriaPage() {
                           <div className="relative aspect-[4/3]">
                             {img ? (
                               <img
+                                loading="lazy"
+                                decoding="async"
                                 src={img}
                                 alt={c.colecao}
                                 className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"

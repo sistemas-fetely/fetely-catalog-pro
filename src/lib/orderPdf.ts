@@ -1,5 +1,20 @@
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+// jsPDF/autoTable (~400 KB) NÃO entram no bundle da rota — carregados sob
+// demanda só quando um PDF é efetivamente gerado.
+type JsPDFDoc = import("jspdf").jsPDF;
+type JsPDFClass = typeof import("jspdf").jsPDF;
+type AutoTableFn = typeof import("jspdf-autotable").default;
+
+let pdfLibsCache: { jsPDF: JsPDFClass; autoTable: AutoTableFn } | null = null;
+async function loadPdfLibs(): Promise<{ jsPDF: JsPDFClass; autoTable: AutoTableFn }> {
+  if (!pdfLibsCache) {
+    const [jspdfMod, autoTableMod] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable"),
+    ]);
+    pdfLibsCache = { jsPDF: jspdfMod.jsPDF, autoTable: autoTableMod.default };
+  }
+  return pdfLibsCache;
+}
 import type { CartItem, Product, SavedOrder } from "@/types";
 import type { Cotacao } from "@/types/cotacao";
 import type { ProvisaoFutura } from "@/types/provisao";
@@ -253,7 +268,7 @@ export interface OrderPDFResult {
   dataUrl: string;
 }
 
-function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): void {
+function renderOrderToDoc(doc: JsPDFDoc, order: SavedOrder, autoTableFn: AutoTableFn, thumbs?: ThumbMap): void {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   const contentWidth = pageWidth - margin * 2;
@@ -468,7 +483,7 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
         4: { cellWidth: temDesc ? 32 : 28, halign: "right" },
       };
 
-  autoTable(doc, {
+  autoTableFn(doc, {
     startY: y,
     head: head as unknown as (string | number)[][],
     body: body as unknown as (string | number)[][],
@@ -675,9 +690,10 @@ function renderOrderToDoc(doc: jsPDF, order: SavedOrder, thumbs?: ThumbMap): voi
 }
 
 export async function generateOrderPDF(order: SavedOrder): Promise<OrderPDFResult> {
+  const { jsPDF, autoTable } = await loadPdfLibs();
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const thumbs = await loadItemThumbs(order.items);
-  renderOrderToDoc(doc, order, thumbs);
+  renderOrderToDoc(doc, order, autoTable, thumbs);
   const blob = doc.output("blob");
   const dataUrl = doc.output("datauristring");
   const base64 = dataUrl.split(",")[1];
@@ -695,11 +711,12 @@ export async function generateOrdersBatchPDF(
   mode: "completa" | "resumida",
 ): Promise<OrderPDFResult> {
   if (mode === "completa") {
+    const { jsPDF, autoTable } = await loadPdfLibs();
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const allThumbs = await Promise.all(orders.map((o) => loadItemThumbs(o.items)));
     orders.forEach((order, idx) => {
       if (idx > 0) doc.addPage();
-      renderOrderToDoc(doc, order, allThumbs[idx]);
+      renderOrderToDoc(doc, order, autoTable, allThumbs[idx]);
     });
     const blob = doc.output("blob");
     const dataUrl = doc.output("datauristring");
@@ -713,6 +730,7 @@ export async function generateOrdersBatchPDF(
   }
 
   // ─── RESUMIDA ───
+  const { jsPDF, autoTable } = await loadPdfLibs();
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;

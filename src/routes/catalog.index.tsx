@@ -153,6 +153,8 @@ function CatalogPage() {
               <header className="rounded-xl overflow-hidden gold-border mb-6 sm:mb-8 relative aspect-[16/7] sm:aspect-[16/5] md:aspect-[16/4] bg-surface-2">
                 {heroPhoto ? (
                   <img
+                    loading="lazy"
+                    decoding="async"
                     key={heroPhoto}
                     src={heroPhoto}
                     alt={activeColor ? `${colecao} — ${activeColor}` : colecao}
@@ -334,6 +336,8 @@ function EmptyState() {
                 <div className="relative aspect-[4/3] overflow-hidden">
                   {img ? (
                     <img
+                      loading="lazy"
+                      decoding="async"
                       src={img}
                       alt={c.nome}
                       className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
@@ -410,6 +414,8 @@ function EmptyState() {
                 <div className="relative aspect-square overflow-hidden">
                   {img ? (
                     <img
+                      loading="lazy"
+                      decoding="async"
                       src={img}
                       alt={c.colecao}
                       className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"

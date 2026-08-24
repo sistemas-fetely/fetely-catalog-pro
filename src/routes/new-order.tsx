@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { NumericalCandleGrid } from "@/components/catalog/NumericalCandleGrid";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { StepIndicator, type Step } from "@/components/ui/StepIndicator";
-import { COLLECTION_ACCENT } from "@/data/products";
+import { COLLECTION_ACCENT } from "@/data/productConstants";
 import {
   useCatalog,
   getCategories,

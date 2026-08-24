@@ -1,4 +1,5 @@
-import jsPDF from "jspdf";
+// jsPDF (~400 KB) carregado sob demanda, só ao gerar o PDF do catálogo.
+type JsPDFDoc = import("jspdf").jsPDF;
 import type { Product } from "@/types";
 import { getColecaoPhoto, getProdutoPhoto } from "@/store/photoStore";
 
@@ -173,7 +174,7 @@ interface BuildOpts {
 
 // Desenha a imagem mantendo a proporção (contain) dentro da caixa.
 function drawContained(
-  doc: jsPDF,
+  doc: JsPDFDoc,
   img: LoadedImage,
   bx: number,
   by: number,
@@ -202,6 +203,7 @@ function drawContained(
 export async function buildCatalogPDF(opts: BuildOpts): Promise<Blob> {
   const { products, photos, colecoesSelecionadas, version, fields, onProgress } = opts;
   const fieldSet = new Set<CatalogFieldKey>(fields);
+  const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -398,7 +400,7 @@ function fieldValue(p: Product, key: CatalogFieldKey): string | null {
 }
 
 function renderProductCell(
-  doc: jsPDF,
+  doc: JsPDFDoc,
   p: Product,
   x: number,
   y: number,

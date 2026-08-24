@@ -821,7 +821,7 @@ function CartPage() {
                       >
                         <div className="hidden sm:block w-16 h-16 rounded overflow-hidden bg-surface-2 shrink-0">
                           {img ? (
-                            <img src={img} alt={item.product.nomeComercial} className="w-full h-full object-cover" />
+                            <img loading="lazy" decoding="async" src={img} alt={item.product.nomeComercial} className="w-full h-full object-cover" />
                           ) : (
                             <PhotoPlaceholder colecao={item.product.colecao} className="w-full h-full" showIcon={false} />
                           )}
@@ -830,7 +830,7 @@ function CartPage() {
                           <div className="min-w-0 flex-1 flex gap-3 sm:block">
                             <div className="sm:hidden w-14 h-14 rounded overflow-hidden bg-surface-2 shrink-0">
                               {img ? (
-                                <img src={img} alt={item.product.nomeComercial} className="w-full h-full object-cover" />
+                                <img loading="lazy" decoding="async" src={img} alt={item.product.nomeComercial} className="w-full h-full object-cover" />
                               ) : (
                                 <PhotoPlaceholder colecao={item.product.colecao} className="w-full h-full" showIcon={false} />
                               )}
