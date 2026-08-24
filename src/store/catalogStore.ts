@@ -257,13 +257,22 @@ function logAudit(entry: AuditEntry): void {
 export const useCatalog = create<CatalogState>()(
   persist(
     (set, get) => ({
-      products: DEFAULT_PRODUCTS,
+      products: [],
       audit: [],
       source: "default",
       importedAt: null,
       hidratado: false,
+      lastSyncAt: 0,
 
-      hydrate: async () => {
+      hydrate: async (opts) => {
+        // Cache-first: catálogo muda raramente — só revalida após o TTL (5 min)
+        // ou quando forçado. Em reloads, usa o cache persistido instantaneamente.
+        const st = get();
+        const TTL = 300_000;
+        if (!opts?.force && st.products.length > 0 && Date.now() - st.lastSyncAt < TTL) {
+          if (!st.hidratado) set({ hidratado: true });
+          return;
+        }
         try {
           const { data, error } = await supabase
             .from("products")
@@ -277,12 +286,24 @@ export const useCatalog = create<CatalogState>()(
               source: "banco",
               importedAt: null,
               hidratado: true,
+              lastSyncAt: Date.now(),
             });
           } else {
-            set({ hidratado: true });
+            // Banco vazio — cai pro catálogo default embutido (chunk sob demanda)
+            const defaults = await loadDefaultProducts();
+            set({ products: defaults, source: "default", hidratado: true, lastSyncAt: Date.now() });
           }
         } catch (err) {
           console.error("[catalogStore] hydrate falhou:", err);
+          // Sem rede e sem cache: tenta o catálogo default embutido
+          if (get().products.length === 0) {
+            try {
+              const defaults = await loadDefaultProducts();
+              set({ products: defaults, source: "default" });
+            } catch {
+              /* ignora — hidrata mesmo assim */
+            }
+          }
           set({ hidratado: true });
         }
       },
@@ -292,6 +313,7 @@ export const useCatalog = create<CatalogState>()(
           products,
           source: "imported",
           importedAt: new Date().toISOString(),
+          lastSyncAt: Date.now(),
         });
         (async () => {
           try {
@@ -314,7 +336,9 @@ export const useCatalog = create<CatalogState>()(
       },
 
       resetToDefault: () => {
-        set({ products: DEFAULT_PRODUCTS, source: "default", importedAt: null });
+        void loadDefaultProducts().then((defaults) => {
+          set({ products: defaults, source: "default", importedAt: null });
+        });
         console.warn(
           "[catalogStore] resetToDefault aplicado só no estado local; o banco mantém o catálogo atual",
         );
