@@ -1283,6 +1283,7 @@ import {
   setFreteFallbackPercent,
   upsertFreteUF,
   removeFreteUF,
+  syncFreteFromDb,
   ufsSemTabela,
   type FreteUF,
 } from "@/lib/freteUf";
@@ -1295,7 +1296,17 @@ function FreteUfTab({ meta }: { meta: { usuarioId: string; usuarioNome: string }
   const [novoOpen, setNovoOpen] = useState(false);
   const [simOpen, setSimOpen] = useState(false);
 
-  const recarregar = () => setLista(getFretesUF());
+  const recarregar = () => {
+    setLista(getFretesUF());
+    setFallback(getFreteFallbackPercent());
+  };
+
+  // Fonte oficial é o banco: baixa a tabela ao abrir (e sobe customizações
+  // locais antigas uma única vez, sem sobrescrever o que já está no banco).
+  useEffect(() => {
+    void syncFreteFromDb(meta.usuarioNome).then(recarregar);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtrada = useMemo(
     () =>

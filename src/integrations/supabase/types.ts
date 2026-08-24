@@ -766,6 +766,30 @@ export type Database = {
         }
         Relationships: []
       }
+      frete_uf: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          atualizado_por: string | null
+          percentual: number
+          uf: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          atualizado_por?: string | null
+          percentual?: number
+          uf: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          atualizado_por?: string | null
+          percentual?: number
+          uf?: string
+        }
+        Relationships: []
+      }
       grupos_clientes: {
         Row: {
           ativo: boolean
@@ -2543,6 +2567,7 @@ export type Database = {
           bonus_pix_padrao: number
           desconto_master_max: number
           faixa_reservada_nome: string
+          frete_fallback_percent: number
           id: number
           pedido_minimo: number
           provisao_expirar_dias: number
@@ -2555,6 +2580,7 @@ export type Database = {
           bonus_pix_padrao?: number
           desconto_master_max?: number
           faixa_reservada_nome?: string
+          frete_fallback_percent?: number
           id?: number
           pedido_minimo?: number
           provisao_expirar_dias?: number
@@ -2567,6 +2593,7 @@ export type Database = {
           bonus_pix_padrao?: number
           desconto_master_max?: number
           faixa_reservada_nome?: string
+          frete_fallback_percent?: number
           id?: number
           pedido_minimo?: number
           provisao_expirar_dias?: number

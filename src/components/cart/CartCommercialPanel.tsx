@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { syncFreteFromDb } from "@/lib/freteUf";
 import { Award, ChevronDown, Gift, Lock, Settings2, Sparkles, X } from "lucide-react";
 import {
   ACRESCIMO_ISENTO_IE_PERCENT,
@@ -93,6 +94,13 @@ export function CartCommercialPanel({
   const [motivoBonif, setMotivoBonif] = useState<string>("");
   const [motivoOutroTxt, setMotivoOutroTxt] = useState<string>("");
   useEffect(() => { if (!canBonificar && bonificado) setBonificado(false); }, [canBonificar, bonificado]);
+
+  // Tabela de frete FOB por UF: sincroniza com o banco (fonte oficial) e
+  // re-renderiza para o cálculo refletir eventuais atualizações do admin.
+  const [, setFreteTick] = useState(0);
+  useEffect(() => {
+    void syncFreteFromDb().then(() => setFreteTick((n) => n + 1));
+  }, []);
   const motivoBonificacaoFinal =
     motivoBonif === "outro" ? (motivoOutroTxt.trim() ? `outro: ${motivoOutroTxt.trim()}` : "") : motivoBonif;
 
