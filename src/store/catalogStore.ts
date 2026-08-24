@@ -431,17 +431,19 @@ export const useCatalog = create<CatalogState>()(
     {
       name: "fetely-catalog",
       storage: createJSONStorage(createSafeStorage),
-      version: 12,
+      version: 13,
       partialize: (state) => ({
         products: state.products,
         source: state.source,
         importedAt: state.importedAt,
+        lastSyncAt: state.lastSyncAt,
       }) as never,
       migrate: (_persisted: unknown, _version) => {
         return {
-          products: DEFAULT_PRODUCTS,
+          products: [],
           source: "default" as const,
           importedAt: null,
+          lastSyncAt: 0,
         };
       },
     },
@@ -487,5 +489,8 @@ export function getProductsBy(
 }
 
 export function isNumericCollection(colecao: string): boolean {
-  return (NUMERIC_CANDLE_COLLECTIONS as readonly string[]).includes(colecao);
+  // Derivado do catálogo atual (banco/cache) — sem depender do JSON estático
+  return useCatalog.getState().products.some(
+    (p) => p.colecao === colecao && p.grupo === "Vela" && p.tipo === "Numérica",
+  );
 }
