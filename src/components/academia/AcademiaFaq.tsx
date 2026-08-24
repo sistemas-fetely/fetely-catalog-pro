@@ -48,8 +48,9 @@ export function AcademiaFaq() {
         <h2 className="font-display text-xl">Perguntas</h2>
       </div>
       <p className="mt-1 text-sm text-text-secondary">
-        Inteligência artificial alimentada pela base de conhecimento da
-        Academy — respostas estruturadas, com fonte do vídeo e do minuto
+        Inteligência artificial alimentada pela Academy e pelos cadastros do
+        sistema — produtos, preços, estoque e previsões, cartilhas comerciais,
+        condições de pagamento e frete por UF — com fonte do vídeo e do minuto
         exato.
       </p>
 
