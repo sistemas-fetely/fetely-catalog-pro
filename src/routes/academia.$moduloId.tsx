@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Circle,
   Download,
+  ExternalLink,
   FileText,
   GraduationCap,
   Image as ImageIcon,
@@ -344,6 +345,50 @@ function BlocoView({
           </div>
         )}
       </figure>
+    );
+  }
+
+  if (bloco.tipo === "link" && bloco.conteudo_texto) {
+    const href = bloco.conteudo_texto;
+    const capa = bloco.arquivo_url ? urls[bloco.arquivo_url] : undefined;
+    let dominio = href;
+    try {
+      dominio = new URL(href).hostname.replace(/^www\./, "");
+    } catch {
+      // mantém o href bruto se a URL for inválida
+    }
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group block overflow-hidden rounded-xl border border-border bg-surface transition hover:border-gold/60"
+      >
+        {capa && (
+          <div className="aspect-video w-full overflow-hidden bg-surface-2">
+            <img
+              src={capa}
+              alt={bloco.arquivo_nome ?? "Capa do link"}
+              className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+              loading="lazy"
+            />
+          </div>
+        )}
+        <span className="flex items-center gap-3 p-4">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">
+            <ExternalLink className="h-4 w-4" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium text-text-primary">
+              {bloco.arquivo_nome?.trim() || dominio}
+            </span>
+            <span className="block truncate text-xs text-text-muted">
+              {dominio} — abre em nova aba
+            </span>
+          </span>
+          <ExternalLink className="h-4 w-4 shrink-0 text-text-muted transition group-hover:text-gold" />
+        </span>
+      </a>
     );
   }
 

@@ -1,0 +1,2 @@
+alter table public.treinamento_bloco drop constraint if exists treinamento_bloco_tipo_check;
+alter table public.treinamento_bloco add constraint treinamento_bloco_tipo_check check (tipo in ('video','texto','imagem','anexo','link'));
