@@ -736,38 +736,38 @@ export async function responderPergunta(
     return out;
   };
 
-  let resposta: string;
-  let encontrou: boolean;
-  let fontes: FaqFonte[];
+  const contexto = relevantes
+    .map((m, i) => {
+      const origem = !m.modulo_id
+        ? "Base de conhecimento (nota interna do time)"
+        : m.origem_tipo === "descritivo"
+          ? `Módulo "${modMap.get(m.modulo_id) ?? ""}" · Aula "${aulaMap.get(m.aula_id) ?? ""}" · vídeo em ${m.timestamp_video}`
+          : `Módulo "${modMap.get(m.modulo_id) ?? ""}"${m.aula_id ? ` · Aula "${aulaMap.get(m.aula_id) ?? ""}"` : ""}`;
+      return `[${i + 1}] ${origem}\n"${m.texto}"`;
+    })
+    .join("\n\n");
 
-  if (relevantes.length === 0) {
-    encontrou = false;
-    fontes = fontesDe(lista.slice(0, 1));
+  let resposta = await chatCompletar(
+    SYSTEM_PROMPT,
+    `Pergunta: ${pergunta}\n\n` +
+      `Dados cadastrais do sistema (consulta ao vivo no banco de dados — fonte oficial para preços, valores, fretes, condições, estoque e previsões):\n` +
+      `${cadastros.texto || "(indisponível no momento)"}\n\n` +
+      `Trechos da base de conhecimento (treinamentos, transcrições e notas internas):\n` +
+      `${contexto || "(nenhum trecho relevante encontrado)"}`,
+  );
+  if (!resposta)
     resposta =
-      "Ainda não temos um conteúdo sobre isso na Academia. " +
-      (fontes.length > 0
-        ? "O material mais próximo é o indicado abaixo — se não ajudar, fale com o time interno para criarmos esse conteúdo."
-        : "Assim que um conteúdo relacionado for publicado, passo a responder por aqui.");
+      "Ainda não temos um conteúdo sobre isso na Academia. Fale com o time interno para criarmos esse material.";
+
+  const encontrou = !resposta.toLowerCase().includes("ainda não temos");
+  let fontes: FaqFonte[];
+  if (encontrou) {
+    fontes = [
+      ...(cadastros.texto ? [FONTE_CADASTROS] : []),
+      ...fontesDe(relevantes),
+    ].slice(0, 3);
   } else {
-    const contexto = relevantes
-      .map((m, i) => {
-        const origem = !m.modulo_id
-          ? "Base de conhecimento (nota interna do time)"
-          : m.origem_tipo === "descritivo"
-            ? `Módulo "${modMap.get(m.modulo_id) ?? ""}" · Aula "${aulaMap.get(m.aula_id) ?? ""}" · vídeo em ${m.timestamp_video}`
-            : `Módulo "${modMap.get(m.modulo_id) ?? ""}"${m.aula_id ? ` · Aula "${aulaMap.get(m.aula_id) ?? ""}"` : ""}`;
-        return `[${i + 1}] ${origem}\n"${m.texto}"`;
-      })
-      .join("\n\n");
-    resposta = await chatCompletar(
-      SYSTEM_PROMPT,
-      `Pergunta: ${pergunta}\n\nTrechos da base de conhecimento:\n${contexto}`,
-    );
-    if (!resposta)
-      resposta =
-        "Ainda não temos um conteúdo sobre isso na Academia. Fale com o time interno para criarmos esse material.";
-    encontrou = true;
-    fontes = fontesDe(relevantes);
+    fontes = fontesDe(lista.slice(0, 1));
   }
 
   await supabase.from("faq_pergunta").insert({
