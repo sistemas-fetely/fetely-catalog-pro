@@ -49,7 +49,7 @@ export function AcademiaFaq() {
       </div>
       <p className="mt-1 text-sm text-text-secondary">
         Inteligência artificial alimentada pela base de conhecimento da
-        Academia — respostas estruturadas, com fonte do vídeo e do minuto
+        Academy — respostas estruturadas, com fonte do vídeo e do minuto
         exato.
       </p>
 

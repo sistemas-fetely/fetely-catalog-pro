@@ -82,7 +82,7 @@ export const TELAS_SISTEMA: TelaDefinicao[] = [
   { id: "negociacao_faixa_res", nome: "↳ Ativar Faixa Reservada", grupo: "Comercial", acoes: V },
 
   // ACADEMIA
-  { id: "academia", nome: "Academia Fetély", grupo: "Academia", acoes: CRUD },
+  { id: "academia", nome: "Academy Fetély", grupo: "Academy", acoes: CRUD },
 
   // CONFIGURAÇÕES — PRODUTOS
   { id: "cfg_produtos", nome: "Gestão de Produtos", grupo: "Configurações", acoes: CRUDE },

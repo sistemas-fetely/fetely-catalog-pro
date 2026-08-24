@@ -39,7 +39,7 @@ function contentDisposition(filename: string): string {
 
 function htmlErro(status: number, msg: string): Response {
   return new Response(
-    `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Academia Fetély</title></head>` +
+    `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Academy Fetély</title></head>` +
       `<body style="font-family:sans-serif;padding:48px;max-width:520px;margin:0 auto;color:#333">` +
       `<h2 style="margin:0 0 12px">Não foi possível abrir o arquivo</h2><p>${msg}</p></body></html>`,
     { status, headers: { "content-type": "text/html; charset=utf-8" } },
