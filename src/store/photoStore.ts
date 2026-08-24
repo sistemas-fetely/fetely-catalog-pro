@@ -33,22 +33,31 @@ interface PhotoState {
   removeProdutoPhoto: (colecao: string, cor: string) => Promise<void>;
 }
 
-export const usePhotos = create<PhotoState>()((set, get) => ({
+export const usePhotos = create<PhotoState>()(
+  persist(
+    (set, get) => ({
   colecoes: {},
   produtos: {},
   paths: {},
   loaded: false,
   loading: false,
+  fetchedAt: 0,
 
-  fetchAll: async () => {
-    if (get().loading) return;
+  fetchAll: async (force) => {
+    const st = get();
+    if (st.loading) return;
+    // Cache-first: se buscou há menos de 10 min, reusa o mapa persistido
+    if (!force && st.fetchedAt > 0 && Date.now() - st.fetchedAt < PHOTOS_TTL) {
+      if (!st.loaded) set({ loaded: true });
+      return;
+    }
     set({ loading: true });
     const { data, error } = await supabase
       .from("photos")
       .select("kind, colecao, categoria, cor, url, path");
     if (error) {
       console.error("photos fetch error", error);
-      set({ loading: false });
+      set({ loading: false, loaded: true });
       return;
     }
     const colecoes: Record<string, string> = {};
@@ -66,7 +75,7 @@ export const usePhotos = create<PhotoState>()((set, get) => ({
         paths[`p:${key}`] = row.path;
       }
     }
-    set({ colecoes, produtos, paths, loaded: true, loading: false });
+    set({ colecoes, produtos, paths, loaded: true, loading: false, fetchedAt: Date.now() });
   },
 
   setColecaoPhoto: async (colecao, categoria, dataUrl) => {
