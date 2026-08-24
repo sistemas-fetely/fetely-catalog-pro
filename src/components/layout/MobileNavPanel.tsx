@@ -62,13 +62,13 @@ export function MobileNavPanel({ onNavigate }: { onNavigate?: () => void }) {
     { to: "/reunioes", label: "Reuniões", Icon: CalendarDays, badge: reunioesNovas },
     { to: "/clientes", label: "Clientes", Icon: Users, tela: "clientes_lista" },
     { to: "/dashboard", label: "Dashboard", Icon: BarChart3, tela: "dashboard" },
-    { to: "/academia", label: "Academia", Icon: GraduationCap, tela: "academia" },
+    { to: "/academia", label: "Academy", Icon: GraduationCap, tela: "academia" },
   ];
 
   const admin: Item[] = [
     { to: "/photos", label: "Fotos", Icon: ImageIcon, tela: "fotos_gerenciar" },
     { to: "/import", label: "Importar", Icon: Upload, tela: "cfg_produtos_importar" },
-    { to: "/admin/academia", label: "Academia (conteúdo)", Icon: GraduationCap, adminOnly: true },
+    { to: "/admin/academia", label: "Academy (conteúdo)", Icon: GraduationCap, adminOnly: true },
     { to: "/admin/permissoes", label: "Permissões", Icon: ShieldCheck, adminOnly: true },
     { to: "/settings", label: "Configurações", Icon: Settings },
   ];

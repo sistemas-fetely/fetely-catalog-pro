@@ -157,7 +157,7 @@ export function Header() {
               )}
               {temPermissao("academia", "ver") && (
                 <Link to="/academia" className={navLinkClass(pathname.startsWith("/academia"))}>
-                  Academia
+                  Academy
                 </Link>
               )}
             </nav>

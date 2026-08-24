@@ -14,7 +14,7 @@ import { useAuth } from "@/store/authStore";
 export const Route = createFileRoute("/academia/")({
   head: () => ({
     meta: [
-      { title: "Academia Fetély — Central de Treinamento" },
+      { title: "Academy Fetély — Central de Treinamento" },
       {
         name: "description",
         content:
@@ -61,7 +61,7 @@ function AcademiaPage() {
           <p className="text-[11px] uppercase tracking-[0.25em] text-gold">
             Central de treinamento
           </p>
-          <h1 className="mt-1 font-display text-3xl md:text-4xl">Academia Fetély</h1>
+          <h1 className="mt-1 font-display text-3xl md:text-4xl">Academy Fetély</h1>
           <p className="mt-2 max-w-xl text-sm text-text-secondary">
             Trilhas de capacitação do time comercial: vídeos, textos e materiais de apoio.
           </p>

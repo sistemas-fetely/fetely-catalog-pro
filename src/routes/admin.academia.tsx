@@ -57,10 +57,10 @@ import { useAuth } from "@/store/authStore";
 export const Route = createFileRoute("/admin/academia")({
   head: () => ({
     meta: [
-      { title: "Gerenciar Academia — Admin Fetély" },
+      { title: "Gerenciar Academy — Admin Fetély" },
       {
         name: "description",
-        content: "Administração dos módulos, aulas e materiais da Academia Fetély.",
+        content: "Administração dos módulos, aulas e materiais da Academy Fetély.",
       },
     ],
   }),
@@ -108,7 +108,7 @@ function AdminAcademiaPage() {
       <main className="mx-auto max-w-2xl px-4 py-16 text-center">
         <h1 className="font-display text-2xl">Acesso restrito</h1>
         <p className="mt-2 text-sm text-text-secondary">
-          Apenas administradores gerenciam o conteúdo da Academia.
+          Apenas administradores gerenciam o conteúdo da Academy.
         </p>
       </main>
     );
@@ -175,14 +175,14 @@ function AdminAcademiaPage() {
     <main className="mx-auto w-full max-w-5xl px-4 py-8 md:py-12">
       <nav className="text-xs text-text-muted">
         <Link to="/academia" className="hover:text-gold">
-          Academia
+          Academy
         </Link>{" "}
         / <span className="text-text-secondary">Gerenciar conteúdo</span>
       </nav>
 
       <header className="mt-3 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl">Academia — Conteúdo</h1>
+          <h1 className="font-display text-3xl">Academy — Conteúdo</h1>
           <p className="mt-1 text-sm text-text-secondary">
             Crie módulos, organize aulas e publique para o time.
           </p>

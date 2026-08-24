@@ -36,7 +36,7 @@ export const Route = createFileRoute("/academia/$moduloId")({
   }),
   head: () => ({
     meta: [
-      { title: "Academia Fetély — Módulo" },
+      { title: "Academy Fetély — Módulo" },
       { name: "description", content: "Aulas do módulo de treinamento Fetély." },
     ],
   }),
@@ -156,7 +156,7 @@ function ModuloPage() {
           to="/academia"
           className="mt-3 rounded-md bg-gold px-5 py-2 text-xs uppercase tracking-[0.15em] text-background hover:bg-gold-light"
         >
-          Voltar para a Academia
+          Voltar para a Academy
         </Link>
       </main>
     );
@@ -174,7 +174,7 @@ function ModuloPage() {
     <main className="mx-auto w-full max-w-6xl px-4 py-8 md:py-10">
       <nav className="text-xs text-text-muted">
         <Link to="/academia" className="hover:text-gold">
-          Academia
+          Academy
         </Link>{" "}
         / <span className="text-text-secondary">{modulo.titulo}</span>
       </nav>
