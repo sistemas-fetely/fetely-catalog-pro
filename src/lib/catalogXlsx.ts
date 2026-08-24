@@ -1,5 +1,4 @@
 // ExcelJS (~500 KB) carregado sob demanda, só ao gerar a planilha do catálogo.
-import type ExcelJSType from "exceljs";
 import type { Product } from "@/types";
 import { getProdutoPhoto } from "@/store/photoStore";
 import {
