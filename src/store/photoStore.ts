@@ -190,7 +190,21 @@ export const usePhotos = create<PhotoState>()(
       return { produtos, paths };
     });
   },
-}));
+    }),
+    {
+      name: "fetely-photos",
+      storage: createJSONStorage(createSafeStorage),
+      version: 1,
+      partialize: (s) =>
+        ({
+          colecoes: s.colecoes,
+          produtos: s.produtos,
+          paths: s.paths,
+          fetchedAt: s.fetchedAt,
+        }) as never,
+    },
+  ),
+);
 
 export function getColecaoPhoto(
   state: { colecoes: Record<string, string> },
