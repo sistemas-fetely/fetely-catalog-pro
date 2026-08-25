@@ -126,7 +126,39 @@ function AdminUsersPage() {
     login: string | null;
     email: string;
     senha: string;
+    titulo?: string;
   } | null>(null);
+  const [resettingId, setResettingId] = useState<string | null>(null);
+
+  const copiarCredenciais = async (u: {
+    id: string;
+    nome_completo: string | null;
+    email: string;
+    login_amigavel: string | null;
+  }) => {
+    if (
+      !confirm(
+        `Gerar uma NOVA senha para ${u.nome_completo ?? u.email} e copiar as credenciais?\n\nA senha anterior deixará de funcionar.`,
+      )
+    )
+      return;
+    setResettingId(u.id);
+    try {
+      const { password } = await resetPwFn({ data: { user_id: u.id } });
+      setCredModal({
+        login: u.login_amigavel,
+        email: u.email,
+        senha: password,
+        titulo: "Credenciais de acesso",
+      });
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao gerar nova senha",
+      );
+    } finally {
+      setResettingId(null);
+    }
+  };
   const [busca, setBusca] = useState("");
   const [filtroTipo, setFiltroTipo] = useState<"todos" | TipoVendedor | "inativos">(
     "todos",
