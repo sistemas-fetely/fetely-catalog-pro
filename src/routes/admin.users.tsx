@@ -759,9 +759,7 @@ Acesse: https://fetely-catalog-pro.lovable.app
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="w-full max-w-md rounded-lg border border-gold/40 bg-surface p-6 space-y-4">
-        <h3 className="font-display text-lg text-gold">
-          ✦ Usuário criado com sucesso
-        </h3>
+        <h3 className="font-display text-lg text-gold">✦ {titulo}</h3>
         <div className="space-y-2 text-sm">
           {login && (
             <Row label="Login amigável" value={login} mono />
