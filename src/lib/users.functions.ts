@@ -237,6 +237,32 @@ export const setUserAtivo = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const resetPasswordSchema = z.object({ user_id: z.string().uuid() });
+
+export const resetUserPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => resetPasswordSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as { userId: string };
+    await assertCallerCan(userId, "vendedor"); // apenas master ou admin
+
+    const novaSenha = `Fetely@${Math.floor(1000 + Math.random() * 9000)}`;
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(
+      data.user_id,
+      { password: novaSenha },
+    );
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin.rpc("log_access_event", {
+      p_user_id: data.user_id,
+      p_evento: "senha_redefinida_admin",
+      p_descricao: "Senha redefinida pelo painel de usuários",
+      p_metadata: { por: userId },
+    });
+
+    return { password: novaSenha };
+  });
+
 const deleteSchema = z.object({ user_id: z.string().uuid() });
 
 export const deleteAppUser = createServerFn({ method: "POST" })

@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, Trash2, UserPlus, Power, Search, Shield } from "lucide-react";
+import { Copy, KeyRound, Trash2, UserPlus, Power, Search, Shield } from "lucide-react";
+import { toast } from "sonner";
 import { useRegioes } from "@/hooks/useRegioes";
 import { useAuth, type AppRole, type TipoVendedor } from "@/store/authStore";
 import {
@@ -10,6 +11,7 @@ import {
   listAppUsers,
   setUserAtivo,
   deleteAppUser,
+  resetUserPassword,
 } from "@/lib/users.functions";
 
 export const Route = createFileRoute("/admin/users")({
@@ -43,6 +45,7 @@ function AdminUsersPage() {
   const createFn = useServerFn(createAppUser);
   const toggleFn = useServerFn(setUserAtivo);
   const deleteFn = useServerFn(deleteAppUser);
+  const resetPwFn = useServerFn(resetUserPassword);
 
   useEffect(() => {
     init();
@@ -123,7 +126,39 @@ function AdminUsersPage() {
     login: string | null;
     email: string;
     senha: string;
+    titulo?: string;
   } | null>(null);
+  const [resettingId, setResettingId] = useState<string | null>(null);
+
+  const copiarCredenciais = async (u: {
+    id: string;
+    nome_completo: string | null;
+    email: string;
+    login_amigavel: string | null;
+  }) => {
+    if (
+      !confirm(
+        `Gerar uma NOVA senha para ${u.nome_completo ?? u.email} e copiar as credenciais?\n\nA senha anterior deixará de funcionar.`,
+      )
+    )
+      return;
+    setResettingId(u.id);
+    try {
+      const { password } = await resetPwFn({ data: { user_id: u.id } });
+      setCredModal({
+        login: u.login_amigavel,
+        email: u.email,
+        senha: password,
+        titulo: "Credenciais de acesso",
+      });
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao gerar nova senha",
+      );
+    } finally {
+      setResettingId(null);
+    }
+  };
   const [busca, setBusca] = useState("");
   const [filtroTipo, setFiltroTipo] = useState<"todos" | TipoVendedor | "inativos">(
     "todos",
@@ -533,6 +568,14 @@ function AdminUsersPage() {
                       Permissões
                     </button>
                     <button
+                      onClick={() => copiarCredenciais(u)}
+                      disabled={resettingId === u.id}
+                      className="text-text-secondary hover:text-gold p-1 disabled:opacity-50"
+                      title="Copiar credenciais (gera nova senha)"
+                    >
+                      <KeyRound className="h-4 w-4" />
+                    </button>
+                    <button
                       onClick={() =>
                         toggleMut.mutate({ user_id: u.id, ativo: !u.ativo })
                       }
@@ -629,6 +672,14 @@ function AdminUsersPage() {
                   <Shield className="h-4 w-4" />
                 </button>
                 <button
+                  onClick={() => copiarCredenciais(u)}
+                  disabled={resettingId === u.id}
+                  className="text-text-secondary hover:text-gold p-1 disabled:opacity-50"
+                  title="Copiar credenciais (gera nova senha)"
+                >
+                  <KeyRound className="h-4 w-4" />
+                </button>
+                <button
                   onClick={() =>
                     toggleMut.mutate({ user_id: u.id, ativo: !u.ativo })
                   }
@@ -660,6 +711,7 @@ function AdminUsersPage() {
           login={credModal.login}
           email={credModal.email}
           senha={credModal.senha}
+          titulo={credModal.titulo}
           onClose={() => setCredModal(null)}
         />
       )}
@@ -687,11 +739,13 @@ function CredentialsModal({
   login,
   email,
   senha,
+  titulo = "Usuário criado com sucesso",
   onClose,
 }: {
   login: string | null;
   email: string;
   senha: string;
+  titulo?: string;
   onClose: () => void;
 }) {
   const texto = `*Fetély B2B Orders — Acesso criado*
@@ -705,9 +759,7 @@ Acesse: https://fetely-catalog-pro.lovable.app
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="w-full max-w-md rounded-lg border border-gold/40 bg-surface p-6 space-y-4">
-        <h3 className="font-display text-lg text-gold">
-          ✦ Usuário criado com sucesso
-        </h3>
+        <h3 className="font-display text-lg text-gold">✦ {titulo}</h3>
         <div className="space-y-2 text-sm">
           {login && (
             <Row label="Login amigável" value={login} mono />
