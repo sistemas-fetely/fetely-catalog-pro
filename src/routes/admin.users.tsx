@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, Trash2, UserPlus, Power, Search, Shield } from "lucide-react";
+import { Copy, KeyRound, Trash2, UserPlus, Power, Search, Shield } from "lucide-react";
+import { toast } from "sonner";
 import { useRegioes } from "@/hooks/useRegioes";
 import { useAuth, type AppRole, type TipoVendedor } from "@/store/authStore";
 import {
@@ -10,6 +11,7 @@ import {
   listAppUsers,
   setUserAtivo,
   deleteAppUser,
+  resetUserPassword,
 } from "@/lib/users.functions";
 
 export const Route = createFileRoute("/admin/users")({
@@ -43,6 +45,7 @@ function AdminUsersPage() {
   const createFn = useServerFn(createAppUser);
   const toggleFn = useServerFn(setUserAtivo);
   const deleteFn = useServerFn(deleteAppUser);
+  const resetPwFn = useServerFn(resetUserPassword);
 
   useEffect(() => {
     init();
