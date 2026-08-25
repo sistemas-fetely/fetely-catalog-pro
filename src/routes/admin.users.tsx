@@ -711,6 +711,7 @@ function AdminUsersPage() {
           login={credModal.login}
           email={credModal.email}
           senha={credModal.senha}
+          titulo={credModal.titulo}
           onClose={() => setCredModal(null)}
         />
       )}
@@ -738,11 +739,13 @@ function CredentialsModal({
   login,
   email,
   senha,
+  titulo = "Usuário criado com sucesso",
   onClose,
 }: {
   login: string | null;
   email: string;
   senha: string;
+  titulo?: string;
   onClose: () => void;
 }) {
   const texto = `*Fetély B2B Orders — Acesso criado*
