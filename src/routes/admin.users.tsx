@@ -568,6 +568,14 @@ function AdminUsersPage() {
                       Permissões
                     </button>
                     <button
+                      onClick={() => copiarCredenciais(u)}
+                      disabled={resettingId === u.id}
+                      className="text-text-secondary hover:text-gold p-1 disabled:opacity-50"
+                      title="Copiar credenciais (gera nova senha)"
+                    >
+                      <KeyRound className="h-4 w-4" />
+                    </button>
+                    <button
                       onClick={() =>
                         toggleMut.mutate({ user_id: u.id, ativo: !u.ativo })
                       }
@@ -662,6 +670,14 @@ function AdminUsersPage() {
                   title="Permissões"
                 >
                   <Shield className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => copiarCredenciais(u)}
+                  disabled={resettingId === u.id}
+                  className="text-text-secondary hover:text-gold p-1 disabled:opacity-50"
+                  title="Copiar credenciais (gera nova senha)"
+                >
+                  <KeyRound className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() =>
