@@ -302,6 +302,8 @@ function Confirmation() {
               <Info label="CNPJ" value={order.meta.cnpj || "—"} />
               <Info label="Pagamento" value={order.meta.condicaoPagamento} />
               <Info label="Vendedor" value={order.meta.vendedor} />
+              <Info label="Contato" value={order.meta.telefone || order.meta.email || "—"} />
+              <Info label="Email" value={order.meta.email || "—"} />
             </div>
             {order.meta.observacoesCliente && (
               <div>
