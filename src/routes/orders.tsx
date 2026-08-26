@@ -310,7 +310,16 @@ function OrdersPage() {
                     <td className="px-4 py-3 text-text-secondary">
                       {new Date(o.createdAt).toLocaleString("pt-BR")}
                     </td>
-                    <td className="px-4 py-3">{o.meta.cliente || "—"}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span>{o.meta.cliente || "—"}</span>
+                        {(o.meta.telefone || o.meta.email) && (
+                          <span className="text-[11px] text-text-muted">
+                            {o.meta.telefone || o.meta.email}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     {isAdminOrMaster && (
                       <td className="px-4 py-3">
                         {o.vendedorNome ? (
@@ -554,6 +563,11 @@ function OrdersPage() {
                     <div className="text-sm text-text-primary truncate mt-0.5">
                       {o.meta.cliente || "—"}
                     </div>
+                    {(o.meta.telefone || o.meta.email) && (
+                      <div className="text-[11px] text-text-muted truncate">
+                        {o.meta.telefone || o.meta.email}
+                      </div>
+                    )}
                     <div className="text-[10px] text-text-muted mt-0.5">
                       {new Date(o.createdAt).toLocaleString("pt-BR")}
                       {isAdminOrMaster && o.vendedorNome && <> · {o.vendedorNome}</>}
