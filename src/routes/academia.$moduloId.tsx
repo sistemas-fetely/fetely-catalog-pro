@@ -88,9 +88,18 @@ function ModuloPage() {
             }
           }
         }
+        // Progresso + assinatura de arquivos em paralelo.
+        const paths: string[] = [];
+        if (data.modulo.capa_url) paths.push(data.modulo.capa_url);
+        for (const a of data.aulas)
+          for (const b of a.blocos) if (b.arquivo_url) paths.push(b.arquivo_url);
+        const [prog, urlsMap] = await Promise.all([
+          user ? meuProgresso(user.id) : Promise.resolve(new Set<string>()),
+          paths.length > 0 ? urlsAcademia(paths) : Promise.resolve({} as Record<string, string>),
+        ]);
+        if (!alive) return;
+        setUrls(urlsMap);
         if (user) {
-          const prog = await meuProgresso(user.id);
-          if (!alive) return;
           setProgresso(prog);
           // Abre na primeira aula não concluída (exceto quando veio deep link)
           if (!deepLinked) {
@@ -98,12 +107,6 @@ function ModuloPage() {
             setSelIdx(firstOpen >= 0 ? firstOpen : 0);
           }
         }
-        // Assina capa + todos os arquivos dos blocos
-        const paths: string[] = [];
-        if (data.modulo.capa_url) paths.push(data.modulo.capa_url);
-        for (const a of data.aulas)
-          for (const b of a.blocos) if (b.arquivo_url) paths.push(b.arquivo_url);
-        if (paths.length > 0 && alive) setUrls(await urlsAcademia(paths));
       } catch (e) {
         toast.error("Não foi possível abrir o módulo", {
           description: e instanceof Error ? e.message : undefined,
