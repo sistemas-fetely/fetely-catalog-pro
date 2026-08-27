@@ -19,6 +19,8 @@ import { formatBRL } from "@/lib/format";
 
 /** Dedup de hidratação: evita várias buscas simultâneas do histórico. */
 let inflightHydrate: Promise<void> | null = null;
+/** Dedup do carregamento dos itens (fase 2, em segundo plano). */
+let inflightItems: Promise<void> | null = null;
 
 interface OrderState {
   items: CartItem[];
@@ -26,7 +28,10 @@ interface OrderState {
   history: SavedOrder[];
   hidratado: boolean;
   lastSyncAt: number;
+  itemsCarregados: boolean;
   hydrate: (opts?: { force?: boolean }) => Promise<void>;
+  loadAllItems: () => Promise<void>;
+  ensureItemsFor: (ids: string[]) => Promise<SavedOrder[]>;
   hydrateOrderById: (orderId: string) => Promise<SavedOrder | null>;
   setHistoryFromRows: (orders: SavedOrder[]) => void;
   addItem: (product: Product, quantity: number) => void;
@@ -105,6 +110,8 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
     bonificado: Boolean(row.bonificado ?? false),
     motivoBonificacao: (row.motivo_bonificacao as string | null) ?? null,
     estadoLiberacao: (row.estado_liberacao as SavedOrder["estadoLiberacao"]) ?? "aguardando_liberacao",
+    totalUnidades: row.total_unidades == null ? null : Number(row.total_unidades),
+    totalSkus: row.total_skus == null ? null : Number(row.total_skus),
   };
 }
 
@@ -251,6 +258,7 @@ export const useOrder = create<OrderState>()(
       meta: defaultMeta,
       history: [],
       hidratado: false,
+      itemsCarregados: false,
       lastSyncAt: 0,
       hydrate: async (opts) => {
         // Cache-first: se já temos histórico recente em memória/cache, não
@@ -261,8 +269,8 @@ export const useOrder = create<OrderState>()(
         if (inflightHydrate) return inflightHydrate;
         inflightHydrate = (async () => {
         try {
-          // Pagina TODOS os pedidos visíveis (RLS decide o escopo). Um limite
-          // fixo escondia pedidos antigos de quem enxerga a base inteira.
+          // FASE 1 (rápida): só os cabeçalhos dos pedidos. Os itens (JSON de
+          // snapshot, dezenas de MB) entram depois, em segundo plano.
           const PAGE = 1000;
           const orderRows: Record<string, unknown>[] = [];
           for (let from = 0; ; from += PAGE) {
@@ -275,12 +283,13 @@ export const useOrder = create<OrderState>()(
             orderRows.push(...((page ?? []) as Record<string, unknown>[]));
             if (!page || page.length < PAGE) break;
           }
-          const ids = (orderRows ?? []).map((r) => r.id as string);
-          const itemsByOrder = await fetchOrderItemRowsByOrderIds(ids);
-          const history = (orderRows ?? []).map((r) =>
-            rowToOrder(r as Record<string, unknown>, itemsByOrder[(r as Record<string, unknown>).id as string] ?? []),
+          const prevItems = new Map(get().history.map((o) => [o.id, o.items]));
+          const history = orderRows.map((r) =>
+            rowToOrder(r, prevItems.get(r.id as string) ?? []),
           );
           set({ history, hidratado: true, lastSyncAt: Date.now() });
+          // FASE 2: carrega os itens em segundo plano (não bloqueia a tela).
+          void get().loadAllItems();
         } catch (err) {
           console.error("[orderStore] hydrate falhou:", err);
           set({ hidratado: true });
@@ -290,6 +299,44 @@ export const useOrder = create<OrderState>()(
         })();
         return inflightHydrate;
       },
+      loadAllItems: async () => {
+        if (inflightItems) return inflightItems;
+        inflightItems = (async () => {
+          try {
+            const ids = get().history.map((o) => o.id);
+            const itemsByOrder = await fetchOrderItemRowsByOrderIds(ids);
+            set((s) => ({
+              history: s.history.map((o) =>
+                itemsByOrder[o.id] ? { ...o, items: itemsByOrder[o.id] } : o,
+              ),
+              itemsCarregados: true,
+            }));
+          } catch (err) {
+            console.error("[orderStore] loadAllItems falhou:", err);
+          } finally {
+            inflightItems = null;
+          }
+        })();
+        return inflightItems;
+      },
+      ensureItemsFor: async (ids) => {
+        const faltando = get().history.filter(
+          (o) => ids.includes(o.id) && o.items.length === 0,
+        );
+        if (faltando.length > 0) {
+          const itemsByOrder = await fetchOrderItemRowsByOrderIds(
+            faltando.map((o) => o.id),
+          );
+          set((s) => ({
+            history: s.history.map((o) =>
+              itemsByOrder[o.id] ? { ...o, items: itemsByOrder[o.id] } : o,
+            ),
+          }));
+        }
+        const map = new Map(get().history.map((o) => [o.id, o]));
+        return ids.map((id) => map.get(id)).filter(Boolean) as SavedOrder[];
+      },
+
       hydrateOrderById: async (orderId) => {
         try {
           const { data: orderRow, error: errO } = await supabase

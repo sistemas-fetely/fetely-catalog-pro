@@ -27,7 +27,7 @@ interface CotacaoRow {
   valido_ate: string;
   status: StatusCotacao;
   total: number | string;
-  items: unknown;
+  items?: unknown;
   meta: unknown;
   commercial: unknown;
   pedido_convertido_id: string | null;
@@ -44,7 +44,7 @@ function fromRow(r: CotacaoRow): Cotacao {
     vendedorId: r.vendedor_id,
     vendedorNome: r.vendedor_nome,
     vendedorLogin: r.vendedor_login ?? undefined,
-    items: (r.items as CartItem[]) ?? [],
+    items: (r.items as CartItem[] | undefined) ?? [],
     meta: (r.meta as OrderMeta) ?? ({} as OrderMeta),
     total: Number(r.total ?? 0),
     commercial: (r.commercial as OrderCommercial | null) ?? undefined,
@@ -54,6 +54,9 @@ function fromRow(r: CotacaoRow): Cotacao {
     motivoPerdaObs: r.motivo_perda_obs ?? undefined,
   };
 }
+
+const LIST_COLS =
+  "id, vendedor_id, vendedor_nome, vendedor_login, cliente_id, criado_em, atualizado_em, valido_ate, status, total, meta, commercial, pedido_convertido_id, motivo_perda, motivo_perda_obs";
 
 interface CreateCotacaoInput {
   items: CartItem[];
@@ -68,6 +71,7 @@ interface CotacaoState {
   loaded: boolean;
   lastSyncAt: number;
   fetchAll: (opts?: { force?: boolean }) => Promise<void>;
+  ensureItems: (id: string) => Promise<Cotacao | null>;
   criarCotacao: (input: CreateCotacaoInput) => Promise<Cotacao>;
   atualizarCotacao: (id: string, input: CreateCotacaoInput) => Promise<Cotacao | null>;
   atualizarStatus: (
@@ -94,21 +98,46 @@ export const useCotacao = create<CotacaoState>()((set, get) => ({
     if (!opts?.force && st.loaded && Date.now() - st.lastSyncAt < TTL) return;
     if (st.loading) return;
     set({ loading: true });
+    // Lista leve: sem o JSON de itens (carregado sob demanda ao abrir).
     const { data, error } = await supabase
       .from("cotacoes")
-      .select("*")
+      .select(LIST_COLS)
       .order("criado_em", { ascending: false });
     if (error) {
       console.error("[cotacoes] fetchAll", error);
       set({ loading: false });
       return;
     }
+    const anteriores = new Map(get().cotacoes.map((c) => [c.id, c.items]));
     set({
-      cotacoes: (data as CotacaoRow[]).map(fromRow),
+      cotacoes: (data as unknown as CotacaoRow[]).map((r) => {
+        const c = fromRow(r);
+        const prev = anteriores.get(c.id);
+        return prev && prev.length > 0 ? { ...c, items: prev } : c;
+      }),
       loading: false,
       loaded: true,
       lastSyncAt: Date.now(),
     });
+  },
+
+  ensureItems: async (id) => {
+    const atual = get().cotacoes.find((c) => c.id === id) ?? null;
+    if (atual && atual.items.length > 0) return atual;
+    const { data, error } = await supabase
+      .from("cotacoes")
+      .select("items")
+      .eq("id", id)
+      .maybeSingle();
+    if (error || !data) {
+      if (error) console.error("[cotacoes] ensureItems", error);
+      return atual;
+    }
+    const items = ((data as { items: unknown }).items as CartItem[]) ?? [];
+    set((s) => ({
+      cotacoes: s.cotacoes.map((c) => (c.id === id ? { ...c, items } : c)),
+    }));
+    return get().cotacoes.find((c) => c.id === id) ?? null;
   },
 
   criarCotacao: async (input) => {

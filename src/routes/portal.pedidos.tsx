@@ -77,7 +77,10 @@ function PortalPedidos() {
               <div
                 key={p.id}
                 className="grid grid-cols-[90px_120px_1fr_160px_140px] gap-3 px-4 py-3 text-xs items-center border-b border-border/40 last:border-b-0 hover:bg-surface-hover transition cursor-pointer"
-                onClick={() => setSelected(p)}
+                onClick={async () => {
+                  await useOrder.getState().ensureItemsFor([p.id]);
+                  setSelected(useOrder.getState().history.find((o) => o.id === p.id) ?? p);
+                }}
               >
                 <span className="font-mono text-text-muted">
                   {p.id.replace("PED-", "#")}
@@ -99,7 +102,10 @@ function PortalPedidos() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
-                    onClick={() => setExporting(p)}
+                    onClick={async () => {
+                      await useOrder.getState().ensureItemsFor([p.id]);
+                      setExporting(useOrder.getState().history.find((o) => o.id === p.id) ?? p);
+                    }}
                     className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] uppercase tracking-wider text-text-secondary hover:text-gold hover:border-gold"
                   >
                     <Download className="h-3 w-3" /> PDF

@@ -32,16 +32,22 @@ export async function bootstrapFopAfterLogin(): Promise<void> {
     console.error("[fopBootstrap] migração falhou:", err);
   }
 
+  // Só o essencial bloqueia o login (permissões + clientes). O restante
+  // hidrata em segundo plano para a navegação ficar imediata.
   await Promise.all([
+    usePermissoesStore.getState().hidratar(auth.user.id),
     useClientes.getState().hydrate(),
+  ]);
+
+  void Promise.all([
     useOrder.getState().hydrate(),
     useProvisao.getState().hydrate(),
     useCartilhas.getState().hydrate(),
     useCatalog.getState().hydrate(),
-    usePermissoesStore.getState().hidratar(auth.user.id),
     useGrupos.getState().hydrate(),
     useModelos.getState().hydrate(),
-  ]);
+  ]).catch((err) => console.error("[fopBootstrap] hidratação em background:", err));
+
 
   try {
     await retrySyncLocalCache();

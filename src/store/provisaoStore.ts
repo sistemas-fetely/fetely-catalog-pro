@@ -19,6 +19,7 @@ interface CreateProvisaoInput {
 }
 
 /** Dedup de hidratação de provisões. */
+let inflightProvItens: Promise<void> | null = null;
 let inflightProvHydrate: Promise<void> | null = null;
 
 interface ProvisaoState {
@@ -27,6 +28,7 @@ interface ProvisaoState {
   hidratado: boolean;
   lastSyncAt: number;
   hydrate: (opts?: { force?: boolean }) => Promise<void>;
+  loadItens: (ids: string[]) => Promise<void>;
   setProvisoesFromRows: (p: ProvisaoFutura[], maxCounter: number) => void;
   createProvisao: (input: CreateProvisaoInput) => Promise<ProvisaoFutura>;
   updateStatus: (id: string, status: StatusProvisao, extra?: Partial<ProvisaoFutura>) => void;
@@ -133,32 +135,12 @@ export const useProvisao = create<ProvisaoState>()(
             .order("criado_em", { ascending: false })
             .limit(500);
           if (err1) throw err1;
-          const ids = (provRows ?? []).map((r) => r.id as string);
-          let itensByProv: Record<string, ItemProvisao[]> = {};
-          if (ids.length > 0) {
-            // Paginar para evitar truncamento pelo limite padrão do PostgREST (1000 linhas).
-            const PAGE = 1000;
-            const allItems: Record<string, unknown>[] = [];
-            for (let from = 0; ; from += PAGE) {
-              const { data: itemRows, error: err2 } = await supabase
-                .from("provisao_itens")
-                .select("*")
-                .in("provisao_id", ids)
-                .range(from, from + PAGE - 1);
-              if (err2) throw err2;
-              const rows = (itemRows ?? []) as Record<string, unknown>[];
-              allItems.push(...rows);
-              if (rows.length < PAGE) break;
-            }
-            itensByProv = allItems.reduce<Record<string, ItemProvisao[]>>((acc, r) => {
-              const pid = r.provisao_id as string;
-              if (!acc[pid]) acc[pid] = [];
-              acc[pid].push(rowToItemProvisao(r));
-              return acc;
-            }, {});
-          }
+          const anteriores = new Map(get().provisoes.map((p) => [p.id, p.itens]));
           const provisoes = (provRows ?? []).map((r) =>
-            rowToProvisao(r as Record<string, unknown>, itensByProv[(r as Record<string, unknown>).id as string] ?? []),
+            rowToProvisao(
+              r as Record<string, unknown>,
+              anteriores.get((r as Record<string, unknown>).id as string) ?? [],
+            ),
           );
           const maxCounter = provisoes.reduce((max, p) => {
             const m = /^P(\d+)$/.exec(p.id);
@@ -169,6 +151,8 @@ export const useProvisao = create<ProvisaoState>()(
             return max;
           }, 0);
           set({ provisoes, counter: maxCounter, hidratado: true, lastSyncAt: Date.now() });
+          // Itens em segundo plano — a lista já aparece na tela.
+          void get().loadItens(provisoes.map((p) => p.id));
         } catch (err) {
           console.error("[provisaoStore] hydrate falhou:", err);
           set({ hidratado: true });
@@ -178,7 +162,45 @@ export const useProvisao = create<ProvisaoState>()(
         })();
         return inflightProvHydrate;
       },
+      loadItens: async (ids) => {
+        if (ids.length === 0) return;
+        if (inflightProvItens) return inflightProvItens;
+        inflightProvItens = (async () => {
+          try {
+            const PAGE = 1000;
+            const allItems: Record<string, unknown>[] = [];
+            for (let from = 0; ; from += PAGE) {
+              const { data, error } = await supabase
+                .from("provisao_itens")
+                .select("*")
+                .in("provisao_id", ids)
+                .range(from, from + PAGE - 1);
+              if (error) throw error;
+              const rows = (data ?? []) as Record<string, unknown>[];
+              allItems.push(...rows);
+              if (rows.length < PAGE) break;
+            }
+            const itensByProv = allItems.reduce<Record<string, ItemProvisao[]>>((acc, r) => {
+              const pid = r.provisao_id as string;
+              if (!acc[pid]) acc[pid] = [];
+              acc[pid].push(rowToItemProvisao(r));
+              return acc;
+            }, {});
+            set((s) => ({
+              provisoes: s.provisoes.map((p) =>
+                itensByProv[p.id] ? { ...p, itens: itensByProv[p.id] } : p,
+              ),
+            }));
+          } catch (err) {
+            console.error("[provisaoStore] loadItens falhou:", err);
+          } finally {
+            inflightProvItens = null;
+          }
+        })();
+        return inflightProvItens;
+      },
       setProvisoesFromRows: (p, maxCounter) => set({ provisoes: p, counter: maxCounter }),
+
       createProvisao: async (input) => {
         const auth = useAuth.getState();
         if (!auth.session || !auth.user?.id) {

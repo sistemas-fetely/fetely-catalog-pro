@@ -61,7 +61,10 @@ function PortalCotacoes() {
           {minhas.map((c) => (
             <div
               key={c.id}
-              onClick={() => setSelected(c)}
+              onClick={async () => {
+                const full = await useCotacao.getState().ensureItems(c.id);
+                setSelected(full ?? c);
+              }}
               className="grid grid-cols-[90px_120px_1fr_120px_140px] gap-3 px-4 py-3 text-xs items-center border-b border-border/40 last:border-b-0 hover:bg-surface-hover transition cursor-pointer"
             >
               <span className="font-mono text-text-muted">{c.id}</span>

@@ -177,7 +177,10 @@ function CotacoesPage() {
               </thead>
               <tbody>
                 {filtradas.map((c) => (
-                  <CotacaoRow key={c.id} cotacao={c} onClick={() => setSelecionada(c.id)} />
+                  <CotacaoRow key={c.id} cotacao={c} onClick={() => {
+                    setSelecionada(c.id);
+                    void useCotacao.getState().ensureItems(c.id);
+                  }} />
                 ))}
               </tbody>
             </table>
@@ -192,7 +195,10 @@ function CotacoesPage() {
               return (
                 <button
                   key={c.id}
-                  onClick={() => setSelecionada(c.id)}
+                  onClick={() => {
+                    setSelecionada(c.id);
+                    void useCotacao.getState().ensureItems(c.id);
+                  }}
                   className="w-full text-left rounded-lg gold-border bg-surface p-3 active:bg-surface-hover transition"
                 >
                   <div className="flex items-start justify-between gap-2">

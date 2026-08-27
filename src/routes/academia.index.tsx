@@ -39,9 +39,15 @@ function AcademiaPage() {
         const lista = await listarModulos();
         if (!alive) return;
         setModulos(lista);
-        if (user) setProgresso(await meuProgresso(user.id));
+        // Progresso e capas em paralelo — não bloqueiam a lista de módulos.
         const paths = lista.map((m) => m.capa_url).filter(Boolean) as string[];
-        if (paths.length > 0 && alive) setCapas(await urlsAcademia(paths));
+        const [prog, urls] = await Promise.all([
+          user ? meuProgresso(user.id) : Promise.resolve(new Set<string>()),
+          paths.length > 0 ? urlsAcademia(paths) : Promise.resolve({} as Record<string, string>),
+        ]);
+        if (!alive) return;
+        setProgresso(prog);
+        setCapas(urls);
       } catch (e) {
         toast.error("Não foi possível carregar os treinamentos", {
           description: e instanceof Error ? e.message : undefined,

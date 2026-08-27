@@ -232,6 +232,9 @@ export interface SavedOrder {
   bonificado?: boolean;
   motivoBonificacao?: string | null;
   estadoLiberacao?: "aguardando_liberacao" | "enviado_sncf" | null;
+  /** Totais persistidos na linha do pedido (permitem exibir a lista antes de carregar os itens). */
+  totalUnidades?: number | null;
+  totalSkus?: number | null;
 }
 
 
