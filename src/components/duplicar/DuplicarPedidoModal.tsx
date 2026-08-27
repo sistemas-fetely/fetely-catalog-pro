@@ -126,6 +126,10 @@ export function DuplicarPedidoModal({
   }, [clientes, clientesSelecionados, buscaClienteQ]);
 
   const handleContinuar = async () => {
+    // Os itens do pedido são carregados sob demanda (lista fica leve).
+    if (origemTipo === "pedido" && pedidoOrigem && pedidoOrigem.items.length === 0) {
+      await useOrder.getState().ensureItemsFor([pedidoOrigem.id]);
+    }
     if (itensBase.length === 0) { toast.error("Escolha a origem dos itens"); return; }
     if (clientesSelecionados.size === 0) { toast.error("Selecione ao menos um cliente destino"); return; }
 
