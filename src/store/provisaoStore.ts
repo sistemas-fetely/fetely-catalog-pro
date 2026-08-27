@@ -162,7 +162,45 @@ export const useProvisao = create<ProvisaoState>()(
         })();
         return inflightProvHydrate;
       },
+      loadItens: async (ids) => {
+        if (ids.length === 0) return;
+        if (inflightProvItens) return inflightProvItens;
+        inflightProvItens = (async () => {
+          try {
+            const PAGE = 1000;
+            const allItems: Record<string, unknown>[] = [];
+            for (let from = 0; ; from += PAGE) {
+              const { data, error } = await supabase
+                .from("provisao_itens")
+                .select("*")
+                .in("provisao_id", ids)
+                .range(from, from + PAGE - 1);
+              if (error) throw error;
+              const rows = (data ?? []) as Record<string, unknown>[];
+              allItems.push(...rows);
+              if (rows.length < PAGE) break;
+            }
+            const itensByProv = allItems.reduce<Record<string, ItemProvisao[]>>((acc, r) => {
+              const pid = r.provisao_id as string;
+              if (!acc[pid]) acc[pid] = [];
+              acc[pid].push(rowToItemProvisao(r));
+              return acc;
+            }, {});
+            set((s) => ({
+              provisoes: s.provisoes.map((p) =>
+                itensByProv[p.id] ? { ...p, itens: itensByProv[p.id] } : p,
+              ),
+            }));
+          } catch (err) {
+            console.error("[provisaoStore] loadItens falhou:", err);
+          } finally {
+            inflightProvItens = null;
+          }
+        })();
+        return inflightProvItens;
+      },
       setProvisoesFromRows: (p, maxCounter) => set({ provisoes: p, counter: maxCounter }),
+
       createProvisao: async (input) => {
         const auth = useAuth.getState();
         if (!auth.session || !auth.user?.id) {
