@@ -273,7 +273,7 @@ export function DuplicarPedidoModal({
                               <span className="font-mono text-gold">{o.id}</span>
                               <span className="text-text-secondary"> · {o.meta.cliente}</span>
                             </div>
-                            <span className="text-text-muted shrink-0">{o.items.length} itens · {formatBRL(o.total)}</span>
+                            <span className="text-text-muted shrink-0">{o.totalSkus ?? o.items.length} itens · {formatBRL(o.total)}</span>
                           </button>
                         ))}
                       </div>
