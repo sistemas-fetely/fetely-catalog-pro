@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Circle,
+  Copy,
   Download,
   ExternalLink,
   FileText,
@@ -357,24 +358,34 @@ function BlocoView({
     } catch {
       // mantém o href bruto se a URL for inválida
     }
+
+    async function copiarLink() {
+      try {
+        await navigator.clipboard.writeText(href);
+        toast.success("Link copiado!");
+      } catch {
+        toast.error("Não foi possível copiar o link");
+      }
+    }
+
     return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group block overflow-hidden rounded-xl border border-border bg-surface transition hover:border-gold/60"
-      >
+      <div className="overflow-hidden rounded-xl border border-border bg-surface transition hover:border-gold/60">
         {capa && (
-          <div className="aspect-video w-full overflow-hidden bg-surface-2">
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block aspect-video w-full overflow-hidden bg-surface-2"
+          >
             <img
               src={capa}
               alt={bloco.arquivo_nome ?? "Capa do link"}
-              className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+              className="h-full w-full object-cover transition hover:scale-[1.02]"
               loading="lazy"
             />
-          </div>
+          </a>
         )}
-        <span className="flex items-center gap-3 p-4">
+        <div className="flex items-center gap-3 p-4">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">
             <ExternalLink className="h-4 w-4" />
           </span>
@@ -382,13 +393,28 @@ function BlocoView({
             <span className="block truncate text-sm font-medium text-text-primary">
               {bloco.arquivo_nome?.trim() || dominio}
             </span>
-            <span className="block truncate text-xs text-text-muted">
-              {dominio} — abre em nova aba
-            </span>
+            <span className="block truncate text-xs text-text-muted">{dominio}</span>
           </span>
-          <ExternalLink className="h-4 w-4 shrink-0 text-text-muted transition group-hover:text-gold" />
-        </span>
-      </a>
+        </div>
+        <div className="flex items-center gap-2 border-t border-border px-4 pb-4 pt-2">
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border bg-surface-2 px-3 py-2 text-xs font-medium uppercase tracking-wider text-text-primary transition hover:border-gold hover:text-gold"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Abrir
+          </a>
+          <button
+            onClick={copiarLink}
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border bg-surface-2 px-3 py-2 text-xs font-medium uppercase tracking-wider text-text-primary transition hover:border-gold hover:text-gold"
+          >
+            <Copy className="h-3.5 w-3.5" />
+            Copiar Link
+          </button>
+        </div>
+      </div>
     );
   }
 
