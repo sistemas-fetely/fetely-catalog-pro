@@ -19,6 +19,8 @@ import { formatBRL } from "@/lib/format";
 
 /** Dedup de hidratação: evita várias buscas simultâneas do histórico. */
 let inflightHydrate: Promise<void> | null = null;
+/** Dedup do carregamento dos itens (fase 2, em segundo plano). */
+let inflightItems: Promise<void> | null = null;
 
 interface OrderState {
   items: CartItem[];
@@ -26,7 +28,10 @@ interface OrderState {
   history: SavedOrder[];
   hidratado: boolean;
   lastSyncAt: number;
+  itemsCarregados: boolean;
   hydrate: (opts?: { force?: boolean }) => Promise<void>;
+  loadAllItems: () => Promise<void>;
+  ensureItemsFor: (ids: string[]) => Promise<SavedOrder[]>;
   hydrateOrderById: (orderId: string) => Promise<SavedOrder | null>;
   setHistoryFromRows: (orders: SavedOrder[]) => void;
   addItem: (product: Product, quantity: number) => void;
@@ -251,6 +256,7 @@ export const useOrder = create<OrderState>()(
       meta: defaultMeta,
       history: [],
       hidratado: false,
+      itemsCarregados: false,
       lastSyncAt: 0,
       hydrate: async (opts) => {
         // Cache-first: se já temos histórico recente em memória/cache, não
