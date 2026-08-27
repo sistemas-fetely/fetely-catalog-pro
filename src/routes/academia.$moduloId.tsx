@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Circle,
+  Copy,
   Download,
   ExternalLink,
   FileText,
