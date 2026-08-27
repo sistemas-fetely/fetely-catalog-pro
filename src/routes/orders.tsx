@@ -150,15 +150,21 @@ function OrdersPage() {
           {selectedIds.size > 0 && (
             <>
               <button
-                onClick={() => setPrintDialogOpen(true)}
+                onClick={async () => {
+                  await useOrder.getState().ensureItemsFor(Array.from(selectedIds));
+                  setPrintDialogOpen(true);
+                }}
                 className="flex items-center gap-1.5 rounded-md gold-border bg-surface px-3 py-2 text-xs uppercase tracking-wider text-gold hover:bg-gold/10"
               >
                 <Printer className="h-3.5 w-3.5" /> Imprimir {selectedIds.size}
               </button>
               <button
-                onClick={() =>
-                  setExportOrders(history.filter((o) => selectedIds.has(o.id)))
-                }
+                onClick={async () => {
+                  const orders = await useOrder
+                    .getState()
+                    .ensureItemsFor(Array.from(selectedIds));
+                  setExportOrders(orders);
+                }}
                 className="flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs uppercase tracking-wider text-background hover:bg-gold-light"
               >
                 <Download className="h-3.5 w-3.5" /> Exportar {selectedIds.size}
@@ -260,7 +266,7 @@ function OrdersPage() {
             </thead>
             <tbody>
               {filtered.map((o) => {
-                const qty = o.items.reduce((s, i) => s + i.quantity, 0);
+                const qty = o.totalUnidades ?? o.items.reduce((s, i) => s + i.quantity, 0);
                 const isRep = o.vendedorTipo === "representante";
                 const cliente = o.meta.clienteId
                   ? clientes.find((c) => c.id === o.meta.clienteId)
@@ -390,8 +396,9 @@ function OrdersPage() {
                               )
                                 return;
                               try {
+                                const [full] = await useOrder.getState().ensureItemsFor([o.id]);
                                 const cot = await criarCotacao({
-                                  items: o.items,
+                                  items: full?.items ?? o.items,
                                   meta: o.meta,
                                   total: o.total,
                                   commercial: o.commercial,
@@ -520,7 +527,7 @@ function OrdersPage() {
       {hydrated && filtered.length > 0 && (
         <div className="md:hidden space-y-2">
           {filtered.map((o) => {
-            const qty = o.items.reduce((s, i) => s + i.quantity, 0);
+            const qty = o.totalUnidades ?? o.items.reduce((s, i) => s + i.quantity, 0);
             const cliente = o.meta.clienteId
               ? clientes.find((c) => c.id === o.meta.clienteId)
               : null;
@@ -639,8 +646,9 @@ function OrdersPage() {
                         )
                           return;
                         try {
+                          const [full] = await useOrder.getState().ensureItemsFor([o.id]);
                           const cot = await criarCotacao({
-                            items: o.items,
+                            items: full?.items ?? o.items,
                             meta: o.meta,
                             total: o.total,
                             commercial: o.commercial,

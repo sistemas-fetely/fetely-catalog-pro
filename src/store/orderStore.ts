@@ -110,6 +110,8 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
     bonificado: Boolean(row.bonificado ?? false),
     motivoBonificacao: (row.motivo_bonificacao as string | null) ?? null,
     estadoLiberacao: (row.estado_liberacao as SavedOrder["estadoLiberacao"]) ?? "aguardando_liberacao",
+    totalUnidades: row.total_unidades == null ? null : Number(row.total_unidades),
+    totalSkus: row.total_skus == null ? null : Number(row.total_skus),
   };
 }
 
