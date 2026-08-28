@@ -39,7 +39,7 @@ import { SEGMENTO_LABEL, type SegmentoCliente } from "@/types/preSelecao";
 import { buildPreSelecao, encodePreSelecao, itemFromProductQty, submitPreSelecaoRemote, PUBLIC_SITE_URL } from "@/lib/preSelecao";
 import { enviarPreSelecaoPublica } from "@/lib/preSelecao.functions";
 import { usePreSelecao } from "@/store/preSelecaoStore";
-import { formatBRL } from "@/lib/format";
+import { formatBRL, halfBox, nearestMultiple } from "@/lib/format";
 import type { Product } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -722,7 +722,9 @@ function DadosEmpresaModal({
     try {
       const itens = Object.entries(cart).map(([sku, q]) => {
         const p = produtos.find((x) => x.sku === sku)!;
-        return itemFromProductQty(p, q);
+        // Mínimo de venda: meia caixa. Quantidades abaixo são elevadas ao mínimo.
+        const qtd = q > 0 ? Math.max(halfBox(p.multiplos || 1), nearestMultiple(q, p.multiplos || 1)) : q;
+        return itemFromProductQty(p, qtd);
       });
       const preBase = await buildPreSelecao({
         vendedorId: vendedor,
@@ -976,7 +978,7 @@ function WishlistSheet({
                                 <div className="inline-flex items-center rounded border border-border">
                                   <button
                                     className="px-2 py-1 text-text-secondary hover:text-gold"
-                                    onClick={() => onQty(p.sku, Math.max(0, qty - (p.multiplos || 1)))}
+                                    onClick={() => { const st = halfBox(p.multiplos || 1); onQty(p.sku, qty - st < st ? 0 : qty - st); }}
                                     aria-label="Diminuir"
                                   >
                                     <Minus className="h-3.5 w-3.5" />
@@ -984,7 +986,7 @@ function WishlistSheet({
                                   <span className="px-2 text-sm min-w-[2.5rem] text-center">{qty}</span>
                                   <button
                                     className="px-2 py-1 text-text-secondary hover:text-gold"
-                                    onClick={() => onQty(p.sku, qty + (p.multiplos || 1))}
+                                    onClick={() => { const st = halfBox(p.multiplos || 1); onQty(p.sku, qty <= 0 ? st : qty + st); }}
                                     aria-label="Aumentar"
                                   >
                                     <Plus className="h-3.5 w-3.5" />

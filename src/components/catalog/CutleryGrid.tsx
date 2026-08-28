@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { StockBadge } from "@/components/ui/StockBadge";
-import { formatBRL } from "@/lib/format";
+import { formatBRL, halfBox } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
@@ -60,7 +60,7 @@ export function CutleryGrid({ products, colecao, onColorChange }: Props) {
   const applyBoxes = (boxes: number) => {
     const next: Record<string, number> = { ...qtys };
     filtered.forEach((p) => {
-      const step = Math.max(1, p.multiplos);
+      const step = Math.max(1, halfBox(p.multiplos));
       next[p.sku] = boxes * step;
     });
     setQtys(next);
@@ -160,7 +160,7 @@ export function CutleryGrid({ products, colecao, onColorChange }: Props) {
                   <StockBadge status={p.statusEstoque} estoqueDisponivel={p.estoqueDisponivel} prontaEntrega={p.prontaEntrega} />
                 </div>
                 <div className="text-[10px] text-text-muted mt-1">
-                  Caixa: {p.multiplos} un.
+                  Caixa: {p.multiplos} un. · mín. {halfBox(p.multiplos)}
                 </div>
               </div>
               <div className="px-4 py-3 text-right text-xs text-text-secondary">

@@ -10,7 +10,7 @@ import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { StockBadge } from "@/components/ui/StockBadge";
-import { formatBRL, isValidMultiple } from "@/lib/format";
+import { formatBRL, halfBox, isValidMultiple } from "@/lib/format";
 
 const searchSchema = z.object({
   sku: fallback(z.string(), "").optional(),
@@ -208,7 +208,7 @@ function ProductPage() {
           <div className="space-y-3 rounded-lg bg-surface p-4 gold-border">
             <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-text-muted">
               <Package className="h-3.5 w-3.5" />
-              Caixa fechada: {product.multiplos} un. — mínimo
+              Caixa: {product.multiplos} un. · mínimo {halfBox(product.multiplos)} un. (meia caixa)
             </div>
             <QuantityInput
               value={qty}

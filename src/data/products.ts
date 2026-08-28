@@ -1,16 +1,6 @@
 import type { Product } from "@/types";
 import rawProducts from "./products.json";
 
-// Coleções de velas que permitem múltiplos de 6 (pacote menor que a caixa de 12).
-const SIX_PACK_COLLECTIONS = new Set([
-  "Le Moment",
-  "Amour",
-  "Lumi Star",
-  "Twist",
-  "Pattern",
-  "Spirale",
-]);
-
 // Categorias que são sempre pronta entrega (pedido firme), independente da tag
 // de previsão herdada da planilha.
 const PRONTA_ENTREGA_CATEGORIES = new Set(["Celebrar à Mesa"]);
@@ -18,9 +8,6 @@ const PRONTA_ENTREGA_CATEGORIES = new Set(["Celebrar à Mesa"]);
 // Catálogo carregado direto da base oficial (planilha XLSX → JSON).
 export const PRODUCTS: Product[] = (rawProducts as Product[]).map((p) => {
   const prontaEntrega = p.prontaEntrega ?? PRONTA_ENTREGA_CATEGORIES.has(p.categoria);
-  if (SIX_PACK_COLLECTIONS.has(p.colecao) && p.multiplos === 12) {
-    return { ...p, multiplos: 6, prontaEntrega };
-  }
   return { ...p, prontaEntrega };
 });
 

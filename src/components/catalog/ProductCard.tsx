@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { X, Heart, Check } from "lucide-react";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { StockBadge } from "@/components/ui/StockBadge";
-import { formatBRL, isValidMultiple } from "@/lib/format";
+import { formatBRL, halfBox, isValidMultiple } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
 import { useAuth } from "@/store/authStore";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
@@ -229,7 +229,7 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
           return (
             <div className="mt-auto space-y-2 pt-2 border-t border-border/60">
               <div className="text-[10px] uppercase tracking-wider text-text-muted">
-                Caixa: {product.multiplos} un. — mínimo
+                Caixa: {product.multiplos} un. · mínimo {halfBox(product.multiplos)} un. (meia caixa)
               </div>
               <QuantityInput
                 value={qty}
@@ -267,7 +267,7 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
           return (
             <div className="mt-auto space-y-2 pt-2 border-t border-border/60">
               <div className="text-[10px] uppercase tracking-wider text-text-muted flex items-center justify-between">
-                <span>Caixa: {product.multiplos} un.</span>
+                <span>Caixa: {product.multiplos} un. · mín. {halfBox(product.multiplos)}</span>
                 {selected && (
                   <span className="inline-flex items-center gap-1 text-gold">
                     <Check className="h-3 w-3" />
