@@ -1,6 +1,6 @@
 import { Minus, Plus } from "lucide-react";
 import { useState } from "react";
-import { isValidMultiple, nearestMultiple } from "@/lib/format";
+import { halfBox, isValidMultiple, nearestMultiple } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface QuantityInputProps {
@@ -14,7 +14,7 @@ interface QuantityInputProps {
 export function QuantityInput({ value, onChange, multiplos, compact, disabled }: QuantityInputProps) {
   const [focused, setFocused] = useState(false);
   const valid = value === 0 || isValidMultiple(value, multiplos);
-  const step = Math.max(1, multiplos);
+  const step = Math.max(1, halfBox(multiplos));
 
   return (
     <div className="space-y-1">
@@ -29,7 +29,7 @@ export function QuantityInput({ value, onChange, multiplos, compact, disabled }:
         <button
           type="button"
           disabled={disabled || value <= 0}
-          onClick={() => onChange(Math.max(0, value - step))}
+          onClick={() => onChange(value - step < step ? 0 : value - step)}
           className="px-2 text-text-secondary hover:text-gold disabled:opacity-30"
           aria-label="Diminuir"
         >
@@ -55,7 +55,7 @@ export function QuantityInput({ value, onChange, multiplos, compact, disabled }:
         <button
           type="button"
           disabled={disabled}
-          onClick={() => onChange(value + step)}
+          onClick={() => onChange(value <= 0 ? step : value + step)}
           className="px-2 text-text-secondary hover:text-gold disabled:opacity-30"
           aria-label="Aumentar"
         >

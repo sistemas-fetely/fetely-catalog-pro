@@ -976,7 +976,7 @@ function WishlistSheet({
                                 <div className="inline-flex items-center rounded border border-border">
                                   <button
                                     className="px-2 py-1 text-text-secondary hover:text-gold"
-                                    onClick={() => onQty(p.sku, Math.max(0, qty - (p.multiplos || 1)))}
+                                    onClick={() => { const st = halfBox(p.multiplos || 1); onQty(p.sku, qty - st < st ? 0 : qty - st); }}
                                     aria-label="Diminuir"
                                   >
                                     <Minus className="h-3.5 w-3.5" />
@@ -984,7 +984,7 @@ function WishlistSheet({
                                   <span className="px-2 text-sm min-w-[2.5rem] text-center">{qty}</span>
                                   <button
                                     className="px-2 py-1 text-text-secondary hover:text-gold"
-                                    onClick={() => onQty(p.sku, qty + (p.multiplos || 1))}
+                                    onClick={() => { const st = halfBox(p.multiplos || 1); onQty(p.sku, qty <= 0 ? st : qty + st); }}
                                     aria-label="Aumentar"
                                   >
                                     <Plus className="h-3.5 w-3.5" />
