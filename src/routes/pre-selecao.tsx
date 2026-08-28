@@ -722,7 +722,9 @@ function DadosEmpresaModal({
     try {
       const itens = Object.entries(cart).map(([sku, q]) => {
         const p = produtos.find((x) => x.sku === sku)!;
-        return itemFromProductQty(p, q);
+        // Mínimo de venda: meia caixa. Quantidades abaixo são elevadas ao mínimo.
+        const qtd = q > 0 ? Math.max(halfBox(p.multiplos || 1), nearestMultiple(q, p.multiplos || 1)) : q;
+        return itemFromProductQty(p, qtd);
       });
       const preBase = await buildPreSelecao({
         vendedorId: vendedor,
