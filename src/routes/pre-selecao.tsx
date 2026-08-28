@@ -39,7 +39,7 @@ import { SEGMENTO_LABEL, type SegmentoCliente } from "@/types/preSelecao";
 import { buildPreSelecao, encodePreSelecao, itemFromProductQty, submitPreSelecaoRemote, PUBLIC_SITE_URL } from "@/lib/preSelecao";
 import { enviarPreSelecaoPublica } from "@/lib/preSelecao.functions";
 import { usePreSelecao } from "@/store/preSelecaoStore";
-import { formatBRL, halfBox } from "@/lib/format";
+import { formatBRL, halfBox, nearestMultiple } from "@/lib/format";
 import type { Product } from "@/types";
 import { cn } from "@/lib/utils";
 
