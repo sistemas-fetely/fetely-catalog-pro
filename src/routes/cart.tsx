@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { toast } from "sonner";
 import { QuantityInput } from "@/components/ui/QuantityInput";
-import { formatBRL } from "@/lib/format";
+import { formatBRL, halfBox } from "@/lib/format";
 import { fatorDescontoItens, formatPercentBR } from "@/lib/commercial";
 import { useOrder, cartTotal, effectiveUnitPrice, effectiveItemSubtotal, hasItemOverride } from "@/store/orderStore";
 import { useNegotiation, registrarNegociacao } from "@/store/negotiationStore";
@@ -845,7 +845,7 @@ function CartPage() {
                                 )}
                               </div>
                               <div className="text-[10px] font-mono text-text-muted mt-0.5">
-                                {item.product.sku} · Caixa {item.product.multiplos}
+                                {item.product.sku} · Caixa {item.product.multiplos} · mín. {halfBox(item.product.multiplos)}
                               </div>
                             </div>
                           </div>

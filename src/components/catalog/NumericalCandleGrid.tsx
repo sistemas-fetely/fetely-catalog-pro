@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { COLLECTION_ACCENT } from "@/data/productConstants";
-import { formatBRL } from "@/lib/format";
+import { formatBRL, halfBox } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
 import { ColorVariantChips } from "@/components/catalog/ColorVariantChips";
 import type { Product } from "@/types";
@@ -112,7 +112,7 @@ export function NumericalCandleGrid({ products, colecao, onColorChange }: Props)
         onApplyBoxes={(perItem) => {
           const next: Record<string, number> = { ...qtys };
           filtered.forEach((p) => {
-            const step = Math.max(1, p.multiplos);
+            const step = Math.max(1, halfBox(p.multiplos));
             next[p.sku] = perItem * step;
           });
           setQtys(next);

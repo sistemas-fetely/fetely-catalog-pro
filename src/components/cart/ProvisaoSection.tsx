@@ -1,6 +1,6 @@
 import { Trash2 } from "lucide-react";
 import { QuantityInput } from "@/components/ui/QuantityInput";
-import { formatBRL } from "@/lib/format";
+import { formatBRL, halfBox } from "@/lib/format";
 import { extrairDataPrevisao } from "@/lib/classifyItem";
 import { useOrder } from "@/store/orderStore";
 import type { CartItem } from "@/types";
@@ -44,7 +44,7 @@ export function ProvisaoSection({ items }: { items: CartItem[] }) {
                   </div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="text-[10px] font-mono text-white/70">
-                      {item.product.sku} · Caixa {item.product.multiplos}
+                      {item.product.sku} · Caixa {item.product.multiplos} · mín. {halfBox(item.product.multiplos)}
                     </span>
                     <span className="inline-flex items-center rounded-full bg-yellow-400/20 border border-yellow-300/50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-yellow-200 font-semibold">
                       {previsao}
