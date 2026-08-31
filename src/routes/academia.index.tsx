@@ -4,6 +4,7 @@ import { GraduationCap, Lock, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   urlsAcademia,
+  agruparPorChave,
   listarModulos,
   meuProgresso,
   type ModuloResumo,
@@ -177,7 +178,7 @@ function ModuloCard({
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h2 className="font-display text-lg leading-snug">{modulo.titulo}</h2>
+        <h3 className="font-display text-lg leading-snug">{modulo.titulo}</h3>
         {modulo.descricao && (
           <p className="line-clamp-2 text-sm text-text-secondary">{modulo.descricao}</p>
         )}
