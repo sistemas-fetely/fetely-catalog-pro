@@ -380,12 +380,12 @@ export async function salvarAula(a: {
   modulo_id: string;
   titulo: string;
   ordem?: number;
+  secao?: string | null;
 }): Promise<string> {
   if (a.id) {
-    const { error } = await db
-      .from("treinamento_aula")
-      .update({ titulo: a.titulo })
-      .eq("id", a.id);
+    const patch: Record<string, unknown> = { titulo: a.titulo };
+    if (a.secao !== undefined) patch.secao = a.secao?.trim() ? a.secao.trim() : null;
+    const { error } = await db.from("treinamento_aula").update(patch).eq("id", a.id);
     if (error) throw new Error(error.message);
     return a.id;
   }
@@ -398,12 +398,18 @@ export async function salvarAula(a: {
     .maybeSingle();
   const { data, error } = await db
     .from("treinamento_aula")
-    .insert({ modulo_id: a.modulo_id, titulo: a.titulo, ordem: (maxRow?.ordem ?? -1) + 1 })
+    .insert({
+      modulo_id: a.modulo_id,
+      titulo: a.titulo,
+      secao: a.secao?.trim() ? a.secao.trim() : null,
+      ordem: (maxRow?.ordem ?? -1) + 1,
+    })
     .select("id")
     .single();
   if (error) throw new Error(error.message);
   return data.id as string;
 }
+
 
 export async function excluirAula(id: string): Promise<void> {
   const { error } = await db.from("treinamento_aula").delete().eq("id", id);
