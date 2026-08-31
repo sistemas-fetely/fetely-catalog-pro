@@ -252,8 +252,9 @@ function ModuloPage() {
                       );
                     })}
                   </ul>
-                </div>
+                </section>
               ))}
+
             </div>
           </aside>
 
