@@ -856,12 +856,17 @@ function AulasPanel({
   onChanged: () => Promise<void>;
 }) {
   const [novoTitulo, setNovoTitulo] = useState("");
+  const [novaSecao, setNovaSecao] = useState("");
 
   async function adicionar() {
     const t = novoTitulo.trim();
     if (!t) return;
     try {
-      const id = await salvarAula({ modulo_id: moduloId, titulo: t });
+      const id = await salvarAula({
+        modulo_id: moduloId,
+        titulo: t,
+        secao: novaSecao.trim() || null,
+      });
       setNovoTitulo("");
       await onChanged();
       onSelect(id);
@@ -884,6 +889,20 @@ function AulasPanel({
       });
     }
   }
+
+  async function definirSecao(a: AulaComBlocos, secao: string) {
+    const s = secao.trim();
+    if (s === (a.secao ?? "")) return;
+    try {
+      await salvarAula({ id: a.id, modulo_id: moduloId, titulo: a.titulo, secao: s || null });
+      await onChanged();
+    } catch (e) {
+      toast.error("Falha ao salvar a subcategoria", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  }
+
 
   async function mover(idx: number, dir: -1 | 1) {
     const a = aulas[idx];
