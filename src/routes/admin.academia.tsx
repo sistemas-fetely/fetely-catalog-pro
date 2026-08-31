@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import {
   urlsAcademia,
+  agruparPorChave,
   descritivoParaTexto,
   excluirAula,
   excluirBloco,
