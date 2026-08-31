@@ -930,78 +930,124 @@ function AulasPanel({
     }
   }
 
+  const secoesExistentes = [
+    ...new Set(aulas.map((a) => (a.secao ?? "").trim()).filter(Boolean)),
+  ];
+  const grupos = agruparPorChave(aulas, (a) => a.secao);
+
   return (
     <div>
       <p className="mb-2 text-[11px] uppercase tracking-[0.2em] text-text-muted">
         Aulas ({aulas.length})
       </p>
-      <ul className="space-y-1.5">
-        {aulas.map((a, i) => (
-          <li
-            key={a.id}
-            className={`rounded-md border px-2 py-1.5 ${
-              a.id === aulaSelId ? "border-gold/60 bg-surface" : "border-border bg-surface"
-            }`}
-          >
-            <div className="flex items-center gap-1.5">
-              <div className="flex flex-col">
-                <button
-                  onClick={() => mover(i, -1)}
-                  disabled={i === 0}
-                  className="text-text-muted hover:text-gold disabled:opacity-30"
-                  aria-label="Mover aula para cima"
-                >
-                  <ArrowUp className="h-3 w-3" />
-                </button>
-                <button
-                  onClick={() => mover(i, 1)}
-                  disabled={i === aulas.length - 1}
-                  className="text-text-muted hover:text-gold disabled:opacity-30"
-                  aria-label="Mover aula para baixo"
-                >
-                  <ArrowDown className="h-3 w-3" />
-                </button>
-              </div>
-              <input
-                defaultValue={a.titulo}
-                key={a.id + a.titulo}
-                onFocus={() => onSelect(a.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                }}
-                onBlur={(e) => void renomear(a, e.target.value)}
-                title="Enter ou clicar fora salva o nome"
-                className="min-w-0 flex-1 rounded bg-transparent px-1.5 py-1 text-sm outline-none focus:bg-background"
-              />
-              <button
-                onClick={() => remover(a)}
-                className="p-1 text-text-muted hover:text-red-400"
-                aria-label="Excluir aula"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </li>
+      <datalist id="academia-secoes">
+        {secoesExistentes.map((s) => (
+          <option key={s} value={s} />
         ))}
-      </ul>
-      <div className="mt-2 flex gap-1.5">
-        <input
-          value={novoTitulo}
-          onChange={(e) => setNovoTitulo(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") void adicionar();
-          }}
-          placeholder="Nova aula..."
-          className="min-w-0 flex-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-gold"
-        />
-        <button
-          onClick={() => void adicionar()}
-          className="rounded-md bg-gold px-2.5 text-background hover:bg-gold-light"
-          aria-label="Adicionar aula"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
+      </datalist>
+      <div className="space-y-4">
+        {grupos.map((g) => (
+          <div key={g.nome}>
+            <p className="mb-1.5 text-[10px] uppercase tracking-[0.2em] text-gold">
+              {g.nome}
+            </p>
+            <ul className="space-y-1.5">
+              {g.itens.map((a) => {
+                const i = aulas.indexOf(a);
+                return (
+                  <li
+                    key={a.id}
+                    className={`rounded-md border px-2 py-1.5 ${
+                      a.id === aulaSelId
+                        ? "border-gold/60 bg-surface"
+                        : "border-border bg-surface"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex flex-col">
+                        <button
+                          onClick={() => mover(i, -1)}
+                          disabled={i === 0}
+                          className="text-text-muted hover:text-gold disabled:opacity-30"
+                          aria-label="Mover aula para cima"
+                        >
+                          <ArrowUp className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={() => mover(i, 1)}
+                          disabled={i === aulas.length - 1}
+                          className="text-text-muted hover:text-gold disabled:opacity-30"
+                          aria-label="Mover aula para baixo"
+                        >
+                          <ArrowDown className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <input
+                        defaultValue={a.titulo}
+                        key={a.id + a.titulo}
+                        onFocus={() => onSelect(a.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        }}
+                        onBlur={(e) => void renomear(a, e.target.value)}
+                        title="Enter ou clicar fora salva o nome"
+                        className="min-w-0 flex-1 rounded bg-transparent px-1.5 py-1 text-sm outline-none focus:bg-background"
+                      />
+                      <button
+                        onClick={() => remover(a)}
+                        className="p-1 text-text-muted hover:text-red-400"
+                        aria-label="Excluir aula"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <input
+                      defaultValue={a.secao ?? ""}
+                      key={`s-${a.id}-${a.secao ?? ""}`}
+                      list="academia-secoes"
+                      placeholder="Subcategoria (opcional)"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      }}
+                      onBlur={(e) => void definirSecao(a, e.target.value)}
+                      title="Agrupa a aula em uma subcategoria dentro do módulo"
+                      className="ml-6 mt-1 w-[calc(100%-1.5rem)] rounded border border-border/60 bg-background px-1.5 py-0.5 text-[11px] text-text-secondary outline-none focus:border-gold"
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </div>
+      <div className="mt-3 space-y-1.5">
+        <div className="flex gap-1.5">
+          <input
+            value={novoTitulo}
+            onChange={(e) => setNovoTitulo(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void adicionar();
+            }}
+            placeholder="Nova aula..."
+            className="min-w-0 flex-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-gold"
+          />
+          <button
+            onClick={() => void adicionar()}
+            className="rounded-md bg-gold px-2.5 text-background hover:bg-gold-light"
+            aria-label="Adicionar aula"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+        <input
+          value={novaSecao}
+          onChange={(e) => setNovaSecao(e.target.value)}
+          list="academia-secoes"
+          placeholder="Subcategoria da nova aula (opcional)"
+          className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[11px] text-text-secondary outline-none focus:border-gold"
+        />
+      </div>
+
     </div>
   );
 }
