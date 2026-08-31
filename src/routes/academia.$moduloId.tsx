@@ -214,14 +214,13 @@ function ModuloPage() {
             <p className="mb-2 text-[11px] uppercase tracking-[0.2em] text-text-muted">
               Aulas
             </p>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {agruparPorChave(aulas, (a) => a.secao).map((g) => (
-                <div key={g.nome}>
-                  {g.nome !== "Geral" && (
-                    <p className="mb-1.5 text-[10px] uppercase tracking-[0.2em] text-gold">
-                      {g.nome}
-                    </p>
-                  )}
+                <section key={g.nome}>
+                  <h2 className="mb-3 text-[11px] uppercase tracking-[0.25em] text-gold">
+                    {g.nome}
+                  </h2>
+
                   <ul className="space-y-1">
                     {g.itens.map((a) => {
                       const i = aulas.indexOf(a);
