@@ -23,6 +23,7 @@ export interface TreinamentoModulo {
   status: StatusModulo;
   criado_por: string | null;
   criado_em: string;
+  categoria: string | null; // categoria/subcategoria que agrupa módulos
 }
 
 export interface TreinamentoAula {
@@ -30,7 +31,26 @@ export interface TreinamentoAula {
   modulo_id: string;
   titulo: string;
   ordem: number;
+  secao: string | null; // subcategoria (seção) que agrupa aulas dentro do módulo
 }
+
+export const SEM_CATEGORIA = "Geral";
+
+/** Agrupa itens por uma chave textual, preservando a ordem de entrada. */
+export function agruparPorChave<T>(
+  itens: T[],
+  chave: (i: T) => string | null | undefined,
+): { nome: string; itens: T[] }[] {
+  const grupos: { nome: string; itens: T[] }[] = [];
+  for (const it of itens) {
+    const nome = (chave(it) ?? "").trim() || SEM_CATEGORIA;
+    const g = grupos.find((x) => x.nome === nome);
+    if (g) g.itens.push(it);
+    else grupos.push({ nome, itens: [it] });
+  }
+  return grupos;
+}
+
 
 export interface DescritivoSegmento {
   tempo: string; // "mm:ss" ou "hh:mm:ss"
@@ -360,12 +380,12 @@ export async function salvarAula(a: {
   modulo_id: string;
   titulo: string;
   ordem?: number;
+  secao?: string | null;
 }): Promise<string> {
   if (a.id) {
-    const { error } = await db
-      .from("treinamento_aula")
-      .update({ titulo: a.titulo })
-      .eq("id", a.id);
+    const patch: Record<string, unknown> = { titulo: a.titulo };
+    if (a.secao !== undefined) patch.secao = a.secao?.trim() ? a.secao.trim() : null;
+    const { error } = await db.from("treinamento_aula").update(patch).eq("id", a.id);
     if (error) throw new Error(error.message);
     return a.id;
   }
@@ -378,12 +398,18 @@ export async function salvarAula(a: {
     .maybeSingle();
   const { data, error } = await db
     .from("treinamento_aula")
-    .insert({ modulo_id: a.modulo_id, titulo: a.titulo, ordem: (maxRow?.ordem ?? -1) + 1 })
+    .insert({
+      modulo_id: a.modulo_id,
+      titulo: a.titulo,
+      secao: a.secao?.trim() ? a.secao.trim() : null,
+      ordem: (maxRow?.ordem ?? -1) + 1,
+    })
     .select("id")
     .single();
   if (error) throw new Error(error.message);
   return data.id as string;
 }
+
 
 export async function excluirAula(id: string): Promise<void> {
   const { error } = await db.from("treinamento_aula").delete().eq("id", id);

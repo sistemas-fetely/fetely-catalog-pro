@@ -4,6 +4,7 @@ import { GraduationCap, Lock, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   urlsAcademia,
+  agruparPorChave,
   listarModulos,
   meuProgresso,
   type ModuloResumo,
@@ -97,18 +98,28 @@ function AcademiaPage() {
           </p>
         </div>
       ) : (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {modulos.map((m) => (
-            <ModuloCard
-              key={m.id}
-              modulo={m}
-              capaUrl={m.capa_url ? capas[m.capa_url] : undefined}
-              concluidas={m.aula_ids.filter((id) => progresso.has(id)).length}
-              isAdmin={isAdmin}
-            />
+        <div className="mt-8 space-y-10">
+          {agruparPorChave(modulos, (m) => m.categoria).map((grupo) => (
+            <section key={grupo.nome}>
+              <h2 className="mb-3 text-[11px] uppercase tracking-[0.25em] text-gold">
+                {grupo.nome}
+              </h2>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {grupo.itens.map((m) => (
+                  <ModuloCard
+                    key={m.id}
+                    modulo={m}
+                    capaUrl={m.capa_url ? capas[m.capa_url] : undefined}
+                    concluidas={m.aula_ids.filter((id) => progresso.has(id)).length}
+                    isAdmin={isAdmin}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}
+
     </main>
   );
 }
@@ -167,7 +178,7 @@ function ModuloCard({
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h2 className="font-display text-lg leading-snug">{modulo.titulo}</h2>
+        <h3 className="font-display text-lg leading-snug">{modulo.titulo}</h3>
         {modulo.descricao && (
           <p className="line-clamp-2 text-sm text-text-secondary">{modulo.descricao}</p>
         )}

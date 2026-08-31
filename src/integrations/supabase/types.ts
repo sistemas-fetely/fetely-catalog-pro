@@ -2730,18 +2730,21 @@ export type Database = {
           id: string
           modulo_id: string
           ordem: number
+          secao: string | null
           titulo: string
         }
         Insert: {
           id?: string
           modulo_id: string
           ordem?: number
+          secao?: string | null
           titulo: string
         }
         Update: {
           id?: string
           modulo_id?: string
           ordem?: number
+          secao?: string | null
           titulo?: string
         }
         Relationships: [
@@ -2804,6 +2807,7 @@ export type Database = {
       treinamento_modulo: {
         Row: {
           capa_url: string | null
+          categoria: string | null
           criado_em: string
           criado_por: string | null
           descricao: string | null
@@ -2815,6 +2819,7 @@ export type Database = {
         }
         Insert: {
           capa_url?: string | null
+          categoria?: string | null
           criado_em?: string
           criado_por?: string | null
           descricao?: string | null
@@ -2826,6 +2831,7 @@ export type Database = {
         }
         Update: {
           capa_url?: string | null
+          categoria?: string | null
           criado_em?: string
           criado_por?: string | null
           descricao?: string | null

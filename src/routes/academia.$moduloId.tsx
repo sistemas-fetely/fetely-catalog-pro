@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import {
   urlsAcademia,
+  agruparPorChave,
   marcarAula,
   meuProgresso,
   obterModulo,
@@ -213,34 +214,48 @@ function ModuloPage() {
             <p className="mb-2 text-[11px] uppercase tracking-[0.2em] text-text-muted">
               Aulas
             </p>
-            <ul className="space-y-1">
-              {aulas.map((a, i) => {
-                const done = progresso.has(a.id);
-                const active = i === selIdx;
-                return (
-                  <li key={a.id}>
-                    <button
-                      onClick={() => setSelIdx(i)}
-                      className={`flex w-full items-center gap-2.5 rounded-md border px-3 py-2.5 text-left text-sm transition ${
-                        active
-                          ? "border-gold/60 bg-surface text-text-primary"
-                          : "border-transparent text-text-secondary hover:bg-surface-2"
-                      }`}
-                    >
-                      {done ? (
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-gold" />
-                      ) : (
-                        <Circle className="h-4 w-4 shrink-0 text-text-muted" />
-                      )}
-                      <span className="line-clamp-2">
-                        <span className="mr-1.5 text-[11px] text-text-muted">{i + 1}.</span>
-                        {a.titulo}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="space-y-4">
+              {agruparPorChave(aulas, (a) => a.secao).map((g) => (
+                <div key={g.nome}>
+                  {g.nome !== "Geral" && (
+                    <p className="mb-1.5 text-[10px] uppercase tracking-[0.2em] text-gold">
+                      {g.nome}
+                    </p>
+                  )}
+                  <ul className="space-y-1">
+                    {g.itens.map((a) => {
+                      const i = aulas.indexOf(a);
+                      const done = progresso.has(a.id);
+                      const active = i === selIdx;
+                      return (
+                        <li key={a.id}>
+                          <button
+                            onClick={() => setSelIdx(i)}
+                            className={`flex w-full items-center gap-2.5 rounded-md border px-3 py-2.5 text-left text-sm transition ${
+                              active
+                                ? "border-gold/60 bg-surface text-text-primary"
+                                : "border-transparent text-text-secondary hover:bg-surface-2"
+                            }`}
+                          >
+                            {done ? (
+                              <CheckCircle2 className="h-4 w-4 shrink-0 text-gold" />
+                            ) : (
+                              <Circle className="h-4 w-4 shrink-0 text-text-muted" />
+                            )}
+                            <span className="line-clamp-2">
+                              <span className="mr-1.5 text-[11px] text-text-muted">
+                                {i + 1}.
+                              </span>
+                              {a.titulo}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </aside>
 
           {/* Conteúdo da aula */}
