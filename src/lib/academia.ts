@@ -23,6 +23,7 @@ export interface TreinamentoModulo {
   status: StatusModulo;
   criado_por: string | null;
   criado_em: string;
+  categoria: string | null; // categoria/subcategoria que agrupa módulos
 }
 
 export interface TreinamentoAula {
@@ -30,7 +31,26 @@ export interface TreinamentoAula {
   modulo_id: string;
   titulo: string;
   ordem: number;
+  secao: string | null; // subcategoria (seção) que agrupa aulas dentro do módulo
 }
+
+export const SEM_CATEGORIA = "Geral";
+
+/** Agrupa itens por uma chave textual, preservando a ordem de entrada. */
+export function agruparPorChave<T>(
+  itens: T[],
+  chave: (i: T) => string | null | undefined,
+): { nome: string; itens: T[] }[] {
+  const grupos: { nome: string; itens: T[] }[] = [];
+  for (const it of itens) {
+    const nome = (chave(it) ?? "").trim() || SEM_CATEGORIA;
+    const g = grupos.find((x) => x.nome === nome);
+    if (g) g.itens.push(it);
+    else grupos.push({ nome, itens: [it] });
+  }
+  return grupos;
+}
+
 
 export interface DescritivoSegmento {
   tempo: string; // "mm:ss" ou "hh:mm:ss"
