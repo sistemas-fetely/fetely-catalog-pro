@@ -97,18 +97,28 @@ function AcademiaPage() {
           </p>
         </div>
       ) : (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {modulos.map((m) => (
-            <ModuloCard
-              key={m.id}
-              modulo={m}
-              capaUrl={m.capa_url ? capas[m.capa_url] : undefined}
-              concluidas={m.aula_ids.filter((id) => progresso.has(id)).length}
-              isAdmin={isAdmin}
-            />
+        <div className="mt-8 space-y-10">
+          {agruparPorChave(modulos, (m) => m.categoria).map((grupo) => (
+            <section key={grupo.nome}>
+              <h2 className="mb-3 text-[11px] uppercase tracking-[0.25em] text-gold">
+                {grupo.nome}
+              </h2>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {grupo.itens.map((m) => (
+                  <ModuloCard
+                    key={m.id}
+                    modulo={m}
+                    capaUrl={m.capa_url ? capas[m.capa_url] : undefined}
+                    concluidas={m.aula_ids.filter((id) => progresso.has(id)).length}
+                    isAdmin={isAdmin}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}
+
     </main>
   );
 }
