@@ -757,7 +757,28 @@ function ModuloEditor({
                 className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
               />
             </label>
+            <label className="block">
+              <span className="text-[11px] uppercase tracking-wider text-text-muted">
+                Categoria (agrupa os módulos na Academy)
+              </span>
+              <input
+                defaultValue={modulo.categoria ?? ""}
+                key={`c-${modulo.id}`}
+                placeholder="Ex.: Produto, Comercial, Processos..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                }}
+                onBlur={(e) => {
+                  const v = e.target.value.trim();
+                  if (v !== (modulo.categoria ?? ""))
+                    void salvarCabecalho({ categoria: v || null });
+                }}
+                title="Enter ou clicar fora salva a categoria"
+                className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+              />
+            </label>
             <div className="flex flex-wrap gap-3">
+
               <label className="block">
                 <span className="text-[11px] uppercase tracking-wider text-text-muted">
                   Visibilidade
