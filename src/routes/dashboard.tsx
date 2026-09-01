@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { useAuth } from "@/store/authStore";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged, applyVendaValida, applyVendaValidaEmbed, isVendaValida } from "@/lib/reportQuery";
 import { formatBRL } from "@/lib/format";
 import { AnalyticsDetailDrawer } from "@/components/dashboard/AnalyticsDetailDrawer";
 
@@ -130,20 +131,20 @@ function DashboardPage() {
     enabled: !!session && !isCliente,
     queryKey: ["dashboard-orders", range.from.toISOString(), range.to.toISOString(), vendedorFiltro],
     queryFn: async (): Promise<OrderRow[]> => {
-      let q = supabase
-        .from("orders")
-        .select(
-          "id, created_at, vendedor_id, vendedor_nome, cliente_id, cliente_snapshot, total, total_unidades, forma_pagamento, commercial",
-        )
-        .eq("status_pedido", "confirmado")
-        .eq("reprovado", false)
-        .gte("created_at", range.from.toISOString())
-        .lt("created_at", range.to.toISOString())
-        .order("created_at", { ascending: false });
-      if (vendedorFiltro !== "todos") q = q.eq("vendedor_id", vendedorFiltro);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []) as unknown as OrderRow[];
+      const build = () => {
+        let q = applyVendaValida(
+          supabase
+            .from("orders")
+            .select(
+              "id, created_at, vendedor_id, vendedor_nome, cliente_id, cliente_snapshot, total, total_unidades, forma_pagamento, commercial",
+            )
+            .gte("created_at", range.from.toISOString())
+            .lt("created_at", range.to.toISOString()),
+        ).order("created_at", { ascending: false }).order("id", { ascending: false });
+        if (vendedorFiltro !== "todos") q = q.eq("vendedor_id", vendedorFiltro);
+        return q;
+      };
+      return await fetchAllPaged<OrderRow>(build);
     },
   });
 
@@ -155,17 +156,18 @@ function DashboardPage() {
     enabled: !!session && !isCliente,
     queryKey: ["dashboard-orders-prev", rangeAnterior.from.toISOString(), rangeAnterior.to.toISOString(), vendedorFiltro],
     queryFn: async (): Promise<OrderRow[]> => {
-      let q = supabase
-        .from("orders")
-        .select("total, total_unidades")
-        .eq("status_pedido", "confirmado")
-        .eq("reprovado", false)
-        .gte("created_at", rangeAnterior.from.toISOString())
-        .lt("created_at", rangeAnterior.to.toISOString());
-      if (vendedorFiltro !== "todos") q = q.eq("vendedor_id", vendedorFiltro);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []) as unknown as OrderRow[];
+      const build = () => {
+        let q = applyVendaValida(
+          supabase
+            .from("orders")
+            .select("id, total, total_unidades")
+            .gte("created_at", rangeAnterior.from.toISOString())
+            .lt("created_at", rangeAnterior.to.toISOString()),
+        ).order("id", { ascending: true });
+        if (vendedorFiltro !== "todos") q = q.eq("vendedor_id", vendedorFiltro);
+        return q;
+      };
+      return await fetchAllPaged<OrderRow>(build);
     },
   });
 
@@ -199,17 +201,21 @@ function DashboardPage() {
     enabled: !!session && !isCliente,
     queryKey: ["dashboard-items", range.from.toISOString(), range.to.toISOString(), vendedorFiltro],
     queryFn: async () => {
-      let q = supabase
-        .from("order_items")
-        .select("sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_nome, cliente_snapshot, total)")
-        .eq("orders.status_pedido", "confirmado")
-        .eq("orders.reprovado", false)
-        .gte("orders.created_at", range.from.toISOString())
-        .lt("orders.created_at", range.to.toISOString());
-      if (vendedorFiltro !== "todos") q = q.eq("orders.vendedor_id", vendedorFiltro);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []) as Array<DashItem>;
+      const build = () => {
+        let q = applyVendaValidaEmbed(
+          supabase
+            .from("order_items")
+            .select(
+              "id, sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_nome, cliente_snapshot, total, status_pedido, reprovado, sncf_status_sync, bonificado)",
+            )
+            .gte("orders.created_at", range.from.toISOString())
+            .lt("orders.created_at", range.to.toISOString()),
+        ).order("id", { ascending: true });
+        if (vendedorFiltro !== "todos") q = q.eq("orders.vendedor_id", vendedorFiltro);
+        return q;
+      };
+      const rows = await fetchAllPaged<DashItem & { orders: Record<string, unknown> }>(build);
+      return rows.filter((r) => isVendaValida(r.orders as never)) as Array<DashItem>;
     },
   });
 

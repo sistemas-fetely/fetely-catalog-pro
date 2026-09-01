@@ -15,6 +15,7 @@ import { useAuth } from "@/store/authStore";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
 import { useClientes } from "@/store/clienteStore";
+import { fetchAllPaged, applyVendaValida, applyVendaValidaEmbed, isVendaValida } from "@/lib/reportQuery";
 
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
@@ -86,6 +87,8 @@ interface ItemRow {
     total: number;
     status_pedido?: string;
     reprovado?: boolean;
+    sncf_status_sync?: string | null;
+    bonificado?: boolean | null;
   };
 }
 
@@ -211,6 +214,7 @@ function RelatoriosPage() {
   const [vendedorFiltro, setVendedorFiltro] = useState("todos");
   const [tipoFiltro, setTipoFiltro] = useState<TipoVendFiltro>("todos");
   const [tab, setTab] = useState<TabKey>("geral");
+  const [incluirBonificados, setIncluirBonificados] = useState(false);
 
   const range = useMemo(() => rangeFor(periodo, customFrom, customTo), [periodo, customFrom, customTo]);
   const rangeAnt = useMemo(() => {
@@ -234,64 +238,58 @@ function RelatoriosPage() {
   });
 
   const buildOrdersQuery = (from: Date, to: Date) => {
-    let q = supabase
-      .from("orders")
-      .select(
-        "id, created_at, vendedor_id, vendedor_nome, vendedor_tipo, cliente_snapshot, total, total_unidades, total_skus, forma_pagamento, frete, commercial",
-      )
-      .gte("created_at", from.toISOString())
-      .lt("created_at", to.toISOString())
-      .eq("status_pedido", "confirmado")
-      .eq("reprovado", false)
-      .order("created_at", { ascending: false });
+    let q = applyVendaValida(
+      supabase
+        .from("orders")
+        .select(
+          "id, created_at, vendedor_id, vendedor_nome, vendedor_tipo, cliente_snapshot, total, total_unidades, total_skus, forma_pagamento, frete, commercial",
+        )
+        .gte("created_at", from.toISOString())
+        .lt("created_at", to.toISOString()),
+      { incluirBonificados },
+    ).order("created_at", { ascending: false }).order("id", { ascending: false });
     if (vendedorFiltro !== "todos") q = q.eq("vendedor_id", vendedorFiltro);
     if (tipoFiltro !== "todos") q = q.eq("vendedor_tipo", tipoFiltro);
     return q;
   };
 
-  const filtroKey = `${range.from.toISOString()}|${range.to.toISOString()}|${vendedorFiltro}|${tipoFiltro}`;
+  const filtroKey = `${range.from.toISOString()}|${range.to.toISOString()}|${vendedorFiltro}|${tipoFiltro}|${incluirBonificados ? "b1" : "b0"}`;
 
   const { data: orders = [], isLoading: loadingOrders } = useQuery({
     enabled: !!session && !isCliente,
     queryKey: ["rel-orders", filtroKey],
-    queryFn: async () => {
-      const { data, error } = await buildOrdersQuery(range.from, range.to);
-      if (error) throw error;
-      return (data ?? []) as unknown as OrderRow[];
-    },
+    queryFn: async () =>
+      await fetchAllPaged<OrderRow>(() => buildOrdersQuery(range.from, range.to)),
   });
 
   const { data: ordersPrev = [] } = useQuery({
     enabled: !!session && !isCliente,
     queryKey: ["rel-orders-prev", filtroKey],
-    queryFn: async () => {
-      const { data, error } = await buildOrdersQuery(rangeAnt.from, rangeAnt.to);
-      if (error) throw error;
-      return (data ?? []) as unknown as OrderRow[];
-    },
+    queryFn: async () =>
+      await fetchAllPaged<OrderRow>(() => buildOrdersQuery(rangeAnt.from, rangeAnt.to)),
   });
 
   const { data: items = [], isLoading: loadingItems } = useQuery({
     enabled: !!session && !isCliente && (tab === "produto" || tab === "colecao" || tab === "grupo" || tab === "tipo" || tab === "departamento" || tab === "cliente"),
     queryKey: ["rel-items", filtroKey, tab],
     queryFn: async () => {
-      let q = supabase
-        .from("order_items")
-        .select(
-          "sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_tipo, total, status_pedido, reprovado)",
-        )
-        .gte("orders.created_at", range.from.toISOString())
-        .lt("orders.created_at", range.to.toISOString())
-        .eq("orders.status_pedido", "confirmado")
-        .eq("orders.reprovado", false);
-      if (vendedorFiltro !== "todos") q = q.eq("orders.vendedor_id", vendedorFiltro);
-      if (tipoFiltro !== "todos") q = q.eq("orders.vendedor_tipo", tipoFiltro);
-      const { data, error } = await q;
-      if (error) throw error;
-      const rows = (data ?? []) as unknown as ItemRow[];
-      return rows.filter(
-        (r) => r.orders?.status_pedido === "confirmado" && r.orders?.reprovado !== true,
-      );
+      const build = () => {
+        let q = applyVendaValidaEmbed(
+          supabase
+            .from("order_items")
+            .select(
+              "id, sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_tipo, total, status_pedido, reprovado, sncf_status_sync, bonificado)",
+            )
+            .gte("orders.created_at", range.from.toISOString())
+            .lt("orders.created_at", range.to.toISOString()),
+          { incluirBonificados },
+        ).order("id", { ascending: true });
+        if (vendedorFiltro !== "todos") q = q.eq("orders.vendedor_id", vendedorFiltro);
+        if (tipoFiltro !== "todos") q = q.eq("orders.vendedor_tipo", tipoFiltro);
+        return q;
+      };
+      const rows = await fetchAllPaged<ItemRow>(build);
+      return rows.filter((r) => isVendaValida(r.orders, incluirBonificados));
     },
   });
 
@@ -366,7 +364,21 @@ function RelatoriosPage() {
               ]} />
             </>
           )}
+          <label className="flex items-center gap-2 text-[11px] text-text-secondary pb-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={incluirBonificados}
+              onChange={(e) => setIncluirBonificados(e.target.checked)}
+              className="accent-gold"
+            />
+            Incluir pedidos bonificados
+          </label>
         </div>
+        <p className="mt-3 text-[10px] text-text-muted leading-relaxed">
+          Base dos números: pedidos <strong>confirmados</strong>, não reprovados e{" "}
+          <strong>sincronizados com o SNCF</strong> (sncf_status_sync = enviado)
+          {incluirBonificados ? ", incluindo bonificados." : ", excluindo bonificações."}
+        </p>
       </section>
 
       {/* Tabs */}
