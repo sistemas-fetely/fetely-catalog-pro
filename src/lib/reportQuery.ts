@@ -5,7 +5,9 @@
 //   - status_pedido = 'confirmado'
 //   - reprovado = false
 //   - sncf_status_sync = 'enviado'  (efetivamente sincronizado com o SNCF)
-//   - bonificado = false            (bonificação não é faturamento)
+//   - bonificado: entra por padrão (bonificado também desce como pedido e é
+//     sincronizado); pode ser excluído explicitamente via opts.
+
 
 const PAGE_SIZE = 1000;
 
