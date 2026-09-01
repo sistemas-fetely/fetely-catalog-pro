@@ -364,7 +364,21 @@ function RelatoriosPage() {
               ]} />
             </>
           )}
+          <label className="flex items-center gap-2 text-[11px] text-text-secondary pb-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={incluirBonificados}
+              onChange={(e) => setIncluirBonificados(e.target.checked)}
+              className="accent-gold"
+            />
+            Incluir pedidos bonificados
+          </label>
         </div>
+        <p className="mt-3 text-[10px] text-text-muted leading-relaxed">
+          Base dos números: pedidos <strong>confirmados</strong>, não reprovados e{" "}
+          <strong>sincronizados com o SNCF</strong> (sncf_status_sync = enviado)
+          {incluirBonificados ? ", incluindo bonificados." : ", excluindo bonificações."}
+        </p>
       </section>
 
       {/* Tabs */}

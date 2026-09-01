@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Boxes, Layers, ShoppingBag, Search, ArrowUpDown } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllPaged, applyVendaValida, applyVendaValidaEmbed, isVendaValida } from "@/lib/reportQuery";
 import { formatBRL } from "@/lib/format";
 
 export const Route = createFileRoute("/analytics")({
@@ -108,21 +109,19 @@ function AnalyticsPage() {
     enabled: !!session && !isCliente && (view === "produtos" || view === "colecoes"),
     queryKey: ["analytics-items", range.from.toISOString(), range.to.toISOString()],
     queryFn: async (): Promise<DashItem[]> => {
-      const { data, error } = await supabase
-        .from("order_items")
-        .select(
-          "sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_nome, cliente_snapshot, total, status_pedido, reprovado)",
-        )
-        .gte("orders.created_at", range.from.toISOString())
-        .lt("orders.created_at", range.to.toISOString())
-        .eq("orders.status_pedido", "confirmado")
-        .eq("orders.reprovado", false);
-      if (error) throw error;
-      // Defensive client-side filter (PostgREST embed filters can be inconsistent)
-      const rows = (data ?? []) as unknown as Array<DashItem & { orders: { status_pedido?: string; reprovado?: boolean } }>;
-      return rows.filter(
-        (r) => r.orders?.status_pedido === "confirmado" && r.orders?.reprovado !== true,
-      ) as unknown as DashItem[];
+      const rows = await fetchAllPaged<DashItem & { orders: Record<string, unknown> }>(() =>
+        applyVendaValidaEmbed(
+          supabase
+            .from("order_items")
+            .select(
+              "id, sku, quantity, subtotal_bruto, product_snapshot, orders!inner(id, created_at, vendedor_id, vendedor_nome, cliente_snapshot, total, status_pedido, reprovado, sncf_status_sync, bonificado)",
+            )
+            .gte("orders.created_at", range.from.toISOString())
+            .lt("orders.created_at", range.to.toISOString()),
+        ).order("id", { ascending: true }),
+      );
+      // Checagem defensiva (embeds do PostgREST podem ser inconsistentes)
+      return rows.filter((r) => isVendaValida(r.orders as never)) as unknown as DashItem[];
     },
   });
 
@@ -130,18 +129,19 @@ function AnalyticsPage() {
     enabled: !!session && !isCliente && view === "pedidos",
     queryKey: ["analytics-orders", range.from.toISOString(), range.to.toISOString()],
     queryFn: async (): Promise<OrderRow[]> => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          "id, created_at, vendedor_nome, cliente_snapshot, total, total_unidades, total_skus, forma_pagamento, commercial",
+      return await fetchAllPaged<OrderRow>(() =>
+        applyVendaValida(
+          supabase
+            .from("orders")
+            .select(
+              "id, created_at, vendedor_nome, cliente_snapshot, total, total_unidades, total_skus, forma_pagamento, commercial",
+            )
+            .gte("created_at", range.from.toISOString())
+            .lt("created_at", range.to.toISOString()),
         )
-        .gte("created_at", range.from.toISOString())
-        .lt("created_at", range.to.toISOString())
-        .eq("status_pedido", "confirmado")
-        .eq("reprovado", false)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as OrderRow[];
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false }),
+      );
     },
   });
 
