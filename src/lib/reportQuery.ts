@@ -40,7 +40,7 @@ export function applyVendaValida<T>(q: T, opts?: { incluirBonificados?: boolean 
     .eq("status_pedido", "confirmado")
     .eq("reprovado", false)
     .eq("sncf_status_sync", "enviado");
-  if (!opts?.incluirBonificados) r = r.eq("bonificado", false);
+  if (opts?.incluirBonificados === false) r = r.eq("bonificado", false);
   return r as T;
 }
 
@@ -52,7 +52,7 @@ export function applyVendaValidaEmbed<T>(q: T, opts?: { incluirBonificados?: boo
     .eq("orders.status_pedido", "confirmado")
     .eq("orders.reprovado", false)
     .eq("orders.sncf_status_sync", "enviado");
-  if (!opts?.incluirBonificados) r = r.eq("orders.bonificado", false);
+  if (opts?.incluirBonificados === false) r = r.eq("orders.bonificado", false);
   return r as T;
 }
 
@@ -64,7 +64,7 @@ export interface VendaValidaFlags {
 }
 
 /** Checagem defensiva no cliente (embeds do PostgREST podem ser inconsistentes). */
-export function isVendaValida(o: VendaValidaFlags | null | undefined, incluirBonificados = false) {
+export function isVendaValida(o: VendaValidaFlags | null | undefined, incluirBonificados = true) {
   if (!o) return false;
   return (
     o.status_pedido === "confirmado" &&
@@ -73,3 +73,4 @@ export function isVendaValida(o: VendaValidaFlags | null | undefined, incluirBon
     (incluirBonificados || o.bonificado !== true)
   );
 }
+
