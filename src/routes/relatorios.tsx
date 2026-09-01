@@ -214,7 +214,7 @@ function RelatoriosPage() {
   const [vendedorFiltro, setVendedorFiltro] = useState("todos");
   const [tipoFiltro, setTipoFiltro] = useState<TipoVendFiltro>("todos");
   const [tab, setTab] = useState<TabKey>("geral");
-  const [incluirBonificados, setIncluirBonificados] = useState(false);
+  const [incluirBonificados, setIncluirBonificados] = useState(true);
 
   const range = useMemo(() => rangeFor(periodo, customFrom, customTo), [periodo, customFrom, customTo]);
   const rangeAnt = useMemo(() => {
