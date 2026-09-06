@@ -341,11 +341,11 @@ function AdminProductsPage() {
             <FilterSelect label="Grupo" value={fGrupo} onChange={setFGrupo} options={opts.grupo} />
             <FilterSelect label="Status" value={fStatus} onChange={setFStatus} options={opts.status} />
             <FilterSelect
-              label="Ativo"
+              label="Publicação"
               value={fAtivo}
               onChange={(v) => setFAtivo(v as "" | "sim" | "nao")}
               options={["sim", "nao"]}
-              labels={{ sim: "Ativo", nao: "Inativo" }}
+              labels={{ sim: "Publicado", nao: "Não publicado" }}
             />
           </div>
           {(search || fMarca || fLinha || fCategoria || fColecao || fGrupo || fStatus || fAtivo) && (
