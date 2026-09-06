@@ -54,6 +54,14 @@ function SettingsPage() {
         ...(session && isAdminOrMaster
           ? [
               {
+                label: "Cadastro de Produtos",
+                description:
+                  "Nascimento do Produto: rascunho com ficha técnica e publicação validada pelo SNCF",
+                to: "/admin/nascimento-produto",
+                icon: Package,
+                tela: "cfg_produtos",
+              } as Item,
+              {
                 label: "Produtos",
                 description: "Cadastrar, editar e desativar produtos do catálogo",
                 to: "/admin/products",

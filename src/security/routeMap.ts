@@ -15,6 +15,7 @@ interface RotaProtegida {
 const ROTAS: RotaProtegida[] = [
   // ADMIN
   { prefix: "/admin/permissoes", telaId: "cfg_permissoes" },
+  { prefix: "/admin/nascimento-produto", telaId: "cfg_produtos" },
   { prefix: "/admin/products", telaId: "cfg_produtos" },
   { prefix: "/admin/cartilhas", telaId: "cfg_cartilhas" },
   { prefix: "/admin/leads", telaId: "cfg_leads" },
