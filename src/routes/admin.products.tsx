@@ -458,9 +458,10 @@ function AdminProductsPage() {
                         <CopyIcon className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => handleToggle(p)}
-                        className="rounded p-1.5 hover:bg-zinc-800"
-                        title={p.ativo === false ? "Reativar" : "Desativar"}
+                        onClick={() => void handleToggle(p)}
+                        disabled={publicandoSku === p.sku}
+                        className="rounded p-1.5 hover:bg-zinc-800 disabled:opacity-40"
+                        title={p.ativo === false ? "Publicar" : "Despublicar"}
                       >
                         <Power className={`h-4 w-4 ${p.ativo === false ? "text-emerald-400" : "text-red-400"}`} />
                       </button>
