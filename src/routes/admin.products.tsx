@@ -13,6 +13,8 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { fichaPendencias } from "@/lib/fichaPendencias.functions";
 import { exportProductsCSV, exportProductsJSON } from "@/lib/productExporter";
 import {
   DropdownMenu,
