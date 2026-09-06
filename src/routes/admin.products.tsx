@@ -75,7 +75,8 @@ function emptyProduct(): Product {
     precoAtacado: 0,
     statusEstoque: "em estoque",
     isVelaNumerica: false,
-    ativo: true,
+    // publicação só pelo botão Publicar, que valida a ficha no SNCF
+    ativo: false,
   };
 }
 
