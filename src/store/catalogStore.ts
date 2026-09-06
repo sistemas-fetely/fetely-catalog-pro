@@ -218,7 +218,8 @@ export function productToRow(p: Product): Record<string, unknown> {
     estoque_disponivel: p.estoqueDisponivel ?? 0,
     is_vela_numerica: p.isVelaNumerica ?? false,
     numero_vela: p.numeroVela ?? null,
-    ativo: p.ativo ?? true,
+    // publicação só pelo botão Publicar, que valida a ficha no SNCF
+    ativo: p.ativo ?? false,
     pronta_entrega: p.prontaEntrega ?? false,
   };
 }
@@ -353,7 +354,8 @@ export const useCatalog = create<CatalogState>()(
         if (!existing && state.products.some((x) => x.sku === sku)) {
           return { ok: false, error: "SKU já cadastrado" };
         }
-        const next: Product = { ...p, sku, ativo: p.ativo ?? true };
+        // publicação só pelo botão Publicar, que valida a ficha no SNCF
+        const next: Product = { ...p, sku, ativo: p.ativo ?? false };
         const newProducts =
           idx >= 0
             ? state.products.map((x, i) => (i === idx ? next : x))
@@ -411,7 +413,8 @@ export const useCatalog = create<CatalogState>()(
           sku: newSku,
           ean: "",
           codCadastro: "",
-          ativo: true,
+          // publicação só pelo botão Publicar, que valida a ficha no SNCF
+          ativo: false,
         };
         const entry = makeAudit(meta, newSku, copy.nomeComercial, "duplicado");
         set({

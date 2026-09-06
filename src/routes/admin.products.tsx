@@ -13,6 +13,8 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { fichaPendencias } from "@/lib/fichaPendencias.functions";
 import { exportProductsCSV, exportProductsJSON } from "@/lib/productExporter";
 import {
   DropdownMenu,
@@ -47,6 +49,27 @@ export const Route = createFileRoute("/admin/products")({
 
 const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
+interface Pendencia {
+  campo: string;
+  bloco: string;
+  dono: string;
+}
+
+// Normalização da resposta crua do SNCF (mesmo padrão do portão de publicação).
+function normalizarPendencias(resp: unknown): Pendencia[] {
+  const raiz = resp as Record<string, unknown> | null;
+  const bruto =
+    (Array.isArray(raiz?.["pendencias"]) && raiz?.["pendencias"]) ||
+    (Array.isArray(raiz?.["itens"]) && raiz?.["itens"]) ||
+    (Array.isArray(raiz?.["data"]) && raiz?.["data"]) ||
+    (Array.isArray(resp) ? resp : []);
+  return (bruto as Record<string, unknown>[]).map((p) => ({
+    campo: String(p["campo"] ?? p["field"] ?? "—"),
+    bloco: String(p["bloco"] ?? p["block"] ?? "—"),
+    dono: String(p["dono"] ?? p["owner"] ?? "—"),
+  }));
+}
+
 function emptyProduct(): Product {
   return {
     sku: "",
@@ -75,7 +98,8 @@ function emptyProduct(): Product {
     precoAtacado: 0,
     statusEstoque: "em estoque",
     isVelaNumerica: false,
-    ativo: true,
+    // publicação só pelo botão Publicar, que valida a ficha no SNCF
+    ativo: false,
   };
 }
 
@@ -129,7 +153,8 @@ function AdminProductsPage() {
   const [fColecao, setFColecao] = useState("");
   const [fGrupo, setFGrupo] = useState("");
   const [fStatus, setFStatus] = useState("");
-  const [fAtivo, setFAtivo] = useState<"" | "sim" | "nao">("");
+  // default = fila de trabalho de quem cadastra
+  const [fAtivo, setFAtivo] = useState<"" | "sim" | "nao">("nao");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 20;
 
@@ -174,6 +199,11 @@ function AdminProductsPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [editingOriginalSku, setEditingOriginalSku] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+
+  // Portão de publicação (SNCF)
+  const ficha = useServerFn(fichaPendencias);
+  const [publicandoSku, setPublicandoSku] = useState<string | null>(null);
+  const [pendencias, setPendencias] = useState<{ sku: string; itens: Pendencia[] } | null>(null);
 
   function openEdit(p: Product) {
     setEditing({ ...p });
@@ -236,12 +266,35 @@ function AdminProductsPage() {
     }
   }
 
-  function handleToggle(p: Product) {
+  // Portão de publicação: inativo → valida ficha no SNCF antes de publicar.
+  async function handleToggle(p: Product) {
     const ativo = p.ativo !== false;
-    if (!confirm(ativo ? `Desativar ${p.sku}?` : `Reativar ${p.sku}?`)) return;
-    toggleAtivo(p.sku, auditMeta);
-    toast.success(ativo ? "Produto desativado" : "Produto reativado");
+    if (ativo) {
+      if (!confirm(`Despublicar ${p.sku}? Ele deixa de aparecer no catálogo.`)) return;
+      toggleAtivo(p.sku, auditMeta);
+      toast.success("Produto despublicado");
+      return;
+    }
+    setPublicandoSku(p.sku);
+    try {
+      const resp = (await ficha({ data: { skus: [p.sku] } })) as { json: string };
+      const itens = normalizarPendencias(JSON.parse(resp.json) as unknown).filter(
+        (x) => x.campo !== "ficha_bling",
+      );
+      if (itens.length > 0) {
+        setPendencias({ sku: p.sku, itens });
+        toast.error(`${itens.length} pendência(s) na ficha — publicação bloqueada`);
+        return;
+      }
+      toggleAtivo(p.sku, auditMeta);
+      toast.success(`${p.sku} publicado — visível no catálogo`);
+    } catch (e) {
+      toast.error(`Portão de publicação falhou: ${(e as Error).message}`);
+    } finally {
+      setPublicandoSku(null);
+    }
   }
+
 
   if (loading || !session || !isAdminOrMaster()) {
     return <div className="p-8 text-text-secondary">Carregando…</div>;
@@ -340,11 +393,11 @@ function AdminProductsPage() {
             <FilterSelect label="Grupo" value={fGrupo} onChange={setFGrupo} options={opts.grupo} />
             <FilterSelect label="Status" value={fStatus} onChange={setFStatus} options={opts.status} />
             <FilterSelect
-              label="Ativo"
+              label="Publicação"
               value={fAtivo}
               onChange={(v) => setFAtivo(v as "" | "sim" | "nao")}
               options={["sim", "nao"]}
-              labels={{ sim: "Ativo", nao: "Inativo" }}
+              labels={{ sim: "Publicado", nao: "Não publicado" }}
             />
           </div>
           {(search || fMarca || fLinha || fCategoria || fColecao || fGrupo || fStatus || fAtivo) && (
@@ -405,9 +458,10 @@ function AdminProductsPage() {
                         <CopyIcon className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => handleToggle(p)}
-                        className="rounded p-1.5 hover:bg-zinc-800"
-                        title={p.ativo === false ? "Reativar" : "Desativar"}
+                        onClick={() => void handleToggle(p)}
+                        disabled={publicandoSku === p.sku}
+                        className="rounded p-1.5 hover:bg-zinc-800 disabled:opacity-40"
+                        title={p.ativo === false ? "Publicar" : "Despublicar"}
                       >
                         <Power className={`h-4 w-4 ${p.ativo === false ? "text-emerald-400" : "text-red-400"}`} />
                       </button>
@@ -491,11 +545,47 @@ function AdminProductsPage() {
           onClose={close}
           onSave={save}
           onToggleAtivo={() => {
-            handleToggle(editing);
+            void handleToggle(editing);
             close();
           }}
         />
       )}
+
+      {/* Recusa do portão de publicação */}
+      <Dialog open={!!pendencias} onOpenChange={(o) => !o && setPendencias(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Ficha incompleta — não publicado</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-text-secondary">
+            O produto <span className="font-mono">{pendencias?.sku}</span> continua fora do catálogo.
+            Falta completar:
+          </p>
+          <div className="max-h-80 overflow-y-auto rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-zinc-900/60 text-xs uppercase tracking-wider text-zinc-100">
+                <tr>
+                  <th className="px-3 py-2 text-left">Campo</th>
+                  <th className="px-3 py-2 text-left">Bloco</th>
+                  <th className="px-3 py-2 text-left">Responsável</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(pendencias?.itens ?? []).map((it, i) => (
+                  <tr key={`${it.campo}-${i}`} className="border-t border-border">
+                    <td className="px-3 py-2">{it.campo}</td>
+                    <td className="px-3 py-2 text-text-secondary">{it.bloco}</td>
+                    <td className="px-3 py-2 text-text-secondary">{it.dono}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setPendencias(null)}>Entendi</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -794,14 +884,7 @@ function ProductEditor({
                 </Field>
               </div>
             )}
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={product.ativo !== false}
-                onChange={(e) => set("ativo", e.target.checked)}
-              />
-              Produto ativo (visível no catálogo de pedidos)
-            </label>
+            {/* publicação só pelo botão Publicar, que valida a ficha no SNCF */}
           </TabsContent>
 
           <TabsContent value="tec" className="space-y-3 pt-4">
@@ -836,9 +919,17 @@ function ProductEditor({
 
         <DialogFooter className="!justify-between gap-2 sm:!justify-between">
           {!creating ? (
-            <Button variant="outline" onClick={onToggleAtivo} className="border-red-700 text-red-400 hover:bg-red-950">
+            <Button
+              variant="outline"
+              onClick={onToggleAtivo}
+              className={
+                product.ativo === false
+                  ? "border-emerald-700 text-emerald-400 hover:bg-emerald-950"
+                  : "border-red-700 text-red-400 hover:bg-red-950"
+              }
+            >
               <Power className="mr-2 h-4 w-4" />
-              {product.ativo === false ? "Reativar" : "Desativar"}
+              {product.ativo === false ? "Publicar" : "Despublicar"}
             </Button>
           ) : <span />}
           <div className="flex gap-2">
