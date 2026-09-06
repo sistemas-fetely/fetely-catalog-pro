@@ -1961,6 +1961,7 @@ export type Database = {
           estampa: string | null
           estoque_disponivel: number
           familia: string | null
+          fase: string | null
           grupo: string
           grupo_id: string
           id: string
@@ -2013,6 +2014,7 @@ export type Database = {
           estampa?: string | null
           estoque_disponivel?: number
           familia?: string | null
+          fase?: string | null
           grupo: string
           grupo_id: string
           id?: string
@@ -2065,6 +2067,7 @@ export type Database = {
           estampa?: string | null
           estoque_disponivel?: number
           familia?: string | null
+          fase?: string | null
           grupo?: string
           grupo_id?: string
           id?: string
@@ -2112,6 +2115,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "produto_cores"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_fase_fkey"
+            columns: ["fase"]
+            isOneToOne: false
+            referencedRelation: "produto_fase_dim"
+            referencedColumns: ["slug"]
           },
           {
             foreignKeyName: "products_grupo_id_fkey"
@@ -2229,6 +2239,36 @@ export type Database = {
           id?: string
           nome?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      produto_fase_dim: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          descricao: string | null
+          nome: string
+          ordem: number
+          slug: string
+          visivel_catalogo: boolean
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          descricao?: string | null
+          nome: string
+          ordem: number
+          slug: string
+          visivel_catalogo: boolean
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          descricao?: string | null
+          nome?: string
+          ordem?: number
+          slug?: string
+          visivel_catalogo?: boolean
         }
         Relationships: []
       }
