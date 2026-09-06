@@ -795,14 +795,7 @@ function ProductEditor({
                 </Field>
               </div>
             )}
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={product.ativo !== false}
-                onChange={(e) => set("ativo", e.target.checked)}
-              />
-              Produto ativo (visível no catálogo de pedidos)
-            </label>
+            {/* publicação só pelo botão Publicar, que valida a ficha no SNCF */}
           </TabsContent>
 
           <TabsContent value="tec" className="space-y-3 pt-4">
