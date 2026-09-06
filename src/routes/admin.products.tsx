@@ -441,18 +441,19 @@ function AdminProductsPage() {
             <FilterSelect label="Grupo" value={fGrupo} onChange={setFGrupo} options={opts.grupo} />
             <FilterSelect label="Status" value={fStatus} onChange={setFStatus} options={opts.status} />
             <FilterSelect
-              label="Publicação"
-              value={fAtivo}
-              onChange={(v) => setFAtivo(v as "" | "sim" | "nao")}
-              options={["sim", "nao"]}
-              labels={{ sim: "Publicado", nao: "Não publicado" }}
+              label="Fase"
+              value={fFase}
+              onChange={setFFase}
+              options={fases.map((f) => f.slug)}
+              labels={Object.fromEntries(fases.map((f) => [f.slug, f.nome]))}
+              allLabel="Todas"
             />
           </div>
-          {(search || fMarca || fLinha || fCategoria || fColecao || fGrupo || fStatus || fAtivo) && (
+          {(search || fMarca || fLinha || fCategoria || fColecao || fGrupo || fStatus || fFase) && (
             <button
               onClick={() => {
                 setSearch(""); setFMarca(""); setFLinha(""); setFCategoria("");
-                setFColecao(""); setFGrupo(""); setFStatus(""); setFAtivo("");
+                setFColecao(""); setFGrupo(""); setFStatus(""); setFFase("");
               }}
               className="text-xs text-gold underline-offset-4 hover:underline"
             >
