@@ -212,17 +212,16 @@ function AdminProductsPage() {
       if (fColecao && p.colecao !== fColecao) return false;
       if (fGrupo && p.grupo !== fGrupo) return false;
       if (fStatus && p.statusEstoque !== fStatus) return false;
-      if (fAtivo === "sim" && p.ativo === false) return false;
-      if (fAtivo === "nao" && p.ativo !== false) return false;
+      if (fFase && (p.fase ?? "registrado") !== fFase) return false;
       if (s) {
         const hay = `${p.sku} ${p.nomeComercial} ${p.colecao} ${p.ean ?? ""}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
     });
-  }, [products, search, fMarca, fLinha, fCategoria, fColecao, fGrupo, fStatus, fAtivo]);
+  }, [products, search, fMarca, fLinha, fCategoria, fColecao, fGrupo, fStatus, fFase]);
 
-  useEffect(() => { setPage(1); }, [search, fMarca, fLinha, fCategoria, fColecao, fGrupo, fStatus, fAtivo]);
+  useEffect(() => { setPage(1); }, [search, fMarca, fLinha, fCategoria, fColecao, fGrupo, fStatus, fFase]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
