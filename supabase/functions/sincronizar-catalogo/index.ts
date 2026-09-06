@@ -1,4 +1,4 @@
-// 🟢 FOP — sincronizar-catalogo v3.1 (catálogo B2B expandido + CORS para chamada browser)
+// 🟢 FOP — sincronizar-catalogo v3.2 (catálogo B2B expandido + CORS para chamada browser + cod_cadastro)
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -38,7 +38,7 @@ serve(async (req) => {
 
     const { data: produtos, error } = await supabase
       .from("products")
-      .select("sku, ean, nome_comercial, nome_completo, marca, linha, grupo, tipo, colecao, cor_nome, cor, estampa, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, preco_varejo, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm")
+      .select("sku, cod_cadastro, ean, nome_comercial, nome_completo, marca, linha, grupo, tipo, colecao, cor_nome, cor, estampa, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, preco_varejo, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm")
       .eq("ativo", true)
       .order("sku");
 
@@ -53,6 +53,7 @@ serve(async (req) => {
     for (let i = 0; i < produtos.length; i += LOTE) {
       const lote = produtos.slice(i, i + LOTE).map((p) => ({
         sku:                  p.sku,
+        cod_cadastro:         p.cod_cadastro ?? null, // chave canônica (mapa-donos-catalogo-v1); o SNCF só grava quando presente
         ean:                  p.ean                 ?? null,
         nome_comercial:       p.nome_comercial,
         nome_completo:        p.nome_completo        ?? null,
