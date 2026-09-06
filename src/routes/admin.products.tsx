@@ -472,6 +472,7 @@ function AdminProductsPage() {
                 <th className="px-3 py-2 text-left">Coleção</th>
                 <th className="px-3 py-2 text-left">Grupo</th>
                 <th className="px-3 py-2 text-right">Atacado</th>
+                <th className="px-3 py-2 text-left">Fase</th>
                 <th className="px-3 py-2 text-left">Status</th>
                 <th className="px-3 py-2 text-right">Ações</th>
               </tr>
@@ -481,7 +482,7 @@ function AdminProductsPage() {
                 <tr
                   key={p.sku}
                   onClick={() => openEdit(p)}
-                  className={`cursor-pointer border-t border-border hover:bg-surface-hover ${p.ativo === false ? "opacity-50" : ""}`}
+                  className={`cursor-pointer border-t border-border hover:bg-surface-hover ${(p.fase ?? "registrado") === "registrado" || p.fase === "inativo" ? "opacity-50" : ""}`}
                   title="Clique para visualizar / editar"
                 >
                   <td className="px-3 py-2 font-mono text-xs">{p.sku}</td>
@@ -489,6 +490,7 @@ function AdminProductsPage() {
                   <td className="px-3 py-2 text-text-secondary">{p.colecao}</td>
                   <td className="px-3 py-2 text-text-secondary">{p.grupo}</td>
                   <td className="px-3 py-2 text-right">{formatBRL(p.precoAtacado || 0)}</td>
+                  <td className="px-3 py-2">{faseBadge(p)}</td>
                   <td className="px-3 py-2">{statusBadge(p)}</td>
                   <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
@@ -506,14 +508,16 @@ function AdminProductsPage() {
                       >
                         <CopyIcon className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => void handleToggle(p)}
-                        disabled={publicandoSku === p.sku}
-                        className="rounded p-1.5 hover:bg-zinc-800 disabled:opacity-40"
-                        title={p.ativo === false ? "Publicar" : "Despublicar"}
-                      >
-                        <Power className={`h-4 w-4 ${p.ativo === false ? "text-emerald-400" : "text-red-400"}`} />
-                      </button>
+                      {p.fase !== "inativo" && (
+                        <button
+                          onClick={() => void handleToggle(p)}
+                          disabled={publicandoSku === p.sku}
+                          className="rounded p-1.5 hover:bg-zinc-800 disabled:opacity-40"
+                          title={(p.fase ?? "registrado") === "registrado" ? "Publicar" : "Despublicar"}
+                        >
+                          <Power className={`h-4 w-4 ${(p.fase ?? "registrado") === "registrado" ? "text-emerald-400" : "text-red-400"}`} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
