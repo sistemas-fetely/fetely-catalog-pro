@@ -177,6 +177,11 @@ function AdminProductsPage() {
   const [editingOriginalSku, setEditingOriginalSku] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
+  // Portão de publicação (SNCF)
+  const ficha = useServerFn(fichaPendencias);
+  const [publicandoSku, setPublicandoSku] = useState<string | null>(null);
+  const [pendencias, setPendencias] = useState<{ sku: string; itens: Pendencia[] } | null>(null);
+
   function openEdit(p: Product) {
     setEditing({ ...p });
     setEditingOriginalSku(p.sku);
