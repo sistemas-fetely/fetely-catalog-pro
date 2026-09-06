@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { fichaPendencias } from "@/lib/fichaPendencias.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { exportProductsCSV, exportProductsJSON } from "@/lib/productExporter";
 import {
   DropdownMenu,
@@ -99,13 +100,34 @@ function emptyProduct(): Product {
     statusEstoque: "em estoque",
     isVelaNumerica: false,
     // publicação só pelo botão Publicar, que valida a ficha no SNCF
-    ativo: false,
+    fase: "registrado",
   };
 }
 
+const FASE_LABEL: Record<string, string> = {
+  registrado: "Registrado",
+  pre_venda: "Pré-Venda",
+  ativo: "Ativo",
+  inativo: "Inativo",
+};
+
+const FASE_CLASS: Record<string, string> = {
+  registrado: "border-zinc-600 text-zinc-400",
+  pre_venda: "border-amber-700 bg-amber-600/20 text-amber-300",
+  ativo: "border-emerald-700 bg-emerald-600/20 text-emerald-300",
+  inativo: "border-red-900 text-red-400/70",
+};
+
+function faseBadge(p: Product) {
+  const f = p.fase ?? "registrado";
+  return (
+    <Badge variant="outline" className={FASE_CLASS[f] ?? "border-zinc-600 text-zinc-400"}>
+      {FASE_LABEL[f] ?? f}
+    </Badge>
+  );
+}
+
 function statusBadge(p: Product) {
-  if (p.ativo === false)
-    return <Badge variant="outline" className="border-zinc-600 text-zinc-400">Inativo</Badge>;
   if (!p.precoAtacado || p.precoAtacado <= 0)
     return <Badge variant="outline" className="border-zinc-600 text-zinc-400">Sem preço</Badge>;
   const s = (p.statusEstoque || "").toLowerCase();
@@ -134,7 +156,7 @@ function AdminProductsPage() {
   const products = useCatalog((s) => s.products);
   const audit = useCatalog((s) => s.audit);
   const upsertProduct = useCatalog((s) => s.upsertProduct);
-  const toggleAtivo = useCatalog((s) => s.toggleAtivo);
+  const setFase = useCatalog((s) => s.setFase);
   const duplicateProduct = useCatalog((s) => s.duplicateProduct);
 
   const auditMeta = useMemo(
@@ -154,7 +176,17 @@ function AdminProductsPage() {
   const [fGrupo, setFGrupo] = useState("");
   const [fStatus, setFStatus] = useState("");
   // default = fila de trabalho de quem cadastra
-  const [fAtivo, setFAtivo] = useState<"" | "sim" | "nao">("nao");
+  const [fFase, setFFase] = useState<string>("registrado");
+  const [fases, setFases] = useState<{ slug: string; nome: string }[]>([]);
+  useEffect(() => {
+    void supabase
+      .from("produto_fase_dim")
+      .select("slug,nome,ordem")
+      .order("ordem", { ascending: true })
+      .then(({ data }) => {
+        if (data) setFases(data.map((f) => ({ slug: String(f.slug), nome: String(f.nome) })));
+      });
+  }, []);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 20;
 
@@ -180,17 +212,16 @@ function AdminProductsPage() {
       if (fColecao && p.colecao !== fColecao) return false;
       if (fGrupo && p.grupo !== fGrupo) return false;
       if (fStatus && p.statusEstoque !== fStatus) return false;
-      if (fAtivo === "sim" && p.ativo === false) return false;
-      if (fAtivo === "nao" && p.ativo !== false) return false;
+      if (fFase && (p.fase ?? "registrado") !== fFase) return false;
       if (s) {
         const hay = `${p.sku} ${p.nomeComercial} ${p.colecao} ${p.ean ?? ""}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
     });
-  }, [products, search, fMarca, fLinha, fCategoria, fColecao, fGrupo, fStatus, fAtivo]);
+  }, [products, search, fMarca, fLinha, fCategoria, fColecao, fGrupo, fStatus, fFase]);
 
-  useEffect(() => { setPage(1); }, [search, fMarca, fLinha, fCategoria, fColecao, fGrupo, fStatus, fAtivo]);
+  useEffect(() => { setPage(1); }, [search, fMarca, fLinha, fCategoria, fColecao, fGrupo, fStatus, fFase]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -203,7 +234,9 @@ function AdminProductsPage() {
   // Portão de publicação (SNCF)
   const ficha = useServerFn(fichaPendencias);
   const [publicandoSku, setPublicandoSku] = useState<string | null>(null);
-  const [pendencias, setPendencias] = useState<{ sku: string; itens: Pendencia[] } | null>(null);
+  const [pendencias, setPendencias] = useState<
+    { sku: string; itens: Pendencia[]; erroBanco?: string } | null
+  >(null);
 
   function openEdit(p: Product) {
     setEditing({ ...p });
@@ -266,13 +299,19 @@ function AdminProductsPage() {
     }
   }
 
-  // Portão de publicação: inativo → valida ficha no SNCF antes de publicar.
+  // Portão de publicação: registrado → valida ficha no SNCF antes de ir para pré-venda.
+  // Promover para "ativo" e descontinuar são atos do SNCF — não existem nesta tela.
   async function handleToggle(p: Product) {
-    const ativo = p.ativo !== false;
-    if (ativo) {
+    const fase = p.fase ?? "registrado";
+    if (fase === "inativo") return;
+    if (fase === "pre_venda" || fase === "ativo") {
       if (!confirm(`Despublicar ${p.sku}? Ele deixa de aparecer no catálogo.`)) return;
-      toggleAtivo(p.sku, auditMeta);
-      toast.success("Produto despublicado");
+      try {
+        await setFase(p.sku, "registrado", auditMeta);
+        toast.success("Produto despublicado");
+      } catch (e) {
+        toast.error(`Não foi possível despublicar: ${(e as Error).message}`);
+      }
       return;
     }
     setPublicandoSku(p.sku);
@@ -286,14 +325,23 @@ function AdminProductsPage() {
         toast.error(`${itens.length} pendência(s) na ficha — publicação bloqueada`);
         return;
       }
-      toggleAtivo(p.sku, auditMeta);
-      toast.success(`${p.sku} publicado — visível no catálogo`);
+      // Segunda defesa: a trigger do banco também recusa fase incompleta.
+      try {
+        await setFase(p.sku, "pre_venda", auditMeta);
+      } catch (e) {
+        setPendencias({ sku: p.sku, itens: [], erroBanco: (e as Error).message });
+        toast.error("Publicação recusada pelo banco — ficha incompleta");
+        return;
+      }
+      toast.success(`${p.sku} publicado em Pré-Venda — visível no catálogo`);
     } catch (e) {
       toast.error(`Portão de publicação falhou: ${(e as Error).message}`);
     } finally {
       setPublicandoSku(null);
     }
   }
+
+
 
 
   if (loading || !session || !isAdminOrMaster()) {
@@ -393,18 +441,19 @@ function AdminProductsPage() {
             <FilterSelect label="Grupo" value={fGrupo} onChange={setFGrupo} options={opts.grupo} />
             <FilterSelect label="Status" value={fStatus} onChange={setFStatus} options={opts.status} />
             <FilterSelect
-              label="Publicação"
-              value={fAtivo}
-              onChange={(v) => setFAtivo(v as "" | "sim" | "nao")}
-              options={["sim", "nao"]}
-              labels={{ sim: "Publicado", nao: "Não publicado" }}
+              label="Fase"
+              value={fFase}
+              onChange={setFFase}
+              options={fases.map((f) => f.slug)}
+              labels={Object.fromEntries(fases.map((f) => [f.slug, f.nome]))}
+              allLabel="Todas"
             />
           </div>
-          {(search || fMarca || fLinha || fCategoria || fColecao || fGrupo || fStatus || fAtivo) && (
+          {(search || fMarca || fLinha || fCategoria || fColecao || fGrupo || fStatus || fFase) && (
             <button
               onClick={() => {
                 setSearch(""); setFMarca(""); setFLinha(""); setFCategoria("");
-                setFColecao(""); setFGrupo(""); setFStatus(""); setFAtivo("");
+                setFColecao(""); setFGrupo(""); setFStatus(""); setFFase("");
               }}
               className="text-xs text-gold underline-offset-4 hover:underline"
             >
@@ -423,6 +472,7 @@ function AdminProductsPage() {
                 <th className="px-3 py-2 text-left">Coleção</th>
                 <th className="px-3 py-2 text-left">Grupo</th>
                 <th className="px-3 py-2 text-right">Atacado</th>
+                <th className="px-3 py-2 text-left">Fase</th>
                 <th className="px-3 py-2 text-left">Status</th>
                 <th className="px-3 py-2 text-right">Ações</th>
               </tr>
@@ -432,7 +482,7 @@ function AdminProductsPage() {
                 <tr
                   key={p.sku}
                   onClick={() => openEdit(p)}
-                  className={`cursor-pointer border-t border-border hover:bg-surface-hover ${p.ativo === false ? "opacity-50" : ""}`}
+                  className={`cursor-pointer border-t border-border hover:bg-surface-hover ${(p.fase ?? "registrado") === "registrado" || p.fase === "inativo" ? "opacity-50" : ""}`}
                   title="Clique para visualizar / editar"
                 >
                   <td className="px-3 py-2 font-mono text-xs">{p.sku}</td>
@@ -440,6 +490,7 @@ function AdminProductsPage() {
                   <td className="px-3 py-2 text-text-secondary">{p.colecao}</td>
                   <td className="px-3 py-2 text-text-secondary">{p.grupo}</td>
                   <td className="px-3 py-2 text-right">{formatBRL(p.precoAtacado || 0)}</td>
+                  <td className="px-3 py-2">{faseBadge(p)}</td>
                   <td className="px-3 py-2">{statusBadge(p)}</td>
                   <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
@@ -457,21 +508,23 @@ function AdminProductsPage() {
                       >
                         <CopyIcon className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => void handleToggle(p)}
-                        disabled={publicandoSku === p.sku}
-                        className="rounded p-1.5 hover:bg-zinc-800 disabled:opacity-40"
-                        title={p.ativo === false ? "Publicar" : "Despublicar"}
-                      >
-                        <Power className={`h-4 w-4 ${p.ativo === false ? "text-emerald-400" : "text-red-400"}`} />
-                      </button>
+                      {p.fase !== "inativo" && (
+                        <button
+                          onClick={() => void handleToggle(p)}
+                          disabled={publicandoSku === p.sku}
+                          className="rounded p-1.5 hover:bg-zinc-800 disabled:opacity-40"
+                          title={(p.fase ?? "registrado") === "registrado" ? "Publicar" : "Despublicar"}
+                        >
+                          <Power className={`h-4 w-4 ${(p.fase ?? "registrado") === "registrado" ? "text-emerald-400" : "text-red-400"}`} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
               ))}
               {pageItems.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="p-6 text-center text-text-secondary">
+                  <td colSpan={8} className="p-6 text-center text-text-secondary">
                     Nenhum produto encontrado
                   </td>
                 </tr>
@@ -561,26 +614,33 @@ function AdminProductsPage() {
             O produto <span className="font-mono">{pendencias?.sku}</span> continua fora do catálogo.
             Falta completar:
           </p>
-          <div className="max-h-80 overflow-y-auto rounded-lg border border-border">
-            <table className="w-full text-sm">
-              <thead className="bg-zinc-900/60 text-xs uppercase tracking-wider text-zinc-100">
-                <tr>
-                  <th className="px-3 py-2 text-left">Campo</th>
-                  <th className="px-3 py-2 text-left">Bloco</th>
-                  <th className="px-3 py-2 text-left">Responsável</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(pendencias?.itens ?? []).map((it, i) => (
-                  <tr key={`${it.campo}-${i}`} className="border-t border-border">
-                    <td className="px-3 py-2">{it.campo}</td>
-                    <td className="px-3 py-2 text-text-secondary">{it.bloco}</td>
-                    <td className="px-3 py-2 text-text-secondary">{it.dono}</td>
+          {(pendencias?.itens.length ?? 0) > 0 && (
+            <div className="max-h-80 overflow-y-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="bg-zinc-900/60 text-xs uppercase tracking-wider text-zinc-100">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Campo</th>
+                    <th className="px-3 py-2 text-left">Bloco</th>
+                    <th className="px-3 py-2 text-left">Responsável</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {(pendencias?.itens ?? []).map((it, i) => (
+                    <tr key={`${it.campo}-${i}`} className="border-t border-border">
+                      <td className="px-3 py-2">{it.campo}</td>
+                      <td className="px-3 py-2 text-text-secondary">{it.bloco}</td>
+                      <td className="px-3 py-2 text-text-secondary">{it.dono}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {pendencias?.erroBanco && (
+            <div className="rounded-lg border border-red-900 bg-red-950/30 p-3 text-sm text-red-200">
+              {pendencias.erroBanco}
+            </div>
+          )}
           <DialogFooter>
             <Button onClick={() => setPendencias(null)}>Entendi</Button>
           </DialogFooter>
@@ -596,12 +656,14 @@ function FilterSelect({
   onChange,
   options,
   labels,
+  allLabel = "Todos",
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: string[];
   labels?: Record<string, string>;
+  allLabel?: string;
 }) {
   return (
     <div>
@@ -611,7 +673,7 @@ function FilterSelect({
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
       >
-        <option value="">Todos</option>
+        <option value="">{allLabel}</option>
         {options.map((o) => (
           <option key={o} value={o}>
             {labels?.[o] ?? o}
@@ -918,18 +980,18 @@ function ProductEditor({
         </Tabs>
 
         <DialogFooter className="!justify-between gap-2 sm:!justify-between">
-          {!creating ? (
+          {!creating && product.fase !== "inativo" ? (
             <Button
               variant="outline"
               onClick={onToggleAtivo}
               className={
-                product.ativo === false
+                (product.fase ?? "registrado") === "registrado"
                   ? "border-emerald-700 text-emerald-400 hover:bg-emerald-950"
                   : "border-red-700 text-red-400 hover:bg-red-950"
               }
             >
               <Power className="mr-2 h-4 w-4" />
-              {product.ativo === false ? "Publicar" : "Despublicar"}
+              {(product.fase ?? "registrado") === "registrado" ? "Publicar" : "Despublicar"}
             </Button>
           ) : <span />}
           <div className="flex gap-2">

@@ -2272,6 +2272,47 @@ export type Database = {
         }
         Relationships: []
       }
+      produto_fase_ficha: {
+        Row: {
+          atualizado_em: string
+          bloco: string
+          campo: string
+          descricao: string | null
+          dono: string
+          fase_exigida: string | null
+          obrigatorio: boolean
+          ordem: number
+        }
+        Insert: {
+          atualizado_em?: string
+          bloco: string
+          campo: string
+          descricao?: string | null
+          dono: string
+          fase_exigida?: string | null
+          obrigatorio?: boolean
+          ordem: number
+        }
+        Update: {
+          atualizado_em?: string
+          bloco?: string
+          campo?: string
+          descricao?: string | null
+          dono?: string
+          fase_exigida?: string | null
+          obrigatorio?: boolean
+          ordem?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produto_fase_ficha_fase_exigida_fkey"
+            columns: ["fase_exigida"]
+            isOneToOne: false
+            referencedRelation: "produto_fase_dim"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       produto_grupos: {
         Row: {
           ativo: boolean
@@ -3100,6 +3141,13 @@ export type Database = {
           origem_tipo: string
           token: string
         }[]
+      }
+      fn_produto_fase_pendencias: {
+        Args: {
+          p: Database["public"]["Tables"]["products"]["Row"]
+          p_fase: string
+        }
+        Returns: string[]
       }
       get_order_by_sncf_id: {
         Args: { p_sncf_pedido_id: string }
