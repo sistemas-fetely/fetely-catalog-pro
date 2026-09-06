@@ -326,7 +326,7 @@ export const useCatalog = create<CatalogState>()(
         });
         (async () => {
           try {
-            await upsertProductsChunked(products.map(productToRow));
+            await upsertProductsChunked(products.map(productToRowBulk));
             if (meta) {
               const entry = makeAudit(
                 meta,
