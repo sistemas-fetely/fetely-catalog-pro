@@ -155,7 +155,7 @@ function AdminProductsPage() {
   const products = useCatalog((s) => s.products);
   const audit = useCatalog((s) => s.audit);
   const upsertProduct = useCatalog((s) => s.upsertProduct);
-  const toggleAtivo = useCatalog((s) => s.toggleAtivo);
+  const setFase = useCatalog((s) => s.setFase);
   const duplicateProduct = useCatalog((s) => s.duplicateProduct);
 
   const auditMeta = useMemo(
@@ -175,7 +175,17 @@ function AdminProductsPage() {
   const [fGrupo, setFGrupo] = useState("");
   const [fStatus, setFStatus] = useState("");
   // default = fila de trabalho de quem cadastra
-  const [fAtivo, setFAtivo] = useState<"" | "sim" | "nao">("nao");
+  const [fFase, setFFase] = useState<string>("registrado");
+  const [fases, setFases] = useState<{ slug: string; nome: string }[]>([]);
+  useEffect(() => {
+    void supabase
+      .from("produto_fase_dim")
+      .select("slug,nome,ordem")
+      .order("ordem", { ascending: true })
+      .then(({ data }) => {
+        if (data) setFases(data.map((f) => ({ slug: String(f.slug), nome: String(f.nome) })));
+      });
+  }, []);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 20;
 
