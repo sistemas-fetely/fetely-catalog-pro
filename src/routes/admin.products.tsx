@@ -883,9 +883,17 @@ function ProductEditor({
 
         <DialogFooter className="!justify-between gap-2 sm:!justify-between">
           {!creating ? (
-            <Button variant="outline" onClick={onToggleAtivo} className="border-red-700 text-red-400 hover:bg-red-950">
+            <Button
+              variant="outline"
+              onClick={onToggleAtivo}
+              className={
+                product.ativo === false
+                  ? "border-emerald-700 text-emerald-400 hover:bg-emerald-950"
+                  : "border-red-700 text-red-400 hover:bg-red-950"
+              }
+            >
               <Power className="mr-2 h-4 w-4" />
-              {product.ativo === false ? "Reativar" : "Desativar"}
+              {product.ativo === false ? "Publicar" : "Despublicar"}
             </Button>
           ) : <span />}
           <div className="flex gap-2">
