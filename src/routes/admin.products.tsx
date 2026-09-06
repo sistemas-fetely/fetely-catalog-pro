@@ -1019,7 +1019,83 @@ function ProductEditor({
   );
 }
 
+// Origem fiscal é código de NF-e ('0'–'8'): nunca texto livre. A lista vem de
+// public.produto_origens_fiscais (mestre) e o que se grava é sempre o `codigo`.
+interface OrigemFiscalOpt {
+  codigo: string;
+  rotulo: string;
+  descricao_oficial: string | null;
+}
+
+const SEM_ORIGEM = "__sem_origem__";
+let origensCache: OrigemFiscalOpt[] | null = null;
+
+function OrigemFiscalField({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange: (v: string | undefined) => void;
+}) {
+  const [origens, setOrigens] = useState<OrigemFiscalOpt[]>(origensCache ?? []);
+
+  useEffect(() => {
+    if (origensCache) return;
+    void supabase
+      .from("produto_origens_fiscais")
+      .select("codigo,rotulo,descricao_oficial,ativo,ordem")
+      .eq("ativo", true)
+      .order("ordem", { ascending: true })
+      .then(({ data }) => {
+        if (!data) return;
+        const opts = data.map((o) => ({
+          codigo: String(o.codigo),
+          rotulo: String(o.rotulo),
+          descricao_oficial: (o.descricao_oficial as string | null) ?? null,
+        }));
+        origensCache = opts;
+        setOrigens(opts);
+      });
+  }, []);
+
+  const atual = value?.trim() ? value.trim() : undefined;
+  const conhecida = origens.find((o) => o.codigo === atual);
+  const legado = atual && origens.length > 0 && !conhecida ? atual : null;
+
+  return (
+    <Field label="Origem Fiscal">
+      <Select
+        value={atual ?? SEM_ORIGEM}
+        onValueChange={(v) => onChange(v === SEM_ORIGEM ? undefined : v)}
+      >
+        <SelectTrigger className={legado ? "border-amber-600" : undefined}>
+          <SelectValue placeholder="— sem origem —" />
+        </SelectTrigger>
+        <SelectContent>
+          {legado ? (
+            <SelectItem value={legado} disabled>
+              {legado} (valor inválido — selecione um código)
+            </SelectItem>
+          ) : null}
+          <SelectItem value={SEM_ORIGEM}>— sem origem —</SelectItem>
+          {origens.map((o) => (
+            <SelectItem key={o.codigo} value={o.codigo}>
+              {o.rotulo}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <p className={`mt-1 text-[11px] ${legado ? "text-amber-400" : "text-text-secondary"}`}>
+        {legado
+          ? "Valor legado fora da tabela oficial — a NF-e espera um código de 0 a 8."
+          : (conhecida?.descricao_oficial ?? "Sem origem fiscal definida (pré-venda).")}
+      </p>
+    </Field>
+  );
+}
+
 function Field({
+
   label,
   children,
   className,
