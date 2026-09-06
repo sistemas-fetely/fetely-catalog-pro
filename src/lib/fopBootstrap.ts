@@ -3,7 +3,7 @@ import { useOrder, orderToRow, orderItemsToRows } from "@/store/orderStore";
 import { useClientes, clienteToRow } from "@/store/clienteStore";
 import { useProvisao, provisaoToRow, provisaoItensToRows } from "@/store/provisaoStore";
 import { useCartilhas } from "@/store/cartilhasStore";
-import { useCatalog, upsertProductsChunked, productToRow } from "@/store/catalogStore";
+import { useCatalog, upsertProductsChunked, productToRowBulk } from "@/store/catalogStore";
 import { usePermissoesStore } from "@/store/permissoesStore";
 import { useGrupos } from "@/store/grupoStore";
 import { useModelos } from "@/store/modeloStore";
