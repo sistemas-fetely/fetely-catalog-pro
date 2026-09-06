@@ -980,7 +980,11 @@ function ProductEditor({
               <Field label="CEST"><Input value={product.cest ?? ""} onChange={(e) => set("cest", e.target.value)} /></Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Origem Fiscal"><Input value={product.origemFisc ?? ""} onChange={(e) => set("origemFisc", e.target.value)} /></Field>
+              <OrigemFiscalField
+                value={product.origemFisc}
+                onChange={(v) => set("origemFisc", v)}
+              />
+
               <Field label="Origem Produção"><Input value={product.origemProd ?? ""} onChange={(e) => set("origemProd", e.target.value)} /></Field>
             </div>
           </TabsContent>
