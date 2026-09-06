@@ -238,12 +238,35 @@ function AdminProductsPage() {
     }
   }
 
-  function handleToggle(p: Product) {
+  // Portão de publicação: inativo → valida ficha no SNCF antes de publicar.
+  async function handleToggle(p: Product) {
     const ativo = p.ativo !== false;
-    if (!confirm(ativo ? `Desativar ${p.sku}?` : `Reativar ${p.sku}?`)) return;
-    toggleAtivo(p.sku, auditMeta);
-    toast.success(ativo ? "Produto desativado" : "Produto reativado");
+    if (ativo) {
+      if (!confirm(`Despublicar ${p.sku}? Ele deixa de aparecer no catálogo.`)) return;
+      toggleAtivo(p.sku, auditMeta);
+      toast.success("Produto despublicado");
+      return;
+    }
+    setPublicandoSku(p.sku);
+    try {
+      const resp = (await ficha({ data: { skus: [p.sku] } })) as { json: string };
+      const itens = normalizarPendencias(JSON.parse(resp.json) as unknown).filter(
+        (x) => x.campo !== "ficha_bling",
+      );
+      if (itens.length > 0) {
+        setPendencias({ sku: p.sku, itens });
+        toast.error(`${itens.length} pendência(s) na ficha — publicação bloqueada`);
+        return;
+      }
+      toggleAtivo(p.sku, auditMeta);
+      toast.success(`${p.sku} publicado — visível no catálogo`);
+    } catch (e) {
+      toast.error(`Portão de publicação falhou: ${(e as Error).message}`);
+    } finally {
+      setPublicandoSku(null);
+    }
   }
+
 
   if (loading || !session || !isAdminOrMaster()) {
     return <div className="p-8 text-text-secondary">Carregando…</div>;
