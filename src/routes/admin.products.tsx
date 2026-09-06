@@ -47,6 +47,27 @@ export const Route = createFileRoute("/admin/products")({
 
 const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
+interface Pendencia {
+  campo: string;
+  bloco: string;
+  dono: string;
+}
+
+// Normalização da resposta crua do SNCF (mesmo padrão do portão de publicação).
+function normalizarPendencias(resp: unknown): Pendencia[] {
+  const raiz = resp as Record<string, unknown> | null;
+  const bruto =
+    (Array.isArray(raiz?.["pendencias"]) && raiz?.["pendencias"]) ||
+    (Array.isArray(raiz?.["itens"]) && raiz?.["itens"]) ||
+    (Array.isArray(raiz?.["data"]) && raiz?.["data"]) ||
+    (Array.isArray(resp) ? resp : []);
+  return (bruto as Record<string, unknown>[]).map((p) => ({
+    campo: String(p["campo"] ?? p["field"] ?? "—"),
+    bloco: String(p["bloco"] ?? p["block"] ?? "—"),
+    dono: String(p["dono"] ?? p["owner"] ?? "—"),
+  }));
+}
+
 function emptyProduct(): Product {
   return {
     sku: "",
