@@ -224,6 +224,14 @@ export function productToRow(p: Product): Record<string, unknown> {
   };
 }
 
+// Caminho em massa não decide publicação. Omitir `ativo` faz o upsert preservar o
+// valor atual da linha; em linha nova, vale o default do banco (false). Publicar
+// é ato humano pelo botão Publicar, que valida a ficha no SNCF.
+export function productToRowBulk(p: Product): Record<string, unknown> {
+  const { ativo: _ativo, ...row } = productToRow(p);
+  return row;
+}
+
 async function upsertProductsChunked(rows: Record<string, unknown>[]): Promise<void> {
   const CHUNK = 500;
   for (let i = 0; i < rows.length; i += CHUNK) {
