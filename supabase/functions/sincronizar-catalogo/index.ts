@@ -1,4 +1,4 @@
-// 🟢 FOP — sincronizar-catalogo v3.2 (catálogo B2B expandido + CORS para chamada browser + cod_cadastro)
+// 🟢 FOP — sincronizar-catalogo v3.3 (catálogo B2B expandido + CORS para chamada browser + cod_cadastro + fase)
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -38,7 +38,7 @@ serve(async (req) => {
 
     const { data: produtos, error } = await supabase
       .from("products")
-      .select("sku, cod_cadastro, ean, nome_comercial, nome_completo, marca, linha, grupo, tipo, colecao, cor_nome, cor, estampa, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, preco_varejo, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm")
+      .select("sku, cod_cadastro, fase, ean, nome_comercial, nome_completo, marca, linha, grupo, tipo, colecao, cor_nome, cor, estampa, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, preco_varejo, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm")
       .eq("ativo", true)
       .order("sku");
 
@@ -83,6 +83,7 @@ serve(async (req) => {
         peso_g:               p.peso_g,
         multiplos:            p.multiplos,
         ativo:                p.ativo,
+        fase:                 p.fase                ?? null, // fase do ciclo de vida (mapa-donos-catalogo-v1 v4): registrado / pre_venda / ativo / inativo
         altura_cm:            p.altura_cm           ?? null,
         largura_cm:           p.largura_cm          ?? null,
         profundidade_cm:      p.profundidade_cm     ?? null,
