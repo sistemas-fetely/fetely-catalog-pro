@@ -52,6 +52,7 @@ import { Route as AdminSincronizacaoSncfRouteImport } from './routes/admin.sincr
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
 import { Route as AdminPermissoesRouteImport } from './routes/admin.permissoes'
+import { Route as AdminNascimentoProdutoRouteImport } from './routes/admin.nascimento-produto'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminGateAbRouteImport } from './routes/admin.gate-ab'
 import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
@@ -277,6 +278,11 @@ const AdminPermissoesRoute = AdminPermissoesRouteImport.update({
   path: '/admin/permissoes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminNascimentoProdutoRoute = AdminNascimentoProdutoRouteImport.update({
+  id: '/admin/nascimento-produto',
+  path: '/admin/nascimento-produto',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLeadsRoute = AdminLeadsRouteImport.update({
   id: '/admin/leads',
   path: '/admin/leads',
@@ -359,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/gate-ab': typeof AdminGateAbRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/nascimento-produto': typeof AdminNascimentoProdutoRoute
   '/admin/permissoes': typeof AdminPermissoesRoute
   '/admin/precos': typeof AdminPrecosRoute
   '/admin/products': typeof AdminProductsRoute
@@ -412,6 +419,7 @@ export interface FileRoutesByTo {
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/gate-ab': typeof AdminGateAbRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/nascimento-produto': typeof AdminNascimentoProdutoRoute
   '/admin/permissoes': typeof AdminPermissoesRoute
   '/admin/precos': typeof AdminPrecosRoute
   '/admin/products': typeof AdminProductsRoute
@@ -467,6 +475,7 @@ export interface FileRoutesById {
   '/admin/cartilhas': typeof AdminCartilhasRoute
   '/admin/gate-ab': typeof AdminGateAbRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/nascimento-produto': typeof AdminNascimentoProdutoRoute
   '/admin/permissoes': typeof AdminPermissoesRoute
   '/admin/precos': typeof AdminPrecosRoute
   '/admin/products': typeof AdminProductsRoute
@@ -523,6 +532,7 @@ export interface FileRouteTypes {
     | '/admin/cartilhas'
     | '/admin/gate-ab'
     | '/admin/leads'
+    | '/admin/nascimento-produto'
     | '/admin/permissoes'
     | '/admin/precos'
     | '/admin/products'
@@ -576,6 +586,7 @@ export interface FileRouteTypes {
     | '/admin/cartilhas'
     | '/admin/gate-ab'
     | '/admin/leads'
+    | '/admin/nascimento-produto'
     | '/admin/permissoes'
     | '/admin/precos'
     | '/admin/products'
@@ -630,6 +641,7 @@ export interface FileRouteTypes {
     | '/admin/cartilhas'
     | '/admin/gate-ab'
     | '/admin/leads'
+    | '/admin/nascimento-produto'
     | '/admin/permissoes'
     | '/admin/precos'
     | '/admin/products'
@@ -685,6 +697,7 @@ export interface RootRouteChildren {
   AdminCartilhasRoute: typeof AdminCartilhasRoute
   AdminGateAbRoute: typeof AdminGateAbRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
+  AdminNascimentoProdutoRoute: typeof AdminNascimentoProdutoRoute
   AdminPermissoesRoute: typeof AdminPermissoesRoute
   AdminPrecosRoute: typeof AdminPrecosRoute
   AdminProductsRoute: typeof AdminProductsRoute
@@ -1001,6 +1014,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPermissoesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/nascimento-produto': {
+      id: '/admin/nascimento-produto'
+      path: '/admin/nascimento-produto'
+      fullPath: '/admin/nascimento-produto'
+      preLoaderRoute: typeof AdminNascimentoProdutoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/leads': {
       id: '/admin/leads'
       path: '/admin/leads'
@@ -1143,6 +1163,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCartilhasRoute: AdminCartilhasRoute,
   AdminGateAbRoute: AdminGateAbRoute,
   AdminLeadsRoute: AdminLeadsRoute,
+  AdminNascimentoProdutoRoute: AdminNascimentoProdutoRoute,
   AdminPermissoesRoute: AdminPermissoesRoute,
   AdminPrecosRoute: AdminPrecosRoute,
   AdminProductsRoute: AdminProductsRoute,
