@@ -234,7 +234,9 @@ function AdminProductsPage() {
   // Portão de publicação (SNCF)
   const ficha = useServerFn(fichaPendencias);
   const [publicandoSku, setPublicandoSku] = useState<string | null>(null);
-  const [pendencias, setPendencias] = useState<{ sku: string; itens: Pendencia[] } | null>(null);
+  const [pendencias, setPendencias] = useState<
+    { sku: string; itens: Pendencia[]; erroBanco?: string } | null
+  >(null);
 
   function openEdit(p: Product) {
     setEditing({ ...p });
