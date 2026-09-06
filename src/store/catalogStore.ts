@@ -218,7 +218,8 @@ export function productToRow(p: Product): Record<string, unknown> {
     estoque_disponivel: p.estoqueDisponivel ?? 0,
     is_vela_numerica: p.isVelaNumerica ?? false,
     numero_vela: p.numeroVela ?? null,
-    ativo: p.ativo ?? true,
+    // publicação só pelo botão Publicar, que valida a ficha no SNCF
+    ativo: p.ativo ?? false,
     pronta_entrega: p.prontaEntrega ?? false,
   };
 }
