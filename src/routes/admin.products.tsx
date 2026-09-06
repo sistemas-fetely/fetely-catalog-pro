@@ -99,13 +99,34 @@ function emptyProduct(): Product {
     statusEstoque: "em estoque",
     isVelaNumerica: false,
     // publicação só pelo botão Publicar, que valida a ficha no SNCF
-    ativo: false,
+    fase: "registrado",
   };
 }
 
+const FASE_LABEL: Record<string, string> = {
+  registrado: "Registrado",
+  pre_venda: "Pré-Venda",
+  ativo: "Ativo",
+  inativo: "Inativo",
+};
+
+const FASE_CLASS: Record<string, string> = {
+  registrado: "border-zinc-600 text-zinc-400",
+  pre_venda: "border-amber-700 bg-amber-600/20 text-amber-300",
+  ativo: "border-emerald-700 bg-emerald-600/20 text-emerald-300",
+  inativo: "border-red-900 text-red-400/70",
+};
+
+function faseBadge(p: Product) {
+  const f = p.fase ?? "registrado";
+  return (
+    <Badge variant="outline" className={FASE_CLASS[f] ?? "border-zinc-600 text-zinc-400"}>
+      {FASE_LABEL[f] ?? f}
+    </Badge>
+  );
+}
+
 function statusBadge(p: Product) {
-  if (p.ativo === false)
-    return <Badge variant="outline" className="border-zinc-600 text-zinc-400">Inativo</Badge>;
   if (!p.precoAtacado || p.precoAtacado <= 0)
     return <Badge variant="outline" className="border-zinc-600 text-zinc-400">Sem preço</Badge>;
   const s = (p.statusEstoque || "").toLowerCase();
