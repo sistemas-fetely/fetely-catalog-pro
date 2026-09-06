@@ -550,6 +550,42 @@ function AdminProductsPage() {
           }}
         />
       )}
+
+      {/* Recusa do portão de publicação */}
+      <Dialog open={!!pendencias} onOpenChange={(o) => !o && setPendencias(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Ficha incompleta — não publicado</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-text-secondary">
+            O produto <span className="font-mono">{pendencias?.sku}</span> continua fora do catálogo.
+            Falta completar:
+          </p>
+          <div className="max-h-80 overflow-y-auto rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-zinc-900/60 text-xs uppercase tracking-wider text-zinc-100">
+                <tr>
+                  <th className="px-3 py-2 text-left">Campo</th>
+                  <th className="px-3 py-2 text-left">Bloco</th>
+                  <th className="px-3 py-2 text-left">Responsável</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(pendencias?.itens ?? []).map((it, i) => (
+                  <tr key={`${it.campo}-${i}`} className="border-t border-border">
+                    <td className="px-3 py-2">{it.campo}</td>
+                    <td className="px-3 py-2 text-text-secondary">{it.bloco}</td>
+                    <td className="px-3 py-2 text-text-secondary">{it.dono}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setPendencias(null)}>Entendi</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
