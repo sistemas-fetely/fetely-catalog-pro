@@ -388,29 +388,35 @@ export const useCatalog = create<CatalogState>()(
         return { ok: true };
       },
 
-      toggleAtivo: (sku, meta) => {
+      // `ativo` é derivado da fase por trigger no banco: aqui só se escreve `fase`.
+      // A trigger recusa promoção sem ficha completa; a mensagem dela lista os campos
+      // que faltam e por isso é propagada para a tela.
+      setFase: async (sku, fase, meta) => {
         const state = get();
         const idx = state.products.findIndex((x) => x.sku === sku);
         if (idx < 0) return;
         const cur = state.products[idx];
-        const novoAtivo = !(cur.ativo ?? true);
-        const next = { ...cur, ativo: novoAtivo };
-        const newProducts = state.products.map((x, i) => (i === idx ? next : x));
+        const publicando = fase === "pre_venda" || fase === "ativo";
+        const { error } = await supabase
+          .from("products")
+          .update({ fase } as never)
+          .eq("sku", sku);
+        if (error) {
+          console.error("[catalogStore] setFase banco falhou:", error);
+          throw new Error(error.message);
+        }
+        const next = { ...cur, fase, ativo: publicando };
         const entry = makeAudit(
           meta,
           sku,
           cur.nomeComercial,
-          novoAtivo ? "reativado" : "desativado",
+          publicando ? "reativado" : "desativado",
         );
-        set({ products: newProducts, audit: [entry, ...state.audit].slice(0, 100) });
-        supabase
-          .from("products")
-          .update({ ativo: novoAtivo })
-          .eq("sku", sku)
-          .then(({ error }) => {
-            if (error) console.error("[catalogStore] toggleAtivo banco falhou:", error);
-            else logAudit(entry);
-          });
+        set({
+          products: get().products.map((x, i) => (i === idx ? next : x)),
+          audit: [entry, ...get().audit].slice(0, 100),
+        });
+        logAudit(entry);
       },
 
       duplicateProduct: (sku, meta) => {
@@ -424,6 +430,7 @@ export const useCatalog = create<CatalogState>()(
           ean: "",
           codCadastro: "",
           // publicação só pelo botão Publicar, que valida a ficha no SNCF
+          fase: "registrado",
           ativo: false,
         };
         const entry = makeAudit(meta, newSku, copy.nomeComercial, "duplicado");
