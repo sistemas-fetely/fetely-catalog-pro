@@ -413,7 +413,8 @@ export const useCatalog = create<CatalogState>()(
           sku: newSku,
           ean: "",
           codCadastro: "",
-          ativo: true,
+          // publicação só pelo botão Publicar, que valida a ficha no SNCF
+          ativo: false,
         };
         const entry = makeAudit(meta, newSku, copy.nomeComercial, "duplicado");
         set({
