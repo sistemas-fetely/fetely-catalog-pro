@@ -524,7 +524,7 @@ function AdminProductsPage() {
               ))}
               {pageItems.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="p-6 text-center text-text-secondary">
+                  <td colSpan={8} className="p-6 text-center text-text-secondary">
                     Nenhum produto encontrado
                   </td>
                 </tr>
@@ -614,26 +614,33 @@ function AdminProductsPage() {
             O produto <span className="font-mono">{pendencias?.sku}</span> continua fora do catálogo.
             Falta completar:
           </p>
-          <div className="max-h-80 overflow-y-auto rounded-lg border border-border">
-            <table className="w-full text-sm">
-              <thead className="bg-zinc-900/60 text-xs uppercase tracking-wider text-zinc-100">
-                <tr>
-                  <th className="px-3 py-2 text-left">Campo</th>
-                  <th className="px-3 py-2 text-left">Bloco</th>
-                  <th className="px-3 py-2 text-left">Responsável</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(pendencias?.itens ?? []).map((it, i) => (
-                  <tr key={`${it.campo}-${i}`} className="border-t border-border">
-                    <td className="px-3 py-2">{it.campo}</td>
-                    <td className="px-3 py-2 text-text-secondary">{it.bloco}</td>
-                    <td className="px-3 py-2 text-text-secondary">{it.dono}</td>
+          {(pendencias?.itens.length ?? 0) > 0 && (
+            <div className="max-h-80 overflow-y-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="bg-zinc-900/60 text-xs uppercase tracking-wider text-zinc-100">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Campo</th>
+                    <th className="px-3 py-2 text-left">Bloco</th>
+                    <th className="px-3 py-2 text-left">Responsável</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {(pendencias?.itens ?? []).map((it, i) => (
+                    <tr key={`${it.campo}-${i}`} className="border-t border-border">
+                      <td className="px-3 py-2">{it.campo}</td>
+                      <td className="px-3 py-2 text-text-secondary">{it.bloco}</td>
+                      <td className="px-3 py-2 text-text-secondary">{it.dono}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {pendencias?.erroBanco && (
+            <div className="rounded-lg border border-red-900 bg-red-950/30 p-3 text-sm text-red-200">
+              {pendencias.erroBanco}
+            </div>
+          )}
           <DialogFooter>
             <Button onClick={() => setPendencias(null)}>Entendi</Button>
           </DialogFooter>
