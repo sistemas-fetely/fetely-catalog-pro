@@ -299,13 +299,19 @@ function AdminProductsPage() {
     }
   }
 
-  // Portão de publicação: inativo → valida ficha no SNCF antes de publicar.
+  // Portão de publicação: registrado → valida ficha no SNCF antes de ir para pré-venda.
+  // Promover para "ativo" e descontinuar são atos do SNCF — não existem nesta tela.
   async function handleToggle(p: Product) {
-    const ativo = p.ativo !== false;
-    if (ativo) {
+    const fase = p.fase ?? "registrado";
+    if (fase === "inativo") return;
+    if (fase === "pre_venda" || fase === "ativo") {
       if (!confirm(`Despublicar ${p.sku}? Ele deixa de aparecer no catálogo.`)) return;
-      toggleAtivo(p.sku, auditMeta);
-      toast.success("Produto despublicado");
+      try {
+        await setFase(p.sku, "registrado", auditMeta);
+        toast.success("Produto despublicado");
+      } catch (e) {
+        toast.error(`Não foi possível despublicar: ${(e as Error).message}`);
+      }
       return;
     }
     setPublicandoSku(p.sku);
@@ -319,14 +325,23 @@ function AdminProductsPage() {
         toast.error(`${itens.length} pendência(s) na ficha — publicação bloqueada`);
         return;
       }
-      toggleAtivo(p.sku, auditMeta);
-      toast.success(`${p.sku} publicado — visível no catálogo`);
+      // Segunda defesa: a trigger do banco também recusa fase incompleta.
+      try {
+        await setFase(p.sku, "pre_venda", auditMeta);
+      } catch (e) {
+        setPendencias({ sku: p.sku, itens: [], erroBanco: (e as Error).message });
+        toast.error("Publicação recusada pelo banco — ficha incompleta");
+        return;
+      }
+      toast.success(`${p.sku} publicado em Pré-Venda — visível no catálogo`);
     } catch (e) {
       toast.error(`Portão de publicação falhou: ${(e as Error).message}`);
     } finally {
       setPublicandoSku(null);
     }
   }
+
+
 
 
   if (loading || !session || !isAdminOrMaster()) {
