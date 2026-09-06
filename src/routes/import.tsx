@@ -194,6 +194,15 @@ function ImportPage() {
         </p>
       </div>
 
+      <div className="rounded-lg border border-stock-out/30 bg-stock-out/10 p-5 mb-8 flex items-start gap-3">
+        <AlertTriangle className="h-5 w-5 text-stock-out shrink-0 mt-0.5" />
+        <div className="text-sm text-text-secondary">
+          <strong className="text-text-primary block mb-1">Publicação não muda com a importação</strong>
+          A importação atualiza os dados do produto, mas não publica nem despublica nada.
+          Produto novo entra como não publicado e precisa passar pelo botão Publicar.
+        </div>
+      </div>
+
       {/* Status atual */}
       <div className="rounded-lg gold-border bg-surface p-5 mb-8 flex items-center justify-between">
         <div>
