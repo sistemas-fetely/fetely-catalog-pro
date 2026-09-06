@@ -980,18 +980,18 @@ function ProductEditor({
         </Tabs>
 
         <DialogFooter className="!justify-between gap-2 sm:!justify-between">
-          {!creating ? (
+          {!creating && product.fase !== "inativo" ? (
             <Button
               variant="outline"
               onClick={onToggleAtivo}
               className={
-                product.ativo === false
+                (product.fase ?? "registrado") === "registrado"
                   ? "border-emerald-700 text-emerald-400 hover:bg-emerald-950"
                   : "border-red-700 text-red-400 hover:bg-red-950"
               }
             >
               <Power className="mr-2 h-4 w-4" />
-              {product.ativo === false ? "Publicar" : "Despublicar"}
+              {(product.fase ?? "registrado") === "registrado" ? "Publicar" : "Despublicar"}
             </Button>
           ) : <span />}
           <div className="flex gap-2">
