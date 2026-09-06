@@ -656,12 +656,14 @@ function FilterSelect({
   onChange,
   options,
   labels,
+  allLabel = "Todos",
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: string[];
   labels?: Record<string, string>;
+  allLabel?: string;
 }) {
   return (
     <div>
@@ -671,7 +673,7 @@ function FilterSelect({
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
       >
-        <option value="">Todos</option>
+        <option value="">{allLabel}</option>
         {options.map((o) => (
           <option key={o} value={o}>
             {labels?.[o] ?? o}
