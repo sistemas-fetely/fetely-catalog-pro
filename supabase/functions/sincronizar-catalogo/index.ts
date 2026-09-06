@@ -1,4 +1,4 @@
-// 🟢 FOP — sincronizar-catalogo v3.3 (catálogo B2B expandido + CORS para chamada browser + cod_cadastro + fase)
+// 🟢 FOP — sincronizar-catalogo v3.4 (catálogo B2B expandido + CORS para chamada browser + cod_cadastro + fase + dimensões de fase)
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -45,6 +45,38 @@ serve(async (req) => {
     if (error) throw error;
     if (!produtos || produtos.length === 0) {
       return jsonResponse(200, { ok: true, enviados: 0, mensagem: "Nenhum produto ativo" });
+    }
+
+    // Matriz campo x fase e dimensao de fase: mestre aqui, espelho no SNCF.
+    // Vai antes dos produtos porque `products.fase` referencia essas fases.
+    const { data: fases, error: errFases } = await supabase
+      .from("produto_fase_dim")
+      .select("slug, nome, ordem, visivel_catalogo, descricao")
+      .order("ordem");
+    if (errFases) throw errFases;
+
+    const { data: ficha, error: errFicha } = await supabase
+      .from("produto_fase_ficha")
+      .select("campo, bloco, dono, fase_exigida, obrigatorio, ordem, descricao")
+      .order("ordem");
+    if (errFicha) throw errFicha;
+
+    const respDim = await fetch(sncfUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${sncfToken}`,
+      },
+      body: JSON.stringify({
+        tipo: "dimensoes_produto",
+        fases: fases ?? [],
+        ficha: ficha ?? [],
+      }),
+    });
+
+    if (!respDim.ok) {
+      const err = await respDim.json().catch(() => ({}));
+      throw new Error(`SNCF respondeu ${respDim.status} na sincronização das dimensões: ${JSON.stringify(err)}`);
     }
 
     const LOTE = 500;
@@ -106,11 +138,12 @@ serve(async (req) => {
       totalEnviados += lote.length;
     }
 
-    console.log(`[sincronizar-catalogo v3.1] ${totalEnviados} produtos enviados ao SNCF`);
+    console.log(`[sincronizar-catalogo v3.4] dimensoes: { fases: ${(fases ?? []).length}, ficha: ${(ficha ?? []).length} }, ${totalEnviados} produtos enviados ao SNCF`);
 
     return jsonResponse(200, {
       ok: true,
       enviados: totalEnviados,
+      dimensoes: { fases: (fases ?? []).length, ficha: (ficha ?? []).length },
       mensagem: `${totalEnviados} produtos sincronizados`,
     });
   } catch (e) {
