@@ -64,6 +64,8 @@ export interface Product {
 
   // Gestão (V8)
   ativo?: boolean;
+  /** Fase do ciclo de vida: registrado / pre_venda / ativo / inativo. `ativo` é derivado dela no banco. */
+  fase?: string;
 }
 
 

@@ -52,7 +52,7 @@ interface CatalogState {
   setProducts: (products: Product[], meta?: AuditMeta) => Promise<void>;
   resetToDefault: () => void;
   upsertProduct: (p: Product, meta: AuditMeta) => { ok: true } | { ok: false; error: string };
-  toggleAtivo: (sku: string, meta: AuditMeta) => void;
+  setFase: (sku: string, fase: string, meta: AuditMeta) => Promise<void>;
   duplicateProduct: (sku: string, meta: AuditMeta) => Product | null;
 }
 
@@ -170,6 +170,7 @@ function rowToProduct(row: Record<string, unknown>): Product {
     isVelaNumerica: (row.is_vela_numerica as boolean) ?? false,
     numeroVela: (row.numero_vela as number | null) ?? null,
     ativo: (row.ativo as boolean) ?? true,
+    fase: (row.fase as string | null) ?? "registrado",
     prontaEntrega: (row.pronta_entrega as boolean) ?? false,
   };
 }
@@ -218,17 +219,18 @@ export function productToRow(p: Product): Record<string, unknown> {
     estoque_disponivel: p.estoqueDisponivel ?? 0,
     is_vela_numerica: p.isVelaNumerica ?? false,
     numero_vela: p.numeroVela ?? null,
+    // `ativo` é derivado da fase por trigger no banco — escrever direto dá erro.
     // publicação só pelo botão Publicar, que valida a ficha no SNCF
-    ativo: p.ativo ?? false,
+    fase: p.fase ?? "registrado",
     pronta_entrega: p.prontaEntrega ?? false,
   };
 }
 
-// Caminho em massa não decide publicação. Omitir `ativo` faz o upsert preservar o
-// valor atual da linha; em linha nova, vale o default do banco (false). Publicar
-// é ato humano pelo botão Publicar, que valida a ficha no SNCF.
+// Caminho em massa não decide publicação nem fase. Omitir as duas faz o upsert
+// preservar o valor atual da linha; em linha nova, vale o default do banco.
+// Publicar é ato humano pelo botão Publicar, que valida a ficha no SNCF.
 export function productToRowBulk(p: Product): Record<string, unknown> {
-  const { ativo: _ativo, ...row } = productToRow(p);
+  const { ativo: _ativo, fase: _fase, ...row } = productToRow(p);
   return row;
 }
 
