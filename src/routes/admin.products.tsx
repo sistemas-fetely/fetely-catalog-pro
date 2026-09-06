@@ -130,7 +130,8 @@ function AdminProductsPage() {
   const [fColecao, setFColecao] = useState("");
   const [fGrupo, setFGrupo] = useState("");
   const [fStatus, setFStatus] = useState("");
-  const [fAtivo, setFAtivo] = useState<"" | "sim" | "nao">("");
+  // default = fila de trabalho de quem cadastra
+  const [fAtivo, setFAtivo] = useState<"" | "sim" | "nao">("nao");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 20;
 
