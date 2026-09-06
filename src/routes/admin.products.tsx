@@ -545,7 +545,7 @@ function AdminProductsPage() {
           onClose={close}
           onSave={save}
           onToggleAtivo={() => {
-            handleToggle(editing);
+            void handleToggle(editing);
             close();
           }}
         />
