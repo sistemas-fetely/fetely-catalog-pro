@@ -354,7 +354,8 @@ export const useCatalog = create<CatalogState>()(
         if (!existing && state.products.some((x) => x.sku === sku)) {
           return { ok: false, error: "SKU já cadastrado" };
         }
-        const next: Product = { ...p, sku, ativo: p.ativo ?? true };
+        // publicação só pelo botão Publicar, que valida a ficha no SNCF
+        const next: Product = { ...p, sku, ativo: p.ativo ?? false };
         const newProducts =
           idx >= 0
             ? state.products.map((x, i) => (i === idx ? next : x))
