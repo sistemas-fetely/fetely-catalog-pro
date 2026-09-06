@@ -2348,6 +2348,30 @@ export type Database = {
           },
         ]
       }
+      produto_origens_fiscais: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          descricao_oficial: string
+          ordem: number
+          rotulo: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          descricao_oficial: string
+          ordem?: number
+          rotulo: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          descricao_oficial?: string
+          ordem?: number
+          rotulo?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ativo: boolean
