@@ -690,7 +690,7 @@ function AdminProductsPage() {
               ))}
               {pageItems.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="p-6 text-center text-text-secondary">
+                  <td colSpan={11} className="p-6 text-center text-text-secondary">
                     Nenhum produto encontrado
                   </td>
                 </tr>
