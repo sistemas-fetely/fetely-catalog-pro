@@ -169,6 +169,72 @@ function statusBadge(p: Product) {
   );
 }
 
+// F2.1 — farol do espelho SNCF. Puro: recebe o produto do FOP (mestre),
+// o registro espelhado (ou undefined) e o estado da consulta.
+const FAROL_CLASS: Record<string, string> = {
+  fiel: "bg-stock-in",
+  divergente: "bg-stock-pre",
+  ausente: "bg-stock-out",
+  nao_espelhado: "bg-transparent border border-border",
+  sem_resposta: "bg-text-muted",
+  carregando: "bg-border animate-pulse",
+};
+
+function farolDe(
+  p: Product,
+  espelhado: any | undefined,
+  estado: string,
+): { nivel: string; rotulo: string; detalhe: string } {
+  if (estado === "carregando") return { nivel: "carregando", rotulo: "Consultando espelho…", detalhe: "" };
+  if (estado === "erro" || estado === "idle")
+    return { nivel: "sem_resposta", rotulo: "Sem resposta do SNCF", detalhe: "" };
+
+  const fase = p.fase ?? "registrado";
+
+  if (!espelhado) {
+    if (fase === "registrado" || fase === "inativo")
+      return {
+        nivel: "nao_espelhado",
+        rotulo: "Não espelhado",
+        detalhe: "Fase não é enviada ao SNCF — estado correto.",
+      };
+    return { nivel: "ausente", rotulo: "Ausente no espelho", detalhe: "" };
+  }
+
+  const divergencias: string[] = [];
+  const informativo: string[] = [];
+
+  if ((p.fase ?? "registrado") !== String(espelhado.fase ?? ""))
+    divergencias.push(`fase: FOP «${fase}» / SNCF «${espelhado.fase ?? ""}»`);
+  if ((p.nomeComercial ?? "") !== String(espelhado.nome_comercial ?? ""))
+    divergencias.push(
+      `nome_comercial: FOP «${p.nomeComercial ?? ""}» / SNCF «${espelhado.nome_comercial ?? ""}»`,
+    );
+  if (Math.abs(Number(p.precoAtacado ?? 0) - Number(espelhado.preco_atacado ?? 0)) > 0.005)
+    divergencias.push(
+      `preco_atacado: FOP «${Number(p.precoAtacado ?? 0)}» / SNCF «${Number(espelhado.preco_atacado ?? 0)}»`,
+    );
+  // SKU é atributo renomeável — a âncora do sync é cod_cadastro. Informativo.
+  if ((p.sku ?? "") !== String(espelhado.sku ?? ""))
+    informativo.push(`SKU renomeado (informativo): FOP «${p.sku ?? ""}» / SNCF «${espelhado.sku ?? ""}»`);
+
+  const extras: string[] = [];
+  if (espelhado.atualizado_em) {
+    const d = new Date(String(espelhado.atualizado_em));
+    if (!Number.isNaN(d.getTime()))
+      extras.push(`Espelho atualizado em ${d.toLocaleString("pt-BR")}`);
+  }
+  if (fase === "inativo")
+    extras.push("Inativo não é reenviado — espelho congelado por construção.");
+
+  const linhas = [...divergencias, ...informativo, ...extras];
+  if (divergencias.length > 0)
+    return { nivel: "divergente", rotulo: "Divergente", detalhe: linhas.join(" · ") };
+  return { nivel: "fiel", rotulo: "Fiel", detalhe: linhas.join(" · ") };
+}
+
+
+
 function AdminProductsPage() {
   const navigate = useNavigate();
   const init = useAuth((s) => s.init);
