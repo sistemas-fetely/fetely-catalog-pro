@@ -639,6 +639,17 @@ function AdminProductsPage() {
                   title="Clique para visualizar / editar"
                 >
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-text-primary">{p.codCadastro}</td>
+                  <td className="px-3 py-2">
+                    {(() => {
+                      const f = farolDe(p, espelho[p.codCadastro ?? ""], espelhoEstado);
+                      const t = `${f.rotulo}${f.detalhe ? " — " + f.detalhe : ""}`;
+                      return (
+                        <span className="inline-flex items-center" title={t} aria-label={t}>
+                          <span className={`h-2 w-2 rounded-full ${FAROL_CLASS[f.nivel] ?? FAROL_CLASS["sem_resposta"]}`} />
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{p.sku}</td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-text-muted">{p.dun?.trim() ? p.dun : "—"}</td>
                   <td className="truncate whitespace-nowrap px-3 py-2" title={p.nomeComercial}>{p.nomeComercial}</td>
