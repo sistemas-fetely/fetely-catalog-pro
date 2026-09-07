@@ -86,6 +86,7 @@ function emptyProduct(): Product {
     sku: "",
     codCadastro: "",
     ean: "",
+    dun: "",
     marca: "Fetély",
     linha: "",
     categoria: "",

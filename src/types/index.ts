@@ -3,6 +3,7 @@ export interface Product {
   sku: string;
   codCadastro: string;
   ean: string;
+  dun?: string;
 
   // Marca / Hierarquia
   marca: string;
