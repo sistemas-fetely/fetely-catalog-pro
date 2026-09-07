@@ -607,25 +607,25 @@ function AdminProductsPage() {
 
         {/* List */}
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full min-w-[1560px] table-fixed text-sm">
+          <table className="w-full min-w-[1120px] table-fixed text-sm">
             <colgroup>
-              <col style={{ width: "80px" }} />
-              <col style={{ width: "70px" }} />
-              <col style={{ width: "190px" }} />
+              <col style={{ width: "40px" }} />
+              <col style={{ width: "75px" }} />
+              <col style={{ width: "120px" }} />
               <col style={{ width: "130px" }} />
               <col />
-              <col style={{ width: "140px" }} />
-              <col style={{ width: "115px" }} />
+              <col style={{ width: "120px" }} />
+              <col style={{ width: "105px" }} />
+              <col style={{ width: "95px" }} />
+              <col style={{ width: "95px" }} />
+              <col style={{ width: "145px" }} />
               <col style={{ width: "100px" }} />
-              <col style={{ width: "100px" }} />
-              <col style={{ width: "150px" }} />
-              <col style={{ width: "110px" }} />
             </colgroup>
             <thead className="bg-surface-2 text-xs uppercase tracking-wider text-text-secondary">
               <tr>
+                <th className="px-3 py-2 text-left"><span className="sr-only">Espelho SNCF</span></th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Cód.</th>
-                <th className="whitespace-nowrap px-3 py-2 text-left">Espelho</th>
-                <th className="whitespace-nowrap px-3 py-2 text-left">SKU</th>
+                <th className="whitespace-nowrap px-3 py-2 text-left">EAN</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">DUN</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Nome Comercial</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Coleção</th>
@@ -644,7 +644,6 @@ function AdminProductsPage() {
                   className={`cursor-pointer border-t border-border hover:bg-surface-2 ${(p.fase ?? "registrado") === "registrado" || p.fase === "inativo" ? "opacity-50" : ""}`}
                   title="Clique para visualizar / editar"
                 >
-                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-text-primary">{p.codCadastro}</td>
                   <td className="px-3 py-2">
                     {(() => {
                       const f = farolDe(p, espelho[p.codCadastro ?? ""], espelhoEstado);
@@ -656,7 +655,8 @@ function AdminProductsPage() {
                       );
                     })()}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{p.sku}</td>
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-text-primary" title={`SKU: ${p.sku}`}>{p.codCadastro}</td>
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-text-secondary">{p.ean?.trim() ? p.ean : "—"}</td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-text-muted">{p.dun?.trim() ? p.dun : "—"}</td>
                   <td className="truncate whitespace-nowrap px-3 py-2" title={p.nomeComercial}>{p.nomeComercial}</td>
                   <td className="truncate whitespace-nowrap px-3 py-2 text-text-secondary" title={p.colecao}>{p.colecao}</td>
