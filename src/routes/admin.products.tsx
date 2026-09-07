@@ -245,7 +245,7 @@ function AdminProductsPage() {
       if (fStatus && p.statusEstoque !== fStatus) return false;
       if (fFase && (p.fase ?? "registrado") !== fFase) return false;
       if (s) {
-        const hay = `${p.codCadastro ?? ""} ${p.sku} ${p.nomeComercial} ${p.colecao} ${p.ean ?? ""}`.toLowerCase();
+        const hay = `${p.codCadastro ?? ""} ${p.sku} ${p.nomeComercial} ${p.colecao} ${p.ean ?? ""} ${p.dun ?? ""}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
@@ -495,15 +495,16 @@ function AdminProductsPage() {
 
         {/* List */}
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full min-w-[1360px] table-fixed text-sm">
+          <table className="w-full min-w-[1490px] table-fixed text-sm">
             <colgroup>
               <col style={{ width: "80px" }} />
               <col style={{ width: "190px" }} />
+              <col style={{ width: "130px" }} />
               <col />
               <col style={{ width: "140px" }} />
-              <col style={{ width: "130px" }} />
+              <col style={{ width: "115px" }} />
               <col style={{ width: "100px" }} />
-              <col style={{ width: "110px" }} />
+              <col style={{ width: "100px" }} />
               <col style={{ width: "150px" }} />
               <col style={{ width: "110px" }} />
             </colgroup>
@@ -511,6 +512,7 @@ function AdminProductsPage() {
               <tr>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Cód.</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">SKU</th>
+                <th className="whitespace-nowrap px-3 py-2 text-left">DUN</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Nome Comercial</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Coleção</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Grupo</th>
@@ -530,6 +532,7 @@ function AdminProductsPage() {
                 >
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-text-primary">{p.codCadastro}</td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{p.sku}</td>
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-text-muted">{p.dun?.trim() ? p.dun : "—"}</td>
                   <td className="truncate whitespace-nowrap px-3 py-2" title={p.nomeComercial}>{p.nomeComercial}</td>
                   <td className="truncate whitespace-nowrap px-3 py-2 text-text-secondary" title={p.colecao}>{p.colecao}</td>
                   <td className="truncate whitespace-nowrap px-3 py-2 text-text-secondary" title={p.grupo}>{p.grupo}</td>
@@ -568,7 +571,7 @@ function AdminProductsPage() {
               ))}
               {pageItems.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="p-6 text-center text-text-secondary">
+                  <td colSpan={10} className="p-6 text-center text-text-secondary">
                     Nenhum produto encontrado
                   </td>
                 </tr>
