@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { fichaPendencias } from "@/lib/fichaPendencias.functions";
+import { catalogoEspelho } from "@/lib/catalogoEspelho.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { exportProductsCSV, exportProductsJSON } from "@/lib/productExporter";
 import {
