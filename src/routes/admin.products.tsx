@@ -245,7 +245,7 @@ function AdminProductsPage() {
       if (fStatus && p.statusEstoque !== fStatus) return false;
       if (fFase && (p.fase ?? "registrado") !== fFase) return false;
       if (s) {
-        const hay = `${p.sku} ${p.nomeComercial} ${p.colecao} ${p.ean ?? ""}`.toLowerCase();
+        const hay = `${p.codCadastro ?? ""} ${p.sku} ${p.nomeComercial} ${p.colecao} ${p.ean ?? ""}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
@@ -460,7 +460,7 @@ function AdminProductsPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por SKU, nome, coleção, EAN..."
+              placeholder="Buscar por cód., SKU, nome, coleção, EAN..."
               className="pl-9"
             />
           </div>
@@ -495,8 +495,9 @@ function AdminProductsPage() {
 
         {/* List */}
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full min-w-[1280px] table-fixed text-sm">
+          <table className="w-full min-w-[1360px] table-fixed text-sm">
             <colgroup>
+              <col style={{ width: "80px" }} />
               <col style={{ width: "190px" }} />
               <col />
               <col style={{ width: "140px" }} />
@@ -508,6 +509,7 @@ function AdminProductsPage() {
             </colgroup>
             <thead className="bg-surface-2 text-xs uppercase tracking-wider text-text-secondary">
               <tr>
+                <th className="whitespace-nowrap px-3 py-2 text-left">Cód.</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">SKU</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Nome Comercial</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Coleção</th>
@@ -526,6 +528,7 @@ function AdminProductsPage() {
                   className={`cursor-pointer border-t border-border hover:bg-surface-2 ${(p.fase ?? "registrado") === "registrado" || p.fase === "inativo" ? "opacity-50" : ""}`}
                   title="Clique para visualizar / editar"
                 >
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-text-primary">{p.codCadastro}</td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{p.sku}</td>
                   <td className="truncate whitespace-nowrap px-3 py-2" title={p.nomeComercial}>{p.nomeComercial}</td>
                   <td className="truncate whitespace-nowrap px-3 py-2 text-text-secondary" title={p.colecao}>{p.colecao}</td>
@@ -565,7 +568,7 @@ function AdminProductsPage() {
               ))}
               {pageItems.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="p-6 text-center text-text-secondary">
+                  <td colSpan={9} className="p-6 text-center text-text-secondary">
                     Nenhum produto encontrado
                   </td>
                 </tr>
