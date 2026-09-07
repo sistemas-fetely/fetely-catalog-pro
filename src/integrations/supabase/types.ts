@@ -1957,6 +1957,7 @@ export type Database = {
           departamento: string | null
           descricao_colecao: string | null
           descricao_produto: string | null
+          dun: string | null
           ean: string | null
           estampa: string | null
           estoque_disponivel: number
@@ -2010,6 +2011,7 @@ export type Database = {
           departamento?: string | null
           descricao_colecao?: string | null
           descricao_produto?: string | null
+          dun?: string | null
           ean?: string | null
           estampa?: string | null
           estoque_disponivel?: number
@@ -2063,6 +2065,7 @@ export type Database = {
           departamento?: string | null
           descricao_colecao?: string | null
           descricao_produto?: string | null
+          dun?: string | null
           ean?: string | null
           estampa?: string | null
           estoque_disponivel?: number
