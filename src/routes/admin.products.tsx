@@ -1009,6 +1009,12 @@ function ProductEditor({
                 <Input type="number" step="0.1" value={product.profundidadeCm ?? 0} onChange={(e) => set("profundidadeCm", parseFloat(e.target.value) || 0)} />
               </Field>
             </div>
+            <Field label="DUN-14">
+              <Input value={product.dun ?? ""} onChange={(e) => set("dun", e.target.value)} />
+              <p className="mt-1 text-[11px] text-text-secondary">
+                Exigido só na promoção para Ativo — depende da qtd. de kits.
+              </p>
+            </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="NCM"><Input value={product.ncm ?? ""} onChange={(e) => set("ncm", e.target.value)} /></Field>
               <Field label="CEST"><Input value={product.cest ?? ""} onChange={(e) => set("cest", e.target.value)} /></Field>
