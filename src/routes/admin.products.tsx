@@ -380,7 +380,7 @@ function AdminProductsPage() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background">
-      <div className="mx-auto max-w-7xl px-4 py-6">
+      <div className="mx-auto max-w-[1600px] px-4 py-6 md:px-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h1 className="font-display text-2xl text-text-primary">Gestão de Produtos</h1>
@@ -494,17 +494,27 @@ function AdminProductsPage() {
 
         {/* List */}
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[1280px] table-fixed text-sm">
+            <colgroup>
+              <col style={{ width: "190px" }} />
+              <col />
+              <col style={{ width: "140px" }} />
+              <col style={{ width: "130px" }} />
+              <col style={{ width: "100px" }} />
+              <col style={{ width: "110px" }} />
+              <col style={{ width: "150px" }} />
+              <col style={{ width: "110px" }} />
+            </colgroup>
             <thead className="bg-surface-2 text-xs uppercase tracking-wider text-text-secondary">
               <tr>
-                <th className="px-3 py-2 text-left">SKU</th>
-                <th className="px-3 py-2 text-left">Nome Comercial</th>
-                <th className="px-3 py-2 text-left">Coleção</th>
-                <th className="px-3 py-2 text-left">Grupo</th>
-                <th className="px-3 py-2 text-right">Atacado</th>
-                <th className="px-3 py-2 text-left">Fase</th>
-                <th className="px-3 py-2 text-left">Status</th>
-                <th className="px-3 py-2 text-right">Ações</th>
+                <th className="whitespace-nowrap px-3 py-2 text-left">SKU</th>
+                <th className="whitespace-nowrap px-3 py-2 text-left">Nome Comercial</th>
+                <th className="whitespace-nowrap px-3 py-2 text-left">Coleção</th>
+                <th className="whitespace-nowrap px-3 py-2 text-left">Grupo</th>
+                <th className="whitespace-nowrap px-3 py-2 text-right">Atacado</th>
+                <th className="whitespace-nowrap px-3 py-2 text-left">Fase</th>
+                <th className="whitespace-nowrap px-3 py-2 text-left">Status</th>
+                <th className="whitespace-nowrap px-3 py-2 text-right">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -515,11 +525,11 @@ function AdminProductsPage() {
                   className={`cursor-pointer border-t border-border hover:bg-surface-2 ${(p.fase ?? "registrado") === "registrado" || p.fase === "inativo" ? "opacity-50" : ""}`}
                   title="Clique para visualizar / editar"
                 >
-                  <td className="px-3 py-2 font-mono text-xs">{p.sku}</td>
-                  <td className="px-3 py-2">{p.nomeComercial}</td>
-                  <td className="px-3 py-2 text-text-secondary">{p.colecao}</td>
-                  <td className="px-3 py-2 text-text-secondary">{p.grupo}</td>
-                  <td className="px-3 py-2 text-right">{formatBRL(p.precoAtacado || 0)}</td>
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{p.sku}</td>
+                  <td className="truncate whitespace-nowrap px-3 py-2" title={p.nomeComercial}>{p.nomeComercial}</td>
+                  <td className="truncate whitespace-nowrap px-3 py-2 text-text-secondary" title={p.colecao}>{p.colecao}</td>
+                  <td className="truncate whitespace-nowrap px-3 py-2 text-text-secondary" title={p.grupo}>{p.grupo}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-right">{formatBRL(p.precoAtacado || 0)}</td>
                   <td className="px-3 py-2">{faseBadge(p)}</td>
                   <td className="px-3 py-2">{statusBadge(p)}</td>
                   <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
