@@ -618,6 +618,7 @@ function AdminProductsPage() {
             <thead className="bg-surface-2 text-xs uppercase tracking-wider text-text-secondary">
               <tr>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Cód.</th>
+                <th className="whitespace-nowrap px-3 py-2 text-left">Espelho</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">SKU</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">DUN</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Nome Comercial</th>
