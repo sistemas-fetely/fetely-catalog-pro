@@ -550,6 +550,35 @@ function AdminProductsPage() {
             <p className="text-sm text-text-secondary">
               {filtered.length} de {products.length} produtos
             </p>
+            {inventarioErro ? (
+              <p className="text-xs text-text-muted" title={inventarioErro}>
+                Espelho SNCF: conferência indisponível
+              </p>
+            ) : inventario ? (
+              (() => {
+                const { orfaos, ausentes, totalEspelho } = inventario;
+                const limite = (arr: string[]) => {
+                  const slice = arr.slice(0, 40);
+                  return slice.join(", ") + (arr.length > 40 ? "…" : "");
+                };
+                const partes: string[] = [];
+                if (ausentes.length > 0) partes.push(`Ausentes: ${limite(ausentes)}`);
+                if (orfaos.length > 0) partes.push(`Órfãos: ${limite(orfaos)}`);
+                const title = partes.length > 0 ? partes.join(" · ") : undefined;
+                if (orfaos.length === 0 && ausentes.length === 0) {
+                  return (
+                    <p className="text-xs text-text-muted">
+                      Espelho SNCF: {totalEspelho} produtos · sem órfãos, sem ausentes
+                    </p>
+                  );
+                }
+                return (
+                  <p className="text-xs text-stock-pre" title={title}>
+                    Espelho SNCF: {totalEspelho} produtos · {ausentes.length} ausente(s) · {orfaos.length} órfão(s)
+                  </p>
+                );
+              })()
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <Can tela="cfg_produtos" acao="exportar">
