@@ -324,6 +324,45 @@ function AdminProductsPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  // F2.1 — espelho SNCF dos produtos visíveis na página
+  const espelhoFn = useServerFn(catalogoEspelho);
+  const [espelho, setEspelho] = useState<Record<string, any>>({});
+  const [espelhoEstado, setEspelhoEstado] = useState<"idle" | "carregando" | "ok" | "erro">("idle");
+  const codsPagina = pageItems.map((p) => p.codCadastro).filter(Boolean) as string[];
+  const codsKey = codsPagina.join(",");
+  useEffect(() => {
+    const cods = codsKey ? codsKey.split(",") : [];
+    if (cods.length === 0) {
+      setEspelho({});
+      setEspelhoEstado("idle");
+      return;
+    }
+    let vivo = true;
+    setEspelhoEstado("carregando");
+    void (async () => {
+      try {
+        const resp = (await espelhoFn({ data: { cods } })) as { json: string };
+        const parsed = JSON.parse(resp.json) as { produtos?: any[] };
+        if (!vivo) return;
+        const mapa: Record<string, any> = {};
+        for (const item of parsed.produtos ?? []) {
+          if (item?.cod_cadastro) mapa[String(item.cod_cadastro)] = item;
+        }
+        setEspelho(mapa);
+        setEspelhoEstado("ok");
+      } catch (e) {
+        if (!vivo) return;
+        setEspelho({});
+        setEspelhoEstado("erro");
+        toast.error(`Espelho SNCF indisponível: ${(e as Error).message}`);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [codsKey, espelhoFn]);
+
+
   // Editor state
   const [editing, setEditing] = useState<Product | null>(null);
   const [editingOriginalSku, setEditingOriginalSku] = useState<string | null>(null);
