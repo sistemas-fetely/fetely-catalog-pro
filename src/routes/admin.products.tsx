@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { fichaPendencias } from "@/lib/fichaPendencias.functions";
+import { catalogoEspelho } from "@/lib/catalogoEspelho.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { exportProductsCSV, exportProductsJSON } from "@/lib/productExporter";
 import {
@@ -169,6 +170,72 @@ function statusBadge(p: Product) {
   );
 }
 
+// F2.1 — farol do espelho SNCF. Puro: recebe o produto do FOP (mestre),
+// o registro espelhado (ou undefined) e o estado da consulta.
+const FAROL_CLASS: Record<string, string> = {
+  fiel: "bg-stock-in",
+  divergente: "bg-stock-pre",
+  ausente: "bg-stock-out",
+  nao_espelhado: "bg-transparent border border-border",
+  sem_resposta: "bg-text-muted",
+  carregando: "bg-border animate-pulse",
+};
+
+function farolDe(
+  p: Product,
+  espelhado: any | undefined,
+  estado: string,
+): { nivel: string; rotulo: string; detalhe: string } {
+  if (estado === "carregando") return { nivel: "carregando", rotulo: "Consultando espelho…", detalhe: "" };
+  if (estado === "erro" || estado === "idle")
+    return { nivel: "sem_resposta", rotulo: "Sem resposta do SNCF", detalhe: "" };
+
+  const fase = p.fase ?? "registrado";
+
+  if (!espelhado) {
+    if (fase === "registrado" || fase === "inativo")
+      return {
+        nivel: "nao_espelhado",
+        rotulo: "Não espelhado",
+        detalhe: "Fase não é enviada ao SNCF — estado correto.",
+      };
+    return { nivel: "ausente", rotulo: "Ausente no espelho", detalhe: "" };
+  }
+
+  const divergencias: string[] = [];
+  const informativo: string[] = [];
+
+  if ((p.fase ?? "registrado") !== String(espelhado.fase ?? ""))
+    divergencias.push(`fase: FOP «${fase}» / SNCF «${espelhado.fase ?? ""}»`);
+  if ((p.nomeComercial ?? "") !== String(espelhado.nome_comercial ?? ""))
+    divergencias.push(
+      `nome_comercial: FOP «${p.nomeComercial ?? ""}» / SNCF «${espelhado.nome_comercial ?? ""}»`,
+    );
+  if (Math.abs(Number(p.precoAtacado ?? 0) - Number(espelhado.preco_atacado ?? 0)) > 0.005)
+    divergencias.push(
+      `preco_atacado: FOP «${Number(p.precoAtacado ?? 0)}» / SNCF «${Number(espelhado.preco_atacado ?? 0)}»`,
+    );
+  // SKU é atributo renomeável — a âncora do sync é cod_cadastro. Informativo.
+  if ((p.sku ?? "") !== String(espelhado.sku ?? ""))
+    informativo.push(`SKU renomeado (informativo): FOP «${p.sku ?? ""}» / SNCF «${espelhado.sku ?? ""}»`);
+
+  const extras: string[] = [];
+  if (espelhado.atualizado_em) {
+    const d = new Date(String(espelhado.atualizado_em));
+    if (!Number.isNaN(d.getTime()))
+      extras.push(`Espelho atualizado em ${d.toLocaleString("pt-BR")}`);
+  }
+  if (fase === "inativo")
+    extras.push("Inativo não é reenviado — espelho congelado por construção.");
+
+  const linhas = [...divergencias, ...informativo, ...extras];
+  if (divergencias.length > 0)
+    return { nivel: "divergente", rotulo: "Divergente", detalhe: linhas.join(" · ") };
+  return { nivel: "fiel", rotulo: "Fiel", detalhe: linhas.join(" · ") };
+}
+
+
+
 function AdminProductsPage() {
   const navigate = useNavigate();
   const init = useAuth((s) => s.init);
@@ -256,6 +323,45 @@ function AdminProductsPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // F2.1 — espelho SNCF dos produtos visíveis na página
+  const espelhoFn = useServerFn(catalogoEspelho);
+  const [espelho, setEspelho] = useState<Record<string, any>>({});
+  const [espelhoEstado, setEspelhoEstado] = useState<"idle" | "carregando" | "ok" | "erro">("idle");
+  const codsPagina = pageItems.map((p) => p.codCadastro).filter(Boolean) as string[];
+  const codsKey = codsPagina.join(",");
+  useEffect(() => {
+    const cods = codsKey ? codsKey.split(",") : [];
+    if (cods.length === 0) {
+      setEspelho({});
+      setEspelhoEstado("idle");
+      return;
+    }
+    let vivo = true;
+    setEspelhoEstado("carregando");
+    void (async () => {
+      try {
+        const resp = (await espelhoFn({ data: { cods } })) as { json: string };
+        const parsed = JSON.parse(resp.json) as { produtos?: any[] };
+        if (!vivo) return;
+        const mapa: Record<string, any> = {};
+        for (const item of parsed.produtos ?? []) {
+          if (item?.cod_cadastro) mapa[String(item.cod_cadastro)] = item;
+        }
+        setEspelho(mapa);
+        setEspelhoEstado("ok");
+      } catch (e) {
+        if (!vivo) return;
+        setEspelho({});
+        setEspelhoEstado("erro");
+        toast.error(`Espelho SNCF indisponível: ${(e as Error).message}`);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [codsKey, espelhoFn]);
+
 
   // Editor state
   const [editing, setEditing] = useState<Product | null>(null);
@@ -495,9 +601,10 @@ function AdminProductsPage() {
 
         {/* List */}
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full min-w-[1490px] table-fixed text-sm">
+          <table className="w-full min-w-[1560px] table-fixed text-sm">
             <colgroup>
               <col style={{ width: "80px" }} />
+              <col style={{ width: "70px" }} />
               <col style={{ width: "190px" }} />
               <col style={{ width: "130px" }} />
               <col />
@@ -511,6 +618,7 @@ function AdminProductsPage() {
             <thead className="bg-surface-2 text-xs uppercase tracking-wider text-text-secondary">
               <tr>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Cód.</th>
+                <th className="whitespace-nowrap px-3 py-2 text-left">Espelho</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">SKU</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">DUN</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Nome Comercial</th>
@@ -531,6 +639,17 @@ function AdminProductsPage() {
                   title="Clique para visualizar / editar"
                 >
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-text-primary">{p.codCadastro}</td>
+                  <td className="px-3 py-2">
+                    {(() => {
+                      const f = farolDe(p, espelho[p.codCadastro ?? ""], espelhoEstado);
+                      const t = `${f.rotulo}${f.detalhe ? " — " + f.detalhe : ""}`;
+                      return (
+                        <span className="inline-flex items-center" title={t} aria-label={t}>
+                          <span className={`h-2 w-2 rounded-full ${FAROL_CLASS[f.nivel] ?? FAROL_CLASS["sem_resposta"]}`} />
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{p.sku}</td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-text-muted">{p.dun?.trim() ? p.dun : "—"}</td>
                   <td className="truncate whitespace-nowrap px-3 py-2" title={p.nomeComercial}>{p.nomeComercial}</td>
@@ -571,7 +690,7 @@ function AdminProductsPage() {
               ))}
               {pageItems.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="p-6 text-center text-text-secondary">
+                  <td colSpan={11} className="p-6 text-center text-text-secondary">
                     Nenhum produto encontrado
                   </td>
                 </tr>
