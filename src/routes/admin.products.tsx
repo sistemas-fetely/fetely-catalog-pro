@@ -339,28 +339,34 @@ function AdminProductsPage() {
     }
     let vivo = true;
     setEspelhoEstado("carregando");
-    void (async () => {
-      try {
-        const resp = (await espelhoFn({ data: { cods } })) as { json: string };
-        const parsed = JSON.parse(resp.json) as { produtos?: any[] };
-        if (!vivo) return;
-        const mapa: Record<string, any> = {};
-        for (const item of parsed.produtos ?? []) {
-          if (item?.cod_cadastro) mapa[String(item.cod_cadastro)] = item;
+    const timer = setTimeout(() => {
+      void (async () => {
+        try {
+          const resp = (await espelhoFn({ data: { cods } })) as { json: string };
+          const parsed = JSON.parse(resp.json) as { produtos?: any[] };
+          if (!vivo) return;
+          const mapa: Record<string, any> = {};
+          for (const item of parsed.produtos ?? []) {
+            if (item?.cod_cadastro) mapa[String(item.cod_cadastro)] = item;
+          }
+          setEspelho(mapa);
+          setEspelhoEstado("ok");
+        } catch (e) {
+          if (!vivo) return;
+          setEspelho({});
+          setEspelhoEstado("erro");
+          toast.error(`Espelho SNCF indisponível: ${(e as Error).message}`);
         }
-        setEspelho(mapa);
-        setEspelhoEstado("ok");
-      } catch (e) {
-        if (!vivo) return;
-        setEspelho({});
-        setEspelhoEstado("erro");
-        toast.error(`Espelho SNCF indisponível: ${(e as Error).message}`);
-      }
-    })();
+      })();
+    }, 300);
     return () => {
       vivo = false;
+      clearTimeout(timer);
     };
-  }, [codsKey, espelhoFn]);
+    // espelhoFn é deliberadamente omitido porque sua identidade pode não ser
+    // estável; a única entrada que importa é a lista de códigos da página.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [codsKey]);
 
 
   // Editor state
