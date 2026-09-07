@@ -601,9 +601,10 @@ function AdminProductsPage() {
 
         {/* List */}
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full min-w-[1490px] table-fixed text-sm">
+          <table className="w-full min-w-[1560px] table-fixed text-sm">
             <colgroup>
               <col style={{ width: "80px" }} />
+              <col style={{ width: "70px" }} />
               <col style={{ width: "190px" }} />
               <col style={{ width: "130px" }} />
               <col />
