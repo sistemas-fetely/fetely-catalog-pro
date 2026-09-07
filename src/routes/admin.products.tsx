@@ -368,6 +368,56 @@ function AdminProductsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codsKey]);
 
+  // F2.2 — conferência global do espelho: órfãos (no SNCF, não no FOP) e
+  // ausentes globais (no FOP em fase publicável, não no SNCF).
+  const [inventario, setInventario] = useState<{
+    orfaos: string[];
+    ausentes: string[];
+    totalEspelho: number;
+  } | null>(null);
+  const [inventarioErro, setInventarioErro] = useState<string | null>(null);
+  useEffect(() => {
+    if (products.length === 0) {
+      setInventario(null);
+      setInventarioErro(null);
+      return;
+    }
+    void (async () => {
+      try {
+        const resp = (await espelhoFn({ data: { cods: [] } })) as { json: string };
+        const parsed = JSON.parse(resp.json) as {
+          ok?: boolean;
+          modo?: string;
+          cods?: unknown[];
+        };
+        if (parsed.modo !== "inventario" || !Array.isArray(parsed.cods)) {
+          throw new Error("Resposta do SNCF não está no modo inventário");
+        }
+        const noEspelho = new Set(parsed.cods.map(String));
+        const noFop = new Set(
+          products.map((p) => p.codCadastro).filter(Boolean).map(String),
+        );
+        const orfaos = Array.from(noEspelho).filter((c) => !noFop.has(c));
+        const ausentes = products
+          .filter(
+            (p) =>
+              (p.fase === "ativo" || p.fase === "pre_venda") &&
+              p.codCadastro &&
+              !noEspelho.has(String(p.codCadastro)),
+          )
+          .map((p) => String(p.codCadastro));
+        setInventario({ orfaos, ausentes, totalEspelho: parsed.cods.length });
+        setInventarioErro(null);
+      } catch (e) {
+        setInventario(null);
+        setInventarioErro((e as Error).message);
+      }
+    })();
+    // espelhoFn é deliberadamente omitido porque sua identidade pode não ser
+    // estável; a única entrada que importa é o carregamento da base de produtos.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products.length]);
+
 
   // Editor state
   const [editing, setEditing] = useState<Product | null>(null);
