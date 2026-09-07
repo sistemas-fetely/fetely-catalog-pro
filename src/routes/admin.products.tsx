@@ -1,10 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Ban,
+  Clock,
   Copy as CopyIcon,
   Download,
   FileJson,
   History,
+  Package,
   Pencil,
   Plus,
   Power,
@@ -119,30 +122,50 @@ const FASE_LABEL: Record<string, string> = {
 };
 
 const FASE_CLASS: Record<string, string> = {
-  registrado: "border-zinc-600 text-zinc-400",
-  pre_venda: "border-amber-700 bg-amber-600/20 text-amber-300",
-  ativo: "border-emerald-700 bg-emerald-600/20 text-emerald-300",
-  inativo: "border-red-900 text-red-400/70",
+  registrado: "border border-border bg-surface-2 text-text-secondary",
+  pre_venda: "border-transparent bg-stock-pre text-background",
+  ativo: "border-transparent bg-stock-in text-background",
+  inativo: "border border-dashed border-stock-out/50 bg-transparent text-stock-out",
 };
 
 function faseBadge(p: Product) {
   const f = p.fase ?? "registrado";
   return (
-    <Badge variant="outline" className={FASE_CLASS[f] ?? "border-zinc-600 text-zinc-400"}>
+    <Badge
+      variant="outline"
+      className={`${FASE_CLASS[f] ?? FASE_CLASS["registrado"]} rounded-full whitespace-nowrap w-fit px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider`}
+    >
       {FASE_LABEL[f] ?? f}
     </Badge>
   );
 }
 
 function statusBadge(p: Product) {
+  const iconProps = { className: "h-3.5 w-3.5" };
   if (!p.precoAtacado || p.precoAtacado <= 0)
-    return <Badge variant="outline" className="border-zinc-600 text-zinc-400">Sem preço</Badge>;
+    return (
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-text-muted">
+        <Ban {...iconProps} /> Sem preço
+      </span>
+    );
   const s = (p.statusEstoque || "").toLowerCase();
   if (s === "em estoque")
-    return <Badge className="bg-emerald-600/20 text-emerald-300 border border-emerald-700">Em estoque</Badge>;
+    return (
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-stock-in">
+        <Package {...iconProps} /> Em estoque
+      </span>
+    );
   if (s.startsWith("prev"))
-    return <Badge className="bg-amber-600/20 text-amber-300 border border-amber-700">{p.statusEstoque}</Badge>;
-  return <Badge variant="outline">{p.statusEstoque || "—"}</Badge>;
+    return (
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-text-secondary">
+        <Clock {...iconProps} /> {p.statusEstoque}
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-text-secondary">
+      <Package {...iconProps} /> {p.statusEstoque || "—"}
+    </span>
+  );
 }
 
 function AdminProductsPage() {
@@ -472,7 +495,7 @@ function AdminProductsPage() {
         {/* List */}
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-900/60 text-xs uppercase tracking-wider text-zinc-100">
+            <thead className="bg-surface-2 text-xs uppercase tracking-wider text-text-secondary">
               <tr>
                 <th className="px-3 py-2 text-left">SKU</th>
                 <th className="px-3 py-2 text-left">Nome Comercial</th>
@@ -489,7 +512,7 @@ function AdminProductsPage() {
                 <tr
                   key={p.sku}
                   onClick={() => openEdit(p)}
-                  className={`cursor-pointer border-t border-border hover:bg-surface-hover ${(p.fase ?? "registrado") === "registrado" || p.fase === "inativo" ? "opacity-50" : ""}`}
+                  className={`cursor-pointer border-t border-border hover:bg-surface-2 ${(p.fase ?? "registrado") === "registrado" || p.fase === "inativo" ? "opacity-50" : ""}`}
                   title="Clique para visualizar / editar"
                 >
                   <td className="px-3 py-2 font-mono text-xs">{p.sku}</td>
@@ -503,14 +526,14 @@ function AdminProductsPage() {
                     <div className="flex justify-end gap-1">
                       <button
                         onClick={() => openEdit(p)}
-                        className="rounded p-1.5 hover:bg-zinc-800"
+                        className="rounded p-1.5 hover:bg-surface-2"
                         title="Editar"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDuplicate(p)}
-                        className="rounded p-1.5 hover:bg-zinc-800"
+                        className="rounded p-1.5 hover:bg-surface-2"
                         title="Duplicar"
                       >
                         <CopyIcon className="h-4 w-4" />
@@ -519,10 +542,10 @@ function AdminProductsPage() {
                         <button
                           onClick={() => void handleToggle(p)}
                           disabled={publicandoSku === p.sku}
-                          className="rounded p-1.5 hover:bg-zinc-800 disabled:opacity-40"
+                          className="rounded p-1.5 hover:bg-surface-2 disabled:opacity-40"
                           title={(p.fase ?? "registrado") === "registrado" ? "Publicar" : "Despublicar"}
                         >
-                          <Power className={`h-4 w-4 ${(p.fase ?? "registrado") === "registrado" ? "text-emerald-400" : "text-red-400"}`} />
+                          <Power className={`h-4 w-4 ${(p.fase ?? "registrado") === "registrado" ? "text-stock-in" : "text-stock-out"}`} />
                         </button>
                       )}
                     </div>
@@ -624,7 +647,7 @@ function AdminProductsPage() {
           {(pendencias?.itens.length ?? 0) > 0 && (
             <div className="max-h-80 overflow-y-auto rounded-lg border border-border">
               <table className="w-full text-sm">
-                <thead className="bg-zinc-900/60 text-xs uppercase tracking-wider text-zinc-100">
+                <thead className="bg-surface-2 text-xs uppercase tracking-wider text-text-secondary">
                   <tr>
                     <th className="px-3 py-2 text-left">Campo</th>
                     <th className="px-3 py-2 text-left">Bloco</th>
@@ -644,7 +667,7 @@ function AdminProductsPage() {
             </div>
           )}
           {pendencias?.erroBanco && (
-            <div className="rounded-lg border border-red-900 bg-red-950/30 p-3 text-sm text-red-200">
+            <div className="rounded-lg border border-stock-out/40 bg-stock-out/10 p-3 text-sm text-stock-out">
               {pendencias.erroBanco}
             </div>
           )}
@@ -714,7 +737,7 @@ function ProductEditor({
   const margem = product.precoVarejo > 0
     ? ((product.precoVarejo - product.precoAtacado) / product.precoVarejo) * 100
     : 0;
-  const margemColor = margem > 40 ? "text-emerald-400" : margem >= 20 ? "text-amber-400" : "text-red-400";
+  const margemColor = margem > 40 ? "text-stock-in" : margem >= 20 ? "text-stock-pre" : "text-stock-out";
 
   const colecoes = useMemo(
     () => Array.from(new Set(allProducts.map((p) => p.colecao).filter(Boolean))).sort(),
@@ -751,7 +774,7 @@ function ProductEditor({
           <TabsContent value="ident" className="space-y-3 pt-4">
             <Field label="SKU *">
               <Input value={product.sku} onChange={(e) => set("sku", e.target.value.trim())} />
-              {skuDup && <p className="mt-1 text-xs text-red-400">SKU já cadastrado</p>}
+              {skuDup && <p className="mt-1 text-xs text-stock-out">SKU já cadastrado</p>}
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Cód. Cadastro"><Input value={product.codCadastro} onChange={(e) => set("codCadastro", e.target.value)} /></Field>
@@ -997,8 +1020,8 @@ function ProductEditor({
               onClick={onToggleAtivo}
               className={
                 (product.fase ?? "registrado") === "registrado"
-                  ? "border-emerald-700 text-emerald-400 hover:bg-emerald-950"
-                  : "border-red-700 text-red-400 hover:bg-red-950"
+                  ? "border-stock-in/60 text-stock-in hover:bg-stock-in/10"
+                  : "border-stock-out/60 text-stock-out hover:bg-stock-out/10"
               }
             >
               <Power className="mr-2 h-4 w-4" />
@@ -1068,7 +1091,7 @@ function OrigemFiscalField({
         value={atual ?? SEM_ORIGEM}
         onValueChange={(v) => onChange(v === SEM_ORIGEM ? undefined : v)}
       >
-        <SelectTrigger className={legado ? "border-amber-600" : undefined}>
+        <SelectTrigger className={legado ? "border-stock-pre" : undefined}>
           <SelectValue placeholder="— sem origem —" />
         </SelectTrigger>
         <SelectContent>
@@ -1085,7 +1108,7 @@ function OrigemFiscalField({
           ))}
         </SelectContent>
       </Select>
-      <p className={`mt-1 text-[11px] ${legado ? "text-amber-400" : "text-text-secondary"}`}>
+      <p className={`mt-1 text-[11px] ${legado ? "text-stock-pre" : "text-text-secondary"}`}>
         {legado
           ? "Valor legado fora da tabela oficial — a NF-e espera um código de 0 a 8."
           : (conhecida?.descricao_oficial ?? "Sem origem fiscal definida (pré-venda).")}
