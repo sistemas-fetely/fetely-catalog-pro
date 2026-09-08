@@ -1258,8 +1258,9 @@ function CarrinhoEmMontagemDialog({
           ? `${a.nome}${a.cor}${a.tamanho}`.localeCompare(`${b.nome}${b.cor}${b.tamanho}`)
           : a.colecao.localeCompare(b.colecao),
       );
-  }, [rows, products]);
+  }, [rows, enviada, products]);
 
+  const daEnviada = Boolean(rows && Object.keys(mesclarItens(rows)).length === 0 && enviada);
   const totalUnid = itens.reduce((s, i) => s + i.qtd, 0);
   const totalValor = itens.reduce((s, i) => s + i.subtotal, 0);
   const atualizado = rows && rows.length > 0 ? new Date(rows[0].atualizado_em) : null;
@@ -1268,11 +1269,15 @@ function CarrinhoEmMontagemDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Carrinho em montagem — {nomeCliente}</DialogTitle>
+          <DialogTitle>
+            {daEnviada ? "Lista enviada" : "Carrinho em montagem"} — {nomeCliente}
+          </DialogTitle>
           <DialogDescription>
-            {atualizado
-              ? `Última alteração ${atualizado.toLocaleString("pt-BR")} (${relativeTime(atualizado)})`
-              : "Itens salvos automaticamente enquanto o cliente navega no catálogo."}
+            {daEnviada && enviada
+              ? `O carrinho foi esvaziado no envio. Mostrando a lista ${enviada.id}, enviada em ${new Date(enviada.criado_em).toLocaleString("pt-BR")}.`
+              : atualizado
+                ? `Última alteração ${atualizado.toLocaleString("pt-BR")} (${relativeTime(atualizado)})`
+                : "Itens salvos automaticamente enquanto o cliente navega no catálogo."}
           </DialogDescription>
         </DialogHeader>
 
