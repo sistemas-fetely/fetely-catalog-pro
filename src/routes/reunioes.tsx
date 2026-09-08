@@ -19,7 +19,7 @@ import { tempoRestante, PUBLIC_SITE_URL } from "@/lib/preSelecao";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSessoesCatalogo, ESTADO_SESSAO_LABEL, type SessaoRow, type EstadoSessao } from "@/lib/sessoesCatalogo";
-import { chavesWishlist, fetchWishlistCarrinhos, mesclarItens, type WishlistCarrinhoRow } from "@/lib/wishlistEquipe";
+import { chavesWishlist, fetchWishlistCarrinhos, fetchUltimaPreSelecao, mesclarItens, type PreSelecaoEnviada, type WishlistCarrinhoRow } from "@/lib/wishlistEquipe";
 
 
 export const Route = createFileRoute("/reunioes")({
@@ -1204,6 +1204,7 @@ function CarrinhoEmMontagemDialog({
 }) {
   const products = useCatalog((s) => s.products);
   const [rows, setRows] = useState<WishlistCarrinhoRow[] | null>(null);
+  const [enviada, setEnviada] = useState<PreSelecaoEnviada | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   const chaves = useMemo(() => chavesWishlist(whatsapp, deviceIds), [whatsapp, deviceIds]);
@@ -1212,11 +1213,18 @@ function CarrinhoEmMontagemDialog({
     if (!open) return;
     let vivo = true;
     setRows(null);
+    setEnviada(null);
     setErro(null);
     (async () => {
       try {
         const r = await fetchWishlistCarrinhos(chaves);
-        if (vivo) setRows(r);
+        if (!vivo) return;
+        setRows(r);
+        // Ao enviar a lista o carrinho é esvaziado: nesse caso mostramos a lista enviada.
+        if (Object.keys(mesclarItens(r)).length === 0) {
+          const ps = await fetchUltimaPreSelecao(whatsapp);
+          if (vivo) setEnviada(ps);
+        }
       } catch (e) {
         if (vivo) setErro(e instanceof Error ? e.message : String(e));
       }
@@ -1224,11 +1232,12 @@ function CarrinhoEmMontagemDialog({
     return () => {
       vivo = false;
     };
-  }, [open, chaves]);
+  }, [open, chaves, whatsapp]);
 
   const itens = useMemo(() => {
     if (!rows) return [];
-    const merged = mesclarItens(rows);
+    const doCarrinho = mesclarItens(rows);
+    const merged = Object.keys(doCarrinho).length > 0 ? doCarrinho : (enviada?.itens ?? {});
     return Object.entries(merged)
       .map(([sku, qtd]) => {
         const p = products.find((x) => x.sku === sku);
@@ -1249,8 +1258,9 @@ function CarrinhoEmMontagemDialog({
           ? `${a.nome}${a.cor}${a.tamanho}`.localeCompare(`${b.nome}${b.cor}${b.tamanho}`)
           : a.colecao.localeCompare(b.colecao),
       );
-  }, [rows, products]);
+  }, [rows, enviada, products]);
 
+  const daEnviada = Boolean(rows && Object.keys(mesclarItens(rows)).length === 0 && enviada);
   const totalUnid = itens.reduce((s, i) => s + i.qtd, 0);
   const totalValor = itens.reduce((s, i) => s + i.subtotal, 0);
   const atualizado = rows && rows.length > 0 ? new Date(rows[0].atualizado_em) : null;
@@ -1259,11 +1269,15 @@ function CarrinhoEmMontagemDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Carrinho em montagem — {nomeCliente}</DialogTitle>
+          <DialogTitle>
+            {daEnviada ? "Lista enviada" : "Carrinho em montagem"} — {nomeCliente}
+          </DialogTitle>
           <DialogDescription>
-            {atualizado
-              ? `Última alteração ${atualizado.toLocaleString("pt-BR")} (${relativeTime(atualizado)})`
-              : "Itens salvos automaticamente enquanto o cliente navega no catálogo."}
+            {daEnviada && enviada
+              ? `O carrinho foi esvaziado no envio. Mostrando a lista ${enviada.id}, enviada em ${new Date(enviada.criado_em).toLocaleString("pt-BR")}.`
+              : atualizado
+                ? `Última alteração ${atualizado.toLocaleString("pt-BR")} (${relativeTime(atualizado)})`
+                : "Itens salvos automaticamente enquanto o cliente navega no catálogo."}
           </DialogDescription>
         </DialogHeader>
 
