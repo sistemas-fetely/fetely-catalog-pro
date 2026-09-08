@@ -1204,6 +1204,7 @@ function CarrinhoEmMontagemDialog({
 }) {
   const products = useCatalog((s) => s.products);
   const [rows, setRows] = useState<WishlistCarrinhoRow[] | null>(null);
+  const [enviada, setEnviada] = useState<PreSelecaoEnviada | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   const chaves = useMemo(() => chavesWishlist(whatsapp, deviceIds), [whatsapp, deviceIds]);
@@ -1212,11 +1213,18 @@ function CarrinhoEmMontagemDialog({
     if (!open) return;
     let vivo = true;
     setRows(null);
+    setEnviada(null);
     setErro(null);
     (async () => {
       try {
         const r = await fetchWishlistCarrinhos(chaves);
-        if (vivo) setRows(r);
+        if (!vivo) return;
+        setRows(r);
+        // Ao enviar a lista o carrinho é esvaziado: nesse caso mostramos a lista enviada.
+        if (Object.keys(mesclarItens(r)).length === 0) {
+          const ps = await fetchUltimaPreSelecao(whatsapp);
+          if (vivo) setEnviada(ps);
+        }
       } catch (e) {
         if (vivo) setErro(e instanceof Error ? e.message : String(e));
       }
@@ -1224,11 +1232,12 @@ function CarrinhoEmMontagemDialog({
     return () => {
       vivo = false;
     };
-  }, [open, chaves]);
+  }, [open, chaves, whatsapp]);
 
   const itens = useMemo(() => {
     if (!rows) return [];
-    const merged = mesclarItens(rows);
+    const doCarrinho = mesclarItens(rows);
+    const merged = Object.keys(doCarrinho).length > 0 ? doCarrinho : (enviada?.itens ?? {});
     return Object.entries(merged)
       .map(([sku, qtd]) => {
         const p = products.find((x) => x.sku === sku);
