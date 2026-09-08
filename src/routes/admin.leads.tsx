@@ -163,6 +163,7 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
   const [fProds, setFProds] = useState<string[]>([]);
   const [prodModo, setProdModo] = useState<"qualquer" | "todos">("qualquer");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [fDias, setFDias] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const produtoOpcoes = useMemo(() => {
