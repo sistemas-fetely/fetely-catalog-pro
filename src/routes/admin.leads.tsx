@@ -163,6 +163,7 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
   const [fProds, setFProds] = useState<string[]>([]);
   const [prodModo, setProdModo] = useState<"qualquer" | "todos">("qualquer");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [fDias, setFDias] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const produtoOpcoes = useMemo(() => {
@@ -179,6 +180,14 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
+    const now = new Date();
+    const cutoff = (() => {
+      if (fDias === "all") return null;
+      const d = new Date(now);
+      d.setDate(d.getDate() - Number(fDias));
+      d.setHours(0, 0, 0, 0);
+      return d;
+    })();
     const list = leads.filter((l) => {
       if (fSeg !== "all" && l.segmento !== fSeg) return false;
       if (fPot !== "all" && l.potencial !== fPot) return false;
@@ -195,6 +204,10 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
             : fProds.some((p) => set.has(p));
         if (!ok) return false;
       }
+      if (cutoff) {
+        const d = new Date(l.criadoEm);
+        if (d < cutoff) return false;
+      }
       if (s) {
         const hay = `${l.nome} ${l.whatsapp} ${l.instagram ?? ""} ${l.email ?? ""}`.toLowerCase();
         if (!hay.includes(s)) return false;
@@ -207,7 +220,7 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
         : b.criadoEm.localeCompare(a.criadoEm),
     );
     return list;
-  }, [leads, search, fSeg, fPot, fStat, fOri, fDest, fInt, fAce, fProds, prodModo, sortDir]);
+  }, [leads, search, fSeg, fPot, fStat, fOri, fDest, fInt, fAce, fProds, prodModo, sortDir, fDias]);
 
 
   const kpis = useMemo(() => {
@@ -319,10 +332,18 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
             options={[["all", "Todas as intenções"], ...Object.entries(INTENCAO_LABEL)]} />
           <FilterSelect value={fAce} onChange={setFAce} placeholder="Condições"
             options={[["all", "Todos os aceites"], ...Object.entries(ACEITE_LABEL)]} />
+          <FilterSelect value={fDias} onChange={setFDias} placeholder="Período"
+            options={[
+              ["all", "Todo o período"],
+              ["1", "Hoje"],
+              ["7", "Últimos 7 dias"],
+              ["30", "Últimos 30 dias"],
+              ["90", "Últimos 90 dias"],
+            ]} />
           <Button variant="ghost" size="sm" onClick={() => {
             setSearch(""); setFSeg("all"); setFPot("all"); setFStat("all"); setFOri("all");
             setFDest("all"); setFInt("all"); setFAce("all"); setFProds([]); setProdModo("qualquer");
-            setSortDir("desc");
+            setSortDir("desc"); setFDias("all");
           }}>
             Limpar
           </Button>
