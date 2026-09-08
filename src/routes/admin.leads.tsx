@@ -332,10 +332,18 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
             options={[["all", "Todas as intenções"], ...Object.entries(INTENCAO_LABEL)]} />
           <FilterSelect value={fAce} onChange={setFAce} placeholder="Condições"
             options={[["all", "Todos os aceites"], ...Object.entries(ACEITE_LABEL)]} />
+          <FilterSelect value={fDias} onChange={setFDias} placeholder="Período"
+            options={[
+              ["all", "Todo o período"],
+              ["1", "Hoje"],
+              ["7", "Últimos 7 dias"],
+              ["30", "Últimos 30 dias"],
+              ["90", "Últimos 90 dias"],
+            ]} />
           <Button variant="ghost" size="sm" onClick={() => {
             setSearch(""); setFSeg("all"); setFPot("all"); setFStat("all"); setFOri("all");
             setFDest("all"); setFInt("all"); setFAce("all"); setFProds([]); setProdModo("qualquer");
-            setSortDir("desc");
+            setSortDir("desc"); setFDias("all");
           }}>
             Limpar
           </Button>
