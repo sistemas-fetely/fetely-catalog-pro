@@ -18,6 +18,9 @@ import {
   MessageSquare,
   CheckCircle2,
   Lock,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 import { Can } from "@/components/security/Can";
@@ -159,6 +162,7 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
   const [fAce, setFAce] = useState<string>("all");
   const [fProds, setFProds] = useState<string[]>([]);
   const [prodModo, setProdModo] = useState<"qualquer" | "todos">("qualquer");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const produtoOpcoes = useMemo(() => {
