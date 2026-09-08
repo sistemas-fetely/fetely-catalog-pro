@@ -63,3 +63,37 @@ export function mesclarItens(rows: WishlistCarrinhoRow[]): Record<string, number
   }
   return merged;
 }
+
+/** Última lista já ENVIADA pelo cliente (pré-seleção), usada quando o carrinho foi esvaziado no envio. */
+export interface PreSelecaoEnviada {
+  id: string;
+  criado_em: string;
+  itens: Record<string, number>;
+}
+
+export async function fetchUltimaPreSelecao(
+  whatsapp?: string | null,
+): Promise<PreSelecaoEnviada | null> {
+  const digits = (whatsapp ?? "").replace(/\D/g, "");
+  if (digits.length < 8) return null;
+  const last8 = digits.slice(-8);
+  const { data, error } = await supabase
+    .from("pre_selecoes")
+    .select("id, criado_em, itens")
+    .ilike("contato_whatsapp", `%${last8}%`)
+    .order("criado_em", { ascending: false })
+    .limit(1);
+  if (error) throw error;
+  const row = (data ?? [])[0];
+  if (!row) return null;
+  const itens: Record<string, number> = {};
+  const arr = Array.isArray(row.itens) ? (row.itens as unknown[]) : [];
+  for (const it of arr) {
+    const o = (it ?? {}) as Record<string, unknown>;
+    const sku = typeof o.sku === "string" ? o.sku : null;
+    if (!sku) continue;
+    const q = Number(o.quantidade ?? 0);
+    itens[sku] = Number.isFinite(q) && q >= 0 ? q : 0;
+  }
+  return { id: String(row.id), criado_em: String(row.criado_em), itens };
+}
