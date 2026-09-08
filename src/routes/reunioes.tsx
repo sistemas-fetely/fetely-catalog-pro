@@ -555,28 +555,39 @@ function SessaoRowView({ grupo, vendedorNome }: { grupo: SessaoGrupo; vendedorNo
           </div>
         </td>
         <td className="px-3 py-3">
-          {s.whatsapp && (
-            <div className="inline-flex items-center gap-1.5">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setTemplatesOpen(true)}
-                title="Mensagens sugeridas para esta etapa"
-              >
-                <MessageSquareText className="h-3.5 w-3.5" />
-                Mensagens
-              </Button>
-              <Button
-                size="sm"
-                variant={abandonado ? "default" : "outline"}
-                className={cn(abandonado && "bg-red-500 hover:bg-red-600 text-white")}
-                onClick={recuperar}
-              >
-                <MessageCircle className="h-3.5 w-3.5" />
-                {abandonado ? "Recuperar" : "WhatsApp"}
-              </Button>
-            </div>
-          )}
+          <div className="inline-flex items-center gap-1.5">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCarrinhoOpen(true)}
+              title="Ver os itens que o cliente já colocou no carrinho"
+            >
+              <ShoppingCart className="h-3.5 w-3.5" />
+              Ver itens
+            </Button>
+            {s.whatsapp && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setTemplatesOpen(true)}
+                  title="Mensagens sugeridas para esta etapa"
+                >
+                  <MessageSquareText className="h-3.5 w-3.5" />
+                  Mensagens
+                </Button>
+                <Button
+                  size="sm"
+                  variant={abandonado ? "default" : "outline"}
+                  className={cn(abandonado && "bg-red-500 hover:bg-red-600 text-white")}
+                  onClick={recuperar}
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  {abandonado ? "Recuperar" : "WhatsApp"}
+                </Button>
+              </>
+            )}
+          </div>
           <MensagensSugeridasDialog
             open={templatesOpen}
             onOpenChange={setTemplatesOpen}
@@ -587,7 +598,15 @@ function SessaoRowView({ grupo, vendedorNome }: { grupo: SessaoGrupo; vendedorNo
             qtdItens={s.qtd_itens ?? 0}
             valor={Number(s.valor_wishlist ?? 0)}
           />
+          <CarrinhoEmMontagemDialog
+            open={carrinhoOpen}
+            onOpenChange={setCarrinhoOpen}
+            nomeCliente={nome}
+            whatsapp={s.whatsapp ?? null}
+            deviceIds={grupo.historico.map((h) => h.device_id)}
+          />
         </td>
+
       </tr>
       {aberto && temHistorico && (
         <tr className="border-t border-border bg-surface-2/40">
