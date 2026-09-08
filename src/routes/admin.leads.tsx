@@ -179,7 +179,7 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    return leads.filter((l) => {
+    const list = leads.filter((l) => {
       if (fSeg !== "all" && l.segmento !== fSeg) return false;
       if (fPot !== "all" && l.potencial !== fPot) return false;
       if (fStat !== "all" && l.statusCrm !== fStat) return false;
@@ -201,7 +201,13 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
       }
       return true;
     });
-  }, [leads, search, fSeg, fPot, fStat, fOri, fDest, fInt, fAce, fProds, prodModo]);
+    list.sort((a, b) =>
+      sortDir === "asc"
+        ? a.criadoEm.localeCompare(b.criadoEm)
+        : b.criadoEm.localeCompare(a.criadoEm),
+    );
+    return list;
+  }, [leads, search, fSeg, fPot, fStat, fOri, fDest, fInt, fAce, fProds, prodModo, sortDir]);
 
 
   const kpis = useMemo(() => {
@@ -316,9 +322,25 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
           <Button variant="ghost" size="sm" onClick={() => {
             setSearch(""); setFSeg("all"); setFPot("all"); setFStat("all"); setFOri("all");
             setFDest("all"); setFInt("all"); setFAce("all"); setFProds([]); setProdModo("qualquer");
+            setSortDir("desc");
           }}>
             Limpar
           </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+              title={sortDir === "asc" ? "Ordenar: mais recentes primeiro" : "Ordenar: mais antigos primeiro"}
+            >
+              <ArrowUpDown className="h-4 w-4 mr-1" />
+              {sortDir === "asc" ? (
+                <><ArrowUp className="h-3 w-3 mr-1" /> Data crescente</>
+              ) : (
+                <><ArrowDown className="h-3 w-3 mr-1" /> Data decrescente</>
+              )}
+            </Button>
+          </div>
           <div className="ml-auto flex gap-2">
             <Can tela="cfg_leads_exportar" acao="exportar">
               <Button variant="outline" size="sm" onClick={exportCsv}>
