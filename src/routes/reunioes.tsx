@@ -19,6 +19,8 @@ import { tempoRestante, PUBLIC_SITE_URL } from "@/lib/preSelecao";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSessoesCatalogo, ESTADO_SESSAO_LABEL, type SessaoRow, type EstadoSessao } from "@/lib/sessoesCatalogo";
+import { chavesWishlist, fetchWishlistCarrinhos, mesclarItens, type WishlistCarrinhoRow } from "@/lib/wishlistEquipe";
+
 
 export const Route = createFileRoute("/reunioes")({
   head: () => ({
