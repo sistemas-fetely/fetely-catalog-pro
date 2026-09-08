@@ -494,8 +494,10 @@ function SessaoRowView({ grupo, vendedorNome }: { grupo: SessaoGrupo; vendedorNo
   const ultimo = s.ultimo_evento ? new Date(s.ultimo_evento) : null;
   const rel = ultimo ? relativeTime(ultimo) : "—";
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [carrinhoOpen, setCarrinhoOpen] = useState(false);
   const [aberto, setAberto] = useState(false);
   const temHistorico = grupo.acessos > 1;
+
 
   const digits = (s.whatsapp ?? "").replace(/\D/g, "");
 
