@@ -1187,3 +1187,140 @@ function MensagensSugeridasDialog({
     </Dialog>
   );
 }
+
+/** Mostra à equipe os itens que o cliente já colocou no carrinho, antes de enviar. */
+function CarrinhoEmMontagemDialog({
+  open,
+  onOpenChange,
+  nomeCliente,
+  whatsapp,
+  deviceIds,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  nomeCliente: string;
+  whatsapp: string | null;
+  deviceIds: (string | null)[];
+}) {
+  const products = useCatalog((s) => s.products);
+  const [rows, setRows] = useState<WishlistCarrinhoRow[] | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+
+  const chaves = useMemo(() => chavesWishlist(whatsapp, deviceIds), [whatsapp, deviceIds]);
+
+  useEffect(() => {
+    if (!open) return;
+    let vivo = true;
+    setRows(null);
+    setErro(null);
+    (async () => {
+      try {
+        const r = await fetchWishlistCarrinhos(chaves);
+        if (vivo) setRows(r);
+      } catch (e) {
+        if (vivo) setErro(e instanceof Error ? e.message : String(e));
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [open, chaves]);
+
+  const itens = useMemo(() => {
+    if (!rows) return [];
+    const merged = mesclarItens(rows);
+    return Object.entries(merged)
+      .map(([sku, qtd]) => {
+        const p = products.find((x) => x.sku === sku);
+        return {
+          sku,
+          qtd,
+          nome: p?.nomeComercial ?? sku,
+          cor: p?.corNome ?? "",
+          colecao: p?.colecao ?? "—",
+          categoria: p?.categoria ?? "",
+          tamanho: p?.tamanhoNumero ?? "",
+          atacado: p?.precoAtacado ?? 0,
+          subtotal: (p?.precoAtacado ?? 0) * qtd,
+        };
+      })
+      .sort((a, b) =>
+        a.colecao === b.colecao
+          ? `${a.nome}${a.cor}${a.tamanho}`.localeCompare(`${b.nome}${b.cor}${b.tamanho}`)
+          : a.colecao.localeCompare(b.colecao),
+      );
+  }, [rows, products]);
+
+  const totalUnid = itens.reduce((s, i) => s + i.qtd, 0);
+  const totalValor = itens.reduce((s, i) => s + i.subtotal, 0);
+  const atualizado = rows && rows.length > 0 ? new Date(rows[0].atualizado_em) : null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Carrinho em montagem — {nomeCliente}</DialogTitle>
+          <DialogDescription>
+            {atualizado
+              ? `Última alteração ${atualizado.toLocaleString("pt-BR")} (${relativeTime(atualizado)})`
+              : "Itens salvos automaticamente enquanto o cliente navega no catálogo."}
+          </DialogDescription>
+        </DialogHeader>
+
+        {erro ? (
+          <p className="text-sm text-red-500">Não foi possível carregar o carrinho: {erro}</p>
+        ) : rows === null ? (
+          <p className="text-sm text-text-secondary">Carregando…</p>
+        ) : itens.length === 0 ? (
+          <p className="text-sm text-text-secondary">
+            Este cliente ainda não salvou nenhum item no carrinho.
+          </p>
+        ) : (
+          <>
+            <div className="max-h-[55vh] overflow-y-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="bg-surface-2 text-xs uppercase tracking-wider text-text-secondary">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Produto</th>
+                    <th className="px-3 py-2 text-left">Coleção</th>
+                    <th className="px-3 py-2 text-right">Qtd.</th>
+                    <th className="px-3 py-2 text-right">Atacado</th>
+                    <th className="px-3 py-2 text-right">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {itens.map((i) => (
+                    <tr key={i.sku} className="border-t border-border">
+                      <td className="px-3 py-2">
+                        <div className="font-medium">{i.nome}</div>
+                        <div className="text-xs text-text-secondary">
+                          {[i.cor, i.tamanho].filter(Boolean).join(" · ") || i.sku}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-text-secondary">{i.colecao}</td>
+                      <td className="px-3 py-2 text-right">
+                        {i.qtd === 0 ? (
+                          <span className="text-xs text-text-muted italic">interesse</span>
+                        ) : (
+                          i.qtd
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right text-xs">{formatBRL(i.atacado)}</td>
+                      <td className="px-3 py-2 text-right text-xs text-gold">{formatBRL(i.subtotal)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between text-sm pt-1">
+              <span className="text-text-secondary">
+                {itens.length} {itens.length === 1 ? "item" : "itens"} · {totalUnid} un.
+              </span>
+              <span className="font-semibold text-gold">{formatBRL(totalValor)} no atacado</span>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
