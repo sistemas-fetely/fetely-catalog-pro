@@ -1945,13 +1945,13 @@ export type Database = {
         Row: {
           altura_cm: number
           ativo: boolean
-          categoria: string
+          categoria: string | null
           cest: string | null
           cod_cadastro: string | null
-          colecao: string
-          colecao_id: string
+          colecao: string | null
+          colecao_id: string | null
           cor: string | null
-          cor_id: string
+          cor_id: string | null
           cor_nome: string | null
           created_at: string
           departamento: string | null
@@ -1963,8 +1963,8 @@ export type Database = {
           estoque_disponivel: number
           familia: string | null
           fase: string | null
-          grupo: string
-          grupo_id: string
+          grupo: string | null
+          grupo_id: string | null
           id: string
           is_vela_numerica: boolean
           largura_cm: number
@@ -1975,7 +1975,7 @@ export type Database = {
           meta_descricao: string | null
           multiplos: number
           ncm: string | null
-          nome_comercial: string
+          nome_comercial: string | null
           nome_completo: string | null
           numero_vela: number | null
           origem_fisc: string | null
@@ -1999,13 +1999,13 @@ export type Database = {
         Insert: {
           altura_cm?: number
           ativo?: boolean
-          categoria: string
+          categoria?: string | null
           cest?: string | null
           cod_cadastro?: string | null
-          colecao: string
-          colecao_id: string
+          colecao?: string | null
+          colecao_id?: string | null
           cor?: string | null
-          cor_id: string
+          cor_id?: string | null
           cor_nome?: string | null
           created_at?: string
           departamento?: string | null
@@ -2017,8 +2017,8 @@ export type Database = {
           estoque_disponivel?: number
           familia?: string | null
           fase?: string | null
-          grupo: string
-          grupo_id: string
+          grupo?: string | null
+          grupo_id?: string | null
           id?: string
           is_vela_numerica?: boolean
           largura_cm?: number
@@ -2029,7 +2029,7 @@ export type Database = {
           meta_descricao?: string | null
           multiplos?: number
           ncm?: string | null
-          nome_comercial: string
+          nome_comercial?: string | null
           nome_completo?: string | null
           numero_vela?: number | null
           origem_fisc?: string | null
@@ -2053,13 +2053,13 @@ export type Database = {
         Update: {
           altura_cm?: number
           ativo?: boolean
-          categoria?: string
+          categoria?: string | null
           cest?: string | null
           cod_cadastro?: string | null
-          colecao?: string
-          colecao_id?: string
+          colecao?: string | null
+          colecao_id?: string | null
           cor?: string | null
-          cor_id?: string
+          cor_id?: string | null
           cor_nome?: string | null
           created_at?: string
           departamento?: string | null
@@ -2071,8 +2071,8 @@ export type Database = {
           estoque_disponivel?: number
           familia?: string | null
           fase?: string | null
-          grupo?: string
-          grupo_id?: string
+          grupo?: string | null
+          grupo_id?: string | null
           id?: string
           is_vela_numerica?: boolean
           largura_cm?: number
@@ -2083,7 +2083,7 @@ export type Database = {
           meta_descricao?: string | null
           multiplos?: number
           ncm?: string | null
-          nome_comercial?: string
+          nome_comercial?: string | null
           nome_completo?: string | null
           numero_vela?: number | null
           origem_fisc?: string | null
