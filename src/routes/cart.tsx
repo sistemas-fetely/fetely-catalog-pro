@@ -428,6 +428,10 @@ function CartPage() {
       acrescimoIsentoIEAplicado: !!c.acrescimoIsentoIEAplicado,
       bonificado: !!commercial.bonificado,
       motivoBonificacao: commercial.motivoBonificacao,
+      naturezaOperacao: commercial.naturezaOperacao ?? "venda",
+      campanha: commercial.campanha,
+      entregaB2C: !!commercial.entregaB2C,
+      cfop: commercial.cfop,
     };
 
     setSalvandoPedido(true);
