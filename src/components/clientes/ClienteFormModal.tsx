@@ -155,6 +155,9 @@ export function ClienteFormModal({
       setJustificativa("");
       setMigracaoEnviada(false);
       setTagInput("");
+      setCpfErro(null);
+      setCpfDuplicado(null);
+      setCepErro(null);
     }
   }, [open, initial, user, profile]);
 
@@ -171,7 +174,8 @@ export function ClienteFormModal({
   // cliente existe na base (e de quem é a carteira), sem esperar o botão buscar.
   const cnpjDigitsAtual = onlyDigits(cliente.cnpjFormatado || cliente.cnpj);
   useEffect(() => {
-    if (!open || cliente.isInternacional) return;
+    // Pessoa física não passa pela checagem de CNPJ/carteira.
+    if (!open || cliente.isInternacional || ehPF) return;
     if (cnpjDigitsAtual.length !== 14) return;
     if (initial && onlyDigits(initial.cnpj) === cnpjDigitsAtual) return;
     let cancelado = false;
