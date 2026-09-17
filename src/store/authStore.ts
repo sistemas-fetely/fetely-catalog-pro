@@ -86,6 +86,7 @@ export const useAuth = create<AuthState>((set, get) => ({
       // Logout REAL só no SIGNED_OUT. Blip de rede transiente não emite esse
       // evento — o autoRefreshToken renova sozinho e segura a sessão.
       if (event === "SIGNED_OUT") {
+        setQuantidadeLivre(false);
         set({ session: null, user: null, profile: null, roles: [], loading: false });
         return;
       }
@@ -127,6 +128,7 @@ export const useAuth = create<AuthState>((set, get) => ({
         }, 0);
       } else {
         // INITIAL_SESSION sem sessão persistida = visitante.
+        setQuantidadeLivre(false);
         set({ session: null, user: null, profile: null, roles: [], loading: false });
       }
     });
@@ -173,6 +175,7 @@ export const useAuth = create<AuthState>((set, get) => ({
 
   signOut: async () => {
     await supabase.auth.signOut();
+    setQuantidadeLivre(false);
     set({ session: null, user: null, profile: null, roles: [] });
     // limpa permissões hidratadas
     const { usePermissoesStore } = await import("@/store/permissoesStore");
