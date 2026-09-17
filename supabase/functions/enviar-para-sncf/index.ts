@@ -445,14 +445,15 @@ Deno.serve(async (req) => {
       itens_json: itens,
 
       // CRÍTICO — resolve o problema do nome no SNCF
-      razao_social: c.razao_social ?? snap.razaoSocial ?? null,
+      razao_social:
+        (ehPF ? c.nome_completo_pf : null) ?? c.razao_social ?? snap.razaoSocial ?? null,
       cidade: c.cidade ?? snap.cidade ?? null,
       uf: c.estado ?? snap.estado ?? null,
 
       // Recomendados/opcionais — cadastro completo de uma vez
       nome_fantasia: c.nome_fantasia ?? snap.nomeFantasia ?? null,
-      inscricao_estadual: c.inscricao_estadual ?? null,
-      isento_ie: typeof c.isento_ie === "boolean" ? c.isento_ie : null,
+      inscricao_estadual: ehPF ? "ISENTO" : (c.inscricao_estadual ?? null),
+      isento_ie: ehPF ? true : (typeof c.isento_ie === "boolean" ? c.isento_ie : null),
       situacao_cadastral: c.situacao_cadastral ?? null,
       cep: c.cep ?? null,
       logradouro: c.logradouro ?? null,
