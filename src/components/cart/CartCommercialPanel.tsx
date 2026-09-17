@@ -23,6 +23,7 @@ import { useOrder } from "@/store/orderStore";
 import { useClientes } from "@/store/clienteStore";
 import { useAuth } from "@/store/authStore";
 import { getPremissasVigentes } from "@/lib/premissas";
+import { NATUREZA_LABEL, cfopDe, type NaturezaOperacao } from "@/lib/fiscal";
 
 
 export interface CommercialState {
@@ -36,6 +37,11 @@ export interface CommercialState {
   podeSalvarCotacao: boolean;
   bonificado?: boolean;
   motivoBonificacao?: string;
+  /** Natureza da operação — venda ou remessa/brinde (sem cobrança). */
+  naturezaOperacao?: NaturezaOperacao;
+  campanha?: string;
+  entregaB2C?: boolean;
+  cfop?: string;
 }
 
 export function CartCommercialPanel({
