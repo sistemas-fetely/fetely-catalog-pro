@@ -16,6 +16,7 @@ interface ClienteState {
   deleteCliente: (id: string) => Promise<void>;
   setAtivo: (id: string, ativo: boolean) => Promise<void>;
   findByCnpj: (cnpjDigits: string) => Cliente | undefined;
+  findByCpf: (cpfDigits: string) => Cliente | undefined;
   getById: (id: string) => Cliente | undefined;
 }
 
@@ -28,6 +29,15 @@ export function rowToCliente(row: Record<string, unknown>): Cliente {
     atualizadoEm: row.atualizado_em as string,
     cadastradoPorVendedorId: row.cadastrado_por_vendedor_id as string,
     cadastradoPorVendedorNome: row.cadastrado_por_vendedor_nome as string,
+    tipoPessoa: ((row.tipo_pessoa as string) === "PF" ? "PF" : "PJ") as Cliente["tipoPessoa"],
+    cpf: (row.cpf as string | null) ?? undefined,
+    cpfFormatado: (row.cpf_formatado as string | null) ?? undefined,
+    nomeCompletoPF: (row.nome_completo_pf as string | null) ?? undefined,
+    dataNascimento: (row.data_nascimento as string | null) ?? undefined,
+    pontoReferencia: (row.ponto_referencia as string | null) ?? undefined,
+    tipoEndereco: (row.tipo_endereco as Cliente["tipoEndereco"]) ?? undefined,
+    observacaoEntrega: (row.observacao_entrega as string | null) ?? undefined,
+    socialHandle: (row.social_handle as string | null) ?? undefined,
     cnpj: (row.cnpj as string) ?? "",
     cnpjFormatado: (row.cnpj_formatado as string) ?? "",
     razaoSocial: (row.razao_social as string) ?? "",
@@ -79,6 +89,15 @@ export function clienteToRow(c: Cliente): Record<string, unknown> {
     atualizado_em: c.atualizadoEm,
     cadastrado_por_vendedor_id: c.cadastradoPorVendedorId,
     cadastrado_por_vendedor_nome: c.cadastradoPorVendedorNome,
+    tipo_pessoa: c.tipoPessoa === "PF" ? "PF" : "PJ",
+    cpf: c.cpf?.trim() ? c.cpf : null,
+    cpf_formatado: c.cpfFormatado?.trim() ? c.cpfFormatado : null,
+    nome_completo_pf: c.nomeCompletoPF ?? null,
+    data_nascimento: c.dataNascimento?.trim() ? c.dataNascimento : null,
+    ponto_referencia: c.pontoReferencia ?? null,
+    tipo_endereco: c.tipoEndereco ?? null,
+    observacao_entrega: c.observacaoEntrega ?? null,
+    social_handle: c.socialHandle ?? null,
     cnpj: c.cnpj,
     cnpj_formatado: c.cnpjFormatado,
     razao_social: c.razaoSocial,
@@ -150,10 +169,17 @@ export const useClientes = create<ClienteState>()(
             "Sessão não está pronta. Atualize a página antes de cadastrar o cliente.",
           );
         }
-        if (!c.razaoSocial) {
+        const ehPF = c.tipoPessoa === "PF";
+        if (ehPF && !(c.nomeCompletoPF ?? "").trim()) {
+          throw new Error("Informe o nome completo da pessoa física.");
+        }
+        if (ehPF && !c.cpf) {
+          throw new Error("Informe o CPF.");
+        }
+        if (!ehPF && !c.razaoSocial) {
           throw new Error("Razão social é obrigatória.");
         }
-        if (!c.isInternacional && !c.cnpj) {
+        if (!ehPF && !c.isInternacional && !c.cnpj) {
           throw new Error("CNPJ é obrigatório (ou marque como cliente internacional).");
         }
         if (c.isInternacional && !c.documentoNumero) {
@@ -238,6 +264,8 @@ export const useClientes = create<ClienteState>()(
       },
       findByCnpj: (cnpjDigits) =>
         get().clientes.find((c) => c.cnpj === cnpjDigits && c.cnpj !== ""),
+      findByCpf: (cpfDigits) =>
+        get().clientes.find((c) => (c.cpf ?? "") === cpfDigits && !!cpfDigits),
       getById: (id) => get().clientes.find((c) => c.id === id),
     }),
     {
@@ -269,6 +297,26 @@ export function isRepresentanteAtual(): boolean {
   const { profile, roles } = useAuth.getState();
   if (roles.includes("admin") || roles.includes("master")) return false;
   return profile?.tipo_vendedor === "representante";
+}
+
+/** Busca cadastro existente pelo CPF (base completa, não só o que está em memória). */
+export async function checkCpfExistente(cpf: string): Promise<Cliente | null> {
+  const d = (cpf ?? "").replace(/\D/g, "");
+  if (d.length !== 11) return null;
+  const local = useClientes.getState().findByCpf(d);
+  if (local) return local;
+  try {
+    const { data, error } = await supabase
+      .from("clientes")
+      .select("*")
+      .eq("cpf", d)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? rowToCliente(data as Record<string, unknown>) : null;
+  } catch (err) {
+    console.error("[clienteStore] checkCpfExistente falhou:", err);
+    return null;
+  }
 }
 
 export interface CnpjOwnership {

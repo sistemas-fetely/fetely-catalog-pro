@@ -23,6 +23,7 @@ import { useOrder } from "@/store/orderStore";
 import { useClientes } from "@/store/clienteStore";
 import { useAuth } from "@/store/authStore";
 import { getPremissasVigentes } from "@/lib/premissas";
+import { NATUREZA_LABEL, cfopDe, type NaturezaOperacao } from "@/lib/fiscal";
 
 
 export interface CommercialState {
@@ -36,6 +37,11 @@ export interface CommercialState {
   podeSalvarCotacao: boolean;
   bonificado?: boolean;
   motivoBonificacao?: string;
+  /** Natureza da operação — venda ou remessa/brinde (sem cobrança). */
+  naturezaOperacao?: NaturezaOperacao;
+  campanha?: string;
+  entregaB2C?: boolean;
+  cfop?: string;
 }
 
 export function CartCommercialPanel({
@@ -90,10 +96,15 @@ export function CartCommercialPanel({
   const isRepresentante = !roles.includes("admin") && !roles.includes("master");
   const tetoDesconto = isRepresentante ? DESCONTO_REP_MAX : DESCONTO_MASTER_MAX;
   const descontoPctEfetivo = Math.min(descontoPct, tetoDesconto);
-  const [bonificado, setBonificado] = useState(false);
+  const [bonificadoManual, setBonificadoManual] = useState(false);
   const [motivoBonif, setMotivoBonif] = useState<string>("");
   const [motivoOutroTxt, setMotivoOutroTxt] = useState<string>("");
-  useEffect(() => { if (!canBonificar && bonificado) setBonificado(false); }, [canBonificar, bonificado]);
+  useEffect(() => {
+    if (!canBonificar && bonificadoManual) setBonificadoManual(false);
+  }, [canBonificar, bonificadoManual]);
+  // Natureza da operação (venda / remessa-brinde) e campanha vinculada
+  const [naturezaManual, setNaturezaManual] = useState<NaturezaOperacao | null>(null);
+  const [campanha, setCampanha] = useState("");
 
   // Tabela de frete FOB por UF: sincroniza com o banco (fonte oficial) e
   // re-renderiza para o cálculo refletir eventuais atualizações do admin.
@@ -120,6 +131,17 @@ export function CartCommercialPanel({
     }
     return metaUf ? metaUf.toUpperCase() : undefined;
   }, [cliente, metaUf]);
+
+  // Destinatário pessoa física → entrega B2C e natureza padrão "remessa/brinde"
+  const ehPFDestino = (cliente?.tipoPessoa ?? "PJ") === "PF";
+  const naturezaOperacao: NaturezaOperacao =
+    naturezaManual ?? (ehPFDestino ? "remessa_brinde" : "venda");
+  const ehRemessa = naturezaOperacao === "remessa_brinde";
+  const cfop = cfopDe(naturezaOperacao, ufDestino);
+  // Remessa/brinde não gera cobrança: segue a mesma trilha do pedido bonificado
+  // (sem pedido mínimo, sem meta/pace/comissão).
+  const bonificado = bonificadoManual || ehRemessa;
+
 
   // Faixa atual — faixa fixa do cliente tem prioridade
   const faixa = useMemo(() => {
@@ -246,7 +268,10 @@ export function CartCommercialPanel({
   const negociacaoSemJustificativa =
     ativo && (descontoPct > 0 || abaixoDoMinimoLiberado) && !justificativa;
 
-  const bonificadoSemMotivo = bonificado && !motivoBonificacaoFinal;
+  // Remessa/brinde já explica a si mesma: motivo assumido como marketing.
+  const motivoBonifEfetivo =
+    motivoBonificacaoFinal || (ehRemessa ? "marketing" : "");
+  const bonificadoSemMotivo = bonificado && !motivoBonifEfetivo;
 
   const podeFinalizar =
     !!calculo.faixa && !!condicao && !negociacaoSemJustificativa && !bonificadoSemMotivo;
@@ -271,9 +296,13 @@ export function CartCommercialPanel({
       condicaoCotacao,
       podeSalvarCotacao,
       bonificado,
-      motivoBonificacao: bonificado ? motivoBonificacaoFinal : undefined,
+      motivoBonificacao: bonificado ? motivoBonifEfetivo : undefined,
+      naturezaOperacao,
+      campanha: campanha.trim() || undefined,
+      entregaB2C: ehPFDestino,
+      cfop,
     });
-  }, [calculo, condicao, podeFinalizar, motivoBloqueio, onChange, bonificado, motivoBonificacaoFinal, calculoCotacao, condicaoCotacao, podeSalvarCotacao]);
+  }, [calculo, condicao, podeFinalizar, motivoBloqueio, onChange, bonificado, motivoBonifEfetivo, calculoCotacao, condicaoCotacao, podeSalvarCotacao, naturezaOperacao, campanha, ehPFDestino, cfop]);
 
   const prox = premissas?.temFaixaFixa ? null : proximaFaixa(faixa);
   const faltaProx = prox ? prox.valorMin - bruto : 0;
@@ -562,12 +591,45 @@ export function CartCommercialPanel({
               valor={aplicarIsentoIE ? `+ ${formatBRL(calculo.acrescimoIsentoIEValor ?? 0)}` : undefined}
             />
 
+            {/* Natureza da operação */}
+            <div className="space-y-2">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-text-muted">
+                Natureza da operação *
+              </div>
+              <select
+                value={naturezaOperacao}
+                onChange={(e) => setNaturezaManual(e.target.value as NaturezaOperacao)}
+                className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+              >
+                {(Object.keys(NATUREZA_LABEL) as NaturezaOperacao[]).map((n) => (
+                  <option key={n} value={n}>
+                    {NATUREZA_LABEL[n]}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                value={campanha}
+                onChange={(e) => setCampanha(e.target.value)}
+                placeholder="Campanha / ação (opcional)"
+                maxLength={120}
+                className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+              />
+              <p className="text-[11px] text-text-muted">
+                {ehRemessa
+                  ? "Remessa/brinde: sem cobrança ao cliente e fora das metas de faturamento. Valores unitários ficam apenas como referência fiscal."
+                  : "Venda normal com cobrança ao cliente."}
+                {" "}CFOP {cfop}.
+                {ehPFDestino ? " Destinatário pessoa física (entrega B2C)." : ""}
+              </p>
+            </div>
+
             {/* Bonificado */}
             {canBonificar && (
               <div className="space-y-2">
                 <Toggle
                   checked={bonificado}
-                  onChange={setBonificado}
+                  onChange={setBonificadoManual}
                   label="Pedido bonificado"
                   hint="Ignora mínimo. Não conta em meta, pace nem comissão."
                   icon={<Gift className="h-3.5 w-3.5 text-purple-300" />}

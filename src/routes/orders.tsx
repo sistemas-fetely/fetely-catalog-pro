@@ -33,6 +33,8 @@ export const Route = createFileRoute("/orders")({
 function OrdersPage() {
   const [showReprovados, setShowReprovados] = useState(false);
   const [bonificadoOnly, setBonificadoOnly] = useState(false);
+  const [b2cOnly, setB2cOnly] = useState(false);
+  const [naturezaFilter, setNaturezaFilter] = useState<"all" | "venda" | "remessa_brinde">("all");
   const history = useVisibleOrders({ includeReprovados: showReprovados });
   const isAdmin = useAuth((s) => s.roles.includes("admin"));
   const isMaster = useAuth((s) => s.roles.includes("master"));
@@ -114,6 +116,12 @@ function OrdersPage() {
     return history.filter((o) => {
       if (vendedorFilter !== "all" && o.vendedorId !== vendedorFilter) return false;
       if (bonificadoOnly && !o.bonificado) return false;
+      if (b2cOnly && !o.entregaB2C) return false;
+      if (
+        naturezaFilter !== "all" &&
+        (o.naturezaOperacao ?? "venda") !== naturezaFilter
+      )
+        return false;
       if (!q) return true;
       return (
         o.id.toLowerCase().includes(q) ||
@@ -122,7 +130,7 @@ function OrdersPage() {
         (o.vendedorNome ?? "").toLowerCase().includes(q)
       );
     });
-  }, [history, query, vendedorFilter, bonificadoOnly]);
+  }, [history, query, vendedorFilter, bonificadoOnly, b2cOnly, naturezaFilter]);
 
   return (
     <main className="mx-auto max-w-6xl px-3 py-6 sm:px-6 sm:py-12">
@@ -206,6 +214,30 @@ function OrdersPage() {
           >
             ✨ Bonificados
           </button>
+          <button
+            type="button"
+            onClick={() => setB2cOnly((v) => !v)}
+            className={`rounded-md border px-3 py-2 text-[11px] uppercase tracking-wider transition ${
+              b2cOnly
+                ? "border-gold/50 bg-gold/10 text-gold"
+                : "border-border text-text-secondary hover:text-text-primary"
+            }`}
+            title="Mostrar apenas entregas para pessoa física (B2C)"
+          >
+            Entrega B2C
+          </button>
+          <select
+            value={naturezaFilter}
+            onChange={(e) =>
+              setNaturezaFilter(e.target.value as "all" | "venda" | "remessa_brinde")
+            }
+            className="rounded-md gold-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gold flex-1 sm:flex-initial min-w-0"
+            title="Natureza da operação"
+          >
+            <option value="all">Toda natureza</option>
+            <option value="venda">Venda</option>
+            <option value="remessa_brinde">Remessa/Brinde</option>
+          </select>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}

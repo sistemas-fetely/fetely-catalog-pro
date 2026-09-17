@@ -166,6 +166,15 @@ export interface OrderCommercial {
   bonificado?: boolean;
   /** Motivo da bonificação (amostra, brinde, compensacao, marketing, outro:texto) */
   motivoBonificacao?: string;
+
+  /** Natureza da operação — venda ou remessa/brinde (sem cobrança ao cliente). */
+  naturezaOperacao?: import("@/lib/fiscal").NaturezaOperacao;
+  /** Campanha / ação vinculada (texto livre). */
+  campanha?: string;
+  /** Entrega para consumidor final pessoa física. */
+  entregaB2C?: boolean;
+  /** CFOP registrado (não calcula imposto — apenas registra). */
+  cfop?: string;
 }
 
 export type StatusPedido =
@@ -238,6 +247,14 @@ export interface SavedOrder {
   /** Totais persistidos na linha do pedido (permitem exibir a lista antes de carregar os itens). */
   totalUnidades?: number | null;
   totalSkus?: number | null;
+  /** Natureza da operação — venda ou remessa/brinde (sem cobrança). */
+  naturezaOperacao?: import("@/lib/fiscal").NaturezaOperacao;
+  /** Campanha / ação de marketing vinculada (texto livre). */
+  campanha?: string | null;
+  /** Entrega para consumidor final (pessoa física) — filtro interno. */
+  entregaB2C?: boolean;
+  /** CFOP registrado conforme natureza e UF de destino. */
+  cfop?: string | null;
 }
 
 

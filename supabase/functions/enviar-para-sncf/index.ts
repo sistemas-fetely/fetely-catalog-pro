@@ -311,11 +311,16 @@ Deno.serve(async (req) => {
     const c: any = clienteFull ?? {};
     const snap: any = clienteSnapshot ?? {};
 
+    // Pessoa física (remessa/brinde para influenciadores): CPF no lugar do CNPJ.
+    const ehPF = c?.tipo_pessoa === "PF" || (pedido as any).entrega_b2c === true;
+    const cpf = ehPF ? (c?.cpf ?? null) : null;
     // CNPJ: snapshot primeiro, cadastro como fallback.
-    const cnpj = snap?.cnpj ?? c?.cnpj ?? null;
-    if (!cnpj) {
+    const cnpj = ehPF ? null : (snap?.cnpj ?? c?.cnpj ?? null);
+    if (!cnpj && !cpf) {
       return jsonResponse(400, {
-        error: "Pedido sem CNPJ: nem o snapshot nem o cadastro do cliente têm CNPJ.",
+        error: ehPF
+          ? "Pedido de pessoa física sem CPF no cadastro do cliente."
+          : "Pedido sem CNPJ: nem o snapshot nem o cadastro do cliente têm CNPJ.",
       });
     }
 
@@ -414,6 +419,15 @@ Deno.serve(async (req) => {
     const payloadBase: Record<string, unknown> = {
       // Obrigatórios (já enviados hoje)
       cnpj,
+      // Destinatário pessoa física (remessa/brinde, ações de marketing)
+      tipo_pessoa: ehPF ? "PF" : "PJ",
+      cpf,
+      consumidor_final: ehPF,
+      natureza_operacao:
+        (pedido as any).natureza_operacao ?? (ehPF ? "remessa_brinde" : "venda"),
+      cfop: (pedido as any).cfop ?? null,
+      campanha: (pedido as any).campanha ?? null,
+      entrega_b2c: (pedido as any).entrega_b2c === true,
       id_externo: pedido.id,
       data_pedido: pedido.created_at.split("T")[0],
       valor_bruto: pedido.valor_bruto ?? pedido.total,
@@ -431,14 +445,15 @@ Deno.serve(async (req) => {
       itens_json: itens,
 
       // CRÍTICO — resolve o problema do nome no SNCF
-      razao_social: c.razao_social ?? snap.razaoSocial ?? null,
+      razao_social:
+        (ehPF ? c.nome_completo_pf : null) ?? c.razao_social ?? snap.razaoSocial ?? null,
       cidade: c.cidade ?? snap.cidade ?? null,
       uf: c.estado ?? snap.estado ?? null,
 
       // Recomendados/opcionais — cadastro completo de uma vez
       nome_fantasia: c.nome_fantasia ?? snap.nomeFantasia ?? null,
-      inscricao_estadual: c.inscricao_estadual ?? null,
-      isento_ie: typeof c.isento_ie === "boolean" ? c.isento_ie : null,
+      inscricao_estadual: ehPF ? "ISENTO" : (c.inscricao_estadual ?? null),
+      isento_ie: ehPF ? true : (typeof c.isento_ie === "boolean" ? c.isento_ie : null),
       situacao_cadastral: c.situacao_cadastral ?? null,
       cep: c.cep ?? null,
       logradouro: c.logradouro ?? null,

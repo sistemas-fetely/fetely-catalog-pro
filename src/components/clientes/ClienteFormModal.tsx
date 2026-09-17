@@ -5,10 +5,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { fetchCNPJ, formatCNPJ, isValidCNPJLength, onlyDigits } from "@/lib/cnpj";
+import { formatCEP, formatCPF, fetchCEP, isValidCPF } from "@/lib/documento";
 import {
   useClientes,
   isRepresentanteAtual,
   checkCnpjOwnership,
+  checkCpfExistente,
   solicitarMigracaoCnpj,
   listVendedoresCarteira,
   type VendedorCarteira,
@@ -22,11 +24,14 @@ import {
   DOCUMENTO_TIPOS,
   PAISES_LIST,
   SEGMENTO_LABEL,
+  TIPO_ENDERECO_LABEL,
   UF_LIST,
   type CanalCliente,
   type Cliente,
   type SegmentoCliente,
   type SituacaoCadastral,
+  type TipoEndereco,
+  type TipoPessoa,
 } from "@/types/cliente";
 
 function emptyCliente(vendedorId: string, vendedorNome: string): Cliente {
@@ -37,6 +42,15 @@ function emptyCliente(vendedorId: string, vendedorNome: string): Cliente {
     atualizadoEm: now,
     cadastradoPorVendedorId: vendedorId,
     cadastradoPorVendedorNome: vendedorNome,
+    tipoPessoa: "PJ",
+    cpf: "",
+    cpfFormatado: "",
+    nomeCompletoPF: "",
+    dataNascimento: "",
+    pontoReferencia: "",
+    tipoEndereco: "casa",
+    observacaoEntrega: "",
+    socialHandle: "",
     cnpj: "",
     cnpjFormatado: "",
     razaoSocial: "",
@@ -118,6 +132,12 @@ export function ClienteFormModal({
   const [enviandoMigracao, setEnviandoMigracao] = useState(false);
   const [migracaoEnviada, setMigracaoEnviada] = useState(false);
   const [checandoCnpj, setChecandoCnpj] = useState(false);
+  // Pessoa física
+  const ehPF = (cliente.tipoPessoa ?? "PJ") === "PF";
+  const [cpfErro, setCpfErro] = useState<string | null>(null);
+  const [cpfDuplicado, setCpfDuplicado] = useState<Cliente | null>(null);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepErro, setCepErro] = useState<string | null>(null);
   // Direcionamento de carteira (só admin/master/interno)
   const podeDirecionar = !repAtual;
   const [vendedores, setVendedores] = useState<VendedorCarteira[]>([]);
@@ -135,6 +155,9 @@ export function ClienteFormModal({
       setJustificativa("");
       setMigracaoEnviada(false);
       setTagInput("");
+      setCpfErro(null);
+      setCpfDuplicado(null);
+      setCepErro(null);
     }
   }, [open, initial, user, profile]);
 
@@ -151,7 +174,8 @@ export function ClienteFormModal({
   // cliente existe na base (e de quem é a carteira), sem esperar o botão buscar.
   const cnpjDigitsAtual = onlyDigits(cliente.cnpjFormatado || cliente.cnpj);
   useEffect(() => {
-    if (!open || cliente.isInternacional) return;
+    // Pessoa física não passa pela checagem de CNPJ/carteira.
+    if (!open || cliente.isInternacional || ehPF) return;
     if (cnpjDigitsAtual.length !== 14) return;
     if (initial && onlyDigits(initial.cnpj) === cnpjDigitsAtual) return;
     let cancelado = false;
@@ -169,7 +193,61 @@ export function ClienteFormModal({
       setChecandoCnpj(false);
       clearTimeout(t);
     };
-  }, [open, cnpjDigitsAtual, cliente.isInternacional, cliente.id, initial]);
+  }, [open, cnpjDigitsAtual, cliente.isInternacional, cliente.id, initial, ehPF]);
+
+  // Pessoa física: valida o dígito verificador do CPF e avisa se já existe cadastro.
+  const cpfDigitsAtual = (cliente.cpf ?? "").replace(/\D/g, "");
+  useEffect(() => {
+    if (!open || !ehPF) return;
+    setCpfDuplicado(null);
+    if (cpfDigitsAtual.length === 0) {
+      setCpfErro(null);
+      return;
+    }
+    if (cpfDigitsAtual.length < 11) {
+      setCpfErro(null);
+      return;
+    }
+    if (!isValidCPF(cpfDigitsAtual)) {
+      setCpfErro("CPF inválido — confira os números digitados.");
+      return;
+    }
+    setCpfErro(null);
+    let cancelado = false;
+    const t = setTimeout(async () => {
+      const achado = await checkCpfExistente(cpfDigitsAtual);
+      if (cancelado) return;
+      if (achado && achado.id !== cliente.id) setCpfDuplicado(achado);
+    }, 400);
+    return () => {
+      cancelado = true;
+      clearTimeout(t);
+    };
+  }, [open, ehPF, cpfDigitsAtual, cliente.id]);
+
+  // Busca automática de endereço pelo CEP (ViaCEP) — só no modo pessoa física.
+  const buscarCep = async (cepValor: string) => {
+    setCepErro(null);
+    setCepLoading(true);
+    try {
+      const r = await fetchCEP(cepValor);
+      setCliente((c) => ({
+        ...c,
+        cep: r.cep,
+        logradouro: r.logradouro || c.logradouro,
+        bairro: r.bairro || c.bairro,
+        cidade: r.cidade || c.cidade,
+        estado: r.uf || c.estado,
+      }));
+    } catch (err) {
+      setCepErro(
+        err instanceof Error ? err.message : "Não foi possível consultar o CEP.",
+      );
+    } finally {
+      setCepLoading(false);
+    }
+  };
+
 
 
   const handleCnpjLookup = async () => {
@@ -241,6 +319,21 @@ export function ClienteFormModal({
 
 
   const podeSalvar = useMemo(() => {
+    if (ehPF) {
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((cliente.contatoEmail ?? "").trim());
+      return Boolean(
+        (cliente.nomeCompletoPF ?? "").trim() &&
+          isValidCPF(cliente.cpf ?? "") &&
+          emailOk &&
+          (cliente.contatoTelefone ?? "").trim() &&
+          (cliente.cep ?? "").replace(/\D/g, "").length === 8 &&
+          (cliente.logradouro ?? "").trim() &&
+          (cliente.numero ?? "").trim() &&
+          (cliente.cidade ?? "").trim() &&
+          (cliente.estado ?? "").trim() &&
+          cliente.tipoEndereco,
+      );
+    }
     const base =
       cliente.razaoSocial.trim().length > 0 &&
       cliente.contatoNome.trim().length > 0 &&
@@ -256,10 +349,18 @@ export function ClienteFormModal({
       return Boolean(cliente.pais && cliente.documentoNumero?.trim());
     }
     return true;
-  }, [cliente]);
+  }, [cliente, ehPF]);
 
   const handleSave = async () => {
     if (!podeSalvar) {
+      if (ehPF) {
+        toast.error(
+          !isValidCPF(cliente.cpf ?? "")
+            ? "CPF inválido — confira os números digitados."
+            : "Preencha nome completo, CPF, e-mail, telefone, CEP, número, cidade/UF e tipo de endereço.",
+        );
+        return;
+      }
       const ieFaltando =
         !cliente.isInternacional &&
         !(cliente.isentoIE ?? false) &&
@@ -318,8 +419,31 @@ export function ClienteFormModal({
         };
       }
     }
+    // Pessoa física: CPF único na base.
+    if (ehPF) {
+      const achado = cpfDuplicado ?? (await checkCpfExistente(cliente.cpf ?? ""));
+      if (achado && achado.id !== cliente.id) {
+        setCpfDuplicado(achado);
+        toast.error("Este CPF já está cadastrado. Use o cadastro existente.");
+        return;
+      }
+    }
+
+    const nomePF = (cliente.nomeCompletoPF ?? "").trim();
     const saved: Cliente = {
       ...cliente,
+      ...(ehPF
+        ? {
+            cnpj: "",
+            cnpjFormatado: "",
+            razaoSocial: nomePF,
+            nomeFantasia: nomePF,
+            inscricaoEstadual: "ISENTO",
+            isentoIE: true,
+            contatoNome: (cliente.contatoNome ?? "").trim() || nomePF,
+            situacaoCadastral: "desconhecida" as const,
+          }
+        : {}),
       premissasComerciais,
       atualizadoEm: new Date().toISOString(),
     };
@@ -367,7 +491,57 @@ export function ClienteFormModal({
 
           {/* FISCAL */}
           <TabsContent value="fiscal" className="space-y-3 pt-2">
-            {!cliente.isInternacional ? (
+            {/* Tipo de pessoa — define quais campos fiscais aparecem */}
+            <div className="rounded-md border border-border bg-surface-2 p-2">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-text-muted mb-2">
+                Tipo de cadastro
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {(["PJ", "PF"] as TipoPessoa[]).map((tp) => (
+                  <button
+                    key={tp}
+                    type="button"
+                    onClick={() => {
+                      if ((cliente.tipoPessoa ?? "PJ") === tp) return;
+                      update({
+                        tipoPessoa: tp,
+                        ...(tp === "PF"
+                          ? {
+                              cnpj: "",
+                              cnpjFormatado: "",
+                              isInternacional: false,
+                              situacaoCadastral: "desconhecida" as const,
+                              inscricaoEstadual: "ISENTO",
+                              isentoIE: true,
+                              tipoEndereco: cliente.tipoEndereco ?? ("casa" as const),
+                            }
+                          : {
+                              cpf: "",
+                              cpfFormatado: "",
+                              nomeCompletoPF: "",
+                              inscricaoEstadual: "",
+                              isentoIE: false,
+                            }),
+                      });
+                      setCnpjError(null);
+                      setDuplicateWarn(null);
+                      setBloqueio(null);
+                      setCpfErro(null);
+                      setCpfDuplicado(null);
+                    }}
+                    className={`rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wider border transition-colors ${
+                      (cliente.tipoPessoa ?? "PJ") === tp
+                        ? "border-gold bg-gold/10 text-gold"
+                        : "border-border bg-surface text-text-secondary hover:border-gold/50"
+                    }`}
+                  >
+                    {tp === "PJ" ? "Pessoa Jurídica" : "Pessoa Física"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {!ehPF && !cliente.isInternacional ? (
               <Field label="CNPJ">
                 <div className="flex gap-2">
                   <input
@@ -466,7 +640,7 @@ export function ClienteFormModal({
             ) : null}
 
             {/* V15.1 — Toggle Cliente Internacional (só antes do CNPJ ser buscado/preenchido) */}
-            {!cliente.cnpj && (
+            {!ehPF && !cliente.cnpj && (
               <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -487,7 +661,7 @@ export function ClienteFormModal({
               </label>
             )}
 
-            {cliente.isInternacional && (
+            {!ehPF && cliente.isInternacional && (
               <div className="space-y-3 p-3 rounded-md border border-gold/30 bg-gold/5">
                 <Field label="País *">
                   <select
@@ -531,42 +705,275 @@ export function ClienteFormModal({
               </div>
             )}
 
-            <Field label="Razão Social *">
-              <input
-                className="input"
-                value={cliente.razaoSocial}
-                onChange={(e) => update({ razaoSocial: e.target.value })}
-              />
-            </Field>
-            <Field label="Nome Fantasia">
-              <input
-                className="input"
-                value={cliente.nomeFantasia}
-                onChange={(e) => update({ nomeFantasia: e.target.value })}
-              />
-            </Field>
-            <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
-              <Field label="Inscrição Estadual *">
-                <input
-                  className="input"
-                  value={cliente.inscricaoEstadual ?? ""}
-                  disabled={cliente.isentoIE}
-                  onChange={(e) => update({ inscricaoEstadual: e.target.value })}
-                />
-              </Field>
-              <label className="flex items-center gap-2 text-xs text-text-secondary pb-2">
-                <input
-                  type="checkbox"
-                  checked={cliente.isentoIE ?? false}
-                  onChange={(e) => update({ isentoIE: e.target.checked })}
-                />
-                Isento
-              </label>
-            </div>
-            <p className="text-[11px] text-text-muted">
-              Informe o número da Inscrição Estadual ou marque <strong>Isento</strong>. Clientes
-              isentos recebem acréscimo de 15% na composição do preço final do pedido.
-            </p>
+            {!ehPF && (
+              <>
+                <Field label="Razão Social *">
+                  <input
+                    className="input"
+                    value={cliente.razaoSocial}
+                    onChange={(e) => update({ razaoSocial: e.target.value })}
+                  />
+                </Field>
+                <Field label="Nome Fantasia">
+                  <input
+                    className="input"
+                    value={cliente.nomeFantasia}
+                    onChange={(e) => update({ nomeFantasia: e.target.value })}
+                  />
+                </Field>
+                <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
+                  <Field label="Inscrição Estadual *">
+                    <input
+                      className="input"
+                      value={cliente.inscricaoEstadual ?? ""}
+                      disabled={cliente.isentoIE}
+                      onChange={(e) => update({ inscricaoEstadual: e.target.value })}
+                    />
+                  </Field>
+                  <label className="flex items-center gap-2 text-xs text-text-secondary pb-2">
+                    <input
+                      type="checkbox"
+                      checked={cliente.isentoIE ?? false}
+                      onChange={(e) => update({ isentoIE: e.target.checked })}
+                    />
+                    Isento
+                  </label>
+                </div>
+                <p className="text-[11px] text-text-muted">
+                  Informe o número da Inscrição Estadual ou marque <strong>Isento</strong>.
+                  Clientes isentos recebem acréscimo de 15% na composição do preço final do
+                  pedido.
+                </p>
+              </>
+            )}
+
+            {ehPF && (
+              <div className="space-y-3">
+                <Field label="Nome completo (como consta no CPF) *">
+                  <input
+                    className="input"
+                    value={cliente.nomeCompletoPF ?? ""}
+                    onChange={(e) => update({ nomeCompletoPF: e.target.value })}
+                  />
+                </Field>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="CPF *">
+                    <input
+                      className="input"
+                      inputMode="numeric"
+                      maxLength={14}
+                      placeholder="000.000.000-00"
+                      value={cliente.cpfFormatado ?? ""}
+                      onChange={(e) => {
+                        const v = formatCPF(e.target.value);
+                        update({ cpfFormatado: v, cpf: v.replace(/\D/g, "") });
+                      }}
+                    />
+                    {cpfErro && (
+                      <p className="mt-1 text-[11px] text-stock-out">{cpfErro}</p>
+                    )}
+                  </Field>
+                  <Field label="Data de nascimento">
+                    <input
+                      type="date"
+                      className="input"
+                      value={cliente.dataNascimento ?? ""}
+                      onChange={(e) => update({ dataNascimento: e.target.value })}
+                    />
+                  </Field>
+                </div>
+
+                {cpfDuplicado && (
+                  <div className="rounded-md border border-stock-out/50 bg-surface-2 p-3 space-y-2">
+                    <div className="text-[10px] uppercase tracking-[0.2em] text-stock-out">
+                      CPF já cadastrado
+                    </div>
+                    <p className="text-xs text-text-secondary">
+                      Já existe cadastro para{" "}
+                      <span className="text-text-primary">
+                        {cpfDuplicado.nomeCompletoPF || cpfDuplicado.razaoSocial}
+                      </span>
+                      . Use o cadastro existente em vez de criar outro.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCliente(cpfDuplicado);
+                        setCpfDuplicado(null);
+                        toast.success("Cadastro existente carregado para edição.");
+                      }}
+                      className="w-full px-3 py-2 rounded-md bg-gold text-background text-xs font-semibold uppercase tracking-wider hover:bg-gold-light"
+                    >
+                      Usar cadastro existente
+                    </button>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="E-mail (para NF) *">
+                    <input
+                      className="input"
+                      type="email"
+                      value={cliente.contatoEmail}
+                      onChange={(e) => update({ contatoEmail: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Telefone / WhatsApp com DDD *">
+                    <input
+                      className="input"
+                      inputMode="tel"
+                      placeholder="(11) 99999-0000"
+                      value={cliente.contatoTelefone}
+                      onChange={(e) =>
+                        update({ contatoTelefone: e.target.value, contatoWhatsapp: e.target.value })
+                      }
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-3">
+                  <Field label="CEP *">
+                    <div className="flex gap-2">
+                      <input
+                        className="input flex-1"
+                        inputMode="numeric"
+                        maxLength={9}
+                        placeholder="00000-000"
+                        value={formatCEP(cliente.cep ?? "")}
+                        onChange={(e) => {
+                          const v = formatCEP(e.target.value);
+                          update({ cep: v });
+                          setCepErro(null);
+                          if (v.replace(/\D/g, "").length === 8) void buscarCep(v);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        aria-label="Buscar CEP"
+                        onClick={() => void buscarCep(cliente.cep ?? "")}
+                        disabled={cepLoading}
+                        className="px-3 rounded-md bg-surface-2 border border-border text-gold hover:border-gold disabled:opacity-40"
+                      >
+                        {cepLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Search className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                    {cepErro && (
+                      <p className="mt-1 text-[11px] text-stock-out">
+                        {cepErro} Preencha o endereço manualmente.
+                      </p>
+                    )}
+                  </Field>
+                  <Field label="Logradouro *">
+                    <input
+                      className="input"
+                      value={cliente.logradouro}
+                      onChange={(e) => update({ logradouro: e.target.value })}
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Field label="Número *">
+                    <input
+                      className="input"
+                      value={cliente.numero}
+                      onChange={(e) => update({ numero: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Complemento">
+                    <input
+                      className="input"
+                      value={cliente.complemento ?? ""}
+                      onChange={(e) => update({ complemento: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Bairro">
+                    <input
+                      className="input"
+                      value={cliente.bairro}
+                      onChange={(e) => update({ bairro: e.target.value })}
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_100px] gap-3">
+                  <Field label="Cidade *">
+                    <input
+                      className="input"
+                      value={cliente.cidade}
+                      onChange={(e) => update({ cidade: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="UF *">
+                    <select
+                      className="input"
+                      value={cliente.estado}
+                      onChange={(e) => update({ estado: e.target.value })}
+                    >
+                      <option value="">—</option>
+                      {UF_LIST.map((uf) => (
+                        <option key={uf} value={uf}>
+                          {uf}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                <Field label="Ponto de referência">
+                  <input
+                    className="input"
+                    value={cliente.pontoReferencia ?? ""}
+                    onChange={(e) => update({ pontoReferencia: e.target.value })}
+                  />
+                </Field>
+
+                <Field label="Tipo de endereço *">
+                  <select
+                    className="input"
+                    value={cliente.tipoEndereco ?? "casa"}
+                    onChange={(e) =>
+                      update({ tipoEndereco: e.target.value as TipoEndereco })
+                    }
+                  >
+                    {(Object.keys(TIPO_ENDERECO_LABEL) as TipoEndereco[]).map((t) => (
+                      <option key={t} value={t}>
+                        {TIPO_ENDERECO_LABEL[t]}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="Observação de entrega">
+                  <textarea
+                    className="input w-full"
+                    rows={2}
+                    placeholder="Ex.: portaria recebe, melhor horário à tarde"
+                    value={cliente.observacaoEntrega ?? ""}
+                    onChange={(e) => update({ observacaoEntrega: e.target.value })}
+                  />
+                </Field>
+
+                <Field label="@ do perfil / rede social">
+                  <input
+                    className="input"
+                    placeholder="@perfil"
+                    value={cliente.socialHandle ?? ""}
+                    onChange={(e) => update({ socialHandle: e.target.value })}
+                  />
+                </Field>
+
+                <p className="text-[11px] text-text-muted">
+                  Inscrição Estadual gravada automaticamente como <strong>ISENTO</strong>. CNPJ,
+                  Razão Social e Nome Fantasia não se aplicam a pessoa física.
+                </p>
+              </div>
+            )}
+
 
           </TabsContent>
 

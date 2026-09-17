@@ -112,6 +112,11 @@ function rowToOrder(row: Record<string, unknown>, items: CartItem[]): SavedOrder
     estadoLiberacao: (row.estado_liberacao as SavedOrder["estadoLiberacao"]) ?? "aguardando_liberacao",
     totalUnidades: row.total_unidades == null ? null : Number(row.total_unidades),
     totalSkus: row.total_skus == null ? null : Number(row.total_skus),
+    naturezaOperacao:
+      (row.natureza_operacao as SavedOrder["naturezaOperacao"]) ?? "venda",
+    campanha: (row.campanha as string | null) ?? null,
+    entregaB2C: Boolean(row.entrega_b2c ?? false),
+    cfop: (row.cfop as string | null) ?? null,
   };
 }
 
@@ -155,6 +160,10 @@ export function orderToRow(o: SavedOrder): Record<string, unknown> {
     grupo_origem_id: o.grupoOrigemId ?? null,
     bonificado: o.bonificado ?? false,
     motivo_bonificacao: o.motivoBonificacao ?? null,
+    natureza_operacao: o.naturezaOperacao ?? o.commercial?.naturezaOperacao ?? "venda",
+    campanha: o.campanha ?? o.commercial?.campanha ?? null,
+    entrega_b2c: o.entregaB2C ?? o.commercial?.entregaB2C ?? false,
+    cfop: o.cfop ?? o.commercial?.cfop ?? null,
   };
 }
 
@@ -563,6 +572,10 @@ export const useOrder = create<OrderState>()(
           grupoOrigemId,
           bonificado: commercial?.bonificado ?? false,
           motivoBonificacao: commercial?.motivoBonificacao ?? null,
+          naturezaOperacao: commercial?.naturezaOperacao ?? "venda",
+          campanha: commercial?.campanha ?? null,
+          entregaB2C: commercial?.entregaB2C ?? false,
+          cfop: commercial?.cfop ?? null,
         });
 
         const isUniqueViolation = (err: unknown) =>
