@@ -311,11 +311,16 @@ Deno.serve(async (req) => {
     const c: any = clienteFull ?? {};
     const snap: any = clienteSnapshot ?? {};
 
+    // Pessoa física (remessa/brinde para influenciadores): CPF no lugar do CNPJ.
+    const ehPF = c?.tipo_pessoa === "PF" || (pedido as any).entrega_b2c === true;
+    const cpf = ehPF ? (c?.cpf ?? null) : null;
     // CNPJ: snapshot primeiro, cadastro como fallback.
-    const cnpj = snap?.cnpj ?? c?.cnpj ?? null;
-    if (!cnpj) {
+    const cnpj = ehPF ? null : (snap?.cnpj ?? c?.cnpj ?? null);
+    if (!cnpj && !cpf) {
       return jsonResponse(400, {
-        error: "Pedido sem CNPJ: nem o snapshot nem o cadastro do cliente têm CNPJ.",
+        error: ehPF
+          ? "Pedido de pessoa física sem CPF no cadastro do cliente."
+          : "Pedido sem CNPJ: nem o snapshot nem o cadastro do cliente têm CNPJ.",
       });
     }
 
