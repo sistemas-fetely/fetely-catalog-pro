@@ -419,6 +419,15 @@ Deno.serve(async (req) => {
     const payloadBase: Record<string, unknown> = {
       // Obrigatórios (já enviados hoje)
       cnpj,
+      // Destinatário pessoa física (remessa/brinde, ações de marketing)
+      tipo_pessoa: ehPF ? "PF" : "PJ",
+      cpf,
+      consumidor_final: ehPF,
+      natureza_operacao:
+        (pedido as any).natureza_operacao ?? (ehPF ? "remessa_brinde" : "venda"),
+      cfop: (pedido as any).cfop ?? null,
+      campanha: (pedido as any).campanha ?? null,
+      entrega_b2c: (pedido as any).entrega_b2c === true,
       id_externo: pedido.id,
       data_pedido: pedido.created_at.split("T")[0],
       valor_bruto: pedido.valor_bruto ?? pedido.total,
