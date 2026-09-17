@@ -584,12 +584,45 @@ export function CartCommercialPanel({
               valor={aplicarIsentoIE ? `+ ${formatBRL(calculo.acrescimoIsentoIEValor ?? 0)}` : undefined}
             />
 
+            {/* Natureza da operação */}
+            <div className="space-y-2">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-text-muted">
+                Natureza da operação *
+              </div>
+              <select
+                value={naturezaOperacao}
+                onChange={(e) => setNaturezaManual(e.target.value as NaturezaOperacao)}
+                className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+              >
+                {(Object.keys(NATUREZA_LABEL) as NaturezaOperacao[]).map((n) => (
+                  <option key={n} value={n}>
+                    {NATUREZA_LABEL[n]}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                value={campanha}
+                onChange={(e) => setCampanha(e.target.value)}
+                placeholder="Campanha / ação (opcional)"
+                maxLength={120}
+                className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+              />
+              <p className="text-[11px] text-text-muted">
+                {ehRemessa
+                  ? "Remessa/brinde: sem cobrança ao cliente e fora das metas de faturamento. Valores unitários ficam apenas como referência fiscal."
+                  : "Venda normal com cobrança ao cliente."}
+                {" "}CFOP {cfop}.
+                {ehPFDestino ? " Destinatário pessoa física (entrega B2C)." : ""}
+              </p>
+            </div>
+
             {/* Bonificado */}
             {canBonificar && (
               <div className="space-y-2">
                 <Toggle
                   checked={bonificado}
-                  onChange={setBonificado}
+                  onChange={setBonificadoManual}
                   label="Pedido bonificado"
                   hint="Ignora mínimo. Não conta em meta, pace nem comissão."
                   icon={<Gift className="h-3.5 w-3.5 text-purple-300" />}
