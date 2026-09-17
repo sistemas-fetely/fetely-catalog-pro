@@ -5,10 +5,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { fetchCNPJ, formatCNPJ, isValidCNPJLength, onlyDigits } from "@/lib/cnpj";
+import { formatCEP, formatCPF, fetchCEP, isValidCPF } from "@/lib/documento";
 import {
   useClientes,
   isRepresentanteAtual,
   checkCnpjOwnership,
+  checkCpfExistente,
   solicitarMigracaoCnpj,
   listVendedoresCarteira,
   type VendedorCarteira,
@@ -22,11 +24,14 @@ import {
   DOCUMENTO_TIPOS,
   PAISES_LIST,
   SEGMENTO_LABEL,
+  TIPO_ENDERECO_LABEL,
   UF_LIST,
   type CanalCliente,
   type Cliente,
   type SegmentoCliente,
   type SituacaoCadastral,
+  type TipoEndereco,
+  type TipoPessoa,
 } from "@/types/cliente";
 
 function emptyCliente(vendedorId: string, vendedorNome: string): Cliente {
