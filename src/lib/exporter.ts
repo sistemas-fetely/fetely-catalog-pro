@@ -159,6 +159,13 @@ export interface PedidoExportavel {
   premissasAplicadas: boolean;
   premissasResumo: string[];
   premissasVigenciaFim: string;
+  // Pessoa física / natureza da operação
+  tipoPessoa: "PF" | "PJ";
+  clienteDocumento: string;
+  naturezaOperacao: string;
+  campanha: string;
+  entregaB2C: boolean;
+  cfop: string;
 }
 
 export interface ExportOptions {
@@ -285,6 +292,12 @@ export function buildPedidoExportavel(order: SavedOrder): PedidoExportavel {
     observacoesVendedor: order.meta.observacoes,
     observacoesInternas: c?.observacaoInterna,
     ...buildPremissasResumo(snap?.premissasAplicadas ?? null, c),
+    tipoPessoa: tipoPessoaPedido,
+    clienteDocumento: documentoPedido,
+    naturezaOperacao: naturezaPedido,
+    campanha: (c?.campanha ?? order.campanha ?? "") as string,
+    entregaB2C: Boolean(c?.entregaB2C ?? order.entregaB2C),
+    cfop: (c?.cfop ?? order.cfop ?? "") as string,
   };
 }
 
