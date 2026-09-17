@@ -23,6 +23,24 @@ export function isQuantidadeLivre(): boolean {
   return quantidadeLivre;
 }
 
+// --- Cadastro de pessoa física (PF) -----------------------------------------
+// A opção "Pessoa Física" no cadastro de cliente fica visível apenas para o
+// master e contas autorizadas, enquanto a frente PF está em rollout. Os demais
+// usuários continuam vendo somente Pessoa Jurídica (cadastros PF existentes
+// continuam abrindo normalmente para leitura/edição).
+let pfLiberado = false;
+
+/** E-mails autorizados a cadastrar pessoa física, além do master. */
+export const EMAILS_PF_LIBERADO = EMAILS_QUANTIDADE_LIVRE;
+
+export function setPfLiberado(v: boolean): void {
+  pfLiberado = v;
+}
+
+export function isPfLiberado(): boolean {
+  return pfLiberado;
+}
+
 /** Meia caixa — quantidade mínima permitida por SKU. */
 export function halfBox(mult: number): number {
   if (quantidadeLivre) return 1;

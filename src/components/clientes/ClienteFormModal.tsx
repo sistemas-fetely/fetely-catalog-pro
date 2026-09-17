@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { fetchCNPJ, formatCNPJ, isValidCNPJLength, onlyDigits } from "@/lib/cnpj";
 import { formatCEP, formatCPF, fetchCEP, isValidCPF } from "@/lib/documento";
+import { isPfLiberado } from "@/lib/format";
 import {
   useClientes,
   isRepresentanteAtual,
@@ -492,6 +493,9 @@ export function ClienteFormModal({
           {/* FISCAL */}
           <TabsContent value="fiscal" className="space-y-3 pt-2">
             {/* Tipo de pessoa — define quais campos fiscais aparecem */}
+            {/* Seletor PJ/PF: visível só para master e contas autorizadas,
+                ou quando o cadastro aberto já é pessoa física. */}
+            {(isPfLiberado() || ehPF) && (
             <div className="rounded-md border border-border bg-surface-2 p-2">
               <div className="text-[10px] uppercase tracking-[0.2em] text-text-muted mb-2">
                 Tipo de cadastro
@@ -540,6 +544,7 @@ export function ClienteFormModal({
                 ))}
               </div>
             </div>
+            )}
 
             {!ehPF && !cliente.isInternacional ? (
               <Field label="CNPJ">
