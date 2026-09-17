@@ -299,6 +299,26 @@ export function isRepresentanteAtual(): boolean {
   return profile?.tipo_vendedor === "representante";
 }
 
+/** Busca cadastro existente pelo CPF (base completa, não só o que está em memória). */
+export async function checkCpfExistente(cpf: string): Promise<Cliente | null> {
+  const d = (cpf ?? "").replace(/\D/g, "");
+  if (d.length !== 11) return null;
+  const local = useClientes.getState().findByCpf(d);
+  if (local) return local;
+  try {
+    const { data, error } = await supabase
+      .from("clientes")
+      .select("*")
+      .eq("cpf", d)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? rowToCliente(data as Record<string, unknown>) : null;
+  } catch (err) {
+    console.error("[clienteStore] checkCpfExistente falhou:", err);
+    return null;
+  }
+}
+
 export interface CnpjOwnership {
   existe: boolean;
   clienteId: string | null;
