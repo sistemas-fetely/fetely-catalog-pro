@@ -60,6 +60,7 @@ import { Route as AdminAcademiaRouteImport } from './routes/admin.academia'
 import { Route as AcademiaModuloIdRouteImport } from './routes/academia.$moduloId'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
+import { Route as ApiPublicCatalogoFileRouteImport } from './routes/api/public/catalogo-file'
 import { Route as ApiPublicAcademiaFileRouteImport } from './routes/api/public/academia-file'
 
 const StandRoute = StandRouteImport.update({
@@ -318,6 +319,11 @@ const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
   path: '/api/public/img',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCatalogoFileRoute = ApiPublicCatalogoFileRouteImport.update({
+  id: '/api/public/catalogo-file',
+  path: '/api/public/catalogo-file',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAcademiaFileRoute = ApiPublicAcademiaFileRouteImport.update({
   id: '/api/public/academia-file',
   path: '/api/public/academia-file',
@@ -375,6 +381,7 @@ export interface FileRoutesByFullPath {
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
+  '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -428,6 +435,7 @@ export interface FileRoutesByTo {
   '/catalog': typeof CatalogIndexRoute
   '/portal': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
+  '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -483,6 +491,7 @@ export interface FileRoutesById {
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
+  '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -539,6 +548,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/portal/'
     | '/api/public/academia-file'
+    | '/api/public/catalogo-file'
     | '/api/public/img'
     | '/catalog/categoria/$categoria'
   fileRoutesByTo: FileRoutesByTo
@@ -592,6 +602,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/portal'
     | '/api/public/academia-file'
+    | '/api/public/catalogo-file'
     | '/api/public/img'
     | '/catalog/categoria/$categoria'
   id:
@@ -646,6 +657,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/portal/'
     | '/api/public/academia-file'
+    | '/api/public/catalogo-file'
     | '/api/public/img'
     | '/catalog/categoria/$categoria'
   fileRoutesById: FileRoutesById
@@ -694,6 +706,7 @@ export interface RootRouteChildren {
   AcademiaIndexRoute: typeof AcademiaIndexRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
   ApiPublicAcademiaFileRoute: typeof ApiPublicAcademiaFileRoute
+  ApiPublicCatalogoFileRoute: typeof ApiPublicCatalogoFileRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
   CatalogCategoriaCategoriaRoute: typeof CatalogCategoriaCategoriaRoute
 }
@@ -1057,6 +1070,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImgRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/catalogo-file': {
+      id: '/api/public/catalogo-file'
+      path: '/api/public/catalogo-file'
+      fullPath: '/api/public/catalogo-file'
+      preLoaderRoute: typeof ApiPublicCatalogoFileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/academia-file': {
       id: '/api/public/academia-file'
       path: '/api/public/academia-file'
@@ -1152,6 +1172,7 @@ const rootRouteChildren: RootRouteChildren = {
   AcademiaIndexRoute: AcademiaIndexRoute,
   CatalogIndexRoute: CatalogIndexRoute,
   ApiPublicAcademiaFileRoute: ApiPublicAcademiaFileRoute,
+  ApiPublicCatalogoFileRoute: ApiPublicCatalogoFileRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
   CatalogCategoriaCategoriaRoute: CatalogCategoriaCategoriaRoute,
 }
