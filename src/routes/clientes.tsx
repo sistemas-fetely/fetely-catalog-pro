@@ -126,15 +126,18 @@ function ClientesPage() {
 
   const exportCSV = (subset: { cliente: Cliente; stats: ReturnType<typeof calcClienteStats> }[]) => {
     const header = [
+      "Tipo Pessoa","Documento",
       "Razao Social","Nome Fantasia","Internacional","Pais","Documento Tipo","Documento Numero",
-      "CNPJ","IE","Cidade","Estado","CEP",
+      "CNPJ","CPF","IE","Cidade","Estado","CEP",
       "Contato","Email","Telefone","Segmento","Canal","Total Pedidos","Total Faturado","Ultimo Pedido","Vendedor",
     ];
     const rows = subset.map(({ cliente: c, stats }) => [
+      c.tipoPessoa === "PF" ? "PF" : "PJ",
+      c.tipoPessoa === "PF" ? c.cpfFormatado ?? "" : c.cnpjFormatado,
       c.razaoSocial, c.nomeFantasia,
       c.isInternacional ? "Sim" : "Nao",
       c.pais ?? "", c.documentoTipo ?? "", c.documentoNumero ?? "",
-      c.cnpjFormatado, c.inscricaoEstadual ?? "",
+      c.cnpjFormatado, c.cpfFormatado ?? "", c.inscricaoEstadual ?? "",
       c.cidade, c.estado, c.cep, c.contatoNome, c.contatoEmail, c.contatoTelefone,
       SEGMENTO_LABEL[c.segmento], CANAL_LABEL[c.canal],
       String(stats.totalPedidos), stats.totalFaturado.toFixed(2),
@@ -339,6 +342,15 @@ function ClientesPage() {
                     </span>
                   );
                 })()}
+                <span
+                  className={`shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${
+                    c.tipoPessoa === "PF"
+                      ? "border-purple-400/40 bg-purple-400/10 text-purple-300"
+                      : "border-border bg-surface-2 text-text-muted"
+                  }`}
+                >
+                  {c.tipoPessoa === "PF" ? "PF" : "PJ"}
+                </span>
                 {!c.ativo && (
                   <span className="ml-1 text-[9px] uppercase tracking-wider text-stock-out">
                     inativo
@@ -359,9 +371,11 @@ function ClientesPage() {
               )}
             </div>
             <div className="text-xs text-text-secondary font-mono truncate">
-              {c.isInternacional
-                ? `${c.pais ?? "—"} · ${c.documentoTipo ?? ""} ${c.documentoNumero ?? ""}`.trim()
-                : c.cnpjFormatado || "—"}
+              {c.tipoPessoa === "PF"
+                ? c.cpfFormatado || "—"
+                : c.isInternacional
+                  ? `${c.pais ?? "—"} · ${c.documentoTipo ?? ""} ${c.documentoNumero ?? ""}`.trim()
+                  : c.cnpjFormatado || "—"}
             </div>
             <div className="text-xs text-text-secondary truncate">
               {c.cidade}/{c.estado}
