@@ -197,6 +197,19 @@ export function buildPedidoExportavel(order: SavedOrder): PedidoExportavel {
   const totalDescontoGeral = totalBruto - totalLiquido;
   const totalDescontoPercentual = totalBruto > 0 ? (totalDescontoGeral / totalBruto) * 100 : 0;
 
+  const clienteCad = order.meta.clienteId
+    ? useClientes.getState().getById(order.meta.clienteId)
+    : undefined;
+  const tipoPessoaPedido: "PF" | "PJ" =
+    clienteCad?.tipoPessoa === "PF" || c?.entregaB2C || order.entregaB2C ? "PF" : "PJ";
+  const documentoPedido =
+    tipoPessoaPedido === "PF"
+      ? clienteCad?.cpfFormatado || clienteCad?.cpf || ""
+      : snap?.cnpj ?? order.meta.cnpj ?? "";
+  const naturezaPedido = (c?.naturezaOperacao ??
+    order.naturezaOperacao ??
+    (tipoPessoaPedido === "PF" ? "remessa_brinde" : "venda")) as string;
+
   const itens: ItemExportavel[] = order.items.map((i: CartItem) => {
     const p = i.product;
     const subtotalBruto = p.precoAtacado * i.quantity;
@@ -753,6 +766,7 @@ const CSV_HEADERS = [
   "comissao_percent","comissao_estimada_valor",
   "observacoes_vendedor",
   "premissas_aplicadas","premissas_resumo","premissas_vigencia_fim",
+  "tipo_pessoa","cliente_documento","natureza_operacao","campanha","entrega_b2c","cfop",
 ];
 
 const csvEscape = (val: unknown): string => {
@@ -793,6 +807,8 @@ function rowsForPedido(pedido: PedidoExportavel): string[][] {
     String(pedido.premissasAplicadas),
     pedido.premissasResumo.join(" | "),
     pedido.premissasVigenciaFim,
+    pedido.tipoPessoa, pedido.clienteDocumento, pedido.naturezaOperacao,
+    pedido.campanha, String(pedido.entregaB2C), pedido.cfop,
   ]);
 }
 
