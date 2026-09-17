@@ -35,11 +35,18 @@ function slug(s: string): string {
     .slice(0, 60) || "catalogo";
 }
 
+const LIMITE_BYTES = 1024 * 1024 * 1024; // 1 GB
+
 export async function uploadCatalogoArquivo(
   file: File,
   tipo: "pdfs" | "capas",
   nomeBase: string,
 ): Promise<string> {
+  if (file.size > LIMITE_BYTES) {
+    throw new Error(
+      `O arquivo tem ${(file.size / (1024 * 1024)).toFixed(0)} MB e o limite é 1 GB.`,
+    );
+  }
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
   const path = `${tipo}/${slug(nomeBase)}-${Date.now()}.${ext}`;
   const { error } = await supabase.storage
