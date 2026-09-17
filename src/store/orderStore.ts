@@ -572,6 +572,10 @@ export const useOrder = create<OrderState>()(
           grupoOrigemId,
           bonificado: commercial?.bonificado ?? false,
           motivoBonificacao: commercial?.motivoBonificacao ?? null,
+          naturezaOperacao: commercial?.naturezaOperacao ?? "venda",
+          campanha: commercial?.campanha ?? null,
+          entregaB2C: commercial?.entregaB2C ?? false,
+          cfop: commercial?.cfop ?? null,
         });
 
         const isUniqueViolation = (err: unknown) =>
