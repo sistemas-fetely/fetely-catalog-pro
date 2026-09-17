@@ -3176,6 +3176,10 @@ export type Database = {
         }
         Returns: string[]
       }
+      fn_registrar_produtos_cartorio: {
+        Args: { p_dry_run?: boolean; p_itens: Json }
+        Returns: Json
+      }
       get_order_by_sncf_id: {
         Args: { p_sncf_pedido_id: string }
         Returns: Json
