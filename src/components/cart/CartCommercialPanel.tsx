@@ -132,6 +132,17 @@ export function CartCommercialPanel({
     return metaUf ? metaUf.toUpperCase() : undefined;
   }, [cliente, metaUf]);
 
+  // Destinatário pessoa física → entrega B2C e natureza padrão "remessa/brinde"
+  const ehPFDestino = (cliente?.tipoPessoa ?? "PJ") === "PF";
+  const naturezaOperacao: NaturezaOperacao =
+    naturezaManual ?? (ehPFDestino ? "remessa_brinde" : "venda");
+  const ehRemessa = naturezaOperacao === "remessa_brinde";
+  const cfop = cfopDe(naturezaOperacao, ufDestino);
+  // Remessa/brinde não gera cobrança: segue a mesma trilha do pedido bonificado
+  // (sem pedido mínimo, sem meta/pace/comissão).
+  const bonificado = bonificadoManual || ehRemessa;
+
+
   // Faixa atual — faixa fixa do cliente tem prioridade
   const faixa = useMemo(() => {
     if (premissas?.temFaixaFixa && premissas.faixaFixaId != null) {
