@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { setQuantidadeLivre, EMAILS_QUANTIDADE_LIVRE } from "@/lib/format";
+import { setQuantidadeLivre, setPfLiberado, EMAILS_QUANTIDADE_LIVRE } from "@/lib/format";
 
 export type AppRole = "master" | "admin" | "vendedor" | "cliente";
 
@@ -89,6 +89,7 @@ export const useAuth = create<AuthState>((set, get) => ({
       // evento — o autoRefreshToken renova sozinho e segura a sessão.
       if (event === "SIGNED_OUT") {
         setQuantidadeLivre(false);
+        setPfLiberado(false);
         set({ session: null, user: null, profile: null, roles: [], loading: false });
         return;
       }
@@ -131,6 +132,7 @@ export const useAuth = create<AuthState>((set, get) => ({
       } else {
         // INITIAL_SESSION sem sessão persistida = visitante.
         setQuantidadeLivre(false);
+        setPfLiberado(false);
         set({ session: null, user: null, profile: null, roles: [], loading: false });
       }
     });
@@ -178,6 +180,7 @@ export const useAuth = create<AuthState>((set, get) => ({
   signOut: async () => {
     await supabase.auth.signOut();
     setQuantidadeLivre(false);
+    setPfLiberado(false);
     set({ session: null, user: null, profile: null, roles: [] });
     // limpa permissões hidratadas
     const { usePermissoesStore } = await import("@/store/permissoesStore");
