@@ -274,7 +274,10 @@ export type Database = {
           contato_nome: string | null
           contato_telefone: string | null
           contato_whatsapp: string | null
+          cpf: string | null
+          cpf_formatado: string | null
           criado_em: string
+          data_nascimento: string | null
           documento_numero: string | null
           documento_tipo: string | null
           endereco_entrega_igual: boolean
@@ -294,10 +297,13 @@ export type Database = {
           is_internacional: boolean
           isento_ie: boolean
           logradouro: string | null
+          nome_completo_pf: string | null
           nome_fantasia: string
           numero: string | null
+          observacao_entrega: string | null
           observacoes: string | null
           pais: string | null
+          ponto_referencia: string | null
           premissas_ativas: boolean
           premissas_comerciais: Json | null
           premissas_vigencia_fim: string | null
@@ -313,8 +319,11 @@ export type Database = {
           sncf_parceiro_id: string | null
           sncf_perfil_credito: string | null
           sncf_ultima_sync_em: string | null
+          social_handle: string | null
           tags: string[]
           telefones_internacionais: boolean
+          tipo_endereco: string | null
+          tipo_pessoa: string
         }
         Insert: {
           ativo?: boolean
@@ -332,7 +341,10 @@ export type Database = {
           contato_nome?: string | null
           contato_telefone?: string | null
           contato_whatsapp?: string | null
+          cpf?: string | null
+          cpf_formatado?: string | null
           criado_em?: string
+          data_nascimento?: string | null
           documento_numero?: string | null
           documento_tipo?: string | null
           endereco_entrega_igual?: boolean
@@ -352,10 +364,13 @@ export type Database = {
           is_internacional?: boolean
           isento_ie?: boolean
           logradouro?: string | null
+          nome_completo_pf?: string | null
           nome_fantasia: string
           numero?: string | null
+          observacao_entrega?: string | null
           observacoes?: string | null
           pais?: string | null
+          ponto_referencia?: string | null
           premissas_ativas?: boolean
           premissas_comerciais?: Json | null
           premissas_vigencia_fim?: string | null
@@ -371,8 +386,11 @@ export type Database = {
           sncf_parceiro_id?: string | null
           sncf_perfil_credito?: string | null
           sncf_ultima_sync_em?: string | null
+          social_handle?: string | null
           tags?: string[]
           telefones_internacionais?: boolean
+          tipo_endereco?: string | null
+          tipo_pessoa?: string
         }
         Update: {
           ativo?: boolean
@@ -390,7 +408,10 @@ export type Database = {
           contato_nome?: string | null
           contato_telefone?: string | null
           contato_whatsapp?: string | null
+          cpf?: string | null
+          cpf_formatado?: string | null
           criado_em?: string
+          data_nascimento?: string | null
           documento_numero?: string | null
           documento_tipo?: string | null
           endereco_entrega_igual?: boolean
@@ -410,10 +431,13 @@ export type Database = {
           is_internacional?: boolean
           isento_ie?: boolean
           logradouro?: string | null
+          nome_completo_pf?: string | null
           nome_fantasia?: string
           numero?: string | null
+          observacao_entrega?: string | null
           observacoes?: string | null
           pais?: string | null
+          ponto_referencia?: string | null
           premissas_ativas?: boolean
           premissas_comerciais?: Json | null
           premissas_vigencia_fim?: string | null
@@ -429,8 +453,11 @@ export type Database = {
           sncf_parceiro_id?: string | null
           sncf_perfil_credito?: string | null
           sncf_ultima_sync_em?: string | null
+          social_handle?: string | null
           tags?: string[]
           telefones_internacionais?: boolean
+          tipo_endereco?: string | null
+          tipo_pessoa?: string
         }
         Relationships: [
           {
@@ -1396,11 +1423,14 @@ export type Database = {
           aprovado_por_id: string | null
           aprovado_por_nome: string | null
           bonificado: boolean
+          campanha: string | null
+          cfop: string | null
           cliente_id: string | null
           cliente_snapshot: Json | null
           commercial: Json | null
           created_at: string
           duplicado_de: string | null
+          entrega_b2c: boolean
           estado_liberacao: string
           forma_pagamento: string | null
           frete: string | null
@@ -1412,6 +1442,7 @@ export type Database = {
           meta: Json
           modelo_origem_id: string | null
           motivo_bonificacao: string | null
+          natureza_operacao: string
           origem_perfil: string
           provisao_origem_id: string | null
           recusado_em: string | null
@@ -1452,11 +1483,14 @@ export type Database = {
           aprovado_por_id?: string | null
           aprovado_por_nome?: string | null
           bonificado?: boolean
+          campanha?: string | null
+          cfop?: string | null
           cliente_id?: string | null
           cliente_snapshot?: Json | null
           commercial?: Json | null
           created_at?: string
           duplicado_de?: string | null
+          entrega_b2c?: boolean
           estado_liberacao?: string
           forma_pagamento?: string | null
           frete?: string | null
@@ -1468,6 +1502,7 @@ export type Database = {
           meta: Json
           modelo_origem_id?: string | null
           motivo_bonificacao?: string | null
+          natureza_operacao?: string
           origem_perfil?: string
           provisao_origem_id?: string | null
           recusado_em?: string | null
@@ -1508,11 +1543,14 @@ export type Database = {
           aprovado_por_id?: string | null
           aprovado_por_nome?: string | null
           bonificado?: boolean
+          campanha?: string | null
+          cfop?: string | null
           cliente_id?: string | null
           cliente_snapshot?: Json | null
           commercial?: Json | null
           created_at?: string
           duplicado_de?: string | null
+          entrega_b2c?: boolean
           estado_liberacao?: string
           forma_pagamento?: string | null
           frete?: string | null
@@ -1524,6 +1562,7 @@ export type Database = {
           meta?: Json
           modelo_origem_id?: string | null
           motivo_bonificacao?: string | null
+          natureza_operacao?: string
           origem_perfil?: string
           provisao_origem_id?: string | null
           recusado_em?: string | null
