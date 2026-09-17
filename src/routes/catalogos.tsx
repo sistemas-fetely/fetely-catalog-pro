@@ -128,6 +128,19 @@ function CatalogosPage() {
           ))}
         </div>
       )}
+
+      <a
+        href={`https://wa.me/5511999924750?text=${encodeURIComponent(
+          "Olá! Vi os catálogos no site e quero fazer compras no atacado.",
+        )}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-background shadow-lg hover:bg-gold-light transition"
+        aria-label="Falar com a equipe comercial no WhatsApp"
+      >
+        <MessageCircle className="h-5 w-5" />
+        Comprar no atacado
+      </a>
     </main>
   );
 }
