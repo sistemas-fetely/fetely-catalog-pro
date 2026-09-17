@@ -132,6 +132,12 @@ export function ClienteFormModal({
   const [enviandoMigracao, setEnviandoMigracao] = useState(false);
   const [migracaoEnviada, setMigracaoEnviada] = useState(false);
   const [checandoCnpj, setChecandoCnpj] = useState(false);
+  // Pessoa física
+  const ehPF = (cliente.tipoPessoa ?? "PJ") === "PF";
+  const [cpfErro, setCpfErro] = useState<string | null>(null);
+  const [cpfDuplicado, setCpfDuplicado] = useState<Cliente | null>(null);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepErro, setCepErro] = useState<string | null>(null);
   // Direcionamento de carteira (só admin/master/interno)
   const podeDirecionar = !repAtual;
   const [vendedores, setVendedores] = useState<VendedorCarteira[]>([]);
