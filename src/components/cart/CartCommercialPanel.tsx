@@ -96,10 +96,15 @@ export function CartCommercialPanel({
   const isRepresentante = !roles.includes("admin") && !roles.includes("master");
   const tetoDesconto = isRepresentante ? DESCONTO_REP_MAX : DESCONTO_MASTER_MAX;
   const descontoPctEfetivo = Math.min(descontoPct, tetoDesconto);
-  const [bonificado, setBonificado] = useState(false);
+  const [bonificadoManual, setBonificadoManual] = useState(false);
   const [motivoBonif, setMotivoBonif] = useState<string>("");
   const [motivoOutroTxt, setMotivoOutroTxt] = useState<string>("");
-  useEffect(() => { if (!canBonificar && bonificado) setBonificado(false); }, [canBonificar, bonificado]);
+  useEffect(() => {
+    if (!canBonificar && bonificadoManual) setBonificadoManual(false);
+  }, [canBonificar, bonificadoManual]);
+  // Natureza da operação (venda / remessa-brinde) e campanha vinculada
+  const [naturezaManual, setNaturezaManual] = useState<NaturezaOperacao | null>(null);
+  const [campanha, setCampanha] = useState("");
 
   // Tabela de frete FOB por UF: sincroniza com o banco (fonte oficial) e
   // re-renderiza para o cálculo refletir eventuais atualizações do admin.
