@@ -353,6 +353,14 @@ export function ClienteFormModal({
 
   const handleSave = async () => {
     if (!podeSalvar) {
+      if (ehPF) {
+        toast.error(
+          !isValidCPF(cliente.cpf ?? "")
+            ? "CPF inválido — confira os números digitados."
+            : "Preencha nome completo, CPF, e-mail, telefone, CEP, número, cidade/UF e tipo de endereço.",
+        );
+        return;
+      }
       const ieFaltando =
         !cliente.isInternacional &&
         !(cliente.isentoIE ?? false) &&
