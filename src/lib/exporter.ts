@@ -1,6 +1,7 @@
 // Exportação completa de pedidos — PDF, CSV, JSON, ZIP (lote)
 // jsPDF/autoTable/JSZip (~600 KB) carregados sob demanda, só na exportação.
 import FileSaver from "file-saver";
+import { useClientes } from "@/store/clienteStore";
 const { saveAs } = FileSaver;
 
 type JsPDFDoc = import("jspdf").jsPDF;
