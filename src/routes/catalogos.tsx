@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { BookOpen, Download, Eye, Loader2 } from "lucide-react";
+import { BookOpen, Download, Eye, Loader2, MessageCircle } from "lucide-react";
 import {
   formatarTamanho,
   listarCatalogos,
