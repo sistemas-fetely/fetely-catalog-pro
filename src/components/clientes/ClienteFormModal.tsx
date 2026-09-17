@@ -349,7 +349,7 @@ export function ClienteFormModal({
       return Boolean(cliente.pais && cliente.documentoNumero?.trim());
     }
     return true;
-  }, [cliente]);
+  }, [cliente, ehPF]);
 
   const handleSave = async () => {
     if (!podeSalvar) {
