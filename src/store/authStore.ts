@@ -58,11 +58,13 @@ async function loadProfileAndRoles(userId: string): Promise<{ profile: Profile |
   ]);
   const p = (profile as Profile | null) ?? null;
   const roles = (rolesData ?? []).map((r) => r.role as AppRole);
-  // Quantidade unitária (sem caixa fechada): master e contas autorizadas.
+  // Quantidade unitária (sem caixa fechada) e cadastro de pessoa física:
+  // master e contas autorizadas.
   const email = (p?.email ?? "").trim().toLowerCase();
-  setQuantidadeLivre(
-    roles.includes("master") || EMAILS_QUANTIDADE_LIVRE.includes(email),
-  );
+  const liberado =
+    roles.includes("master") || EMAILS_QUANTIDADE_LIVRE.includes(email);
+  setQuantidadeLivre(liberado);
+  setPfLiberado(liberado);
   return { profile: p, roles };
 }
 
