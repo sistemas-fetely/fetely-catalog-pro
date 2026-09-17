@@ -17,6 +17,7 @@ const ROTAS: RotaProtegida[] = [
   { prefix: "/admin/permissoes", telaId: "cfg_permissoes" },
   
   { prefix: "/admin/products", telaId: "cfg_produtos" },
+  { prefix: "/admin/catalogos", telaId: "cfg_produtos" },
   { prefix: "/admin/cartilhas", telaId: "cfg_cartilhas" },
   { prefix: "/admin/leads", telaId: "cfg_leads" },
   { prefix: "/admin/precos", telaId: "cfg_produtos" },

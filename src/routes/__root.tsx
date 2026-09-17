@@ -195,6 +195,7 @@ function BootEffects() {
         pathname === "/catalog" ||
         pathname.startsWith("/catalog/") ||
         pathname === "/produto" ||
+        pathname === "/catalogos" ||
         pathname === "/stand" ||
         pathname.startsWith("/stand/") ||
         pathname === "/pre-selecao" ||
@@ -212,6 +213,7 @@ function BootEffects() {
         pathname.startsWith("/portal/") ||
         pathname === "/catalog" ||
         pathname.startsWith("/catalog/") ||
+        pathname === "/catalogos" ||
         pathname === "/cart" ||
         pathname === "/confirmation" ||
         pathname === "/stand" ||

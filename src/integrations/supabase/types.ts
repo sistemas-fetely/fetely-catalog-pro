@@ -144,6 +144,60 @@ export type Database = {
           },
         ]
       }
+      catalogos_pdf: {
+        Row: {
+          ativo: boolean
+          capa_path: string | null
+          capa_url: string | null
+          colecao: string | null
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          downloads: number
+          id: string
+          nome: string
+          ordem: number
+          pdf_path: string
+          pdf_url: string
+          tamanho_bytes: number | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          capa_path?: string | null
+          capa_url?: string | null
+          colecao?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          downloads?: number
+          id?: string
+          nome: string
+          ordem?: number
+          pdf_path: string
+          pdf_url: string
+          tamanho_bytes?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          capa_path?: string | null
+          capa_url?: string | null
+          colecao?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          downloads?: number
+          id?: string
+          nome?: string
+          ordem?: number
+          pdf_path?: string
+          pdf_url?: string
+          tamanho_bytes?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cliente_migracao_solicitacoes: {
         Row: {
           cliente_id: string | null
@@ -3175,6 +3229,10 @@ export type Database = {
           p_fase: string
         }
         Returns: string[]
+      }
+      fn_registrar_produtos_cartorio: {
+        Args: { p_dry_run?: boolean; p_itens: Json }
+        Returns: Json
       }
       get_order_by_sncf_id: {
         Args: { p_sncf_pedido_id: string }

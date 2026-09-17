@@ -34,6 +34,7 @@ import { Route as ConfirmationRouteImport } from './routes/confirmation'
 import { Route as CondicoesPagamentoRouteImport } from './routes/condicoes-pagamento'
 import { Route as CommercialRouteImport } from './routes/commercial'
 import { Route as ClientesRouteImport } from './routes/clientes'
+import { Route as CatalogosRouteImport } from './routes/catalogos'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
@@ -54,12 +55,14 @@ import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
 import { Route as AdminPermissoesRouteImport } from './routes/admin.permissoes'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminGateAbRouteImport } from './routes/admin.gate-ab'
+import { Route as AdminCatalogosRouteImport } from './routes/admin.catalogos'
 import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
 import { Route as AdminAccessLogsRouteImport } from './routes/admin.access-logs'
 import { Route as AdminAcademiaRouteImport } from './routes/admin.academia'
 import { Route as AcademiaModuloIdRouteImport } from './routes/academia.$moduloId'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
+import { Route as ApiPublicCatalogoFileRouteImport } from './routes/api/public/catalogo-file'
 import { Route as ApiPublicAcademiaFileRouteImport } from './routes/api/public/academia-file'
 
 const StandRoute = StandRouteImport.update({
@@ -187,6 +190,11 @@ const ClientesRoute = ClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CatalogosRoute = CatalogosRouteImport.update({
+  id: '/catalogos',
+  path: '/catalogos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CartRoute = CartRouteImport.update({
   id: '/cart',
   path: '/cart',
@@ -287,6 +295,11 @@ const AdminGateAbRoute = AdminGateAbRouteImport.update({
   path: '/admin/gate-ab',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCatalogosRoute = AdminCatalogosRouteImport.update({
+  id: '/admin/catalogos',
+  path: '/admin/catalogos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCartilhasRoute = AdminCartilhasRouteImport.update({
   id: '/admin/cartilhas',
   path: '/admin/cartilhas',
@@ -318,6 +331,11 @@ const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
   path: '/api/public/img',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCatalogoFileRoute = ApiPublicCatalogoFileRouteImport.update({
+  id: '/api/public/catalogo-file',
+  path: '/api/public/catalogo-file',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAcademiaFileRoute = ApiPublicAcademiaFileRouteImport.update({
   id: '/api/public/academia-file',
   path: '/api/public/academia-file',
@@ -328,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
+  '/catalogos': typeof CatalogosRoute
   '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
   '/condicoes-pagamento': typeof CondicoesPagamentoRoute
@@ -357,6 +376,7 @@ export interface FileRoutesByFullPath {
   '/admin/academia': typeof AdminAcademiaRoute
   '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
+  '/admin/catalogos': typeof AdminCatalogosRoute
   '/admin/gate-ab': typeof AdminGateAbRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/permissoes': typeof AdminPermissoesRoute
@@ -375,6 +395,7 @@ export interface FileRoutesByFullPath {
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
+  '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -382,6 +403,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
+  '/catalogos': typeof CatalogosRoute
   '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
   '/condicoes-pagamento': typeof CondicoesPagamentoRoute
@@ -410,6 +432,7 @@ export interface FileRoutesByTo {
   '/admin/academia': typeof AdminAcademiaRoute
   '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
+  '/admin/catalogos': typeof AdminCatalogosRoute
   '/admin/gate-ab': typeof AdminGateAbRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/permissoes': typeof AdminPermissoesRoute
@@ -428,6 +451,7 @@ export interface FileRoutesByTo {
   '/catalog': typeof CatalogIndexRoute
   '/portal': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
+  '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -436,6 +460,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/cart': typeof CartRoute
+  '/catalogos': typeof CatalogosRoute
   '/clientes': typeof ClientesRoute
   '/commercial': typeof CommercialRoute
   '/condicoes-pagamento': typeof CondicoesPagamentoRoute
@@ -465,6 +490,7 @@ export interface FileRoutesById {
   '/admin/academia': typeof AdminAcademiaRoute
   '/admin/access-logs': typeof AdminAccessLogsRoute
   '/admin/cartilhas': typeof AdminCartilhasRoute
+  '/admin/catalogos': typeof AdminCatalogosRoute
   '/admin/gate-ab': typeof AdminGateAbRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/permissoes': typeof AdminPermissoesRoute
@@ -483,6 +509,7 @@ export interface FileRoutesById {
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
+  '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -492,6 +519,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/cart'
+    | '/catalogos'
     | '/clientes'
     | '/commercial'
     | '/condicoes-pagamento'
@@ -521,6 +549,7 @@ export interface FileRouteTypes {
     | '/admin/academia'
     | '/admin/access-logs'
     | '/admin/cartilhas'
+    | '/admin/catalogos'
     | '/admin/gate-ab'
     | '/admin/leads'
     | '/admin/permissoes'
@@ -539,6 +568,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/portal/'
     | '/api/public/academia-file'
+    | '/api/public/catalogo-file'
     | '/api/public/img'
     | '/catalog/categoria/$categoria'
   fileRoutesByTo: FileRoutesByTo
@@ -546,6 +576,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/cart'
+    | '/catalogos'
     | '/clientes'
     | '/commercial'
     | '/condicoes-pagamento'
@@ -574,6 +605,7 @@ export interface FileRouteTypes {
     | '/admin/academia'
     | '/admin/access-logs'
     | '/admin/cartilhas'
+    | '/admin/catalogos'
     | '/admin/gate-ab'
     | '/admin/leads'
     | '/admin/permissoes'
@@ -592,6 +624,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/portal'
     | '/api/public/academia-file'
+    | '/api/public/catalogo-file'
     | '/api/public/img'
     | '/catalog/categoria/$categoria'
   id:
@@ -599,6 +632,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/cart'
+    | '/catalogos'
     | '/clientes'
     | '/commercial'
     | '/condicoes-pagamento'
@@ -628,6 +662,7 @@ export interface FileRouteTypes {
     | '/admin/academia'
     | '/admin/access-logs'
     | '/admin/cartilhas'
+    | '/admin/catalogos'
     | '/admin/gate-ab'
     | '/admin/leads'
     | '/admin/permissoes'
@@ -646,6 +681,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/portal/'
     | '/api/public/academia-file'
+    | '/api/public/catalogo-file'
     | '/api/public/img'
     | '/catalog/categoria/$categoria'
   fileRoutesById: FileRoutesById
@@ -654,6 +690,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyticsRoute: typeof AnalyticsRoute
   CartRoute: typeof CartRoute
+  CatalogosRoute: typeof CatalogosRoute
   ClientesRoute: typeof ClientesRoute
   CommercialRoute: typeof CommercialRoute
   CondicoesPagamentoRoute: typeof CondicoesPagamentoRoute
@@ -683,6 +720,7 @@ export interface RootRouteChildren {
   AdminAcademiaRoute: typeof AdminAcademiaRoute
   AdminAccessLogsRoute: typeof AdminAccessLogsRoute
   AdminCartilhasRoute: typeof AdminCartilhasRoute
+  AdminCatalogosRoute: typeof AdminCatalogosRoute
   AdminGateAbRoute: typeof AdminGateAbRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminPermissoesRoute: typeof AdminPermissoesRoute
@@ -694,6 +732,7 @@ export interface RootRouteChildren {
   AcademiaIndexRoute: typeof AcademiaIndexRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
   ApiPublicAcademiaFileRoute: typeof ApiPublicAcademiaFileRoute
+  ApiPublicCatalogoFileRoute: typeof ApiPublicCatalogoFileRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
   CatalogCategoriaCategoriaRoute: typeof CatalogCategoriaCategoriaRoute
 }
@@ -875,6 +914,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/catalogos': {
+      id: '/catalogos'
+      path: '/catalogos'
+      fullPath: '/catalogos'
+      preLoaderRoute: typeof CatalogosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cart': {
       id: '/cart'
       path: '/cart'
@@ -1015,6 +1061,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminGateAbRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/catalogos': {
+      id: '/admin/catalogos'
+      path: '/admin/catalogos'
+      fullPath: '/admin/catalogos'
+      preLoaderRoute: typeof AdminCatalogosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/cartilhas': {
       id: '/admin/cartilhas'
       path: '/admin/cartilhas'
@@ -1055,6 +1108,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/img'
       fullPath: '/api/public/img'
       preLoaderRoute: typeof ApiPublicImgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/catalogo-file': {
+      id: '/api/public/catalogo-file'
+      path: '/api/public/catalogo-file'
+      fullPath: '/api/public/catalogo-file'
+      preLoaderRoute: typeof ApiPublicCatalogoFileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/academia-file': {
@@ -1112,6 +1172,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
   CartRoute: CartRoute,
+  CatalogosRoute: CatalogosRoute,
   ClientesRoute: ClientesRoute,
   CommercialRoute: CommercialRoute,
   CondicoesPagamentoRoute: CondicoesPagamentoRoute,
@@ -1141,6 +1202,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAcademiaRoute: AdminAcademiaRoute,
   AdminAccessLogsRoute: AdminAccessLogsRoute,
   AdminCartilhasRoute: AdminCartilhasRoute,
+  AdminCatalogosRoute: AdminCatalogosRoute,
   AdminGateAbRoute: AdminGateAbRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminPermissoesRoute: AdminPermissoesRoute,
@@ -1152,6 +1214,7 @@ const rootRouteChildren: RootRouteChildren = {
   AcademiaIndexRoute: AcademiaIndexRoute,
   CatalogIndexRoute: CatalogIndexRoute,
   ApiPublicAcademiaFileRoute: ApiPublicAcademiaFileRoute,
+  ApiPublicCatalogoFileRoute: ApiPublicCatalogoFileRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
   CatalogCategoriaCategoriaRoute: CatalogCategoriaCategoriaRoute,
 }
