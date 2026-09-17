@@ -7,8 +7,25 @@ export function formatBRL(value: number | null | undefined): string {
   });
 }
 
+// --- Quantidade livre (unidade por unidade) ---------------------------------
+// Alguns usuários (master e contas autorizadas) lançam pedido peça por peça,
+// sem respeitar caixa fechada / meia caixa. O flag é definido no login.
+let quantidadeLivre = false;
+
+/** E-mails autorizados a lançar quantidade unitária, além do master. */
+export const EMAILS_QUANTIDADE_LIVRE = ["rafaela.barbosa@fetely.com.br"];
+
+export function setQuantidadeLivre(v: boolean): void {
+  quantidadeLivre = v;
+}
+
+export function isQuantidadeLivre(): boolean {
+  return quantidadeLivre;
+}
+
 /** Meia caixa — quantidade mínima permitida por SKU. */
 export function halfBox(mult: number): number {
+  if (quantidadeLivre) return 1;
   if (!Number.isFinite(mult) || mult <= 1) return 1;
   return mult % 2 === 0 ? mult / 2 : mult;
 }
