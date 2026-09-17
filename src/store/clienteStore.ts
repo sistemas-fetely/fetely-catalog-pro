@@ -16,6 +16,7 @@ interface ClienteState {
   deleteCliente: (id: string) => Promise<void>;
   setAtivo: (id: string, ativo: boolean) => Promise<void>;
   findByCnpj: (cnpjDigits: string) => Cliente | undefined;
+  findByCpf: (cpfDigits: string) => Cliente | undefined;
   getById: (id: string) => Cliente | undefined;
 }
 
@@ -263,6 +264,8 @@ export const useClientes = create<ClienteState>()(
       },
       findByCnpj: (cnpjDigits) =>
         get().clientes.find((c) => c.cnpj === cnpjDigits && c.cnpj !== ""),
+      findByCpf: (cpfDigits) =>
+        get().clientes.find((c) => (c.cpf ?? "") === cpfDigits && !!cpfDigits),
       getById: (id) => get().clientes.find((c) => c.id === id),
     }),
     {
