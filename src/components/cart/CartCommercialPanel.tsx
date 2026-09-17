@@ -268,7 +268,10 @@ export function CartCommercialPanel({
   const negociacaoSemJustificativa =
     ativo && (descontoPct > 0 || abaixoDoMinimoLiberado) && !justificativa;
 
-  const bonificadoSemMotivo = bonificado && !motivoBonificacaoFinal;
+  // Remessa/brinde já explica a si mesma: motivo assumido como marketing.
+  const motivoBonifEfetivo =
+    motivoBonificacaoFinal || (ehRemessa ? "marketing" : "");
+  const bonificadoSemMotivo = bonificado && !motivoBonifEfetivo;
 
   const podeFinalizar =
     !!calculo.faixa && !!condicao && !negociacaoSemJustificativa && !bonificadoSemMotivo;
@@ -293,9 +296,13 @@ export function CartCommercialPanel({
       condicaoCotacao,
       podeSalvarCotacao,
       bonificado,
-      motivoBonificacao: bonificado ? motivoBonificacaoFinal : undefined,
+      motivoBonificacao: bonificado ? motivoBonifEfetivo : undefined,
+      naturezaOperacao,
+      campanha: campanha.trim() || undefined,
+      entregaB2C: ehPFDestino,
+      cfop,
     });
-  }, [calculo, condicao, podeFinalizar, motivoBloqueio, onChange, bonificado, motivoBonificacaoFinal, calculoCotacao, condicaoCotacao, podeSalvarCotacao]);
+  }, [calculo, condicao, podeFinalizar, motivoBloqueio, onChange, bonificado, motivoBonifEfetivo, calculoCotacao, condicaoCotacao, podeSalvarCotacao, naturezaOperacao, campanha, ehPFDestino, cfop]);
 
   const prox = premissas?.temFaixaFixa ? null : proximaFaixa(faixa);
   const faltaProx = prox ? prox.valorMin - bruto : 0;
