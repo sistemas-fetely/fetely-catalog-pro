@@ -168,10 +168,17 @@ export const useClientes = create<ClienteState>()(
             "Sessão não está pronta. Atualize a página antes de cadastrar o cliente.",
           );
         }
-        if (!c.razaoSocial) {
+        const ehPF = c.tipoPessoa === "PF";
+        if (ehPF && !(c.nomeCompletoPF ?? "").trim()) {
+          throw new Error("Informe o nome completo da pessoa física.");
+        }
+        if (ehPF && !c.cpf) {
+          throw new Error("Informe o CPF.");
+        }
+        if (!ehPF && !c.razaoSocial) {
           throw new Error("Razão social é obrigatória.");
         }
-        if (!c.isInternacional && !c.cnpj) {
+        if (!ehPF && !c.isInternacional && !c.cnpj) {
           throw new Error("CNPJ é obrigatório (ou marque como cliente internacional).");
         }
         if (c.isInternacional && !c.documentoNumero) {
