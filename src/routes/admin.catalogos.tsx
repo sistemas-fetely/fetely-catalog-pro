@@ -99,7 +99,11 @@ function AdminCatalogosPage() {
     tipo: "pdfs" | "capas",
   ): Promise<void> {
     if (!form) return;
-    if (tipo === "pdfs" && file.type !== "application/pdf") {
+    if (
+      tipo === "pdfs" &&
+      file.type !== "application/pdf" &&
+      !file.name.toLowerCase().endsWith(".pdf")
+    ) {
       toast.error("Envie um arquivo PDF.");
       return;
     }
