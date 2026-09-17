@@ -193,7 +193,61 @@ export function ClienteFormModal({
       setChecandoCnpj(false);
       clearTimeout(t);
     };
-  }, [open, cnpjDigitsAtual, cliente.isInternacional, cliente.id, initial]);
+  }, [open, cnpjDigitsAtual, cliente.isInternacional, cliente.id, initial, ehPF]);
+
+  // Pessoa física: valida o dígito verificador do CPF e avisa se já existe cadastro.
+  const cpfDigitsAtual = (cliente.cpf ?? "").replace(/\D/g, "");
+  useEffect(() => {
+    if (!open || !ehPF) return;
+    setCpfDuplicado(null);
+    if (cpfDigitsAtual.length === 0) {
+      setCpfErro(null);
+      return;
+    }
+    if (cpfDigitsAtual.length < 11) {
+      setCpfErro(null);
+      return;
+    }
+    if (!isValidCPF(cpfDigitsAtual)) {
+      setCpfErro("CPF inválido — confira os números digitados.");
+      return;
+    }
+    setCpfErro(null);
+    let cancelado = false;
+    const t = setTimeout(async () => {
+      const achado = await checkCpfExistente(cpfDigitsAtual);
+      if (cancelado) return;
+      if (achado && achado.id !== cliente.id) setCpfDuplicado(achado);
+    }, 400);
+    return () => {
+      cancelado = true;
+      clearTimeout(t);
+    };
+  }, [open, ehPF, cpfDigitsAtual, cliente.id]);
+
+  // Busca automática de endereço pelo CEP (ViaCEP) — só no modo pessoa física.
+  const buscarCep = async (cepValor: string) => {
+    setCepErro(null);
+    setCepLoading(true);
+    try {
+      const r = await fetchCEP(cepValor);
+      setCliente((c) => ({
+        ...c,
+        cep: r.cep,
+        logradouro: r.logradouro || c.logradouro,
+        bairro: r.bairro || c.bairro,
+        cidade: r.cidade || c.cidade,
+        estado: r.uf || c.estado,
+      }));
+    } catch (err) {
+      setCepErro(
+        err instanceof Error ? err.message : "Não foi possível consultar o CEP.",
+      );
+    } finally {
+      setCepLoading(false);
+    }
+  };
+
 
 
   const handleCnpjLookup = async () => {
