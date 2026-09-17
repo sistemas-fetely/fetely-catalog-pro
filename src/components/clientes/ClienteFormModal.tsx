@@ -419,8 +419,31 @@ export function ClienteFormModal({
         };
       }
     }
+    // Pessoa física: CPF único na base.
+    if (ehPF) {
+      const achado = cpfDuplicado ?? (await checkCpfExistente(cliente.cpf ?? ""));
+      if (achado && achado.id !== cliente.id) {
+        setCpfDuplicado(achado);
+        toast.error("Este CPF já está cadastrado. Use o cadastro existente.");
+        return;
+      }
+    }
+
+    const nomePF = (cliente.nomeCompletoPF ?? "").trim();
     const saved: Cliente = {
       ...cliente,
+      ...(ehPF
+        ? {
+            cnpj: "",
+            cnpjFormatado: "",
+            razaoSocial: nomePF,
+            nomeFantasia: nomePF,
+            inscricaoEstadual: "ISENTO",
+            isentoIE: true,
+            contatoNome: (cliente.contatoNome ?? "").trim() || nomePF,
+            situacaoCadastral: "desconhecida" as const,
+          }
+        : {}),
       premissasComerciais,
       atualizadoEm: new Date().toISOString(),
     };
