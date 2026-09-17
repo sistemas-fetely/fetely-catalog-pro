@@ -19,9 +19,13 @@ export interface CatalogoPdf {
   created_at: string;
 }
 
-/** URL pública (same-origin) do arquivo no bucket privado. */
+// URL pública do site publicado — links compartilhados com o cliente devem
+// sempre apontar para o domínio de produção, nunca para o preview.
+const BASE_PUBLICA = "https://fetely-catalog-pro.lovable.app";
+
+/** URL pública absoluta do arquivo no bucket privado (via proxy). */
 export function urlArquivo(path: string, download = false): string {
-  const p = `/api/public/catalogo-file?path=${encodeURIComponent(path)}`;
+  const p = `${BASE_PUBLICA}/api/public/catalogo-file?path=${encodeURIComponent(path)}`;
   return download ? `${p}&dl=1` : p;
 }
 
