@@ -25,12 +25,35 @@ export type SituacaoCadastral =
   | "nula"
   | "desconhecida";
 
+export type TipoPessoa = "PJ" | "PF";
+
+export type TipoEndereco = "casa" | "apartamento" | "comercial";
+
+export const TIPO_ENDERECO_LABEL: Record<TipoEndereco, string> = {
+  casa: "Casa",
+  apartamento: "Apartamento / Condomínio",
+  comercial: "Comercial",
+};
+
 export interface Cliente {
   id: string;
   criadoEm: string;
   atualizadoEm: string;
   cadastradoPorVendedorId: string;
   cadastradoPorVendedorNome: string;
+
+  /** PJ é o padrão — cadastros antigos permanecem PJ. */
+  tipoPessoa?: TipoPessoa;
+
+  // Pessoa Física (envios a influenciadores / ações de marketing)
+  cpf?: string;
+  cpfFormatado?: string;
+  nomeCompletoPF?: string;
+  dataNascimento?: string;
+  pontoReferencia?: string;
+  tipoEndereco?: TipoEndereco;
+  observacaoEntrega?: string;
+  socialHandle?: string;
 
   cnpj: string;
   cnpjFormatado: string;
