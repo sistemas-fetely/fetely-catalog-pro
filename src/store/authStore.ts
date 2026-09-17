@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { setQuantidadeLivre, EMAILS_QUANTIDADE_LIVRE } from "@/lib/format";
 
 export type AppRole = "master" | "admin" | "vendedor" | "cliente";
 
@@ -55,10 +56,14 @@ async function loadProfileAndRoles(userId: string): Promise<{ profile: Profile |
     supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
     supabase.from("user_roles").select("role").eq("user_id", userId),
   ]);
-  return {
-    profile: (profile as Profile | null) ?? null,
-    roles: (rolesData ?? []).map((r) => r.role as AppRole),
-  };
+  const p = (profile as Profile | null) ?? null;
+  const roles = (rolesData ?? []).map((r) => r.role as AppRole);
+  // Quantidade unitária (sem caixa fechada): master e contas autorizadas.
+  const email = (p?.email ?? "").trim().toLowerCase();
+  setQuantidadeLivre(
+    roles.includes("master") || EMAILS_QUANTIDADE_LIVRE.includes(email),
+  );
+  return { profile: p, roles };
 }
 
 export const useAuth = create<AuthState>((set, get) => ({
