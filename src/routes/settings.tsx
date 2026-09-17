@@ -81,6 +81,17 @@ function SettingsPage() {
               } as Item,
             ]
           : []),
+        ...(session && isAdminOrMaster
+          ? [
+              {
+                label: "Catálogos PDF",
+                description: "Subir catálogos em PDF com capa e nome para os clientes",
+                to: "/admin/catalogos",
+                icon: FileStack,
+                tela: "cfg_produtos",
+              } as Item,
+            ]
+          : []),
         {
           label: "Importar",
           description: "Importar dados do sistema via planilhas",
