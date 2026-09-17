@@ -319,6 +319,21 @@ export function ClienteFormModal({
 
 
   const podeSalvar = useMemo(() => {
+    if (ehPF) {
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((cliente.contatoEmail ?? "").trim());
+      return Boolean(
+        (cliente.nomeCompletoPF ?? "").trim() &&
+          isValidCPF(cliente.cpf ?? "") &&
+          emailOk &&
+          (cliente.contatoTelefone ?? "").trim() &&
+          (cliente.cep ?? "").replace(/\D/g, "").length === 8 &&
+          (cliente.logradouro ?? "").trim() &&
+          (cliente.numero ?? "").trim() &&
+          (cliente.cidade ?? "").trim() &&
+          (cliente.estado ?? "").trim() &&
+          cliente.tipoEndereco,
+      );
+    }
     const base =
       cliente.razaoSocial.trim().length > 0 &&
       cliente.contatoNome.trim().length > 0 &&
