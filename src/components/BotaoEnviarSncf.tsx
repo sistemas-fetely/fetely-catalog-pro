@@ -252,13 +252,16 @@ export function BotaoEnviarSncf({ orderId }: { orderId: string }) {
 
   if (status === "rejeitado") {
     return (
-      <button
-        disabled
-        title={`Rejeitado: ${erro ?? "erro"}`}
-        className={`${BASE} border-red-500/40 text-red-500`}
-      >
-        <X className="h-3.5 w-3.5" />
-      </button>
+      <>
+        <button
+          onClick={() => void abrirAprovacao()}
+          title={`Rejeitado: ${erro ?? "erro"} — clique para tentar novamente`}
+          className={`${BASE} border-red-500/40 text-red-500 hover:bg-red-500/10`}
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+        {dialogAprovacao}
+      </>
     );
   }
 
