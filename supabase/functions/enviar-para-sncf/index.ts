@@ -314,10 +314,19 @@ Deno.serve(async (req) => {
     const snap: any = clienteSnapshot ?? {};
 
     // Pessoa física (remessa/brinde para influenciadores): CPF no lugar do CNPJ.
-    const ehPF = c?.tipo_pessoa === "PF" || (pedido as any).entrega_b2c === true;
-    const cpf = ehPF ? (c?.cpf ?? null) : null;
+    // O cadastro pode não ter sido carregado (pedido antigo sem cliente_id), então
+    // o snapshot e a natureza da operação também definem PF.
+    const soDigitos = (v: unknown) => String(v ?? "").replace(/\D/g, "");
+    const cpfBruto = soDigitos(c?.cpf ?? snap?.cpf ?? snap?.documento ?? "");
+    const cnpjBruto = soDigitos(snap?.cnpj ?? c?.cnpj ?? "");
+    const ehPF =
+      c?.tipo_pessoa === "PF" ||
+      snap?.tipoPessoa === "PF" ||
+      (pedido as any).entrega_b2c === true ||
+      (cpfBruto.length === 11 && cnpjBruto.length !== 14);
+    const cpf = ehPF ? (cpfBruto.length === 11 ? cpfBruto : null) : null;
     // CNPJ: snapshot primeiro, cadastro como fallback.
-    const cnpj = ehPF ? null : (snap?.cnpj ?? c?.cnpj ?? null);
+    const cnpj = ehPF ? null : (cnpjBruto.length === 14 ? cnpjBruto : null);
     if (!cnpj && !cpf) {
       return jsonResponse(400, {
         error: ehPF
@@ -325,6 +334,7 @@ Deno.serve(async (req) => {
           : "Pedido sem CNPJ: nem o snapshot nem o cadastro do cliente têm CNPJ.",
       });
     }
+
 
     // Pedido bonificado bypassa validação (é sempre boleto sentinela).
     const formaNormalizada = (pedido as any).bonificado ? "boleto" : normalizarForma(pedido.forma_pagamento);
