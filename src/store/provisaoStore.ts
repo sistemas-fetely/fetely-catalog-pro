@@ -18,6 +18,60 @@ interface CreateProvisaoInput {
   observacoes?: string;
 }
 
+/** Assinatura de itens (SKU + quantidade) usada para detectar provisões repetidas. */
+function assinaturaItens(itens: ItemProvisao[]): string {
+  return itens
+    .map((i) => `${i.sku}x${Math.round(i.quantidade)}`)
+    .sort()
+    .join(",");
+}
+
+/**
+ * Procura no banco uma provisão ABERTA do mesmo cliente com exatamente os mesmos
+ * itens. Serve de trava de idempotência: cada nova tentativa de salvar o mesmo
+ * carrinho reaproveita a provisão existente em vez de criar uma cópia.
+ */
+async function encontrarProvisaoEquivalente(
+  input: CreateProvisaoInput,
+): Promise<ProvisaoFutura | null> {
+  try {
+    const assinatura = assinaturaItens(input.itens);
+    const { data: provs, error } = await supabase
+      .from("provisoes")
+      .select("*")
+      .eq("cliente_id", input.clienteId)
+      .eq("status", "aguardando_estoque")
+      .eq("reprovado", false)
+      .order("criado_em", { ascending: false })
+      .limit(20);
+    if (error || !provs || provs.length === 0) return null;
+
+    const ids = (provs as Record<string, unknown>[]).map((r) => r.id as string);
+    const { data: itensRows } = await supabase
+      .from("provisao_itens")
+      .select("*")
+      .in("provisao_id", ids);
+    const porProv = ((itensRows ?? []) as Record<string, unknown>[]).reduce<
+      Record<string, ItemProvisao[]>
+    >((acc, r) => {
+      const pid = r.provisao_id as string;
+      (acc[pid] ||= []).push(rowToItemProvisao(r));
+      return acc;
+    }, {});
+
+    for (const row of provs as Record<string, unknown>[]) {
+      const id = row.id as string;
+      const itens = porProv[id] ?? [];
+      if (itens.length === 0) continue;
+      if (assinaturaItens(itens) === assinatura) return rowToProvisao(row, input.itens);
+    }
+    return null;
+  } catch (err) {
+    console.error("[provisaoStore] checagem de duplicidade falhou:", err);
+    return null;
+  }
+}
+
 /** Dedup de hidratação de provisões. */
 let inflightProvItens: Promise<void> | null = null;
 let inflightProvHydrate: Promise<void> | null = null;
