@@ -114,8 +114,13 @@ export interface Cliente {
 
 export interface ClienteSnapshot {
   clienteId: string;
+  /** PJ por padrão — snapshots antigos não têm o campo. */
+  tipoPessoa?: TipoPessoa;
+  /** Preenchido só quando o destinatário é pessoa física. */
+  cpf?: string;
   cnpj: string;
   razaoSocial: string;
+
   nomeFantasia: string;
   cidade: string;
   estado: string;
