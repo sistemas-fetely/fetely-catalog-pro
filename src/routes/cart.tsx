@@ -41,10 +41,14 @@ function buildClienteSnapshot(c: Cliente): ClienteSnapshot {
   const endereco = c.enderecoEntregaIgual
     ? `${c.logradouro ?? ""}${c.numero ? `, ${c.numero}` : ""} — ${c.bairro ?? ""}, ${c.cidade ?? ""}/${c.estado ?? ""} · ${c.cep ?? ""}`
     : `${c.entregaLogradouro ?? ""}${c.entregaNumero ? `, ${c.entregaNumero}` : ""} — ${c.entregaBairro ?? ""}, ${c.entregaCidade ?? ""}/${c.entregaEstado ?? ""} · ${c.entregaCep ?? ""}`;
+  const ehPF = (c.tipoPessoa ?? "PJ") === "PF";
   return {
     clienteId: c.id,
+    tipoPessoa: c.tipoPessoa ?? "PJ",
+    cpf: ehPF ? (c.cpfFormatado || c.cpf || "") : undefined,
     cnpj: c.cnpjFormatado,
-    razaoSocial: c.razaoSocial,
+    razaoSocial: ehPF ? (c.nomeCompletoPF || c.razaoSocial) : c.razaoSocial,
+
     nomeFantasia: c.nomeFantasia,
     cidade: c.cidade,
     estado: c.estado,
