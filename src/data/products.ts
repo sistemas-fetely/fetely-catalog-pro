@@ -76,6 +76,7 @@ export const COLLECTION_ACCENT: Record<string, string> = {
   Lavoire: "oklch(0.78 0.11 85)",
   "Esprit d’Halloween": "oklch(0.62 0.16 55)",
   Fairytale: "oklch(0.80 0.10 330)",
+  "Jingle Pop": "oklch(0.62 0.17 25)",
 };
 
 
