@@ -209,6 +209,30 @@ export const useProvisao = create<ProvisaoState>()(
         if (input.itens.length === 0) {
           throw new Error("Não há itens de provisão para salvar.");
         }
+
+        // Idempotência — evita provisões duplicadas quando o usuário repete o
+        // salvamento (pedido que falhou, duplo clique, cotação salva de novo).
+        // Se já existe provisão aberta do mesmo cliente com exatamente os mesmos
+        // itens/quantidades, reaproveita em vez de criar outra.
+        const existente = await encontrarProvisaoEquivalente(input);
+        if (existente) {
+          const patch: Partial<ProvisaoFutura> = {};
+          if (input.pedidoFirmeId && !existente.pedidoFirmeId) patch.pedidoFirmeId = input.pedidoFirmeId;
+          if (input.cotacaoOrigemId && !existente.cotacaoOrigemId) patch.cotacaoOrigemId = input.cotacaoOrigemId;
+          if (Object.keys(patch).length > 0) {
+            const row: Record<string, unknown> = { atualizado_em: new Date().toISOString() };
+            if (patch.pedidoFirmeId) row.pedido_firme_id = patch.pedidoFirmeId;
+            if (patch.cotacaoOrigemId) row.cotacao_origem_id = patch.cotacaoOrigemId;
+            await supabase.from("provisoes").update(row as never).eq("id", existente.id);
+          }
+          const atualizada = { ...existente, ...patch, itens: input.itens };
+          set((s) => ({
+            provisoes: s.provisoes.some((p) => p.id === atualizada.id)
+              ? s.provisoes.map((p) => (p.id === atualizada.id ? atualizada : p))
+              : [atualizada, ...s.provisoes],
+          }));
+          return atualizada;
+        }
         // ID globalmente único (evita colisão entre contadores locais de vendedores diferentes)
         const ts = Date.now();
         const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
