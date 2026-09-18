@@ -429,8 +429,11 @@ Deno.serve(async (req) => {
         : null;
 
     const payloadBase: Record<string, unknown> = {
-      // Obrigatórios (já enviados hoje)
-      cnpj,
+      // Obrigatórios (já enviados hoje).
+      // O SNCF exige 'cnpj' como campo de documento. Para pessoa física
+      // mandamos o CPF nesse campo (documento do destinatário) e sinalizamos
+      // o tipo em tipo_pessoa/cpf/consumidor_final.
+      cnpj: cnpj ?? cpf,
       // Destinatário pessoa física (remessa/brinde, ações de marketing)
       tipo_pessoa: ehPF ? "PF" : "PJ",
       cpf,
