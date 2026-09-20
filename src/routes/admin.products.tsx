@@ -1205,7 +1205,7 @@ function ProductEditor({
         </Tabs>
 
         <DialogFooter className="!justify-between gap-2 sm:!justify-between">
-          {!creating && product.fase !== "inativo" ? (
+          {product.fase !== "inativo" ? (
             <Button
               variant="outline"
               onClick={onToggleAtivo}
