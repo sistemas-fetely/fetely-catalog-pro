@@ -1,4 +1,11 @@
-// 🟢 FOP — sincronizar-catalogo v5.0
+// 🟢 FOP — sincronizar-catalogo v6.0
+// v6.0: terceiro modo de operação. Corpo {"modo":"gravar_produto", cod_cadastro, campos, motivo}
+//       aplica UPDATE em products a pedido do SNCF (braço de escrita do bloco técnico).
+//       Autentica por Bearer contra FSNC_INBOUND_TOKEN do cofre — token de ENTRADA,
+//       distinto do SNCF_OUTBOUND_TOKEN (saída). Só este modo exige o header.
+//       Campos de identidade (cod_cadastro, sku, ean, dun, fase, ativo) são recusados
+//       com 403; recusa de trigger do banco volta 502 com a mensagem crua do Postgres.
+//       Não valida dono de campo: a autorização já foi decidida pelo SNCF.
 // v5.0: segundo modo de operação. Corpo {"modo":"precos"} NÃO sincroniza catálogo:
 //       empurra para o SNCF (receber-precos) o espelho da tabela de preço
 //       (product_prices + product_price_history), só leitura no FOP, só envio.
