@@ -129,6 +129,7 @@ function rowToProduct(row: Record<string, unknown>): Product {
     sku: row.sku as string,
     codCadastro: (row.cod_cadastro as string | null) ?? "",
     ean: (row.ean as string | null) ?? "",
+    dun: (row.dun as string | null) ?? "",
     marca: (row.marca as string) ?? "Fetély",
     linha: (row.linha as string | null) ?? "",
     categoria: row.categoria as string,
@@ -450,7 +451,9 @@ export const useCatalog = create<CatalogState>()(
     {
       name: "fetely-catalog",
       storage: createJSONStorage(createSafeStorage),
-      version: 13,
+      // v14: cache antigo não tem `fase`; migrar limpa para reler do banco e evitar
+      // salvar produto publicado de volta como "registrado".
+      version: 14,
       partialize: (state) => ({
         products: state.products,
         source: state.source,

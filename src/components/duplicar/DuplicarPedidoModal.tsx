@@ -126,11 +126,15 @@ export function DuplicarPedidoModal({
   }, [clientes, clientesSelecionados, buscaClienteQ]);
 
   const handleContinuar = async () => {
-    // Os itens do pedido são carregados sob demanda (lista fica leve).
+    // Os itens do pedido são carregados sob demanda (lista fica leve). Após carregar,
+    // relê do store: o `itensBase` do render atual ainda está vazio neste ponto.
+    let itens = itensBase;
     if (origemTipo === "pedido" && pedidoOrigem && pedidoOrigem.items.length === 0) {
       await useOrder.getState().ensureItemsFor([pedidoOrigem.id]);
+      const atualizado = useOrder.getState().history.find((o) => o.id === pedidoOrigem.id);
+      if (atualizado) itens = itensDePedido(atualizado);
     }
-    if (itensBase.length === 0) { toast.error("Escolha a origem dos itens"); return; }
+    if (itens.length === 0) { toast.error("Escolha a origem dos itens"); return; }
     if (clientesSelecionados.size === 0) { toast.error("Selecione ao menos um cliente destino"); return; }
 
     const recalc = recalcularItens(itensBase);
