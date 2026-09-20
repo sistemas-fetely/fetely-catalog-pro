@@ -1,4 +1,8 @@
-// 🟢 FOP — sincronizar-catalogo v4.0
+// 🟢 FOP — sincronizar-catalogo v5.0
+// v5.0: segundo modo de operação. Corpo {"modo":"precos"} NÃO sincroniza catálogo:
+//       empurra para o SNCF (receber-precos) o espelho da tabela de preço
+//       (product_prices + product_price_history), só leitura no FOP, só envio.
+//       Sem `modo` (ou "catalogo"), o comportamento abaixo é EXATAMENTE o de sempre.
 // v4.0: (1) lote que falha não aborta mais a sincronização — reenvio item a item com
 //       coleta de erros e resumo final; (2) removido o filtro .eq("ativo", true) para o
 //       SNCF receber também descontinuados (quem decide é o SNCF, não este filtro);
@@ -21,6 +25,184 @@ const jsonResponse = (status: number, body: unknown) =>
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
 
+// ---------- MODO precos: espelho da tabela de preço para o SNCF ----------
+// Só leitura no FOP, só envio para fora. Espelho é espelho: preço invertido,
+// zero, vigência órfã e autor nulo vão como estão — apontar é papel do SNCF.
+// deno-lint-ignore no-explicit-any
+async function sincronizarPrecos(supabase: any, sncfToken: string) {
+  const sncfUrl =
+    "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/receber-precos";
+
+  // deno-lint-ignore no-explicit-any
+  const lerTudo = async (tabela: string, select: string): Promise<any[]> => {
+    // O PostgREST corta em 1000 por query — paginar até vir página curta.
+    const linhas: unknown[] = [];
+    let desde = 0;
+    for (;;) {
+      const { data, error } = await supabase
+        .from(tabela)
+        .select(select)
+        .order("id")
+        .range(desde, desde + 999);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      linhas.push(...data);
+      if (data.length < 1000) break;
+      desde += 1000;
+    }
+    return linhas;
+  };
+
+  // Join manual: product_id -> products(cod_cadastro, sku).
+  const produtos = await lerTudo("products", "id, cod_cadastro, sku");
+  const mapaProd = new Map(
+    // deno-lint-ignore no-explicit-any
+    produtos.map((p: any) => [
+      p.id as string,
+      { cod_cadastro: (p.cod_cadastro as string | null) ?? null, sku: (p.sku as string | null) ?? null },
+    ])
+  );
+
+  // Sem filtro de ativo e sem filtro de fase: é espelho, manda tudo.
+  const vigenciasRaw = await lerTudo(
+    "product_prices",
+    "id, product_id, preco_atacado, preco_varejo, vigencia_inicio, vigencia_fim, ativo, observacao, criado_por_nome, created_at, updated_at"
+  );
+  const historicoRaw = await lerTudo(
+    "product_price_history",
+    "id, product_id, sku, nome_comercial, preco_atacado_anterior, preco_varejo_anterior, preco_atacado_novo, preco_varejo_novo, variacao_atacado_percent, variacao_varejo_percent, acao, alterado_por_nome, observacao, criado_em"
+  );
+
+  // Vigência cujo product_id não existe mais em products vai mesmo assim, com
+  // cod_cadastro e sku nulos — é lixo conhecido e o SNCF precisa enxergar.
+  // deno-lint-ignore no-explicit-any
+  const vigencias = vigenciasRaw.map((v: any) => {
+    const prod = mapaProd.get(v.product_id);
+    return {
+      id: v.id,
+      product_id: v.product_id,
+      cod_cadastro: prod?.cod_cadastro ?? null,
+      sku: prod?.sku ?? null,
+      preco_atacado: v.preco_atacado,
+      preco_varejo: v.preco_varejo,
+      vigencia_inicio: v.vigencia_inicio,
+      vigencia_fim: v.vigencia_fim,
+      ativo: v.ativo,
+      observacao: v.observacao ?? null,
+      criado_por_nome: v.criado_por_nome ?? null, // vai como está — não inventar autor
+      created_at: v.created_at,
+      updated_at: v.updated_at,
+    };
+  });
+
+  // deno-lint-ignore no-explicit-any
+  const historico = historicoRaw.map((h: any) => {
+    const prod = mapaProd.get(h.product_id);
+    return {
+      id: h.id,
+      product_id: h.product_id,
+      cod_cadastro: prod?.cod_cadastro ?? null,
+      sku: h.sku ?? prod?.sku ?? null,
+      nome_comercial: h.nome_comercial ?? null,
+      preco_atacado_anterior: h.preco_atacado_anterior,
+      preco_varejo_anterior: h.preco_varejo_anterior,
+      preco_atacado_novo: h.preco_atacado_novo,
+      preco_varejo_novo: h.preco_varejo_novo,
+      variacao_atacado_percent: h.variacao_atacado_percent,
+      variacao_varejo_percent: h.variacao_varejo_percent,
+      acao: h.acao,
+      alterado_por_nome: h.alterado_por_nome ?? null, // vai como está — a perda de autoria fica à vista
+      observacao: h.observacao ?? null,
+      criado_em: h.criado_em,
+    };
+  });
+
+  let envVigencias = 0;
+  let envHistorico = 0;
+  let falhados = 0;
+  const erros: Array<{ tipo: string; indice_lote: number; erro: string }> = [];
+  let errosOmitidos = 0;
+
+  const registrarErro = (tipo: string, indiceLote: number, msg: string, corpoCru?: string) => {
+    falhados += 1;
+    console.error(
+      `[sincronizar-catalogo v5.0 modo=precos] lote ${tipo}#${indiceLote} falhou: ${msg}${corpoCru ? ` | corpo: ${corpoCru.slice(0, 500)}` : ""}`
+    );
+    if (erros.length < MAX_ERROS) {
+      erros.push({ tipo, indice_lote: indiceLote, erro: msg });
+    } else {
+      errosOmitidos += 1;
+    }
+  };
+
+  const enviarBloco = async (body: Record<string, unknown>) => {
+    const resp = await fetch(sncfUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${sncfToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!resp.ok) {
+      const cru = await resp.text().catch(() => "");
+      const err = new Error(`SNCF respondeu ${resp.status}`) as Error & { cru?: string };
+      err.cru = cru;
+      throw err;
+    }
+  };
+
+  // Bloco que falhar não aborta o resto: segue e acumula os erros.
+  const LOTE_PRECOS = 500;
+  for (let i = 0; i < vigencias.length; i += LOTE_PRECOS) {
+    const fatia = vigencias.slice(i, i + LOTE_PRECOS);
+    try {
+      await enviarBloco({ vigencias: fatia });
+      envVigencias += fatia.length;
+    } catch (e) {
+      registrarErro("vigencias", i / LOTE_PRECOS + 1, e instanceof Error ? e.message : String(e), (e as { cru?: string }).cru);
+    }
+  }
+
+  for (let i = 0; i < historico.length; i += LOTE_PRECOS) {
+    const fatia = historico.slice(i, i + LOTE_PRECOS);
+    try {
+      await enviarBloco({ historico: fatia });
+      envHistorico += fatia.length;
+    } catch (e) {
+      registrarErro("historico", i / LOTE_PRECOS + 1, e instanceof Error ? e.message : String(e), (e as { cru?: string }).cru);
+    }
+  }
+
+  console.log(
+    `[sincronizar-catalogo v5.0 modo=precos] vigencias: ${envVigencias}/${vigencias.length}, historico: ${envHistorico}/${historico.length}, falhados: ${falhados}`
+  );
+
+  if (envVigencias === 0 && envHistorico === 0) {
+    return jsonResponse(500, {
+      ok: false,
+      modo: "precos",
+      vigencias: 0,
+      historico: 0,
+      falhados,
+      erros,
+      ...(errosOmitidos > 0 ? { erros_omitidos: errosOmitidos } : {}),
+      error: "Nenhum item sincronizado",
+    });
+  }
+
+  return jsonResponse(200, {
+    ok: falhados === 0,
+    modo: "precos",
+    vigencias: envVigencias,
+    historico: envHistorico,
+    falhados,
+    erros,
+    ...(errosOmitidos > 0 ? { erros_omitidos: errosOmitidos } : {}),
+    mensagem: `${envVigencias} vigências e ${envHistorico} registros de histórico sincronizados${falhados > 0 ? `, ${falhados} blocos com erro` : ""}`,
+  });
+}
+
 serve(async (req) => {
   // Preflight CORS
   if (req.method === "OPTIONS") {
@@ -38,6 +220,13 @@ serve(async (req) => {
     });
     if (!sncfToken) {
       return jsonResponse(500, { error: "Secret SNCF_OUTBOUND_TOKEN não configurado" });
+    }
+
+    // Desvio do modo: {"modo":"precos"} empurra o espelho de preço e retorna.
+    // Sem `modo`, o caminho do catálogo abaixo segue intacto.
+    const corpo = await req.json().catch(() => ({}));
+    if ((corpo as { modo?: string })?.modo === "precos") {
+      return await sincronizarPrecos(supabase, sncfToken);
     }
 
     const sncfUrl =
