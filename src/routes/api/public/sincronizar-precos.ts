@@ -57,7 +57,8 @@ export const Route = createFileRoute("/api/public/sincronizar-precos")({
             const linhas: unknown[] = [];
             let desde = 0;
             for (;;) {
-              const { data, error } = await supabaseAdmin
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const { data, error } = await (supabaseAdmin as any)
                 .from(tabela)
                 .select(select)
                 .order("id")
