@@ -384,10 +384,10 @@ function AdminProductsPage() {
   }, [products.length]);
 
 
-  // Editor state
+  // Editor state — só edição: produto novo não nasce aqui (NASCIMENTO-PASSA-
+  // PELO-CARTÓRIO); nasce no SNCF pela Importação de PI.
   const [editing, setEditing] = useState<Product | null>(null);
   const [editingOriginalSku, setEditingOriginalSku] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
 
   // Portão de publicação (SNCF)
   const ficha = useServerFn(fichaPendencias);
@@ -399,18 +399,10 @@ function AdminProductsPage() {
   function openEdit(p: Product) {
     setEditing({ ...p });
     setEditingOriginalSku(p.sku);
-    setCreating(false);
-  }
-  function openNew() {
-    const np = emptyProduct();
-    setEditing(np);
-    setEditingOriginalSku(null);
-    setCreating(true);
   }
   function close() {
     setEditing(null);
     setEditingOriginalSku(null);
-    setCreating(false);
   }
 
   function save() {
@@ -430,8 +422,8 @@ function AdminProductsPage() {
     if (!(editing.multiplos >= 1)) errs.push("Múltiplos deve ser ≥ 1");
     if (!editing.statusEstoque) errs.push("Status Estoque");
 
-    // Duplicate check on create or SKU change
-    if (creating || editingOriginalSku !== editing.sku) {
+    // Duplicate check on SKU change
+    if (editingOriginalSku !== editing.sku) {
       if (products.some((x) => x.sku === editing.sku))
         errs.push("SKU já cadastrado");
     }
@@ -445,16 +437,8 @@ function AdminProductsPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(creating ? "Produto criado" : "Produto salvo");
+    toast.success("Produto salvo");
     close();
-  }
-
-  function handleDuplicate(p: Product) {
-    const copy = duplicateProduct(p.sku, auditMeta);
-    if (copy) {
-      toast.success(`Duplicado como ${copy.sku}`);
-      openEdit(copy);
-    }
   }
 
   // Portão de publicação: registrado → valida ficha no SNCF antes de ir para pré-venda.
@@ -605,11 +589,10 @@ function AdminProductsPage() {
                 <History className="mr-2 h-4 w-4" /> Tabela de Preço
               </Link>
             </Button>
-            <Can tela="cfg_produtos" acao="criar">
-              <Button onClick={openNew} className="bg-gold text-black hover:bg-gold/90">
-                <Plus className="mr-2 h-4 w-4" /> Novo Produto
-              </Button>
-            </Can>
+            <p className="flex items-center gap-1.5 text-xs text-text-muted">
+              <Lock className="h-3 w-3" />
+              Produto novo nasce no SNCF, pela Importação de PI — o código vem do cartório.
+            </p>
           </div>
         </div>
 
