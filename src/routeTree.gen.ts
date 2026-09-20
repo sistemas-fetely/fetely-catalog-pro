@@ -61,6 +61,7 @@ import { Route as AdminAccessLogsRouteImport } from './routes/admin.access-logs'
 import { Route as AdminAcademiaRouteImport } from './routes/admin.academia'
 import { Route as AcademiaModuloIdRouteImport } from './routes/academia.$moduloId'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
+import { Route as ApiPublicSincronizarPrecosRouteImport } from './routes/api/public/sincronizar-precos'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
 import { Route as ApiPublicCatalogoFileRouteImport } from './routes/api/public/catalogo-file'
 import { Route as ApiPublicAcademiaFileRouteImport } from './routes/api/public/academia-file'
@@ -326,6 +327,12 @@ const CatalogCategoriaCategoriaRoute =
     path: '/catalog/categoria/$categoria',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSincronizarPrecosRoute =
+  ApiPublicSincronizarPrecosRouteImport.update({
+    id: '/api/public/sincronizar-precos',
+    path: '/api/public/sincronizar-precos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
   id: '/api/public/img',
   path: '/api/public/img',
@@ -397,6 +404,7 @@ export interface FileRoutesByFullPath {
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
   '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/img': typeof ApiPublicImgRoute
+  '/api/public/sincronizar-precos': typeof ApiPublicSincronizarPrecosRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
 export interface FileRoutesByTo {
@@ -453,6 +461,7 @@ export interface FileRoutesByTo {
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
   '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/img': typeof ApiPublicImgRoute
+  '/api/public/sincronizar-precos': typeof ApiPublicSincronizarPrecosRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
 export interface FileRoutesById {
@@ -511,6 +520,7 @@ export interface FileRoutesById {
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
   '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/img': typeof ApiPublicImgRoute
+  '/api/public/sincronizar-precos': typeof ApiPublicSincronizarPrecosRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
 export interface FileRouteTypes {
@@ -570,6 +580,7 @@ export interface FileRouteTypes {
     | '/api/public/academia-file'
     | '/api/public/catalogo-file'
     | '/api/public/img'
+    | '/api/public/sincronizar-precos'
     | '/catalog/categoria/$categoria'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -626,6 +637,7 @@ export interface FileRouteTypes {
     | '/api/public/academia-file'
     | '/api/public/catalogo-file'
     | '/api/public/img'
+    | '/api/public/sincronizar-precos'
     | '/catalog/categoria/$categoria'
   id:
     | '__root__'
@@ -683,6 +695,7 @@ export interface FileRouteTypes {
     | '/api/public/academia-file'
     | '/api/public/catalogo-file'
     | '/api/public/img'
+    | '/api/public/sincronizar-precos'
     | '/catalog/categoria/$categoria'
   fileRoutesById: FileRoutesById
 }
@@ -734,6 +747,7 @@ export interface RootRouteChildren {
   ApiPublicAcademiaFileRoute: typeof ApiPublicAcademiaFileRoute
   ApiPublicCatalogoFileRoute: typeof ApiPublicCatalogoFileRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
+  ApiPublicSincronizarPrecosRoute: typeof ApiPublicSincronizarPrecosRoute
   CatalogCategoriaCategoriaRoute: typeof CatalogCategoriaCategoriaRoute
 }
 
@@ -1103,6 +1117,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CatalogCategoriaCategoriaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/sincronizar-precos': {
+      id: '/api/public/sincronizar-precos'
+      path: '/api/public/sincronizar-precos'
+      fullPath: '/api/public/sincronizar-precos'
+      preLoaderRoute: typeof ApiPublicSincronizarPrecosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/img': {
       id: '/api/public/img'
       path: '/api/public/img'
@@ -1216,6 +1237,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAcademiaFileRoute: ApiPublicAcademiaFileRoute,
   ApiPublicCatalogoFileRoute: ApiPublicCatalogoFileRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
+  ApiPublicSincronizarPrecosRoute: ApiPublicSincronizarPrecosRoute,
   CatalogCategoriaCategoriaRoute: CatalogCategoriaCategoriaRoute,
 }
 export const routeTree = rootRouteImport
