@@ -220,6 +220,98 @@ async function sincronizarPrecos(supabase: any, sncfToken: string) {
   });
 }
 
+// ---------- MODO fotos: espelho da tabela photos para o SNCF ----------
+// Só leitura no FOP, só envio para fora. Sem filtro nenhum — colecao/cor nulos e
+// foto órfã vão como estão: enxergar é papel do SNCF, não deste espelho.
+// deno-lint-ignore no-explicit-any
+async function sincronizarFotos(supabase: any, sncfToken: string) {
+  const sncfUrl =
+    "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/receber-fotos";
+
+  // O PostgREST corta em 1000 por query — paginar até vir página curta.
+  const fotos: unknown[] = [];
+  let desde = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from("photos")
+      .select("id, kind, colecao, cor, categoria, url, path, created_at, updated_at")
+      .order("id")
+      .range(desde, desde + 999);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    fotos.push(...data);
+    if (data.length < 1000) break;
+    desde += 1000;
+  }
+
+  let enviados = 0;
+  let falhados = 0;
+  const erros: Array<{ indice_lote: number; erro: string }> = [];
+  let errosOmitidos = 0;
+
+  const registrarErro = (indiceLote: number, msg: string, corpoCru?: string) => {
+    falhados += 1;
+    console.error(
+      `[sincronizar-catalogo v8.0 modo=fotos] lote #${indiceLote} falhou: ${msg}${corpoCru ? ` | corpo: ${corpoCru.slice(0, 500)}` : ""}`
+    );
+    if (erros.length < MAX_ERROS) {
+      erros.push({ indice_lote: indiceLote, erro: msg });
+    } else {
+      errosOmitidos += 1;
+    }
+  };
+
+  // Bloco que falhar não aborta o resto: segue e acumula os erros.
+  const LOTE_FOTOS = 500;
+  for (let i = 0; i < fotos.length; i += LOTE_FOTOS) {
+    const fatia = fotos.slice(i, i + LOTE_FOTOS);
+    try {
+      const resp = await fetch(sncfUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sncfToken}`,
+        },
+        body: JSON.stringify({ fotos: fatia }),
+      });
+      if (!resp.ok) {
+        const cru = await resp.text().catch(() => "");
+        throw new Error(`SNCF respondeu ${resp.status}${cru ? `: ${cru}` : ""}`);
+      }
+      enviados += fatia.length;
+    } catch (e) {
+      const cru = (e as { cru?: string }).cru;
+      registrarErro(i / LOTE_FOTOS + 1, e instanceof Error ? e.message : String(e), cru);
+    }
+  }
+
+  console.log(
+    `[sincronizar-catalogo v8.0 modo=fotos] fotos: ${enviados}/${fotos.length}, falhados: ${falhados}`
+  );
+
+  if (enviados === 0) {
+    return jsonResponse(500, {
+      ok: false,
+      modo: "fotos",
+      fotos: 0,
+      falhados,
+      erros,
+      ...(errosOmitidos > 0 ? { erros_omitidos: errosOmitidos } : {}),
+      error: "Nenhuma foto sincronizada",
+    });
+  }
+
+  return jsonResponse(200, {
+    ok: falhados === 0,
+    modo: "fotos",
+    fotos: enviados,
+    falhados,
+    erros,
+    ...(errosOmitidos > 0 ? { erros_omitidos: errosOmitidos } : {}),
+    mensagem: `${enviados} fotos sincronizadas${falhados > 0 ? `, ${falhados} blocos com erro` : ""}`,
+  });
+}
+
 // ---------- MODO gravar_produto: braço de escrita do SNCF em products ----------
 // Campos de identidade e ciclo de vida: identidade é do cartório e fase tem função
 // própria — recusados com 403 sempre, nunca ignorados em silêncio.
