@@ -1,4 +1,10 @@
-// 🟢 FOP — sincronizar-catalogo v6.0
+// 🟢 FOP — sincronizar-catalogo v7.0
+// v7.0: mais dois modos vindos da promover-fase-produto do SNCF (morta por credencial
+//       de serviço nunca preenchida): {"modo":"promover_fase", sku, fase, motivo} e
+//       {"modo":"registrar_pi", itens, dry_run}. Mesma autenticação do gravar_produto
+//       (Bearer contra FSNC_INBOUND_TOKEN). Regras de degrau/ficha/saldo NÃO moram aqui:
+//       são do SNCF. A trigger gate_fase do FOP segue como rede de proteção — sua recusa
+//       volta 502 com a mensagem crua do Postgres.
 // v6.0: terceiro modo de operação. Corpo {"modo":"gravar_produto", cod_cadastro, campos, motivo}
 //       aplica UPDATE em products a pedido do SNCF (braço de escrita do bloco técnico).
 //       Autentica por Bearer contra FSNC_INBOUND_TOKEN do cofre — token de ENTRADA,
@@ -338,6 +344,141 @@ async function gravarProduto(req: Request, supabase: any, corpo: any) {
   });
 }
 
+// ---------- Autenticação de entrada (modos promover_fase / registrar_pi) ----------
+// Mesmo Bearer contra FSNC_INBOUND_TOKEN do gravar_produto. catalogo/precos não passam
+// por aqui e seguem sem exigir header.
+// deno-lint-ignore no-explicit-any
+async function autenticarEntrada(req: Request, supabase: any, modo: string): Promise<Response | null> {
+  const auth = req.headers.get("Authorization") ?? "";
+  const tokenRecebido = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  const { data: tokenEsperado } = await supabase.rpc("get_vault_secret", {
+    p_name: "FSNC_INBOUND_TOKEN",
+  });
+  if (!tokenEsperado || !tokenRecebido || tokenRecebido !== tokenEsperado) {
+    console.error(`[sincronizar-catalogo v7.0 modo=${modo}] 401: token ausente ou inválido`);
+    return jsonResponse(401, { ok: false, modo, error: "Não autorizado" });
+  }
+  return null;
+}
+
+// ---------- MODO promover_fase: braço de escrita da promoção decidida no SNCF ----------
+// Não replica regra de degrau/ficha/saldo — decisão já tomada do outro lado. A trigger
+// gate_fase do FOP segue como rede de proteção; sua recusa volta crua.
+// deno-lint-ignore no-explicit-any
+async function promoverFase(req: Request, supabase: any, corpo: any) {
+  const modo = "promover_fase";
+  const negado = await autenticarEntrada(req, supabase, modo);
+  if (negado) return negado;
+
+  const sku = typeof corpo?.sku === "string" ? corpo.sku.trim() : "";
+  const fase = typeof corpo?.fase === "string" ? corpo.fase.trim() : "";
+  const motivo = typeof corpo?.motivo === "string" ? corpo.motivo.trim() : "";
+  if (!sku || !fase || !motivo) {
+    console.error(
+      `[sincronizar-catalogo v7.0 modo=promover_fase] 400: corpo inválido: ${JSON.stringify(corpo).slice(0, 500)}`
+    );
+    return jsonResponse(400, {
+      ok: false,
+      modo,
+      error: "sku, fase e motivo são obrigatórios e não vazios",
+    });
+  }
+
+  const { data: produto, error: errBusca } = await supabase
+    .from("products")
+    .select("id, fase")
+    .eq("sku", sku)
+    .maybeSingle();
+  if (errBusca) {
+    console.error(
+      `[sincronizar-catalogo v7.0 modo=promover_fase] 502 na leitura de ${sku}: ${errBusca.message}`
+    );
+    return jsonResponse(502, {
+      ok: false,
+      modo,
+      sku,
+      error: "Banco recusou a leitura do produto",
+      erro_banco: errBusca.message,
+    });
+  }
+  if (!produto) {
+    console.error(
+      `[sincronizar-catalogo v7.0 modo=promover_fase] 404: produto não encontrado: ${sku} | motivo: ${motivo}`
+    );
+    return jsonResponse(404, { ok: false, modo, sku, error: "Produto não encontrado" });
+  }
+
+  console.log(
+    `[sincronizar-catalogo v7.0 modo=promover_fase] ${sku}: ${produto.fase} -> ${fase} | motivo: ${motivo}`
+  );
+
+  const { error: errUpdate } = await supabase
+    .from("products")
+    .update({ fase })
+    .eq("sku", sku);
+  if (errUpdate) {
+    // A gate_fase recusa promoção com ficha incompleta listando os campos — vai crua.
+    console.error(
+      `[sincronizar-catalogo v7.0 modo=promover_fase] 502 em ${sku}: ${errUpdate.message}`
+    );
+    return jsonResponse(502, {
+      ok: false,
+      modo,
+      sku,
+      error: "Banco recusou a gravação",
+      erro_banco: errUpdate.message,
+    });
+  }
+
+  return jsonResponse(200, { ok: true, modo, sku, de: produto.fase, para: fase });
+}
+
+// ---------- MODO registrar_pi: cartório de produtos novos vindos da PI ----------
+// Chama a RPC fn_registrar_produtos_cartorio e devolve o resultado inteiro, sem
+// reinterpretar nada.
+// deno-lint-ignore no-explicit-any
+async function registrarPi(req: Request, supabase: any, corpo: any) {
+  const modo = "registrar_pi";
+  const negado = await autenticarEntrada(req, supabase, modo);
+  if (negado) return negado;
+
+  const itens = corpo?.itens;
+  if (!Array.isArray(itens) || itens.length === 0 || itens.length > 200) {
+    console.error(
+      `[sincronizar-catalogo v7.0 modo=registrar_pi] 400: itens inválido: ${JSON.stringify(corpo).slice(0, 500)}`
+    );
+    return jsonResponse(400, {
+      ok: false,
+      modo,
+      error: "itens deve ser um array não vazio com no máximo 200 itens",
+    });
+  }
+  // dry_run default true: comportamento atual do SNCF, mantido.
+  const dryRun = corpo?.dry_run !== false;
+
+  console.log(
+    `[sincronizar-catalogo v7.0 modo=registrar_pi] ${itens.length} itens | dry_run: ${dryRun}`
+  );
+
+  const { data: resultado, error: errRpc } = await supabase.rpc(
+    "fn_registrar_produtos_cartorio",
+    { p_itens: itens, p_dry_run: dryRun }
+  );
+  if (errRpc) {
+    console.error(
+      `[sincronizar-catalogo v7.0 modo=registrar_pi] 502 na RPC: ${errRpc.message}`
+    );
+    return jsonResponse(502, {
+      ok: false,
+      modo,
+      error: "Banco recusou o registro",
+      erro_banco: errRpc.message,
+    });
+  }
+
+  return jsonResponse(200, { ok: true, modo, resultado });
+}
+
 serve(async (req) => {
   // Preflight CORS
   if (req.method === "OPTIONS") {
@@ -367,6 +508,12 @@ serve(async (req) => {
     }
     if (modo === "gravar_produto") {
       return await gravarProduto(req, supabase, corpo);
+    }
+    if (modo === "promover_fase") {
+      return await promoverFase(req, supabase, corpo);
+    }
+    if (modo === "registrar_pi") {
+      return await registrarPi(req, supabase, corpo);
     }
 
     const sncfUrl =
