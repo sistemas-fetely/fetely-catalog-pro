@@ -1,4 +1,10 @@
-// 🟢 FOP — sincronizar-catalogo v6.0
+// 🟢 FOP — sincronizar-catalogo v7.0
+// v7.0: mais dois modos vindos da promover-fase-produto do SNCF (morta por credencial
+//       de serviço nunca preenchida): {"modo":"promover_fase", sku, fase, motivo} e
+//       {"modo":"registrar_pi", itens, dry_run}. Mesma autenticação do gravar_produto
+//       (Bearer contra FSNC_INBOUND_TOKEN). Regras de degrau/ficha/saldo NÃO moram aqui:
+//       são do SNCF. A trigger gate_fase do FOP segue como rede de proteção — sua recusa
+//       volta 502 com a mensagem crua do Postgres.
 // v6.0: terceiro modo de operação. Corpo {"modo":"gravar_produto", cod_cadastro, campos, motivo}
 //       aplica UPDATE em products a pedido do SNCF (braço de escrita do bloco técnico).
 //       Autentica por Bearer contra FSNC_INBOUND_TOKEN do cofre — token de ENTRADA,
