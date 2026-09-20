@@ -2038,6 +2038,7 @@ export type Database = {
         Row: {
           altura_cm: number
           ativo: boolean
+          canal_venda: string | null
           categoria: string | null
           cest: string | null
           cod_cadastro: string | null
@@ -2092,6 +2093,7 @@ export type Database = {
         Insert: {
           altura_cm?: number
           ativo?: boolean
+          canal_venda?: string | null
           categoria?: string | null
           cest?: string | null
           cod_cadastro?: string | null
@@ -2146,6 +2148,7 @@ export type Database = {
         Update: {
           altura_cm?: number
           ativo?: boolean
+          canal_venda?: string | null
           categoria?: string | null
           cest?: string | null
           cod_cadastro?: string | null
@@ -2199,6 +2202,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_products_canal_venda"
+            columns: ["canal_venda"]
+            isOneToOne: false
+            referencedRelation: "produto_canal_dim"
+            referencedColumns: ["slug"]
+          },
+          {
             foreignKeyName: "products_colecao_id_fkey"
             columns: ["colecao_id"]
             isOneToOne: false
@@ -2227,6 +2237,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      produto_canal_dim: {
+        Row: {
+          ativo: boolean
+          descricao: string | null
+          nome: string
+          ordem: number
+          slug: string
+        }
+        Insert: {
+          ativo?: boolean
+          descricao?: string | null
+          nome: string
+          ordem?: number
+          slug: string
+        }
+        Update: {
+          ativo?: boolean
+          descricao?: string | null
+          nome?: string
+          ordem?: number
+          slug?: string
+        }
+        Relationships: []
       }
       produto_categorias: {
         Row: {
