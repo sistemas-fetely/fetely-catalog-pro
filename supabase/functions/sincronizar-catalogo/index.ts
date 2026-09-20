@@ -1,4 +1,7 @@
-// 🟢 FOP — sincronizar-catalogo v8.0
+// 🟢 FOP — sincronizar-catalogo v8.1
+// v8.1: modo `catalogo` passa a incluir `canal_venda` (b2b/b2c/ambos) no payload.
+//       Nulo vai como nulo — 364 produtos sem canal decidido; o SNCF precisa enxergar
+//       a pendência, não recebê-la preenchida por engano. Nenhum outro modo alterado.
 // v8.0: novo modo de saída {"modo":"fotos"} — empurra o espelho da tabela `photos`
 //       para o SNCF (receber-fotos), sem filtro nenhum, blocos de 500, sem autenticação
 //       (igual a catalogo/precos: é saída de dado, não entrada de comando). Os cinco
