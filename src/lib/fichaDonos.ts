@@ -56,5 +56,5 @@ export const NOTA_DONO: Record<string, string> = {
   fetely: "editado no SNCF — Ficha do Produto",
   sistema: "preenchido pelo sistema",
   carregando: "carregando permissões",
-  erro: "não foi possível carregar as permissões de edição — recarregue a página",
+  erro: "permissões de edição indisponíveis",
 };
