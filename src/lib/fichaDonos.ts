@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 // Titularidade do cadastro: a matriz `produto_fase_ficha` é a ÚNICA fonte da
@@ -8,35 +8,53 @@ import { supabase } from "@/integrations/supabase/client";
 //   dono = 'fetely'  → somente leitura (editado no SNCF — Ficha do Produto)
 //   dono = 'sistema' → somente leitura (preenchido pelo sistema)
 // Campo ausente da matriz não é governado: fica como está.
+//
+// O mapa NÃO é cacheado em variável de módulo: React Query com staleTime de
+// 2 min e refetchOnWindowFocus — voltar para a aba revalida a titularidade,
+// que muda por UPDATE na tabela sem deploy.
 export type DonoCampo = "thomer" | "fetely" | "sistema" | (string & {});
 
-let cache: Record<string, DonoCampo> | null = null;
+export type FichaDonosEstado = {
+  /** Mapa campo → dono. Vazio enquanto carrega ou em caso de erro. */
+  donos: Record<string, DonoCampo>;
+  /** Consulta ainda em voo (primeira carga ou revalidação sem dados). */
+  carregando: boolean;
+  /** Consulta falhou: falha fecha — tratado como tudo travado. */
+  erro: boolean;
+};
 
-export function useFichaDonos(): Record<string, DonoCampo> {
-  const [donos, setDonos] = useState<Record<string, DonoCampo>>(cache ?? {});
+async function buscarDonos(): Promise<Record<string, DonoCampo>> {
+  const { data, error } = await supabase
+    .from("produto_fase_ficha")
+    .select("campo,dono");
+  if (error) throw error;
+  const mapa: Record<string, DonoCampo> = {};
+  for (const r of data ?? []) {
+    const campo = String((r as { campo: unknown }).campo ?? "");
+    const dono = String((r as { dono: unknown }).dono ?? "");
+    if (campo && dono) mapa[campo] = dono as DonoCampo;
+  }
+  return mapa;
+}
 
-  useEffect(() => {
-    if (cache) return;
-    void supabase
-      .from("produto_fase_ficha")
-      .select("campo,dono")
-      .then(({ data, error }) => {
-        if (error || !data) return;
-        const mapa: Record<string, DonoCampo> = {};
-        for (const r of data) {
-          const campo = String((r as { campo: unknown }).campo ?? "");
-          const dono = String((r as { dono: unknown }).dono ?? "");
-          if (campo && dono) mapa[campo] = dono as DonoCampo;
-        }
-        cache = mapa;
-        setDonos(mapa);
-      });
-  }, []);
+export const FICHA_DONOS_QUERY_KEY = ["ficha-donos"] as const;
 
-  return donos;
+export function useFichaDonos(): FichaDonosEstado {
+  const { data, isPending, isError } = useQuery({
+    queryKey: FICHA_DONOS_QUERY_KEY,
+    queryFn: buscarDonos,
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: true,
+  });
+  // `isPending` cobre a primeira carga; revalidações em background mantêm os
+  // dados anteriores na tela (comportamento do React Query) — só trava de
+  // verdade enquanto não há NENHUM dado ou quando a consulta falhou.
+  return { donos: data ?? {}, carregando: isPending, erro: isError };
 }
 
 export const NOTA_DONO: Record<string, string> = {
   fetely: "editado no SNCF — Ficha do Produto",
   sistema: "preenchido pelo sistema",
+  carregando: "carregando permissões",
+  erro: "não foi possível carregar as permissões de edição — recarregue a página",
 };
