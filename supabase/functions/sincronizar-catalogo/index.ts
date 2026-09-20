@@ -509,6 +509,12 @@ serve(async (req) => {
     if (modo === "gravar_produto") {
       return await gravarProduto(req, supabase, corpo);
     }
+    if (modo === "promover_fase") {
+      return await promoverFase(req, supabase, corpo);
+    }
+    if (modo === "registrar_pi") {
+      return await registrarPi(req, supabase, corpo);
+    }
 
     const sncfUrl =
       "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/recebe-pedido";
