@@ -595,12 +595,16 @@ serve(async (req) => {
     }
 
     // Desvio do modo: {"modo":"precos"} empurra o espelho de preço e retorna.
+    // {"modo":"fotos"} empurra o espelho de fotos e retorna.
     // {"modo":"gravar_produto"} grava campos em products a pedido do SNCF e retorna.
     // Sem `modo`, o caminho do catálogo abaixo segue intacto.
     const corpo = await req.json().catch(() => ({}));
     const modo = (corpo as { modo?: string })?.modo;
     if (modo === "precos") {
       return await sincronizarPrecos(supabase, sncfToken);
+    }
+    if (modo === "fotos") {
+      return await sincronizarFotos(supabase, sncfToken);
     }
     if (modo === "gravar_produto") {
       return await gravarProduto(req, supabase, corpo);
