@@ -963,8 +963,13 @@ function ProductEditor({
 
   // Titularidade vem da matriz produto_fase_ficha (coluna `dono`) — nunca de
   // lista no código. Campo fora da matriz não é governado e continua como era.
-  const donos = useFichaDonos();
+  // Falha fecha, não abre: sem mapa (em voo ou com erro) nenhum campo aparece
+  // como editável — se a tela tratasse "sem dono" como "pode editar", o usuário
+  // gravaria campo que não é dele.
+  const { donos, carregando: donosCarregando, erro: donosErro } = useFichaDonos();
   const donoDe = (campo: string): string | undefined => {
+    if (donosErro) return "erro";
+    if (donosCarregando) return "carregando";
     const d = donos[campo];
     if (!d || d === "thomer") return undefined;
     // Linha nova ainda não existe no SNCF: a criação inicial segue aqui.
@@ -1010,6 +1015,12 @@ function ProductEditor({
             {creating ? "Novo Produto" : `Editar: ${product.sku}`}
           </DialogTitle>
         </DialogHeader>
+
+        {donosErro && (
+          <p className="rounded-md bg-surface-2 px-3 py-2 text-xs text-text-secondary" role="alert">
+            Não foi possível carregar as permissões de edição — recarregue a página.
+          </p>
+        )}
 
         <Tabs defaultValue="ident" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
