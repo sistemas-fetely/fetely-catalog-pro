@@ -704,13 +704,6 @@ function AdminProductsPage() {
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => handleDuplicate(p)}
-                        className="rounded p-1.5 hover:bg-surface-2"
-                        title="Duplicar"
-                      >
-                        <CopyIcon className="h-4 w-4" />
-                      </button>
                       {p.fase !== "inativo" && (
                         <button
                           onClick={() => void handleToggle(p)}
@@ -796,7 +789,6 @@ function AdminProductsPage() {
         <ProductEditor
           product={editing}
           setProduct={setEditing}
-          creating={creating}
           allProducts={products}
           onClose={close}
           onSave={save}
@@ -890,7 +882,6 @@ function FilterSelect({
 function ProductEditor({
   product,
   setProduct,
-  creating,
   allProducts,
   onClose,
   onSave,
@@ -898,7 +889,6 @@ function ProductEditor({
 }: {
   product: Product;
   setProduct: (p: Product) => void;
-  creating: boolean;
   allProducts: Product[];
   onClose: () => void;
   onSave: () => void;
@@ -918,8 +908,6 @@ function ProductEditor({
     if (donosCarregando) return "carregando";
     const d = donos[campo];
     if (!d || d === "thomer") return undefined;
-    // Linha nova ainda não existe no SNCF: a criação inicial segue aqui.
-    if (creating) return undefined;
     return d;
   };
   const travado = (campo: string) => Boolean(donoDe(campo));
@@ -943,10 +931,6 @@ function ProductEditor({
     [allProducts],
   );
 
-  const skuDup = !creating
-    ? false
-    : allProducts.some((x) => x.sku === product.sku);
-
   // Status estoque smart selector
   const isPrev = (product.statusEstoque || "").toLowerCase().startsWith("prev");
   const prevParts = isPrev ? product.statusEstoque.match(/Prev\.\s*(\w+)\s*(\d{4})/) : null;
@@ -958,7 +942,7 @@ function ProductEditor({
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {creating ? "Novo Produto" : `Editar: ${product.sku}`}
+            Editar: {product.sku}
           </DialogTitle>
         </DialogHeader>
 
@@ -979,7 +963,6 @@ function ProductEditor({
           <TabsContent value="ident" className="space-y-3 pt-4">
             <Field label="SKU *" dono={donoDe("sku")}>
               <Input value={product.sku} onChange={(e) => set("sku", e.target.value.trim())} {...ro("sku")} />
-              {skuDup && <p className="mt-1 text-xs text-stock-out">SKU já cadastrado</p>}
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Cód. Cadastro" dono={donoDe("cod_cadastro")}><Input value={product.codCadastro} onChange={(e) => set("codCadastro", e.target.value)} {...ro("cod_cadastro")} /></Field>
