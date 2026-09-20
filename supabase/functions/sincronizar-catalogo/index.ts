@@ -210,6 +210,134 @@ async function sincronizarPrecos(supabase: any, sncfToken: string) {
   });
 }
 
+// ---------- MODO gravar_produto: braço de escrita do SNCF em products ----------
+// Campos de identidade e ciclo de vida: identidade é do cartório e fase tem função
+// própria — recusados com 403 sempre, nunca ignorados em silêncio.
+const CAMPOS_PROIBIDOS = new Set(["cod_cadastro", "sku", "ean", "dun", "fase", "ativo"]);
+
+// deno-lint-ignore no-explicit-any
+async function gravarProduto(req: Request, supabase: any, corpo: any) {
+  // Autenticação DESTE modo: token de entrada, conferido contra o cofre.
+  // catalogo/precos não passam por aqui e seguem sem exigir header.
+  const auth = req.headers.get("Authorization") ?? "";
+  const tokenRecebido = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  const { data: tokenEsperado } = await supabase.rpc("get_vault_secret", {
+    p_name: "FSNC_INBOUND_TOKEN",
+  });
+  if (!tokenEsperado || !tokenRecebido || tokenRecebido !== tokenEsperado) {
+    console.error("[sincronizar-catalogo v6.0 modo=gravar_produto] 401: token ausente ou inválido");
+    return jsonResponse(401, { ok: false, modo: "gravar_produto", error: "Não autorizado" });
+  }
+
+  const codCadastro = typeof corpo?.cod_cadastro === "string" ? corpo.cod_cadastro.trim() : "";
+  const motivo = typeof corpo?.motivo === "string" ? corpo.motivo.trim() : "";
+  const campos = corpo?.campos;
+
+  if (
+    !codCadastro ||
+    !motivo ||
+    !campos ||
+    typeof campos !== "object" ||
+    Array.isArray(campos) ||
+    Object.keys(campos).length === 0
+  ) {
+    console.error(
+      `[sincronizar-catalogo v6.0 modo=gravar_produto] 400: corpo inválido: ${JSON.stringify(corpo).slice(0, 500)}`
+    );
+    return jsonResponse(400, {
+      ok: false,
+      modo: "gravar_produto",
+      error: "cod_cadastro, motivo e campos (objeto não vazio) são obrigatórios",
+    });
+  }
+
+  const proibidos = Object.keys(campos).filter((c) => CAMPOS_PROIBIDOS.has(c));
+  if (proibidos.length > 0) {
+    console.error(
+      `[sincronizar-catalogo v6.0 modo=gravar_produto] 403: campos proibidos em ${codCadastro}: ${proibidos.join(", ")} | motivo: ${motivo}`
+    );
+    return jsonResponse(403, {
+      ok: false,
+      modo: "gravar_produto",
+      cod_cadastro: codCadastro,
+      error: `Campos não permitidos neste modo: ${proibidos.join(", ")}`,
+      campos_recusados: proibidos,
+    });
+  }
+
+  // Valores atuais para o de_para da resposta.
+  const camposPedidos = Object.keys(campos);
+  const { data: produto, error: errBusca } = await supabase
+    .from("products")
+    .select(`id, ${camposPedidos.join(", ")}`)
+    .eq("cod_cadastro", codCadastro)
+    .maybeSingle();
+  if (errBusca) {
+    console.error(
+      `[sincronizar-catalogo v6.0 modo=gravar_produto] 502 na leitura de ${codCadastro}: ${errBusca.message}`
+    );
+    return jsonResponse(502, {
+      ok: false,
+      modo: "gravar_produto",
+      cod_cadastro: codCadastro,
+      error: "Banco recusou a leitura do produto",
+      erro_banco: errBusca.message,
+    });
+  }
+  if (!produto) {
+    console.error(
+      `[sincronizar-catalogo v6.0 modo=gravar_produto] 404: produto não encontrado: ${codCadastro} | motivo: ${motivo}`
+    );
+    return jsonResponse(404, {
+      ok: false,
+      modo: "gravar_produto",
+      cod_cadastro: codCadastro,
+      error: "Produto não encontrado",
+    });
+  }
+
+  console.log(
+    `[sincronizar-catalogo v6.0 modo=gravar_produto] ${codCadastro} | campos: ${camposPedidos.join(", ")} | motivo: ${motivo}`
+  );
+
+  // deno-lint-ignore no-explicit-any
+  const patch: Record<string, any> = {};
+  // deno-lint-ignore no-explicit-any
+  const dePara: Record<string, { de: any; para: any }> = {};
+  for (const campo of camposPedidos) {
+    patch[campo] = campos[campo];
+    // deno-lint-ignore no-explicit-any
+    dePara[campo] = { de: (produto as any)[campo] ?? null, para: campos[campo] };
+  }
+
+  const { error: errUpdate } = await supabase
+    .from("products")
+    .update(patch)
+    .eq("cod_cadastro", codCadastro);
+  if (errUpdate) {
+    // A recusa das triggers (gate_fase, gate_dimensoes, derivar_sku) traz mensagem
+    // útil do Postgres — vai crua, sem resumo.
+    console.error(
+      `[sincronizar-catalogo v6.0 modo=gravar_produto] 502 em ${codCadastro}: ${errUpdate.message}`
+    );
+    return jsonResponse(502, {
+      ok: false,
+      modo: "gravar_produto",
+      cod_cadastro: codCadastro,
+      error: "Banco recusou a gravação",
+      erro_banco: errUpdate.message,
+    });
+  }
+
+  return jsonResponse(200, {
+    ok: true,
+    modo: "gravar_produto",
+    cod_cadastro: codCadastro,
+    gravados: camposPedidos,
+    de_para: dePara,
+  });
+}
+
 serve(async (req) => {
   // Preflight CORS
   if (req.method === "OPTIONS") {
