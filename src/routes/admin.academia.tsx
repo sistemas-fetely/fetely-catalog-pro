@@ -955,8 +955,7 @@ function AulasPanel({
               {g.nome}
             </p>
             <ul className="space-y-1.5">
-              {g.itens.map((a) => {
-                const i = aulas.indexOf(a);
+              {g.itens.map((a, i) => {
                 return (
                   <li
                     key={a.id}
