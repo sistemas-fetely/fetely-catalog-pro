@@ -10,8 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 // Campo ausente da matriz não é governado: fica como está.
 //
 // O mapa NÃO é cacheado em variável de módulo: React Query com staleTime de
-// 2 min e refetchOnWindowFocus — voltar para a aba revalida a titularidade,
-// que muda por UPDATE na tabela sem deploy.
+// 5 min e refetchOnWindowFocus — voltar para a aba revalida a titularidade,
+// que muda por UPDATE na tabela sem deploy (chega sozinha em no máx. 5 min).
 export type DonoCampo = "thomer" | "fetely" | "sistema" | (string & {});
 
 export type FichaDonosEstado = {
@@ -26,7 +26,7 @@ export type FichaDonosEstado = {
 async function buscarDonos(): Promise<Record<string, DonoCampo>> {
   const { data, error } = await supabase
     .from("produto_fase_ficha")
-    .select("campo,dono");
+    .select("campo,bloco,dono,fase_exigida,obrigatorio,ordem,descricao");
   if (error) throw error;
   const mapa: Record<string, DonoCampo> = {};
   for (const r of data ?? []) {
@@ -43,7 +43,7 @@ export function useFichaDonos(): FichaDonosEstado {
   const { data, isPending, isError } = useQuery({
     queryKey: FICHA_DONOS_QUERY_KEY,
     queryFn: buscarDonos,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   // `isPending` cobre a primeira carga; revalidações em background mantêm os
