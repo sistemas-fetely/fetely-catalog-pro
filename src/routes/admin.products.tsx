@@ -1386,15 +1386,23 @@ function Field({
   label,
   children,
   className,
+  dono,
 }: {
   label: string;
   children: React.ReactNode;
   className?: string;
+  /** Dono do campo na matriz produto_fase_ficha, quando não é editável aqui. */
+  dono?: string;
 }) {
+  const nota = dono ? (NOTA_DONO[dono] ?? `editado por ${dono}`) : null;
   return (
     <div className={className}>
-      <Label className="text-[11px] uppercase tracking-wider text-text-secondary">{label}</Label>
+      <Label className="flex items-center gap-1 text-[11px] uppercase tracking-wider text-text-secondary">
+        {label}
+        {nota ? <Lock className="h-3 w-3 text-text-muted" aria-label={nota} /> : null}
+      </Label>
       <div className="mt-1">{children}</div>
+      {nota ? <p className="mt-1 text-[11px] text-text-muted">{nota}</p> : null}
     </div>
   );
 }
