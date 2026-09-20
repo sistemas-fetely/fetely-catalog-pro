@@ -1,4 +1,8 @@
-// 🟢 FOP — sincronizar-catalogo v7.0
+// 🟢 FOP — sincronizar-catalogo v8.0
+// v8.0: novo modo de saída {"modo":"fotos"} — empurra o espelho da tabela `photos`
+//       para o SNCF (receber-fotos), sem filtro nenhum, blocos de 500, sem autenticação
+//       (igual a catalogo/precos: é saída de dado, não entrada de comando). Os cinco
+//       modos anteriores não mudaram uma linha.
 // v7.0: mais dois modos vindos da promover-fase-produto do SNCF (morta por credencial
 //       de serviço nunca preenchida): {"modo":"promover_fase", sku, fase, motivo} e
 //       {"modo":"registrar_pi", itens, dry_run}. Mesma autenticação do gravar_produto
