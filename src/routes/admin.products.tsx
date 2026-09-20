@@ -961,6 +961,27 @@ function ProductEditor({
   const set = <K extends keyof Product>(k: K, v: Product[K]) =>
     setProduct({ ...product, [k]: v });
 
+  // Titularidade vem da matriz produto_fase_ficha (coluna `dono`) — nunca de
+  // lista no código. Campo fora da matriz não é governado e continua como era.
+  const donos = useFichaDonos();
+  const donoDe = (campo: string): string | undefined => {
+    const d = donos[campo];
+    if (!d || d === "thomer") return undefined;
+    // Linha nova ainda não existe no SNCF: a criação inicial segue aqui.
+    if (creating) return undefined;
+    return d;
+  };
+  const travado = (campo: string) => Boolean(donoDe(campo));
+  // Somente leitura com aparência de leitura — o valor continua visível.
+  const ro = (campo: string) =>
+    travado(campo)
+      ? {
+          disabled: true,
+          readOnly: true,
+          className: "bg-surface-2 text-text-secondary",
+        }
+      : {};
+
   const margem = product.precoVarejo > 0
     ? ((product.precoVarejo - product.precoAtacado) / product.precoVarejo) * 100
     : 0;
@@ -999,24 +1020,24 @@ function ProductEditor({
           </TabsList>
 
           <TabsContent value="ident" className="space-y-3 pt-4">
-            <Field label="SKU *">
-              <Input value={product.sku} onChange={(e) => set("sku", e.target.value.trim())} />
+            <Field label="SKU *" dono={donoDe("sku")}>
+              <Input value={product.sku} onChange={(e) => set("sku", e.target.value.trim())} {...ro("sku")} />
               {skuDup && <p className="mt-1 text-xs text-stock-out">SKU já cadastrado</p>}
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Cód. Cadastro"><Input value={product.codCadastro} onChange={(e) => set("codCadastro", e.target.value)} /></Field>
-              <Field label="EAN"><Input value={product.ean} onChange={(e) => set("ean", e.target.value)} /></Field>
+              <Field label="Cód. Cadastro" dono={donoDe("cod_cadastro")}><Input value={product.codCadastro} onChange={(e) => set("codCadastro", e.target.value)} {...ro("cod_cadastro")} /></Field>
+              <Field label="EAN" dono={donoDe("ean")}><Input value={product.ean} onChange={(e) => set("ean", e.target.value)} {...ro("ean")} /></Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Marca *"><Input value={product.marca} onChange={(e) => set("marca", e.target.value)} /></Field>
+              <Field label="Marca *" dono={donoDe("marca")}><Input value={product.marca} onChange={(e) => set("marca", e.target.value)} {...ro("marca")} /></Field>
               <Field label="Linha *"><Input value={product.linha} onChange={(e) => set("linha", e.target.value)} /></Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Categoria *"><Input value={product.categoria} onChange={(e) => set("categoria", e.target.value)} /></Field>
-              <Field label="Departamento"><Input value={product.departamento ?? ""} onChange={(e) => set("departamento", e.target.value)} /></Field>
+              <Field label="Categoria *" dono={donoDe("categoria")}><Input value={product.categoria} onChange={(e) => set("categoria", e.target.value)} {...ro("categoria")} /></Field>
+              <Field label="Departamento" dono={donoDe("departamento")}><Input value={product.departamento ?? ""} onChange={(e) => set("departamento", e.target.value)} {...ro("departamento")} /></Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Grupo *">
+              <Field label="Grupo *" dono={donoDe("grupo")}>
                 <Input
                   list="grupos-list"
                   value={product.grupo}
@@ -1025,6 +1046,7 @@ function ProductEditor({
                     set("grupo", v);
                     if (creating && !product.sku) set("sku", nextSkuFor(v, allProducts));
                   }}
+                  {...ro("grupo")}
                 />
                 <datalist id="grupos-list">
                   {["Vela", "Prato", "Guardanapo", "Jogo Americano", "Travessa", "Copos e Taças", "Talheres"].map((g) => (
@@ -1032,13 +1054,14 @@ function ProductEditor({
                   ))}
                 </datalist>
               </Field>
-              <Field label="Tipo *"><Input value={product.tipo} onChange={(e) => set("tipo", e.target.value)} /></Field>
+              <Field label="Tipo *" dono={donoDe("tipo")}><Input value={product.tipo} onChange={(e) => set("tipo", e.target.value)} {...ro("tipo")} /></Field>
             </div>
-            <Field label="Coleção *">
+            <Field label="Coleção *" dono={donoDe("colecao")}>
               <Input
                 list="colecoes-list"
                 value={product.colecao}
                 onChange={(e) => set("colecao", e.target.value)}
+                {...ro("colecao")}
               />
               <datalist id="colecoes-list">
                 {colecoes.map((c) => <option key={c} value={c} />)}
@@ -1046,7 +1069,7 @@ function ProductEditor({
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Sub-coleção"><Input value={product.subColecao ?? ""} onChange={(e) => set("subColecao", e.target.value)} /></Field>
-              <Field label="Família"><Input value={product.familia} onChange={(e) => set("familia", e.target.value)} /></Field>
+              <Field label="Família" dono={donoDe("familia")}><Input value={product.familia} onChange={(e) => set("familia", e.target.value)} {...ro("familia")} /></Field>
             </div>
             <div className="rounded-md border border-border p-3">
               <label className="flex items-center gap-2 text-sm">
@@ -1074,11 +1097,12 @@ function ProductEditor({
           </TabsContent>
 
           <TabsContent value="visual" className="space-y-3 pt-4">
-            <Field label="Nome Comercial *">
+            <Field label="Nome Comercial *" dono={donoDe("nome_comercial")}>
               <Input
                 value={product.nomeComercial}
                 maxLength={120}
                 onChange={(e) => set("nomeComercial", e.target.value)}
+                {...ro("nome_comercial")}
               />
             </Field>
             <Field label="Nome Completo">
@@ -1086,18 +1110,19 @@ function ProductEditor({
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Cor (nome)"><Input value={product.corNome} onChange={(e) => set("corNome", e.target.value)} /></Field>
-              <Field label="Cor (base)"><Input value={product.cor} onChange={(e) => set("cor", e.target.value)} /></Field>
+              <Field label="Cor (base)" dono={donoDe("cor")}><Input value={product.cor} onChange={(e) => set("cor", e.target.value)} {...ro("cor")} /></Field>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <Field label="Estampa"><Input value={product.estampa} onChange={(e) => set("estampa", e.target.value)} /></Field>
-              <Field label="Tamanho (nº)"><Input value={product.tamanhoNumero} onChange={(e) => set("tamanhoNumero", e.target.value)} /></Field>
+              <Field label="Estampa" dono={donoDe("estampa")}><Input value={product.estampa} onChange={(e) => set("estampa", e.target.value)} {...ro("estampa")} /></Field>
+              <Field label="Tamanho (nº)" dono={donoDe("tamanho_numero")}><Input value={product.tamanhoNumero} onChange={(e) => set("tamanhoNumero", e.target.value)} {...ro("tamanho_numero")} /></Field>
               <Field label="Tamanho (ref)"><Input value={product.tamanhoRef} onChange={(e) => set("tamanhoRef", e.target.value)} /></Field>
             </div>
-            <Field label="Descrição do Produto">
+            <Field label="Descrição do Produto" dono={donoDe("descricao_produto")}>
               <Textarea
                 rows={3}
                 value={product.descricaoProduto ?? ""}
                 onChange={(e) => set("descricaoProduto", e.target.value)}
+                {...ro("descricao_produto")}
               />
             </Field>
             <Field label="Descrição da Coleção">
@@ -1111,7 +1136,7 @@ function ProductEditor({
 
           <TabsContent value="preco" className="space-y-3 pt-4">
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Preço Varejo (R$) *">
+              <Field label="Preço Varejo (R$) *" dono={donoDe("preco_varejo")}>
                 <Input
                   type="number" step="0.01"
                   value={product.precoVarejo}
@@ -1120,7 +1145,7 @@ function ProductEditor({
                   disabled={!creating}
                 />
               </Field>
-              <Field label="Preço Atacado (R$) *">
+              <Field label="Preço Atacado (R$) *" dono={donoDe("preco_atacado")}>
                 <Input
                   type="number" step="0.01"
                   value={product.precoAtacado}
@@ -1148,22 +1173,24 @@ function ProductEditor({
               </p>
             )}
             <div className="grid grid-cols-3 gap-3">
-              <Field label="Múltiplos *">
+              <Field label="Múltiplos *" dono={donoDe("multiplos")}>
                 <Input
                   type="number" min={1}
                   value={product.multiplos}
                   onChange={(e) => set("multiplos", parseInt(e.target.value) || 1)}
+                  {...ro("multiplos")}
                 />
               </Field>
-              <Field label="Qtd x Kit">
+              <Field label="Qtd x Kit" dono={donoDe("qtd_kit")}>
                 <Input
                   type="number" min={1}
                   value={product.qtdKit}
                   onChange={(e) => set("qtdKit", parseInt(e.target.value) || 1)}
+                  {...ro("qtd_kit")}
                 />
               </Field>
-              <Field label="Tipo de Embalagem">
-                <Input value={product.tipoEmbalagem ?? ""} onChange={(e) => set("tipoEmbalagem", e.target.value)} />
+              <Field label="Tipo de Embalagem" dono={donoDe("tipo_embalagem")}>
+                <Input value={product.tipoEmbalagem ?? ""} onChange={(e) => set("tipoEmbalagem", e.target.value)} {...ro("tipo_embalagem")} />
               </Field>
             </div>
             <Field label="Status de Estoque *">
@@ -1207,41 +1234,42 @@ function ProductEditor({
           </TabsContent>
 
           <TabsContent value="tec" className="space-y-3 pt-4">
-            <Field label="Material"><Input value={product.material} onChange={(e) => set("material", e.target.value)} /></Field>
+            <Field label="Material" dono={donoDe("material")}><Input value={product.material} onChange={(e) => set("material", e.target.value)} {...ro("material")} /></Field>
             <Field label="Material (descritivo)">
               <Input value={product.materialDescritivo ?? ""} onChange={(e) => set("materialDescritivo", e.target.value)} />
             </Field>
             <div className="grid grid-cols-4 gap-3">
-              <Field label="Peso (g)">
-                <Input type="number" step="0.1" value={product.pesoG} onChange={(e) => set("pesoG", parseFloat(e.target.value) || 0)} />
+              <Field label="Peso (g)" dono={donoDe("peso_g")}>
+                <Input type="number" step="0.1" value={product.pesoG} onChange={(e) => set("pesoG", parseFloat(e.target.value) || 0)} {...ro("peso_g")} />
               </Field>
-              <Field label="Largura (cm)">
-                <Input type="number" step="0.1" value={product.larguraCm} onChange={(e) => set("larguraCm", parseFloat(e.target.value) || 0)} />
+              <Field label="Largura (cm)" dono={donoDe("largura_cm")}>
+                <Input type="number" step="0.1" value={product.larguraCm} onChange={(e) => set("larguraCm", parseFloat(e.target.value) || 0)} {...ro("largura_cm")} />
               </Field>
-              <Field label="Altura (cm)">
-                <Input type="number" step="0.1" value={product.alturaCm} onChange={(e) => set("alturaCm", parseFloat(e.target.value) || 0)} />
+              <Field label="Altura (cm)" dono={donoDe("altura_cm")}>
+                <Input type="number" step="0.1" value={product.alturaCm} onChange={(e) => set("alturaCm", parseFloat(e.target.value) || 0)} {...ro("altura_cm")} />
               </Field>
-              <Field label="Prof. (cm)">
-                <Input type="number" step="0.1" value={product.profundidadeCm ?? 0} onChange={(e) => set("profundidadeCm", parseFloat(e.target.value) || 0)} />
+              <Field label="Prof. (cm)" dono={donoDe("profundidade_cm")}>
+                <Input type="number" step="0.1" value={product.profundidadeCm ?? 0} onChange={(e) => set("profundidadeCm", parseFloat(e.target.value) || 0)} {...ro("profundidade_cm")} />
               </Field>
             </div>
-            <Field label="DUN-14">
-              <Input value={product.dun ?? ""} onChange={(e) => set("dun", e.target.value)} />
+            <Field label="DUN-14" dono={donoDe("dun")}>
+              <Input value={product.dun ?? ""} onChange={(e) => set("dun", e.target.value)} {...ro("dun")} />
               <p className="mt-1 text-[11px] text-text-secondary">
                 Exigido só na promoção para Ativo — depende da qtd. de kits.
               </p>
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="NCM"><Input value={product.ncm ?? ""} onChange={(e) => set("ncm", e.target.value)} /></Field>
-              <Field label="CEST"><Input value={product.cest ?? ""} onChange={(e) => set("cest", e.target.value)} /></Field>
+              <Field label="NCM" dono={donoDe("ncm")}><Input value={product.ncm ?? ""} onChange={(e) => set("ncm", e.target.value)} {...ro("ncm")} /></Field>
+              <Field label="CEST" dono={donoDe("cest")}><Input value={product.cest ?? ""} onChange={(e) => set("cest", e.target.value)} {...ro("cest")} /></Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <OrigemFiscalField
                 value={product.origemFisc}
                 onChange={(v) => set("origemFisc", v)}
+                dono={donoDe("origem_fisc")}
               />
 
-              <Field label="Origem Produção"><Input value={product.origemProd ?? ""} onChange={(e) => set("origemProd", e.target.value)} /></Field>
+              <Field label="Origem Produção" dono={donoDe("origem_prod")}><Input value={product.origemProd ?? ""} onChange={(e) => set("origemProd", e.target.value)} {...ro("origem_prod")} /></Field>
             </div>
           </TabsContent>
         </Tabs>
@@ -1289,9 +1317,11 @@ let origensCache: OrigemFiscalOpt[] | null = null;
 function OrigemFiscalField({
   value,
   onChange,
+  dono,
 }: {
   value?: string;
   onChange: (v: string | undefined) => void;
+  dono?: string;
 }) {
   const [origens, setOrigens] = useState<OrigemFiscalOpt[]>(origensCache ?? []);
 
@@ -1319,10 +1349,11 @@ function OrigemFiscalField({
   const legado = atual && origens.length > 0 && !conhecida ? atual : null;
 
   return (
-    <Field label="Origem Fiscal">
+    <Field label="Origem Fiscal" dono={dono}>
       <Select
         value={atual ?? SEM_ORIGEM}
         onValueChange={(v) => onChange(v === SEM_ORIGEM ? undefined : v)}
+        disabled={Boolean(dono)}
       >
         <SelectTrigger className={legado ? "border-stock-pre" : undefined}>
           <SelectValue placeholder="— sem origem —" />
