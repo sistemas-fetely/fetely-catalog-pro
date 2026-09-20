@@ -36,12 +36,17 @@ async function encontrarProvisaoEquivalente(
 ): Promise<ProvisaoFutura | null> {
   try {
     const assinatura = assinaturaItens(input.itens);
+    // Janela curta: a trava serve para tentativas repetidas do MESMO salvamento
+    // (duplo clique, pedido que falhou e foi refeito). Recompra legítima do mesmo
+    // cliente com os mesmos itens depois disso precisa gerar provisão nova.
+    const desde = new Date(Date.now() - JANELA_DEDUP_MS).toISOString();
     const { data: provs, error } = await supabase
       .from("provisoes")
       .select("*")
       .eq("cliente_id", input.clienteId)
       .eq("status", "aguardando_estoque")
       .eq("reprovado", false)
+      .gte("criado_em", desde)
       .order("criado_em", { ascending: false })
       .limit(20);
     if (error || !provs || provs.length === 0) return null;

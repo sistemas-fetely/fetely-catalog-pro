@@ -634,9 +634,11 @@ export function CartCommercialPanel({
               <div className="space-y-2">
                 <Toggle
                   checked={bonificado}
-                  onChange={setBonificadoManual}
+                  onChange={(v) => { if (!ehRemessa) setBonificadoManual(v); }}
                   label="Pedido bonificado"
-                  hint="Ignora mínimo. Não conta em meta, pace nem comissão."
+                  hint={ehRemessa
+                    ? "Remessa/brinde já é sem cobrança — troque a natureza para desmarcar."
+                    : "Ignora mínimo. Não conta em meta, pace nem comissão."}
                   icon={<Gift className="h-3.5 w-3.5 text-purple-300" />}
                 />
                 {bonificado && (
