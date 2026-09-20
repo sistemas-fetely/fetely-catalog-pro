@@ -1,4 +1,8 @@
-// 🟢 FOP — sincronizar-catalogo v7.0
+// 🟢 FOP — sincronizar-catalogo v8.0
+// v8.0: novo modo de saída {"modo":"fotos"} — empurra o espelho da tabela `photos`
+//       para o SNCF (receber-fotos), sem filtro nenhum, blocos de 500, sem autenticação
+//       (igual a catalogo/precos: é saída de dado, não entrada de comando). Os cinco
+//       modos anteriores não mudaram uma linha.
 // v7.0: mais dois modos vindos da promover-fase-produto do SNCF (morta por credencial
 //       de serviço nunca preenchida): {"modo":"promover_fase", sku, fase, motivo} e
 //       {"modo":"registrar_pi", itens, dry_run}. Mesma autenticação do gravar_produto
@@ -213,6 +217,98 @@ async function sincronizarPrecos(supabase: any, sncfToken: string) {
     erros,
     ...(errosOmitidos > 0 ? { erros_omitidos: errosOmitidos } : {}),
     mensagem: `${envVigencias} vigências e ${envHistorico} registros de histórico sincronizados${falhados > 0 ? `, ${falhados} blocos com erro` : ""}`,
+  });
+}
+
+// ---------- MODO fotos: espelho da tabela photos para o SNCF ----------
+// Só leitura no FOP, só envio para fora. Sem filtro nenhum — colecao/cor nulos e
+// foto órfã vão como estão: enxergar é papel do SNCF, não deste espelho.
+// deno-lint-ignore no-explicit-any
+async function sincronizarFotos(supabase: any, sncfToken: string) {
+  const sncfUrl =
+    "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/receber-fotos";
+
+  // O PostgREST corta em 1000 por query — paginar até vir página curta.
+  const fotos: unknown[] = [];
+  let desde = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from("photos")
+      .select("id, kind, colecao, cor, categoria, url, path, created_at, updated_at")
+      .order("id")
+      .range(desde, desde + 999);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    fotos.push(...data);
+    if (data.length < 1000) break;
+    desde += 1000;
+  }
+
+  let enviados = 0;
+  let falhados = 0;
+  const erros: Array<{ indice_lote: number; erro: string }> = [];
+  let errosOmitidos = 0;
+
+  const registrarErro = (indiceLote: number, msg: string, corpoCru?: string) => {
+    falhados += 1;
+    console.error(
+      `[sincronizar-catalogo v8.0 modo=fotos] lote #${indiceLote} falhou: ${msg}${corpoCru ? ` | corpo: ${corpoCru.slice(0, 500)}` : ""}`
+    );
+    if (erros.length < MAX_ERROS) {
+      erros.push({ indice_lote: indiceLote, erro: msg });
+    } else {
+      errosOmitidos += 1;
+    }
+  };
+
+  // Bloco que falhar não aborta o resto: segue e acumula os erros.
+  const LOTE_FOTOS = 500;
+  for (let i = 0; i < fotos.length; i += LOTE_FOTOS) {
+    const fatia = fotos.slice(i, i + LOTE_FOTOS);
+    try {
+      const resp = await fetch(sncfUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sncfToken}`,
+        },
+        body: JSON.stringify({ fotos: fatia }),
+      });
+      if (!resp.ok) {
+        const cru = await resp.text().catch(() => "");
+        throw new Error(`SNCF respondeu ${resp.status}${cru ? `: ${cru}` : ""}`);
+      }
+      enviados += fatia.length;
+    } catch (e) {
+      const cru = (e as { cru?: string }).cru;
+      registrarErro(i / LOTE_FOTOS + 1, e instanceof Error ? e.message : String(e), cru);
+    }
+  }
+
+  console.log(
+    `[sincronizar-catalogo v8.0 modo=fotos] fotos: ${enviados}/${fotos.length}, falhados: ${falhados}`
+  );
+
+  if (enviados === 0) {
+    return jsonResponse(500, {
+      ok: false,
+      modo: "fotos",
+      fotos: 0,
+      falhados,
+      erros,
+      ...(errosOmitidos > 0 ? { erros_omitidos: errosOmitidos } : {}),
+      error: "Nenhuma foto sincronizada",
+    });
+  }
+
+  return jsonResponse(200, {
+    ok: falhados === 0,
+    modo: "fotos",
+    fotos: enviados,
+    falhados,
+    erros,
+    ...(errosOmitidos > 0 ? { erros_omitidos: errosOmitidos } : {}),
+    mensagem: `${enviados} fotos sincronizadas${falhados > 0 ? `, ${falhados} blocos com erro` : ""}`,
   });
 }
 
@@ -499,12 +595,16 @@ serve(async (req) => {
     }
 
     // Desvio do modo: {"modo":"precos"} empurra o espelho de preço e retorna.
+    // {"modo":"fotos"} empurra o espelho de fotos e retorna.
     // {"modo":"gravar_produto"} grava campos em products a pedido do SNCF e retorna.
     // Sem `modo`, o caminho do catálogo abaixo segue intacto.
     const corpo = await req.json().catch(() => ({}));
     const modo = (corpo as { modo?: string })?.modo;
     if (modo === "precos") {
       return await sincronizarPrecos(supabase, sncfToken);
+    }
+    if (modo === "fotos") {
+      return await sincronizarFotos(supabase, sncfToken);
     }
     if (modo === "gravar_produto") {
       return await gravarProduto(req, supabase, corpo);
