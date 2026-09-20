@@ -18,6 +18,9 @@ interface CreateProvisaoInput {
   observacoes?: string;
 }
 
+/** Janela da trava de idempotência (tentativas repetidas do mesmo salvamento). */
+const JANELA_DEDUP_MS = 15 * 60 * 1000;
+
 /** Assinatura de itens (SKU + quantidade) usada para detectar provisões repetidas. */
 function assinaturaItens(itens: ItemProvisao[]): string {
   return itens
@@ -68,6 +71,14 @@ async function encontrarProvisaoEquivalente(
       const id = row.id as string;
       const itens = porProv[id] ?? [];
       if (itens.length === 0) continue;
+      // Provisão já amarrada a OUTRO pedido/cotação é demanda distinta: não reaproveitar,
+      // senão o segundo pedido perderia o vínculo e a quantidade provisionada.
+      const pedidoLigado = (row.pedido_firme_id as string | null) ?? null;
+      const cotacaoLigada = (row.cotacao_origem_id as string | null) ?? null;
+      if (pedidoLigado && input.pedidoFirmeId && pedidoLigado !== input.pedidoFirmeId) continue;
+      if (cotacaoLigada && input.cotacaoOrigemId && cotacaoLigada !== input.cotacaoOrigemId) continue;
+      if (pedidoLigado && !input.pedidoFirmeId) continue;
+      if (cotacaoLigada && !input.cotacaoOrigemId) continue;
       if (assinaturaItens(itens) === assinatura) return rowToProvisao(row, input.itens);
     }
     return null;
