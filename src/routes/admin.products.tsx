@@ -7,6 +7,7 @@ import {
   Download,
   FileJson,
   History,
+  Lock,
   Package,
   Pencil,
   Plus,
@@ -54,6 +55,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatBRL } from "@/lib/format";
+import { useFichaDonos, NOTA_DONO } from "@/lib/fichaDonos";
 
 export const Route = createFileRoute("/admin/products")({
   component: AdminProductsPage,
@@ -549,6 +551,10 @@ function AdminProductsPage() {
             <h1 className="font-display text-2xl text-text-primary">Gestão de Produtos</h1>
             <p className="text-sm text-text-secondary">
               {filtered.length} de {products.length} produtos
+            </p>
+            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-text-muted">
+              <Lock className="h-3 w-3" />
+              Campos técnicos são editados no SNCF. Aqui você edita nome, descrição e foto.
             </p>
             {inventarioErro ? (
               <p className="text-xs text-text-muted" title={inventarioErro}>
