@@ -184,7 +184,8 @@ function BaseLeadsTab({ leads, loading }: { leads: LeadQualificado[]; loading: b
     const cutoff = (() => {
       if (fDias === "all") return null;
       const d = new Date(now);
-      d.setDate(d.getDate() - Number(fDias));
+      // "Hoje" = 1 dia contado a partir de hoje 00:00 (offset 0), não ontem.
+      d.setDate(d.getDate() - (Number(fDias) - 1));
       d.setHours(0, 0, 0, 0);
       return d;
     })();

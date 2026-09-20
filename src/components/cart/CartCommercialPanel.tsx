@@ -134,8 +134,11 @@ export function CartCommercialPanel({
 
   // Destinatário pessoa física → entrega B2C e natureza padrão "remessa/brinde"
   const ehPFDestino = (cliente?.tipoPessoa ?? "PJ") === "PF";
-  const naturezaOperacao: NaturezaOperacao =
-    naturezaManual ?? (ehPFDestino ? "remessa_brinde" : "venda");
+  // Remessa/brinde não gera cobrança: é a mesma trilha do pedido bonificado, então
+  // só quem pode bonificar pode escolhê-la (inclusive no default de pessoa física).
+  const naturezaOperacao: NaturezaOperacao = canBonificar
+    ? naturezaManual ?? (ehPFDestino ? "remessa_brinde" : "venda")
+    : "venda";
   const ehRemessa = naturezaOperacao === "remessa_brinde";
   const cfop = cfopDe(naturezaOperacao, ufDestino);
   // Remessa/brinde não gera cobrança: segue a mesma trilha do pedido bonificado
@@ -599,7 +602,9 @@ export function CartCommercialPanel({
               <select
                 value={naturezaOperacao}
                 onChange={(e) => setNaturezaManual(e.target.value as NaturezaOperacao)}
-                className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm"
+                disabled={!canBonificar}
+                title={canBonificar ? undefined : "Remessa/brinde só pode ser lançada por usuário autorizado a bonificar."}
+                className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm disabled:opacity-60"
               >
                 {(Object.keys(NATUREZA_LABEL) as NaturezaOperacao[]).map((n) => (
                   <option key={n} value={n}>
@@ -629,9 +634,11 @@ export function CartCommercialPanel({
               <div className="space-y-2">
                 <Toggle
                   checked={bonificado}
-                  onChange={setBonificadoManual}
+                  onChange={(v) => { if (!ehRemessa) setBonificadoManual(v); }}
                   label="Pedido bonificado"
-                  hint="Ignora mínimo. Não conta em meta, pace nem comissão."
+                  hint={ehRemessa
+                    ? "Remessa/brinde já é sem cobrança — troque a natureza para desmarcar."
+                    : "Ignora mínimo. Não conta em meta, pace nem comissão."}
                   icon={<Gift className="h-3.5 w-3.5 text-purple-300" />}
                 />
                 {bonificado && (

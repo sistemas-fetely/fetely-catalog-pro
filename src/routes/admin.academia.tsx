@@ -905,9 +905,11 @@ function AulasPanel({
   }
 
 
-  async function mover(idx: number, dir: -1 | 1) {
-    const a = aulas[idx];
-    const b = aulas[idx + dir];
+  // Reordena DENTRO da subcategoria: o vizinho é o item seguinte/anterior do
+  // próprio grupo, não o vizinho global da lista.
+  async function mover(lista: AulaComBlocos[], idx: number, dir: -1 | 1) {
+    const a = lista[idx];
+    const b = lista[idx + dir];
     if (!a || !b) return;
     try {
       await trocarOrdem("treinamento_aula", a, b);
@@ -953,8 +955,7 @@ function AulasPanel({
               {g.nome}
             </p>
             <ul className="space-y-1.5">
-              {g.itens.map((a) => {
-                const i = aulas.indexOf(a);
+              {g.itens.map((a, i) => {
                 return (
                   <li
                     key={a.id}
@@ -967,7 +968,7 @@ function AulasPanel({
                     <div className="flex items-center gap-1.5">
                       <div className="flex flex-col">
                         <button
-                          onClick={() => mover(i, -1)}
+                          onClick={() => mover(g.itens, i, -1)}
                           disabled={i === 0}
                           className="text-text-muted hover:text-gold disabled:opacity-30"
                           aria-label="Mover aula para cima"
@@ -975,8 +976,8 @@ function AulasPanel({
                           <ArrowUp className="h-3 w-3" />
                         </button>
                         <button
-                          onClick={() => mover(i, 1)}
-                          disabled={i === aulas.length - 1}
+                          onClick={() => mover(g.itens, i, 1)}
+                          disabled={i === g.itens.length - 1}
                           className="text-text-muted hover:text-gold disabled:opacity-30"
                           aria-label="Mover aula para baixo"
                         >

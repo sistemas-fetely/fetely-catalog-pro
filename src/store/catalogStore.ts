@@ -129,6 +129,7 @@ function rowToProduct(row: Record<string, unknown>): Product {
     sku: row.sku as string,
     codCadastro: (row.cod_cadastro as string | null) ?? "",
     ean: (row.ean as string | null) ?? "",
+    dun: (row.dun as string | null) ?? "",
     marca: (row.marca as string) ?? "Fetély",
     linha: (row.linha as string | null) ?? "",
     categoria: row.categoria as string,
@@ -180,6 +181,7 @@ export function productToRow(p: Product): Record<string, unknown> {
     sku: p.sku,
     cod_cadastro: p.codCadastro || null,
     ean: p.ean || null,
+    dun: p.dun || null,
     marca: p.marca || "Fetély",
     linha: p.linha || null,
     categoria: p.categoria,
@@ -329,6 +331,9 @@ export const useCatalog = create<CatalogState>()(
         (async () => {
           try {
             await upsertProductsChunked(products.map(productToRowBulk));
+            // O caminho em massa não escreve `ativo`/`fase`: relê do banco para a tela
+            // não mostrar como publicado o que continua despublicado.
+            await get().hydrate({ force: true });
             if (meta) {
               const entry = makeAudit(
                 meta,
@@ -450,7 +455,9 @@ export const useCatalog = create<CatalogState>()(
     {
       name: "fetely-catalog",
       storage: createJSONStorage(createSafeStorage),
-      version: 13,
+      // v14: cache antigo não tem `fase`; migrar limpa para reler do banco e evitar
+      // salvar produto publicado de volta como "registrado".
+      version: 14,
       partialize: (state) => ({
         products: state.products,
         source: state.source,
