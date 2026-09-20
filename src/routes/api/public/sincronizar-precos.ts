@@ -43,7 +43,8 @@ export const Route = createFileRoute("/api/public/sincronizar-precos")({
             return Response.json({ error: "Sem permissão" }, { status: 403 });
           }
 
-          const { data: sncfToken } = await supabaseAdmin.rpc("get_vault_secret", {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: sncfToken } = await (supabaseAdmin as any).rpc("get_vault_secret", {
             p_name: "SNCF_OUTBOUND_TOKEN",
           });
           if (!sncfToken) {
