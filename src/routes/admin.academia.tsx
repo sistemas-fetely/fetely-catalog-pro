@@ -905,9 +905,11 @@ function AulasPanel({
   }
 
 
-  async function mover(idx: number, dir: -1 | 1) {
-    const a = aulas[idx];
-    const b = aulas[idx + dir];
+  // Reordena DENTRO da subcategoria: o vizinho é o item seguinte/anterior do
+  // próprio grupo, não o vizinho global da lista.
+  async function mover(lista: AulaComBlocos[], idx: number, dir: -1 | 1) {
+    const a = lista[idx];
+    const b = lista[idx + dir];
     if (!a || !b) return;
     try {
       await trocarOrdem("treinamento_aula", a, b);

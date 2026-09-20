@@ -181,6 +181,7 @@ export function productToRow(p: Product): Record<string, unknown> {
     sku: p.sku,
     cod_cadastro: p.codCadastro || null,
     ean: p.ean || null,
+    dun: p.dun || null,
     marca: p.marca || "Fetély",
     linha: p.linha || null,
     categoria: p.categoria,
