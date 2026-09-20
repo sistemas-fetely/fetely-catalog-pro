@@ -3,14 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Ban,
   Clock,
-  Copy as CopyIcon,
   Download,
   FileJson,
   History,
   Lock,
   Package,
   Pencil,
-  Plus,
   Power,
   Search,
   Table as TableIcon,
@@ -32,7 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/store/authStore";
 import { Can } from "@/components/security/Can";
-import { useCatalog, nextSkuFor } from "@/store/catalogStore";
+import { useCatalog } from "@/store/catalogStore";
 import type { Product } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,40 +80,6 @@ function normalizarPendencias(resp: unknown): Pendencia[] {
     bloco: String(p["bloco"] ?? p["block"] ?? "—"),
     dono: String(p["dono"] ?? p["owner"] ?? "—"),
   }));
-}
-
-function emptyProduct(): Product {
-  return {
-    sku: "",
-    codCadastro: "",
-    ean: "",
-    dun: "",
-    marca: "Fetély",
-    linha: "",
-    categoria: "",
-    grupo: "",
-    tipo: "",
-    familia: "",
-    colecao: "",
-    corNome: "",
-    cor: "",
-    estampa: "",
-    tamanhoNumero: "",
-    tamanhoRef: "",
-    nomeComercial: "",
-    material: "",
-    pesoG: 0,
-    larguraCm: 0,
-    alturaCm: 0,
-    multiplos: 1,
-    qtdKit: 1,
-    precoVarejo: 0,
-    precoAtacado: 0,
-    statusEstoque: "em estoque",
-    isVelaNumerica: false,
-    // publicação só pelo botão Publicar, que valida a ficha no SNCF
-    fase: "registrado",
-  };
 }
 
 const FASE_LABEL: Record<string, string> = {
@@ -257,7 +221,6 @@ function AdminProductsPage() {
   const audit = useCatalog((s) => s.audit);
   const upsertProduct = useCatalog((s) => s.upsertProduct);
   const setFase = useCatalog((s) => s.setFase);
-  const duplicateProduct = useCatalog((s) => s.duplicateProduct);
 
   const auditMeta = useMemo(
     () => ({
