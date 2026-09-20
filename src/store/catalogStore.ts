@@ -331,6 +331,9 @@ export const useCatalog = create<CatalogState>()(
         (async () => {
           try {
             await upsertProductsChunked(products.map(productToRowBulk));
+            // O caminho em massa não escreve `ativo`/`fase`: relê do banco para a tela
+            // não mostrar como publicado o que continua despublicado.
+            await get().hydrate({ force: true });
             if (meta) {
               const entry = makeAudit(
                 meta,
