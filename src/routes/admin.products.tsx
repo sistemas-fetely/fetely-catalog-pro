@@ -3,14 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Ban,
   Clock,
-  Copy as CopyIcon,
   Download,
   FileJson,
   History,
   Lock,
   Package,
   Pencil,
-  Plus,
   Power,
   Search,
   Table as TableIcon,
@@ -32,7 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/store/authStore";
 import { Can } from "@/components/security/Can";
-import { useCatalog, nextSkuFor } from "@/store/catalogStore";
+import { useCatalog } from "@/store/catalogStore";
 import type { Product } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,40 +80,6 @@ function normalizarPendencias(resp: unknown): Pendencia[] {
     bloco: String(p["bloco"] ?? p["block"] ?? "—"),
     dono: String(p["dono"] ?? p["owner"] ?? "—"),
   }));
-}
-
-function emptyProduct(): Product {
-  return {
-    sku: "",
-    codCadastro: "",
-    ean: "",
-    dun: "",
-    marca: "Fetély",
-    linha: "",
-    categoria: "",
-    grupo: "",
-    tipo: "",
-    familia: "",
-    colecao: "",
-    corNome: "",
-    cor: "",
-    estampa: "",
-    tamanhoNumero: "",
-    tamanhoRef: "",
-    nomeComercial: "",
-    material: "",
-    pesoG: 0,
-    larguraCm: 0,
-    alturaCm: 0,
-    multiplos: 1,
-    qtdKit: 1,
-    precoVarejo: 0,
-    precoAtacado: 0,
-    statusEstoque: "em estoque",
-    isVelaNumerica: false,
-    // publicação só pelo botão Publicar, que valida a ficha no SNCF
-    fase: "registrado",
-  };
 }
 
 const FASE_LABEL: Record<string, string> = {
@@ -257,7 +221,6 @@ function AdminProductsPage() {
   const audit = useCatalog((s) => s.audit);
   const upsertProduct = useCatalog((s) => s.upsertProduct);
   const setFase = useCatalog((s) => s.setFase);
-  const duplicateProduct = useCatalog((s) => s.duplicateProduct);
 
   const auditMeta = useMemo(
     () => ({
@@ -421,10 +384,10 @@ function AdminProductsPage() {
   }, [products.length]);
 
 
-  // Editor state
+  // Editor state — só edição: produto novo não nasce aqui (NASCIMENTO-PASSA-
+  // PELO-CARTÓRIO); nasce no SNCF pela Importação de PI.
   const [editing, setEditing] = useState<Product | null>(null);
   const [editingOriginalSku, setEditingOriginalSku] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
 
   // Portão de publicação (SNCF)
   const ficha = useServerFn(fichaPendencias);
@@ -436,18 +399,10 @@ function AdminProductsPage() {
   function openEdit(p: Product) {
     setEditing({ ...p });
     setEditingOriginalSku(p.sku);
-    setCreating(false);
-  }
-  function openNew() {
-    const np = emptyProduct();
-    setEditing(np);
-    setEditingOriginalSku(null);
-    setCreating(true);
   }
   function close() {
     setEditing(null);
     setEditingOriginalSku(null);
-    setCreating(false);
   }
 
   function save() {
@@ -467,8 +422,8 @@ function AdminProductsPage() {
     if (!(editing.multiplos >= 1)) errs.push("Múltiplos deve ser ≥ 1");
     if (!editing.statusEstoque) errs.push("Status Estoque");
 
-    // Duplicate check on create or SKU change
-    if (creating || editingOriginalSku !== editing.sku) {
+    // Duplicate check on SKU change
+    if (editingOriginalSku !== editing.sku) {
       if (products.some((x) => x.sku === editing.sku))
         errs.push("SKU já cadastrado");
     }
@@ -482,16 +437,8 @@ function AdminProductsPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(creating ? "Produto criado" : "Produto salvo");
+    toast.success("Produto salvo");
     close();
-  }
-
-  function handleDuplicate(p: Product) {
-    const copy = duplicateProduct(p.sku, auditMeta);
-    if (copy) {
-      toast.success(`Duplicado como ${copy.sku}`);
-      openEdit(copy);
-    }
   }
 
   // Portão de publicação: registrado → valida ficha no SNCF antes de ir para pré-venda.
@@ -642,11 +589,10 @@ function AdminProductsPage() {
                 <History className="mr-2 h-4 w-4" /> Tabela de Preço
               </Link>
             </Button>
-            <Can tela="cfg_produtos" acao="criar">
-              <Button onClick={openNew} className="bg-gold text-black hover:bg-gold/90">
-                <Plus className="mr-2 h-4 w-4" /> Novo Produto
-              </Button>
-            </Can>
+            <p className="flex items-center gap-1.5 text-xs text-text-muted">
+              <Lock className="h-3 w-3" />
+              Produto novo nasce no SNCF, pela Importação de PI — o código vem do cartório.
+            </p>
           </div>
         </div>
 
@@ -758,13 +704,6 @@ function AdminProductsPage() {
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => handleDuplicate(p)}
-                        className="rounded p-1.5 hover:bg-surface-2"
-                        title="Duplicar"
-                      >
-                        <CopyIcon className="h-4 w-4" />
-                      </button>
                       {p.fase !== "inativo" && (
                         <button
                           onClick={() => void handleToggle(p)}
@@ -850,7 +789,6 @@ function AdminProductsPage() {
         <ProductEditor
           product={editing}
           setProduct={setEditing}
-          creating={creating}
           allProducts={products}
           onClose={close}
           onSave={save}
@@ -944,7 +882,6 @@ function FilterSelect({
 function ProductEditor({
   product,
   setProduct,
-  creating,
   allProducts,
   onClose,
   onSave,
@@ -952,7 +889,6 @@ function ProductEditor({
 }: {
   product: Product;
   setProduct: (p: Product) => void;
-  creating: boolean;
   allProducts: Product[];
   onClose: () => void;
   onSave: () => void;
@@ -972,8 +908,6 @@ function ProductEditor({
     if (donosCarregando) return "carregando";
     const d = donos[campo];
     if (!d || d === "thomer") return undefined;
-    // Linha nova ainda não existe no SNCF: a criação inicial segue aqui.
-    if (creating) return undefined;
     return d;
   };
   const travado = (campo: string) => Boolean(donoDe(campo));
@@ -997,10 +931,6 @@ function ProductEditor({
     [allProducts],
   );
 
-  const skuDup = !creating
-    ? false
-    : allProducts.some((x) => x.sku === product.sku);
-
   // Status estoque smart selector
   const isPrev = (product.statusEstoque || "").toLowerCase().startsWith("prev");
   const prevParts = isPrev ? product.statusEstoque.match(/Prev\.\s*(\w+)\s*(\d{4})/) : null;
@@ -1012,7 +942,7 @@ function ProductEditor({
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {creating ? "Novo Produto" : `Editar: ${product.sku}`}
+            Editar: {product.sku}
           </DialogTitle>
         </DialogHeader>
 
@@ -1033,7 +963,6 @@ function ProductEditor({
           <TabsContent value="ident" className="space-y-3 pt-4">
             <Field label="SKU *" dono={donoDe("sku")}>
               <Input value={product.sku} onChange={(e) => set("sku", e.target.value.trim())} {...ro("sku")} />
-              {skuDup && <p className="mt-1 text-xs text-stock-out">SKU já cadastrado</p>}
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Cód. Cadastro" dono={donoDe("cod_cadastro")}><Input value={product.codCadastro} onChange={(e) => set("codCadastro", e.target.value)} {...ro("cod_cadastro")} /></Field>
@@ -1055,7 +984,6 @@ function ProductEditor({
                   onChange={(e) => {
                     const v = e.target.value;
                     set("grupo", v);
-                    if (creating && !product.sku) set("sku", nextSkuFor(v, allProducts));
                   }}
                   {...ro("grupo")}
                 />
@@ -1152,8 +1080,7 @@ function ProductEditor({
                   type="number" step="0.01"
                   value={product.precoVarejo}
                   onChange={(e) => set("precoVarejo", parseFloat(e.target.value) || 0)}
-                  readOnly={!creating}
-                  disabled={!creating}
+                  {...ro("preco_varejo")}
                 />
               </Field>
               <Field label="Preço Atacado (R$) *" dono={donoDe("preco_atacado")}>
@@ -1161,28 +1088,20 @@ function ProductEditor({
                   type="number" step="0.01"
                   value={product.precoAtacado}
                   onChange={(e) => set("precoAtacado", parseFloat(e.target.value) || 0)}
-                  readOnly={!creating}
-                  disabled={!creating}
+                  {...ro("preco_atacado")}
                 />
               </Field>
             </div>
             <p className="text-xs">
               Margem implícita: <span className={`font-semibold ${margemColor}`}>{margem.toFixed(1)}%</span>
             </p>
-            {!creating && (
-              <div className="rounded-md border border-gold/30 bg-gold/5 p-3 text-xs text-text-secondary">
-                Os preços deste produto são gerenciados na{" "}
-                <Link to="/admin/precos" className="font-semibold text-gold hover:underline">
-                  Tabela de Preço
-                </Link>
-                . Toda alteração lá gera histórico automático.
-              </div>
-            )}
-            {creating && (
-              <p className="text-xs text-text-secondary">
-                Defina os preços iniciais. Após criar o produto, as alterações devem ser feitas na Tabela de Preço.
-              </p>
-            )}
+            <div className="rounded-md border border-gold/30 bg-gold/5 p-3 text-xs text-text-secondary">
+              Os preços deste produto são gerenciados na{" "}
+              <Link to="/admin/precos" className="font-semibold text-gold hover:underline">
+                Tabela de Preço
+              </Link>
+              . Toda alteração lá gera histórico automático.
+            </div>
             <div className="grid grid-cols-3 gap-3">
               <Field label="Múltiplos *" dono={donoDe("multiplos")}>
                 <Input
@@ -1286,7 +1205,7 @@ function ProductEditor({
         </Tabs>
 
         <DialogFooter className="!justify-between gap-2 sm:!justify-between">
-          {!creating && product.fase !== "inativo" ? (
+          {product.fase !== "inativo" ? (
             <Button
               variant="outline"
               onClick={onToggleAtivo}
