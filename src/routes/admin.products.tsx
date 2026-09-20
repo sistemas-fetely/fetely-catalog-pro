@@ -276,7 +276,7 @@ function AdminProductsPage() {
   const [fGrupo, setFGrupo] = useState("");
   const [fStatus, setFStatus] = useState("");
   // default = fila de trabalho de quem cadastra
-  const [fFase, setFFase] = useState<string>("registrado");
+  const [fFase, setFFase] = useState<string>("");
   const [fases, setFases] = useState<{ slug: string; nome: string }[]>([]);
   useEffect(() => {
     void supabase
