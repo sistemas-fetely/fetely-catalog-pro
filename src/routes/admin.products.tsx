@@ -1016,6 +1016,12 @@ function ProductEditor({
           </DialogTitle>
         </DialogHeader>
 
+        {donosErro && (
+          <p className="rounded-md bg-surface-2 px-3 py-2 text-xs text-text-secondary" role="alert">
+            Não foi possível carregar as permissões de edição — recarregue a página.
+          </p>
+        )}
+
         <Tabs defaultValue="ident" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="ident">Hierarquia</TabsTrigger>
