@@ -623,7 +623,7 @@ serve(async (req) => {
     // espelho do SNCF congela no último estado conhecido. `ativo` e `fase` vão no payload.
     const { data: produtos, error } = await supabase
       .from("products")
-      .select("sku, cod_cadastro, fase, departamento, categoria, ean, dun, nome_comercial, nome_completo, marca, linha, grupo, tipo, familia, qtd_kit, colecao, cor_nome, cor, estampa, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, preco_varejo, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm")
+      .select("sku, cod_cadastro, fase, departamento, categoria, ean, dun, nome_comercial, nome_completo, marca, linha, grupo, tipo, familia, qtd_kit, colecao, cor_nome, cor, estampa, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, preco_varejo, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm, canal_venda")
       .order("sku");
 
     if (error) throw error;
@@ -707,6 +707,7 @@ serve(async (req) => {
       altura_cm:            p.altura_cm           ?? null,
       largura_cm:           p.largura_cm          ?? null,
       profundidade_cm:      p.profundidade_cm     ?? null,
+      canal_venda:          p.canal_venda         ?? null, // b2b/b2c/ambos — nulo = pendente de decisão; SNCF precisa enxergar a pendência
     });
 
     const enviarProdutos = async (lista: unknown[]) => {
