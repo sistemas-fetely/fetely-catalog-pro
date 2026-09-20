@@ -968,7 +968,7 @@ function AulasPanel({
                     <div className="flex items-center gap-1.5">
                       <div className="flex flex-col">
                         <button
-                          onClick={() => mover(i, -1)}
+                          onClick={() => mover(g.itens, i, -1)}
                           disabled={i === 0}
                           className="text-text-muted hover:text-gold disabled:opacity-30"
                           aria-label="Mover aula para cima"
@@ -976,8 +976,8 @@ function AulasPanel({
                           <ArrowUp className="h-3 w-3" />
                         </button>
                         <button
-                          onClick={() => mover(i, 1)}
-                          disabled={i === aulas.length - 1}
+                          onClick={() => mover(g.itens, i, 1)}
+                          disabled={i === g.itens.length - 1}
                           className="text-text-muted hover:text-gold disabled:opacity-30"
                           aria-label="Mover aula para baixo"
                         >
