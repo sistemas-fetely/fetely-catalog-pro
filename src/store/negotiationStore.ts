@@ -102,6 +102,8 @@ export const useNegotiation = create<NegotiationStore>()(
         set({
           ativo: false,
           descontoPct: 0,
+          descontoModo: "percent",
+          descontoValor: 0,
           justificativa: "",
           observacaoInterna: "",
           usarReservada: false,
