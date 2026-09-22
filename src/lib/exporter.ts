@@ -136,6 +136,8 @@ export interface PedidoExportavel {
   freteIsento: boolean;
   descontoCelebraPercent: number;
   descontoNegociacaoPercent: number;
+  /** Quando o desconto foi digitado em R$, a % não aparece no PDF */
+  descontoNegociacaoModo?: "percent" | "valor";
   descontoNegociacaoJustificativa?: string;
   bonusPixPercent: number;
   condicaoPagamentoId: number | null;
@@ -186,6 +188,13 @@ export const DEFAULT_OPTIONS: ExportOptions = {
 };
 
 // ===== Builder =====
+/** Rótulo do desconto de negociação: quando digitado em R$, omite a % */
+function labelDescontoNegociacao(p: PedidoExportavel): string {
+  return p.descontoNegociacaoModo === "valor"
+    ? "Desconto negociação"
+    : `Desconto negociação (${p.descontoNegociacaoPercent}%)`;
+}
+
 export function buildPedidoExportavel(order: SavedOrder): PedidoExportavel {
   const c = order.commercial;
   const snap = order.meta.clienteSnapshot;
@@ -286,6 +295,7 @@ export function buildPedidoExportavel(order: SavedOrder): PedidoExportavel {
     freteIsento: c?.freteIsento ?? (c?.frete === "CIF"),
     descontoCelebraPercent: c?.descontoCelebraPct ?? 0,
     descontoNegociacaoPercent: c?.descontoMasterPct ?? 0,
+    descontoNegociacaoModo: c?.descontoMasterModo,
     descontoNegociacaoJustificativa: c?.justificativa,
     bonusPixPercent: c?.aplicouPix ? (faixa?.bonusPix ?? 0) : 0,
     condicaoPagamentoId: c?.condicaoId ?? null,
@@ -602,7 +612,7 @@ export async function exportarPDF(
     }
     if (pedido.totalDescontoNegociacao > 0) {
       totaisBody.push([
-        `Desconto negociação (${pedido.descontoNegociacaoPercent}%)`,
+        labelDescontoNegociacao(pedido),
         `– ${fmtBRL(pedido.totalDescontoNegociacao)}`,
       ]);
     }
@@ -704,7 +714,11 @@ export async function exportarPDF(
       `Desconto total aplicado: ${pedido.totalDescontoPercentual.toFixed(2)}% (${fmtBRL(pedido.totalDescontoGeral)})`,
     );
     if (pedido.modoNegociacaoUsado) {
-      internoLines.push(`Negociação master: ${pedido.descontoNegociacaoPercent}% — ${pedido.descontoNegociacaoJustificativa ?? "—"}`);
+      internoLines.push(
+        pedido.descontoNegociacaoModo === "valor"
+          ? `Negociação master: ${fmtBRL(pedido.totalDescontoNegociacao)} — ${pedido.descontoNegociacaoJustificativa ?? "—"}`
+          : `Negociação master: ${pedido.descontoNegociacaoPercent}% — ${pedido.descontoNegociacaoJustificativa ?? "—"}`,
+      );
     }
     if (pedido.vendedorTipo === "representante" && pedido.comissaoEstimadaValor != null) {
       internoLines.push(
@@ -980,7 +994,7 @@ async function _buildPdfInternal(pedido: PedidoExportavel, tipo: "cliente" | "in
   if (pedido.totalDescontoCelebra > 0)
     totaisBody.push([`Desconto ${pedido.faixaNome} (${pedido.descontoCelebraPercent}%)`, `– ${fmtBRL(pedido.totalDescontoCelebra)}`]);
   if (pedido.totalDescontoNegociacao > 0)
-    totaisBody.push([`Desconto negociação (${pedido.descontoNegociacaoPercent}%)`, `– ${fmtBRL(pedido.totalDescontoNegociacao)}`]);
+    totaisBody.push([labelDescontoNegociacao(pedido), `– ${fmtBRL(pedido.totalDescontoNegociacao)}`]);
   if (pedido.totalDescontoBonusPix > 0)
     totaisBody.push([`Bônus PIX (${pedido.bonusPixPercent}%)`, `– ${fmtBRL(pedido.totalDescontoBonusPix)}`]);
   if (pedido.freteIsento || pedido.frete === "CIF") {

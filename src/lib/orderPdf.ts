@@ -569,7 +569,10 @@ function renderOrderToDoc(doc: JsPDFDoc, order: SavedOrder, autoTableFn: AutoTab
       items.push([`Desconto ${c.faixaNome} (${c.descontoCelebraPct}%)`, `− ${formatBRL(c.descontoCelebraValor)}`]);
     }
     if (c.descontoMasterValor > 0) {
-      items.push([`Desconto Master (${c.descontoMasterPct}%)`, `− ${formatBRL(c.descontoMasterValor)}`]);
+      items.push([
+        c.descontoMasterModo === "valor" ? "Desconto Master" : `Desconto Master (${c.descontoMasterPct}%)`,
+        `− ${formatBRL(c.descontoMasterValor)}`,
+      ]);
     }
     if (c.aplicouPix && c.bonusPixValor > 0) {
       items.push([`Bônus PIX (${formatPercentBR(getBonusPixPercent(c))}%)`, `− ${formatBRL(c.bonusPixValor)}`]);
@@ -896,7 +899,7 @@ function renderOrderBlockHTML(order: SavedOrder): string {
     if (c.descontoCelebraValor > 0)
       linhasFin.push(`<div><span>Desconto ${escapeHtml(c.faixaNome)} (${c.descontoCelebraPct}%)</span><b>− ${formatBRL(c.descontoCelebraValor)}</b></div>`);
     if (c.descontoMasterValor > 0)
-      linhasFin.push(`<div><span>Desconto Master (${c.descontoMasterPct}%)</span><b>− ${formatBRL(c.descontoMasterValor)}</b></div>`);
+      linhasFin.push(`<div><span>${c.descontoMasterModo === "valor" ? "Desconto Master" : `Desconto Master (${c.descontoMasterPct}%)`}</span><b>− ${formatBRL(c.descontoMasterValor)}</b></div>`);
     if (c.aplicouPix && c.bonusPixValor > 0)
       linhasFin.push(`<div><span>Bônus PIX (${formatPercentBR(getBonusPixPercent(c))}%)</span><b>− ${formatBRL(c.bonusPixValor)}</b></div>`);
 
@@ -1014,7 +1017,7 @@ function renderOrderResumoHTML(order: SavedOrder): string {
     if (c.descontoCelebraValor > 0)
       linhasFin.push(`<div>Desconto ${escapeHtml(c.faixaNome)} (${c.descontoCelebraPct}%): − ${fmt(c.descontoCelebraValor)}</div>`);
     if (c.descontoMasterValor > 0)
-      linhasFin.push(`<div>Desconto Master (${c.descontoMasterPct}%): − ${fmt(c.descontoMasterValor)}</div>`);
+      linhasFin.push(`<div>${c.descontoMasterModo === "valor" ? "Desconto Master" : `Desconto Master (${c.descontoMasterPct}%)`}: − ${fmt(c.descontoMasterValor)}</div>`);
     if (c.aplicouPix && c.bonusPixValor > 0)
       linhasFin.push(`<div>Bônus PIX (${formatPercentBR(getBonusPixPercent(c))}%): − ${fmt(c.bonusPixValor)}</div>`);
 

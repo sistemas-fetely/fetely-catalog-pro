@@ -160,6 +160,7 @@ function CartPage() {
 
   const negotiationAtivo = useNegotiation((s) => s.ativo);
   const negDescontoPct = useNegotiation((s) => s.descontoPct);
+  const negDescontoModo = useNegotiation((s) => s.descontoModo);
   const negJustificativa = useNegotiation((s) => s.justificativa);
   const negObservacaoInterna = useNegotiation((s) => s.observacaoInterna);
   const negUsarReservada = useNegotiation((s) => s.usarReservada);
@@ -406,6 +407,7 @@ function CartPage() {
       descontoCelebraValor: c.descontoCelebraValor,
       descontoMasterPct: negotiationAtivo ? negDescontoPct : 0,
       descontoMasterValor: c.descontoMasterValor,
+      descontoMasterModo: negotiationAtivo ? negDescontoModo : undefined,
       bonusPixValor: c.bonusPixValor,
       bonusPixPercent: c.bonusPixPercentEfetivo ?? 0,
       aplicouPix: c.aplicouPix,
@@ -552,6 +554,7 @@ function CartPage() {
       descontoCelebraValor: c.descontoCelebraValor,
       descontoMasterPct: negotiationAtivo ? negDescontoPct : 0,
       descontoMasterValor: c.descontoMasterValor,
+      descontoMasterModo: negotiationAtivo ? negDescontoModo : undefined,
       bonusPixValor: c.bonusPixValor,
       bonusPixPercent: c.bonusPixPercentEfetivo ?? 0,
       aplicouPix: c.aplicouPix,
