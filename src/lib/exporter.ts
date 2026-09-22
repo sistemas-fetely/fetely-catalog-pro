@@ -188,6 +188,13 @@ export const DEFAULT_OPTIONS: ExportOptions = {
 };
 
 // ===== Builder =====
+/** Rótulo do desconto de negociação: quando digitado em R$, omite a % */
+function labelDescontoNegociacao(p: PedidoExportavel): string {
+  return p.descontoNegociacaoModo === "valor"
+    ? "Desconto negociação"
+    : `Desconto negociação (${p.descontoNegociacaoPercent}%)`;
+}
+
 export function buildPedidoExportavel(order: SavedOrder): PedidoExportavel {
   const c = order.commercial;
   const snap = order.meta.clienteSnapshot;
