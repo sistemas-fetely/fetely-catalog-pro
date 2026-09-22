@@ -34,6 +34,8 @@ interface NegotiationStore extends PersistState, SessionState {
   desativar: () => void;
   alterarSenha: (atual: string, nova: string) => Promise<{ ok: boolean; erro?: string }>;
   setDescontoPct: (v: number) => void;
+  setDescontoModo: (v: "percent" | "valor") => void;
+  setDescontoValor: (v: number) => void;
   setJustificativa: (v: string) => void;
   setObservacaoInterna: (v: string) => void;
   setUsarReservada: (v: boolean) => void;
