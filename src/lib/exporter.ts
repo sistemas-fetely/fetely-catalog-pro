@@ -994,7 +994,7 @@ async function _buildPdfInternal(pedido: PedidoExportavel, tipo: "cliente" | "in
   if (pedido.totalDescontoCelebra > 0)
     totaisBody.push([`Desconto ${pedido.faixaNome} (${pedido.descontoCelebraPercent}%)`, `– ${fmtBRL(pedido.totalDescontoCelebra)}`]);
   if (pedido.totalDescontoNegociacao > 0)
-    totaisBody.push([`Desconto negociação (${pedido.descontoNegociacaoPercent}%)`, `– ${fmtBRL(pedido.totalDescontoNegociacao)}`]);
+    totaisBody.push([labelDescontoNegociacao(pedido), `– ${fmtBRL(pedido.totalDescontoNegociacao)}`]);
   if (pedido.totalDescontoBonusPix > 0)
     totaisBody.push([`Bônus PIX (${pedido.bonusPixPercent}%)`, `– ${fmtBRL(pedido.totalDescontoBonusPix)}`]);
   if (pedido.freteIsento || pedido.frete === "CIF") {
