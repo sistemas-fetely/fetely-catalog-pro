@@ -65,6 +65,8 @@ export function CartCommercialPanel({
     freteAjusteQtd,
     liberarTodasCondicoes,
     setDescontoPct,
+    setDescontoModo,
+    setDescontoValor,
     setJustificativa,
     setObservacaoInterna,
     setUsarReservada,
