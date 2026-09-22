@@ -516,18 +516,59 @@ export function CartCommercialPanel({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase tracking-wider text-text-muted mb-1">
-                    Desconto adicional {descontoPctEfetivo}% — máx. {tetoDesconto}%
-                  </label>
-                  <input
-                    type="range"
-                    min={0}
-                    max={tetoDesconto}
-                    step={0.5}
-                    value={descontoPct}
-                    onChange={(e) => setDescontoPct(parseFloat(e.target.value))}
-                    className="w-full accent-[var(--gold)]"
-                  />
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <label className="block text-[10px] uppercase tracking-wider text-text-muted">
+                      Desconto adicional {descontoPctEfetivo.toFixed(2).replace(/\.00$/, "")}% ·{" "}
+                      {formatBRL((bruto * descontoPctEfetivo) / 100)} — máx. {tetoDesconto}% (
+                      {formatBRL(tetoDescontoValor)})
+                    </label>
+                    <div className="flex shrink-0 overflow-hidden rounded-md border border-border">
+                      {(["percent", "valor"] as const).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setDescontoModo(m)}
+                          className={`px-2 py-0.5 text-[11px] ${
+                            descontoModo === m
+                              ? "bg-gold/20 text-gold"
+                              : "text-text-muted hover:bg-surface-2"
+                          }`}
+                        >
+                          {m === "percent" ? "%" : "R$"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {descontoModo === "percent" ? (
+                    <input
+                      type="range"
+                      min={0}
+                      max={tetoDesconto}
+                      step={0.5}
+                      value={descontoPct}
+                      onChange={(e) => setDescontoPct(parseFloat(e.target.value))}
+                      className="w-full accent-[var(--gold)]"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] uppercase tracking-wider text-text-muted">R$</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={tetoDescontoValor}
+                        step={1}
+                        value={descontoValor || ""}
+                        onChange={(e) => setDescontoValor(parseFloat(e.target.value))}
+                        placeholder="0,00"
+                        className="w-full bg-surface-2 border border-border rounded-md px-3 py-1.5 text-sm"
+                      />
+                    </div>
+                  )}
+                  {descontoModo === "valor" && descontoValor > tetoDescontoValor && (
+                    <p className="mt-1 text-[11px] text-stock-out">
+                      Acima do limite — aplicando {formatBRL(tetoDescontoValor)} ({tetoDesconto}%).
+                    </p>
+                  )}
                 </div>
 
                 <select
