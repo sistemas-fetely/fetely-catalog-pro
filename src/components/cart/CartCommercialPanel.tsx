@@ -54,6 +54,8 @@ export function CartCommercialPanel({
   const {
     ativo,
     descontoPct,
+    descontoModo,
+    descontoValor,
     justificativa,
     observacaoInterna,
     usarReservada,
