@@ -612,7 +612,7 @@ export async function exportarPDF(
     }
     if (pedido.totalDescontoNegociacao > 0) {
       totaisBody.push([
-        `Desconto negociação (${pedido.descontoNegociacaoPercent}%)`,
+        labelDescontoNegociacao(pedido),
         `– ${fmtBRL(pedido.totalDescontoNegociacao)}`,
       ]);
     }
@@ -714,7 +714,11 @@ export async function exportarPDF(
       `Desconto total aplicado: ${pedido.totalDescontoPercentual.toFixed(2)}% (${fmtBRL(pedido.totalDescontoGeral)})`,
     );
     if (pedido.modoNegociacaoUsado) {
-      internoLines.push(`Negociação master: ${pedido.descontoNegociacaoPercent}% — ${pedido.descontoNegociacaoJustificativa ?? "—"}`);
+      internoLines.push(
+        pedido.descontoNegociacaoModo === "valor"
+          ? `Negociação master: ${fmtBRL(pedido.totalDescontoNegociacao)} — ${pedido.descontoNegociacaoJustificativa ?? "—"}`
+          : `Negociação master: ${pedido.descontoNegociacaoPercent}% — ${pedido.descontoNegociacaoJustificativa ?? "—"}`,
+      );
     }
     if (pedido.vendedorTipo === "representante" && pedido.comissaoEstimadaValor != null) {
       internoLines.push(
