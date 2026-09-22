@@ -124,7 +124,10 @@ export const useNegotiation = create<NegotiationStore>()(
         return { ok: true };
       },
 
-      setDescontoPct: (v) => set({ descontoPct: Math.max(0, Math.min(30, v)) }),
+      setDescontoPct: (v) =>
+        set({ descontoPct: Math.max(0, Math.min(30, Number.isFinite(v) ? v : 0)) }),
+      setDescontoModo: (v) => set({ descontoModo: v }),
+      setDescontoValor: (v) => set({ descontoValor: Math.max(0, Number.isFinite(v) ? v : 0) }),
       setJustificativa: (v) => set({ justificativa: v }),
       setObservacaoInterna: (v) => set({ observacaoInterna: v }),
       setUsarReservada: (v) => set({ usarReservada: v }),
