@@ -48,6 +48,7 @@ export function recalcularComercialParaItens(
     condicaoDescricao: base.condicaoDescricao,
     descontoCelebraPct: base.descontoCelebraPct,
     descontoMasterPct: base.descontoMasterPct,
+    descontoMasterModo: base.descontoMasterModo,
     negociacao: base.negociacao,
     justificativa: base.justificativa,
     observacaoInterna: base.observacaoInterna,
