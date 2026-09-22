@@ -125,6 +125,8 @@ export interface OrderCommercial {
   descontoCelebraValor: number;
   descontoMasterPct: number;
   descontoMasterValor: number;
+  /** Como o desconto de negociação foi digitado: em % ou em R$ (só referência de exibição) */
+  descontoMasterModo?: "percent" | "valor";
   bonusPixValor: number;
   /** Percentual do bônus PIX aplicado no momento do pedido */
   bonusPixPercent?: number;
