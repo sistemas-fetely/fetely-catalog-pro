@@ -100,6 +100,15 @@ export function CartCommercialPanel({
   const isRepresentante = !roles.includes("admin") && !roles.includes("master");
   const tetoDesconto = isRepresentante ? DESCONTO_REP_MAX : DESCONTO_MASTER_MAX;
   const descontoPctEfetivo = Math.min(descontoPct, tetoDesconto);
+  // Desconto em R$: o vendedor digita o valor e convertemos para % sobre o bruto,
+  // que continua sendo a única forma como o desconto é calculado e registrado.
+  const tetoDescontoValor = (bruto * tetoDesconto) / 100;
+  const descontoValorEfetivo = Math.min(descontoValor, tetoDescontoValor);
+  useEffect(() => {
+    if (descontoModo !== "valor") return;
+    const pct = bruto > 0 ? Math.min((descontoValorEfetivo / bruto) * 100, tetoDesconto) : 0;
+    if (Math.abs(pct - descontoPct) > 0.0001) setDescontoPct(pct);
+  }, [descontoModo, descontoValorEfetivo, bruto, tetoDesconto, descontoPct, setDescontoPct]);
   const [bonificadoManual, setBonificadoManual] = useState(false);
   const [motivoBonif, setMotivoBonif] = useState<string>("");
   const [motivoOutroTxt, setMotivoOutroTxt] = useState<string>("");
