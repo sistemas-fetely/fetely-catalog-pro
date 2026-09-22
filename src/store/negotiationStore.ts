@@ -12,6 +12,10 @@ interface SessionState {
   ativo: boolean;
   tentativas: number;
   descontoPct: number;
+  /** Como o vendedor digita o desconto: em % ou em R$ (convertido para % sobre o bruto). */
+  descontoModo: "percent" | "valor";
+  /** Valor em R$ digitado quando descontoModo === "valor" (só para a UI). */
+  descontoValor: number;
   justificativa: string;
   observacaoInterna: string;
   usarReservada: boolean;
@@ -30,6 +34,8 @@ interface NegotiationStore extends PersistState, SessionState {
   desativar: () => void;
   alterarSenha: (atual: string, nova: string) => Promise<{ ok: boolean; erro?: string }>;
   setDescontoPct: (v: number) => void;
+  setDescontoModo: (v: "percent" | "valor") => void;
+  setDescontoValor: (v: number) => void;
   setJustificativa: (v: string) => void;
   setObservacaoInterna: (v: string) => void;
   setUsarReservada: (v: boolean) => void;
@@ -45,6 +51,8 @@ const defaultSession: SessionState = {
   ativo: false,
   tentativas: 0,
   descontoPct: 0,
+  descontoModo: "percent",
+  descontoValor: 0,
   justificativa: "",
   observacaoInterna: "",
   usarReservada: false,
@@ -94,6 +102,8 @@ export const useNegotiation = create<NegotiationStore>()(
         set({
           ativo: false,
           descontoPct: 0,
+          descontoModo: "percent",
+          descontoValor: 0,
           justificativa: "",
           observacaoInterna: "",
           usarReservada: false,
@@ -114,7 +124,10 @@ export const useNegotiation = create<NegotiationStore>()(
         return { ok: true };
       },
 
-      setDescontoPct: (v) => set({ descontoPct: Math.max(0, Math.min(30, v)) }),
+      setDescontoPct: (v) =>
+        set({ descontoPct: Math.max(0, Math.min(30, Number.isFinite(v) ? v : 0)) }),
+      setDescontoModo: (v) => set({ descontoModo: v }),
+      setDescontoValor: (v) => set({ descontoValor: Math.max(0, Number.isFinite(v) ? v : 0) }),
       setJustificativa: (v) => set({ justificativa: v }),
       setObservacaoInterna: (v) => set({ observacaoInterna: v }),
       setUsarReservada: (v) => set({ usarReservada: v }),
