@@ -51,6 +51,8 @@ const defaultSession: SessionState = {
   ativo: false,
   tentativas: 0,
   descontoPct: 0,
+  descontoModo: "percent",
+  descontoValor: 0,
   justificativa: "",
   observacaoInterna: "",
   usarReservada: false,
