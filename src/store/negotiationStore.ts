@@ -12,6 +12,10 @@ interface SessionState {
   ativo: boolean;
   tentativas: number;
   descontoPct: number;
+  /** Como o vendedor digita o desconto: em % ou em R$ (convertido para % sobre o bruto). */
+  descontoModo: "percent" | "valor";
+  /** Valor em R$ digitado quando descontoModo === "valor" (só para a UI). */
+  descontoValor: number;
   justificativa: string;
   observacaoInterna: string;
   usarReservada: boolean;
