@@ -136,6 +136,8 @@ export interface PedidoExportavel {
   freteIsento: boolean;
   descontoCelebraPercent: number;
   descontoNegociacaoPercent: number;
+  /** Quando o desconto foi digitado em R$, a % não aparece no PDF */
+  descontoNegociacaoModo?: "percent" | "valor";
   descontoNegociacaoJustificativa?: string;
   bonusPixPercent: number;
   condicaoPagamentoId: number | null;
@@ -286,6 +288,7 @@ export function buildPedidoExportavel(order: SavedOrder): PedidoExportavel {
     freteIsento: c?.freteIsento ?? (c?.frete === "CIF"),
     descontoCelebraPercent: c?.descontoCelebraPct ?? 0,
     descontoNegociacaoPercent: c?.descontoMasterPct ?? 0,
+    descontoNegociacaoModo: c?.descontoMasterModo,
     descontoNegociacaoJustificativa: c?.justificativa,
     bonusPixPercent: c?.aplicouPix ? (faixa?.bonusPix ?? 0) : 0,
     condicaoPagamentoId: c?.condicaoId ?? null,
