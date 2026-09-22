@@ -2197,7 +2197,7 @@ function ProdutosRows({ items, totalRef, indent }: { items: ItemRow[]; totalRef:
 // TAB: CLIENTE  (Por cliente · Estado · Representante · Atendimento · Recompra)
 // ────────────────────────────────────────────────────────────────────────────
 
-type ClienteView = "cliente" | "cidade" | "estado" | "representante" | "atendimento" | "profundidade" | "recompra";
+type ClienteView = "cliente" | "cidade" | "estado" | "representante" | "atendimento" | "profundidade" | "novos" | "recompra";
 
 function TabCliente({ orders, ordersPrev, items, range }: {
   orders: OrderRow[];
@@ -2493,6 +2493,76 @@ function TabCliente({ orders, ordersPrev, items, range }: {
     return { all, recompraInterna, recompraHistorica, novos };
   }, [orders, ordersPrev]);
 
+  // ── Novos clientes (primeira compra dentro do período; não compraram no período anterior)
+  const novosClientes = useMemo(() => {
+    const chave = (o: OrderRow) => {
+      const c = o.cliente_snapshot ?? {};
+      return (c as { clienteId?: string }).clienteId || c.cnpj || c.razaoSocial || "—";
+    };
+    const antes = new Set(ordersPrev.map(chave));
+    type Row = {
+      key: string; razao: string; cnpj: string; cidade: string; estado: string;
+      vendedor: string; vendedorTipo: string;
+      pedidos: number; unidades: number; liquido: number; primeira: string; ultima: string;
+    };
+    const m = new Map<string, Row>();
+    orders.forEach((o) => {
+      const k = chave(o);
+      if (antes.has(k)) return;
+      const c = o.cliente_snapshot ?? {};
+      const cur = m.get(k) ?? {
+        key: k,
+        razao: c.razaoSocial || c.nomeFantasia || "—",
+        cnpj: c.cnpj || "—",
+        cidade: (c as { cidade?: string }).cidade || "—",
+        estado: (c as { estado?: string }).estado || "—",
+        vendedor: o.vendedor_nome || "—",
+        vendedorTipo: o.vendedor_tipo || "—",
+        pedidos: 0, unidades: 0, liquido: 0,
+        primeira: o.created_at, ultima: o.created_at,
+      };
+      cur.pedidos += 1;
+      cur.unidades += Number(o.total_unidades || 0);
+      cur.liquido += Number(o.total || 0);
+      if (new Date(o.created_at) < new Date(cur.primeira)) {
+        cur.primeira = o.created_at;
+        cur.vendedor = o.vendedor_nome || cur.vendedor;
+        cur.vendedorTipo = o.vendedor_tipo || cur.vendedorTipo;
+      }
+      if (new Date(o.created_at) > new Date(cur.ultima)) cur.ultima = o.created_at;
+      m.set(k, cur);
+    });
+    const rows = Array.from(m.values()).sort((a, b) => b.liquido - a.liquido);
+    const liquido = rows.reduce((s, r) => s + r.liquido, 0);
+    const pedidos = rows.reduce((s, r) => s + r.pedidos, 0);
+
+    const vm = new Map<string, { nome: string; clientes: number; pedidos: number; liquido: number }>();
+    rows.forEach((r) => {
+      const cur = vm.get(r.vendedor) ?? { nome: r.vendedor, clientes: 0, pedidos: 0, liquido: 0 };
+      cur.clientes += 1;
+      cur.pedidos += r.pedidos;
+      cur.liquido += r.liquido;
+      vm.set(r.vendedor, cur);
+    });
+    const porVendedor = Array.from(vm.values()).sort((a, b) => b.clientes - a.clientes || b.liquido - a.liquido);
+
+    // Captação por dia (curva de novos clientes no período)
+    const dm = new Map<string, number>();
+    rows.forEach((r) => {
+      const d = new Date(r.primeira);
+      const k = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+      dm.set(k, (dm.get(k) || 0) + 1);
+    });
+    const porDia = Array.from(dm.entries()).map(([dia, valor]) => ({ dia, valor }));
+
+    return {
+      rows, porVendedor, porDia,
+      liquido, pedidos,
+      ticket: pedidos ? liquido / pedidos : 0,
+      pctFat: totalFat > 0 ? (liquido / totalFat) * 100 : 0,
+    };
+  }, [orders, ordersPrev, totalFat]);
+
   // ── CSV exports
   const exportCliente = () => downloadCSV(`fetely_clientes_${periodSuffix(range.from)}.csv`, porCliente.map((c, i) => {
     const cad = clienteByKey.get(c.key) || clienteByKey.get((c.cnpj || "").replace(/\D/g, ""));
@@ -2528,6 +2598,15 @@ function TabCliente({ orders, ordersPrev, items, range }: {
     "Pedidos no período": c.pedidos, "Fat. Líquido": c.liquido.toFixed(2),
     "Comprou antes": c.existiaAntes ? "Sim" : "Não",
     "Tipo": c.pedidos >= 2 ? "Recompra no período" : c.existiaAntes ? "Recompra histórica" : "Novo cliente",
+    "Última Compra": new Date(c.ultima).toLocaleDateString("pt-BR"),
+  })));
+  const exportNovos = () => downloadCSV(`fetely_novos_clientes_${periodSuffix(range.from)}.csv`, novosClientes.rows.map((c, i) => ({
+    "#": i + 1, "Razão Social": c.razao, CNPJ: c.cnpj,
+    Cidade: c.cidade, UF: c.estado,
+    Vendedor: c.vendedor, "Tipo Vendedor": c.vendedorTipo,
+    "Pedidos no período": c.pedidos, Unidades: c.unidades,
+    "Fat. Líquido": c.liquido.toFixed(2),
+    "Primeira Compra": new Date(c.primeira).toLocaleDateString("pt-BR"),
     "Última Compra": new Date(c.ultima).toLocaleDateString("pt-BR"),
   })));
   const exportProfundidade = () => downloadCSV(`fetely_profundidade_vendedor_${periodSuffix(range.from)}.csv`, profundidade.rows.map((r, i) => ({
@@ -2571,6 +2650,7 @@ function TabCliente({ orders, ordersPrev, items, range }: {
     { key: "representante", label: "Por Vendedor" },
     { key: "atendimento", label: "Por Atendimento" },
     { key: "profundidade", label: "Aprofundamento Vendedor" },
+    { key: "novos", label: "Novos Clientes" },
     { key: "recompra", label: "Recompra" },
   ];
 
@@ -2999,6 +3079,117 @@ function TabCliente({ orders, ordersPrev, items, range }: {
               </Card>
             </>
           )}
+        </>
+      )}
+
+      {view === "novos" && (
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <MiniKpi label="Novos clientes no período" value={String(novosClientes.rows.length)} hint={range.label} />
+            <MiniKpi label="Faturamento dos novos" value={formatBRL(novosClientes.liquido)} hint={`${fmtPct(novosClientes.pctFat)} do total`} />
+            <MiniKpi label="Pedidos dos novos" value={String(novosClientes.pedidos)} />
+            <MiniKpi label="Ticket médio dos novos" value={formatBRL(novosClientes.ticket)} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <Card title="Novos clientes por vendedor">
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart layout="vertical"
+                    data={novosClientes.porVendedor.slice(0, 10).map((v) => ({ nome: v.nome.slice(0, 24), valor: v.clientes }))}
+                    margin={{ top: 8, right: 32, left: 8, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" horizontal={false} />
+                    <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <YAxis type="category" dataKey="nome" tick={AXIS_TICK} axisLine={false} tickLine={false} width={170} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
+                      formatter={(v: number) => `${v} clientes`} />
+                    <Bar dataKey="valor" fill={GOLD} radius={[0, 6, 6, 0]} maxBarSize={16}>
+                      <LabelList dataKey="valor" position="right" style={{ fill: "var(--text-secondary)", fontSize: 10 }} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+            <Card title="Captação de novos clientes por dia">
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={novosClientes.porDia} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="dia" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--surface-2)", opacity: 0.5 }}
+                      formatter={(v: number) => `${v} clientes`} />
+                    <Bar dataKey="valor" fill={GOLD} radius={[6, 6, 0, 0]} maxBarSize={24} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          </div>
+
+          <Card title={`Novos clientes por vendedor (${novosClientes.porVendedor.length})`}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+                    <th className="px-2 py-2 text-left">Vendedor</th>
+                    <th className="px-2 py-2 text-right">Novos clientes</th>
+                    <th className="px-2 py-2 text-right">Pedidos</th>
+                    <th className="px-2 py-2 text-right">Líquido</th>
+                    <th className="px-2 py-2 text-right">Ticket médio</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {novosClientes.porVendedor.map((v) => (
+                    <tr key={v.nome} className="hover:bg-surface-2/40">
+                      <td className="px-2 py-2 text-text-primary">{v.nome}</td>
+                      <td className="px-2 py-2 text-right text-gold">{v.clientes}</td>
+                      <td className="px-2 py-2 text-right">{v.pedidos}</td>
+                      <td className="px-2 py-2 text-right text-text-primary">{formatBRL(v.liquido)}</td>
+                      <td className="px-2 py-2 text-right text-text-secondary">{formatBRL(v.pedidos ? v.liquido / v.pedidos : 0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          <Card title={`Novos clientes · Detalhe (${novosClientes.rows.length})`} action={<ExportBtn onClick={exportNovos} />}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text-muted">
+                    <th className="px-2 py-2 text-left">#</th>
+                    <th className="px-2 py-2 text-left">Cliente</th>
+                    <th className="px-2 py-2 text-left">CNPJ</th>
+                    <th className="px-2 py-2 text-left">Cidade / UF</th>
+                    <th className="px-2 py-2 text-left">Vendedor</th>
+                    <th className="px-2 py-2 text-right">Pedidos</th>
+                    <th className="px-2 py-2 text-right">Unid.</th>
+                    <th className="px-2 py-2 text-right">Líquido</th>
+                    <th className="px-2 py-2 text-left">1ª compra</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {novosClientes.rows.map((c, i) => (
+                    <tr key={c.key} className="hover:bg-surface-2/40">
+                      <td className="px-2 py-2 text-text-muted">{i + 1}</td>
+                      <td className="px-2 py-2 text-text-primary">{c.razao}</td>
+                      <td className="px-2 py-2 text-text-secondary">{c.cnpj}</td>
+                      <td className="px-2 py-2 text-text-secondary">{c.cidade} / {c.estado}</td>
+                      <td className="px-2 py-2 text-text-secondary">{c.vendedor}</td>
+                      <td className="px-2 py-2 text-right">{c.pedidos}</td>
+                      <td className="px-2 py-2 text-right">{c.unidades}</td>
+                      <td className="px-2 py-2 text-right text-text-primary">{formatBRL(c.liquido)}</td>
+                      <td className="px-2 py-2 text-text-secondary">{new Date(c.primeira).toLocaleDateString("pt-BR")}</td>
+                    </tr>
+                  ))}
+                  {!novosClientes.rows.length && (
+                    <tr><td colSpan={9} className="px-2 py-6 text-center text-text-muted">Nenhum cliente novo no período selecionado.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </>
       )}
 
