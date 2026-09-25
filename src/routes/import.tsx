@@ -3,6 +3,7 @@ import { AlertTriangle, Check, FileJson, RotateCcw, Upload } from "lucide-react"
 import { useState } from "react";
 import { useCatalog } from "@/store/catalogStore";
 import type { Product } from "@/types";
+import { normalizePlateNames } from "@/lib/plateNames";
 
 export const Route = createFileRoute("/import")({
   head: () => ({
@@ -70,7 +71,7 @@ function validate(raw: unknown): ValidationResult {
       r.isVelaNumerica !== undefined
         ? Boolean(r.isVelaNumerica)
         : tipo.toLowerCase().includes("numéric") || tipo.toLowerCase().includes("numeric");
-    cleaned.push({
+    cleaned.push(normalizePlateNames({
       sku: String(r.sku),
       codCadastro: String(r.codCadastro ?? r.sku),
       ean: String(r.ean ?? ""),
@@ -113,7 +114,7 @@ function validate(raw: unknown): ValidationResult {
       isVelaNumerica: isVN,
       numeroVela:
         r.numeroVela === null || r.numeroVela === undefined ? null : Number(r.numeroVela),
-    });
+    }));
 
   });
 

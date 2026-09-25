@@ -11,6 +11,7 @@ import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { formatBRL, halfBox, isValidMultiple } from "@/lib/format";
+import { productGroupLabel } from "@/lib/plateNames";
 
 const searchSchema = z.object({
   sku: fallback(z.string(), "").optional(),
@@ -76,7 +77,7 @@ function ProductPage() {
     { label: "Categoria", value: product.categoria },
     { label: "Departamento", value: product.departamento },
     { label: "Grupo", value: product.grupo },
-    { label: "Tipo", value: product.tipo },
+    ...(product.grupo === "Prato" ? [] : [{ label: "Tipo", value: product.tipo }]),
     { label: "Família", value: product.familia },
     { label: "Coleção", value: product.colecao },
     { label: "Sub-coleção", value: product.subColecao },
@@ -164,7 +165,7 @@ function ProductPage() {
         <div className="space-y-5">
           <div>
             <div className="text-[10px] uppercase tracking-[0.2em] text-text-muted">
-              {product.grupo} • {product.tipo}
+              {productGroupLabel(product)}
             </div>
             <h1 className="mt-1 font-display text-2xl sm:text-3xl leading-tight text-text-primary">
               {product.nomeComercial}

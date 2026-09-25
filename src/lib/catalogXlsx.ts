@@ -1,5 +1,6 @@
 // ExcelJS (~500 KB) carregado sob demanda, só ao gerar a planilha do catálogo.
 import type { Product } from "@/types";
+import { normalizePlateNames } from "@/lib/plateNames";
 import { getProdutoPhoto } from "@/store/photoStore";
 import {
   CATALOG_FIELDS,
@@ -43,7 +44,10 @@ async function urlToBase64(url: string, maxSize = 320): Promise<LoadedImage | nu
 
 function fieldValue(p: Product, key: CatalogFieldKey): string | number | null {
   switch (key) {
-    case "nomeComercial": return p.nomeComercial || p.nomeCompleto || null;
+    case "nomeComercial": {
+      const cleanPlate = normalizePlateNames(p);
+      return cleanPlate.nomeComercial || cleanPlate.nomeCompleto || null;
+    }
     case "sku": return p.sku || null;
     case "ean": return p.ean || null;
     case "codCadastro": return p.codCadastro || null;
@@ -73,7 +77,7 @@ function fieldValue(p: Product, key: CatalogFieldKey): string | number | null {
     case "tipo": return p.tipo || null;
     case "familia": return p.familia || null;
     case "subColecao2": return p.subColecao2 || null;
-    case "descricaoProduto": return p.descricaoProduto || null;
+    case "descricaoProduto": return normalizePlateNames(p).descricaoProduto || null;
   }
 }
 

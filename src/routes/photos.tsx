@@ -13,6 +13,7 @@ import {
 import { PhotoUploadModal } from "@/components/photos/PhotoUploadModal";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import { CatalogPdfModal } from "@/components/photos/CatalogPdfModal";
+import { productGroupLabel } from "@/lib/plateNames";
 
 const searchSchema = z.object({
   tab: fallback(z.enum(["colecao", "cor"]), "colecao").default("colecao"),
@@ -331,7 +332,7 @@ function CorTab({
                 </div>
                 <div className="p-3">
                   <div className="text-[10px] uppercase tracking-wider text-text-muted">
-                    {isCutlery ? p.grupo : `${p.grupo} • ${p.tipo}`}
+                    {isCutlery ? p.grupo : productGroupLabel(p)}
                   </div>
                   <div className="font-display text-base leading-tight mt-0.5">
                     {isCutlery ? p.corNome : p.nomeComercial}
