@@ -23,10 +23,6 @@ export const Route = createFileRoute("/catalog/todos")({
         content:
           "Lista completa dos produtos Fetély com busca por nome, código e filtros por categoria e coleção.",
       },
-      { property: "og:title", content: "Todos os produtos — Catálogo Fetély" },
-      { property: "og:description", content: "Lista completa dos produtos Fetély com busca e filtros por categoria e coleção." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: TodosProdutosPage,

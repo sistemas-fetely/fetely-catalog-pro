@@ -1,1 +1,0 @@
-- Normalize customer-facing plate names at the catalog store boundary and fallback dataset while preserving `tipo` internally, because classifications still drive reports and external integrations.

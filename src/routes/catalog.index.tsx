@@ -33,10 +33,6 @@ export const Route = createFileRoute("/catalog/")({
     meta: [
       { title: "Catálogo — Fetély B2B" },
       { name: "description", content: "Navegue pelo catálogo Fetély por coleção." },
-      { property: "og:title", content: "Catálogo — Fetély B2B" },
-      { property: "og:description", content: "Navegue pelo catálogo Fetély por coleção." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: CatalogPage,
