@@ -473,6 +473,7 @@ function renderProductCell(
   const rows: Row[] = [];
   for (const f of CATALOG_FIELDS) {
     if (f.key === "nomeComercial" || f.key === "descricaoProduto") continue;
+    if (p.grupo === "Prato" && f.key === "tipo") continue;
     if (!fields.has(f.key)) continue;
     const v = fieldValue(p, f.key);
     if (!v) continue;

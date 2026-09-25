@@ -27,6 +27,10 @@ export const Route = createFileRoute("/photos")({
     meta: [
       { title: "Gerenciar Fotos — Fetély B2B" },
       { name: "description", content: "Upload de fotos por coleção e por cor." },
+      { property: "og:title", content: "Gerenciar Fotos — Fetély B2B" },
+      { property: "og:description", content: "Organize as fotos de produtos e coleções Fetély." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PhotosPage,

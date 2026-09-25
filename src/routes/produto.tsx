@@ -20,7 +20,14 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/produto")({
   validateSearch: zodValidator(searchSchema),
   head: () => ({
-    meta: [{ title: "Detalhes do produto — Fetély B2B" }],
+    meta: [
+      { title: "Detalhes do produto — Fetély B2B" },
+      { name: "description", content: "Detalhes, fotos e informações comerciais dos produtos Fetély." },
+      { property: "og:title", content: "Detalhes do produto — Fetély B2B" },
+      { property: "og:description", content: "Detalhes, fotos e informações comerciais dos produtos Fetély." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
   }),
   component: ProductPage,
 });
