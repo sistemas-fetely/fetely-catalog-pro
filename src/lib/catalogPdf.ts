@@ -1,6 +1,7 @@
 // jsPDF (~400 KB) carregado sob demanda, só ao gerar o PDF do catálogo.
 type JsPDFDoc = import("jspdf").jsPDF;
 import type { Product } from "@/types";
+import { normalizePlateNames } from "@/lib/plateNames";
 import { getColecaoPhoto, getProdutoPhoto } from "@/store/photoStore";
 
 const COLORS = {
@@ -444,7 +445,8 @@ function renderProductCell(
     doc.setTextColor(COLORS.black);
     doc.setFontSize(8.5);
     doc.setFont("helvetica", "bold");
-    const nome = p.nomeComercial || p.nomeCompleto || p.sku;
+    const cleanPlate = normalizePlateNames(p);
+    const nome = cleanPlate.nomeComercial || cleanPlate.nomeCompleto || p.sku;
     const nomeLines = doc.splitTextToSize(nome, w - 6);
     const shown = nomeLines.slice(0, 2);
     doc.text(shown, x + 3, ty);

@@ -32,6 +32,7 @@ import { useAuth } from "@/store/authStore";
 import { Can } from "@/components/security/Can";
 import { useCatalog } from "@/store/catalogStore";
 import type { Product } from "@/types";
+import { normalizePlateNames } from "@/lib/plateNames";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -440,7 +441,7 @@ function AdminProductsPage() {
       toast.error("Corrija os campos: " + errs.join(", "));
       return;
     }
-    const res = upsertProduct(editing, auditMeta);
+    const res = upsertProduct(normalizePlateNames(editing), auditMeta);
     if (!res.ok) {
       toast.error(res.error);
       return;
