@@ -521,10 +521,11 @@ function renderProductCell(
     }
   }
 
-  if (fields.has("descricaoProduto") && p.descricaoProduto && ty + lineH <= priceBlockTop) {
+  const description = normalizePlateNames(p).descricaoProduto;
+  if (fields.has("descricaoProduto") && description && ty + lineH <= priceBlockTop) {
     doc.setFontSize(Math.max(5, fontSize - 0.5));
     doc.setTextColor(COLORS.text);
-    const lines = doc.splitTextToSize(p.descricaoProduto, w - 6);
+    const lines = doc.splitTextToSize(description, w - 6);
     for (const ln of lines) {
       if (ty + lineH > priceBlockTop) break;
       doc.text(ln, x + 3, ty);
