@@ -1,5 +1,6 @@
 import type { Product } from "@/types";
 import rawProducts from "./products.json";
+import { normalizePlateNames } from "@/lib/plateNames";
 
 // Categorias que são sempre pronta entrega (pedido firme), independente da tag
 // de previsão herdada da planilha.
@@ -8,7 +9,7 @@ const PRONTA_ENTREGA_CATEGORIES = new Set(["Celebrar à Mesa"]);
 // Catálogo carregado direto da base oficial (planilha XLSX → JSON).
 export const PRODUCTS: Product[] = (rawProducts as Product[]).map((p) => {
   const prontaEntrega = p.prontaEntrega ?? PRONTA_ENTREGA_CATEGORIES.has(p.categoria);
-  return { ...p, prontaEntrega };
+  return normalizePlateNames({ ...p, prontaEntrega });
 });
 
 

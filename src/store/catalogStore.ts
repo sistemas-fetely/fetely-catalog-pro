@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type { Product } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeStorage } from "@/lib/safeStorage";
+import { normalizePlateNames } from "@/lib/plateNames";
 
 // O JSON default do catálogo (1,2 MB) NÃO é importado estaticamente — fica num
 // chunk separado carregado sob demanda (banco vazio, reset ou seed inicial).
@@ -125,7 +126,7 @@ function applySixPackOverride(p: Product): Product {
 }
 
 function rowToProduct(row: Record<string, unknown>): Product {
-  return {
+  return normalizePlateNames({
     sku: row.sku as string,
     codCadastro: (row.cod_cadastro as string | null) ?? "",
     ean: (row.ean as string | null) ?? "",
@@ -173,10 +174,11 @@ function rowToProduct(row: Record<string, unknown>): Product {
     ativo: (row.ativo as boolean) ?? true,
     fase: (row.fase as string | null) ?? "registrado",
     prontaEntrega: (row.pronta_entrega as boolean) ?? false,
-  };
+  });
 }
 
 export function productToRow(p: Product): Record<string, unknown> {
+  p = normalizePlateNames(p);
   return {
     sku: p.sku,
     cod_cadastro: p.codCadastro || null,
@@ -323,7 +325,7 @@ export const useCatalog = create<CatalogState>()(
 
       setProducts: async (products, meta) => {
         set({
-          products,
+          products: products.map(normalizePlateNames),
           source: "imported",
           importedAt: new Date().toISOString(),
           lastSyncAt: Date.now(),
@@ -370,7 +372,7 @@ export const useCatalog = create<CatalogState>()(
           return { ok: false, error: "SKU já cadastrado" };
         }
         // publicação só pelo botão Publicar, que valida a ficha no SNCF
-        const next: Product = { ...p, sku, ativo: p.ativo ?? false };
+        const next: Product = normalizePlateNames({ ...p, sku, ativo: p.ativo ?? false });
         const newProducts =
           idx >= 0
             ? state.products.map((x, i) => (i === idx ? next : x))
@@ -457,7 +459,7 @@ export const useCatalog = create<CatalogState>()(
       storage: createJSONStorage(createSafeStorage),
       // v14: cache antigo não tem `fase`; migrar limpa para reler do banco e evitar
       // salvar produto publicado de volta como "registrado".
-      version: 14,
+      version: 15,
       partialize: (state) => ({
         products: state.products,
         source: state.source,

@@ -10,6 +10,7 @@ import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import { roteamentoQtd } from "@/lib/classifyItem";
 import type { Product } from "@/types";
+import { productGroupLabel } from "@/lib/plateNames";
 
 
 interface ProductCardProps {
@@ -133,7 +134,7 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div>
           <div className="text-[10px] uppercase tracking-wider text-text-muted">
-            {product.grupo} • {product.tipo}
+            {productGroupLabel(product)}
           </div>
           <Link
             to="/produto"
