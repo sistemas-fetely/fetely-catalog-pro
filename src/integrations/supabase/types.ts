@@ -3296,6 +3296,10 @@ export type Database = {
           token: string
         }[]
       }
+      fn_pedidos_vendedor_para_sncf: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       fn_produto_fase_pendencias: {
         Args: {
           p: Database["public"]["Tables"]["products"]["Row"]
@@ -3307,6 +3311,7 @@ export type Database = {
         Args: { p_dry_run?: boolean; p_itens: Json }
         Returns: Json
       }
+      fn_representantes_para_sncf: { Args: { p_token: string }; Returns: Json }
       get_order_by_sncf_id: {
         Args: { p_sncf_pedido_id: string }
         Returns: Json
