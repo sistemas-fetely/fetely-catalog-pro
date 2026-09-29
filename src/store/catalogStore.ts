@@ -54,6 +54,7 @@ interface CatalogState {
   resetToDefault: () => void;
   upsertProduct: (p: Product, meta: AuditMeta) => { ok: true } | { ok: false; error: string };
   setFase: (sku: string, fase: string, meta: AuditMeta) => Promise<void>;
+  setLiberado: (sku: string, liberado: boolean) => Promise<void>;
   duplicateProduct: (sku: string, meta: AuditMeta) => Product | null;
 }
 
@@ -174,6 +175,7 @@ function rowToProduct(row: Record<string, unknown>): Product {
     ativo: (row.ativo as boolean) ?? true,
     fase: (row.fase as string | null) ?? "registrado",
     prontaEntrega: (row.pronta_entrega as boolean) ?? false,
+    liberadoParaPedido: (row.liberado_para_pedido as boolean | null) ?? false,
   });
 }
 
@@ -398,6 +400,24 @@ export const useCatalog = create<CatalogState>()(
       // `ativo` é derivado da fase por trigger no banco: aqui só se escreve `fase`.
       // A trigger recusa promoção sem ficha completa; a mensagem dela lista os campos
       // que faltam e por isso é propagada para a tela.
+      // Liberação comercial (FOP/Thomer). Coluna própria que o SNCF nunca toca.
+      setLiberado: async (sku, liberado) => {
+        const { data: u } = await supabase.auth.getUser();
+        const { error } = await supabase
+          .from("products")
+          .update({
+            liberado_para_pedido: liberado,
+            liberado_em: new Date().toISOString(),
+            liberado_por: u.user?.id ?? null,
+          } as never)
+          .eq("sku", sku);
+        if (error) throw new Error(error.message);
+        set({
+          products: get().products.map((x) =>
+            x.sku === sku ? { ...x, liberadoParaPedido: liberado } : x,
+          ),
+        });
+      },
       setFase: async (sku, fase, meta) => {
         const state = get();
         const idx = state.products.findIndex((x) => x.sku === sku);

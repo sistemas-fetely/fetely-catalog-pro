@@ -6,18 +6,23 @@ export function classificarItem(statusEstoque: string): "firme" | "provisao" {
   return "provisao";
 }
 
+// Titularidade:
+// - `statusEstoque`, `prontaEntrega`, `estoqueDisponivel` são espelho do SNCF
+//   (job fop-status-estoque a cada 30 min). Disponibilidade física.
+// - `liberadoParaPedido` é a liberação comercial do FOP (admin/master). O SNCF
+//   nunca escreve nela. É o único override de firme × provisão.
+type Disp = Pick<Product, "estoqueDisponivel" | "statusEstoque" | "liberadoParaPedido">;
+
 /**
  * Quantidade do produto que pode ser vendida firme agora.
- * Preferência: `estoqueDisponivel` numérico. Fallback: se ainda não migrado,
- * usa o `statusEstoque` textual (comportamento antigo: em estoque = ilimitado).
+ * 1) liberadoParaPedido → ilimitado.
+ * 2) status com "prev" → 0.
+ * 3) estoqueDisponivel > 0 → essa quantidade.
+ * 4) fallback textual (em estoque = ilimitado).
  */
-export function disponivelParaVenda(product: Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega">): number {
-  // Pronta entrega é decisão explícita do cadastro e prevalece sobre o texto
-  // de previsão herdado do catálogo.
-  if (product.prontaEntrega) return Number.POSITIVE_INFINITY;
+export function disponivelParaVenda(product: Disp): number {
+  if (product.liberadoParaPedido === true) return Number.POSITIVE_INFINITY;
   const status = (product.statusEstoque || "").toLowerCase().trim();
-  // Uma previsão explícita prevalece sobre flags antigas/inconsistentes do
-  // catálogo. Isso evita transformar itens ainda futuros em pedido firme.
   if (status.includes("prev")) return 0;
   const q = Number(product.estoqueDisponivel ?? 0);
   if (q > 0) return q;
@@ -25,8 +30,7 @@ export function disponivelParaVenda(product: Pick<Product, "estoqueDisponivel" |
   return 0;
 }
 
-
-export function emEstoque(product: Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega">): boolean {
+export function emEstoque(product: Disp): boolean {
   return disponivelParaVenda(product) > 0;
 }
 
@@ -35,7 +39,7 @@ export function emEstoque(product: Pick<Product, "estoqueDisponivel" | "statusEs
  * estoque disponível. Não altera o produto — apenas calcula.
  */
 export function roteamentoQtd(
-  product: Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega">,
+  product: Disp,
   quantidade: number,
 ): { firme: number; provisao: number } {
   const qtd = Math.max(0, Math.floor(quantidade));
