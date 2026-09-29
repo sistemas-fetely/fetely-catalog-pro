@@ -447,7 +447,7 @@ function AdminProductsPage() {
   // Portão de publicação: registrado → valida ficha no SNCF antes de ir para pré-venda.
   // Promover para "ativo" e descontinuar são atos do SNCF — não existem nesta tela.
   async function handleLiberar(p: Product, v: boolean) {
-    if (!isAdminOrMaster) return;
+    if (!isAdminOrMaster()) return;
     setLiberandoSku(p.sku);
     try {
       await useCatalog.getState().setLiberado(p.sku, v);
@@ -721,7 +721,7 @@ function AdminProductsPage() {
                     >
                       <Switch
                         checked={!!p.liberadoParaPedido}
-                        disabled={!isAdminOrMaster || liberandoSku === p.sku}
+                        disabled={!isAdminOrMaster() || liberandoSku === p.sku}
                         aria-label="Liberado para pedido"
                         onCheckedChange={(v) => void handleLiberar(p, v)}
                       />
