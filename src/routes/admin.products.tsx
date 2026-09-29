@@ -34,6 +34,7 @@ import { useCatalog } from "@/store/catalogStore";
 import type { Product } from "@/types";
 import { normalizePlateNames } from "@/lib/plateNames";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -393,6 +394,7 @@ function AdminProductsPage() {
   // Portão de publicação (SNCF)
   const ficha = useServerFn(fichaPendencias);
   const [publicandoSku, setPublicandoSku] = useState<string | null>(null);
+  const [liberandoSku, setLiberandoSku] = useState<string | null>(null);
   const [pendencias, setPendencias] = useState<
     { sku: string; itens: Pendencia[]; erroBanco?: string } | null
   >(null);

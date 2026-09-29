@@ -319,6 +319,9 @@ async function sincronizarFotos(supabase: any, sncfToken: string) {
 // Campos de identidade e ciclo de vida: identidade é do cartório e fase tem função
 // própria — recusados com 403 sempre, nunca ignorados em silêncio.
 const CAMPOS_PROIBIDOS = new Set(["cod_cadastro", "sku", "ean", "dun", "fase", "ativo"]);
+// Liberação comercial é do FOP (admin/master). O SNCF nunca escreve aqui:
+// campos ignorados + logados, resposta segue ok:true com `ignorados`.
+const CAMPOS_EXCLUSIVOS_FOP = new Set(["liberado_para_pedido", "liberado_em", "liberado_por", "id", "created_at"]);
 
 // deno-lint-ignore no-explicit-any
 async function gravarProduto(req: Request, supabase: any, corpo: any) {
