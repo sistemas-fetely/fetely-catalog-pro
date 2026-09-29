@@ -34,6 +34,7 @@ import { useCatalog } from "@/store/catalogStore";
 import type { Product } from "@/types";
 import { normalizePlateNames } from "@/lib/plateNames";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -393,6 +394,7 @@ function AdminProductsPage() {
   // Portão de publicação (SNCF)
   const ficha = useServerFn(fichaPendencias);
   const [publicandoSku, setPublicandoSku] = useState<string | null>(null);
+  const [liberandoSku, setLiberandoSku] = useState<string | null>(null);
   const [pendencias, setPendencias] = useState<
     { sku: string; itens: Pendencia[]; erroBanco?: string } | null
   >(null);
@@ -444,6 +446,19 @@ function AdminProductsPage() {
 
   // Portão de publicação: registrado → valida ficha no SNCF antes de ir para pré-venda.
   // Promover para "ativo" e descontinuar são atos do SNCF — não existem nesta tela.
+  async function handleLiberar(p: Product, v: boolean) {
+    if (!isAdminOrMaster()) return;
+    setLiberandoSku(p.sku);
+    try {
+      await useCatalog.getState().setLiberado(p.sku, v);
+      toast.success(v ? "Liberado para pedido firme" : "Liberação removida — volta para provisão");
+    } catch (e) {
+      toast.error(`Não foi possível alterar: ${(e as Error).message}`);
+    } finally {
+      setLiberandoSku(null);
+    }
+  }
+
   async function handleToggle(p: Product) {
     const fase = p.fase ?? "registrado";
     if (fase === "inativo") return;
@@ -592,7 +607,7 @@ function AdminProductsPage() {
             </Button>
             <p className="flex items-center gap-1.5 text-xs text-text-muted">
               <Lock className="h-3 w-3" />
-              Produto novo nasce no SNCF, pela Importação de PI — o código vem do cartório.
+              Produto novo nasce no SNCF, pela Importação de PI — o código vem do cartório. Status, estoque e pronta entrega são espelho do SNCF; a liberação para pedido (coluna Liberado) é decisão comercial do FOP.
             </p>
           </div>
         </div>
@@ -651,6 +666,7 @@ function AdminProductsPage() {
               <col style={{ width: "95px" }} />
               <col style={{ width: "95px" }} />
               <col style={{ width: "145px" }} />
+              <col style={{ width: "80px" }} />
               <col style={{ width: "100px" }} />
             </colgroup>
             <thead className="bg-surface-2 text-xs uppercase tracking-wider text-text-secondary">
@@ -664,7 +680,8 @@ function AdminProductsPage() {
                 <th className="whitespace-nowrap px-3 py-2 text-left">Grupo</th>
                 <th className="whitespace-nowrap px-3 py-2 text-right">Atacado</th>
                 <th className="whitespace-nowrap px-3 py-2 text-left">Fase</th>
-                <th className="whitespace-nowrap px-3 py-2 text-left">Status</th>
+                <th className="whitespace-nowrap px-3 py-2 text-left" title="Espelho SNCF — editável no SNCF (fase + estoque + ETA)">Status</th>
+                <th className="whitespace-nowrap px-3 py-2 text-left" title="Liberação comercial FOP — somente admin/master">Liberado</th>
                 <th className="whitespace-nowrap px-3 py-2 text-right">Ações</th>
               </tr>
             </thead>
@@ -695,7 +712,21 @@ function AdminProductsPage() {
                   <td className="truncate whitespace-nowrap px-3 py-2 text-text-secondary" title={p.grupo}>{p.grupo}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-right">{formatBRL(p.precoAtacado || 0)}</td>
                   <td className="px-3 py-2">{faseBadge(p)}</td>
-                  <td className="px-3 py-2">{statusBadge(p)}</td>
+                  <td className="px-3 py-2" title="Espelho SNCF — editável no SNCF (fase + estoque + ETA)">{statusBadge(p)}</td>
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                    <Can
+                      tela="cfg_produtos"
+                      acao="editar"
+                      fallback={<Switch checked={!!p.liberadoParaPedido} disabled aria-label="Liberado para pedido" />}
+                    >
+                      <Switch
+                        checked={!!p.liberadoParaPedido}
+                        disabled={!isAdminOrMaster() || liberandoSku === p.sku}
+                        aria-label="Liberado para pedido"
+                        onCheckedChange={(v) => void handleLiberar(p, v)}
+                      />
+                    </Can>
+                  </td>
                   <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
                       <button
@@ -721,7 +752,7 @@ function AdminProductsPage() {
               ))}
               {pageItems.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="p-6 text-center text-text-secondary">
+                  <td colSpan={12} className="p-6 text-center text-text-secondary">
                     Nenhum produto encontrado
                   </td>
                 </tr>
@@ -1124,43 +1155,15 @@ function ProductEditor({
                 <Input value={product.tipoEmbalagem ?? ""} onChange={(e) => set("tipoEmbalagem", e.target.value)} {...ro("tipo_embalagem")} />
               </Field>
             </div>
-            <Field label="Status de Estoque *">
-              <select
-                value={isPrev ? "prev" : product.statusEstoque}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (v === "prev") set("statusEstoque", `Prev. ${prevMes} ${prevAno}`);
-                  else set("statusEstoque", v);
-                }}
-                className="w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
+            <Field label="Status de Estoque (Espelho SNCF)">
+              <div
+                className="flex items-center gap-2 rounded-md border border-input bg-surface-2 px-2 py-1 text-sm text-text-secondary"
+                title="Espelho SNCF — editável no SNCF (fase + estoque + ETA)"
               >
-                <option value="em estoque">em estoque</option>
-                <option value="prev">Prev. (mês/ano)</option>
-                <option value="sob consulta">sob consulta</option>
-              </select>
-            </Field>
-            {isPrev && (
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Mês">
-                  <select
-                    value={prevMes}
-                    onChange={(e) => { setPrevMes(e.target.value); set("statusEstoque", `Prev. ${e.target.value} ${prevAno}`); }}
-                    className="w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
-                  >
-                    {MESES.map((m) => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                </Field>
-                <Field label="Ano">
-                  <select
-                    value={prevAno}
-                    onChange={(e) => { setPrevAno(e.target.value); set("statusEstoque", `Prev. ${prevMes} ${e.target.value}`); }}
-                    className="w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
-                  >
-                    {["2026", "2027", "2028"].map((a) => <option key={a} value={a}>{a}</option>)}
-                  </select>
-                </Field>
+                <Lock className="h-3 w-3" />
+                {product.statusEstoque || "—"} · Pronta entrega: {product.prontaEntrega ? "sim" : "não"}
               </div>
-            )}
+            </Field>
             {/* publicação só pelo botão Publicar, que valida a ficha no SNCF */}
           </TabsContent>
 
