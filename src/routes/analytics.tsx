@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ClienteLink } from "@/components/clientes/ClienteLink";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Boxes, Layers, ShoppingBag, Search, ArrowUpDown } from "lucide-react";
@@ -516,7 +517,7 @@ function OrdersTable({
                   {o.id.replace("PED-", "#")}
                 </td>
                 <td className="px-4 py-3 text-text-primary truncate max-w-[260px]">
-                  {o.cliente_snapshot?.nomeFantasia || o.cliente_snapshot?.razaoSocial || "—"}
+                  <ClienteLink clienteId={o.cliente_snapshot?.clienteId} cnpj={o.cliente_snapshot?.cnpj} nome={o.cliente_snapshot?.nomeFantasia || o.cliente_snapshot?.razaoSocial} />
                 </td>
                 {showVendedor && (
                   <td className="px-4 py-3 text-text-secondary whitespace-nowrap">{o.vendedor_nome}</td>

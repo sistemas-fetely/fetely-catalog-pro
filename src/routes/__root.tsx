@@ -21,6 +21,7 @@ import { regraDaRota, rotaBloqueadaParaRepresentante } from "@/security/routeMap
 import "@/store/cartilhasStore"; // side-effect: sincroniza commercial.ts com a cartilha persistida
 import { bootstrapFopAfterLogin } from "@/lib/fopBootstrap";
 import { Toaster } from "@/components/ui/sonner";
+import { ClientePopupHost } from "@/components/clientes/ClienteLink";
 import { toast } from "sonner";
 
 function NotFoundComponent() {
@@ -161,6 +162,7 @@ function RootComponent() {
         </div>
       )}
       <Toaster />
+      <ClientePopupHost />
     </QueryClientProvider>
   );
 }

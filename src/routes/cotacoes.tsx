@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ClienteLink } from "@/components/clientes/ClienteLink";
 import { useEffect, useMemo, useState } from "react";
 import { FileText, Plus, Search } from "lucide-react";
 import { formatBRL } from "@/lib/format";
@@ -205,7 +206,7 @@ function CotacoesPage() {
                     <div className="min-w-0 flex-1">
                       <div className="font-mono text-[11px] text-gold truncate">{c.id}</div>
                       <div className="text-sm text-text-primary truncate mt-0.5">
-                        {c.meta.cliente || "—"}
+                        <ClienteLink clienteId={c.meta.clienteId} cnpj={c.meta.cnpj} nome={c.meta.cliente} />
                       </div>
                     </div>
                     <span
@@ -256,7 +257,7 @@ function CotacaoRow({ cotacao, onClick }: { cotacao: Cotacao; onClick: () => voi
     >
       <td className="px-4 py-3 font-mono text-text-primary">{cotacao.id}</td>
       <td className="px-4 py-3 text-text-primary truncate max-w-xs">
-        {cotacao.meta.cliente || "—"}
+        <ClienteLink clienteId={cotacao.meta.clienteId} cnpj={cotacao.meta.cnpj} nome={cotacao.meta.cliente} />
       </td>
       <td className="px-4 py-3 text-right text-gold font-medium">
         {formatBRL(cotacao.total)}
