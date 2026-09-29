@@ -373,8 +373,18 @@ async function gravarProduto(req: Request, supabase: any, corpo: any) {
     });
   }
 
+  const ignorados = Object.keys(campos).filter((c) => CAMPOS_EXCLUSIVOS_FOP.has(c));
+  if (ignorados.length > 0) {
+    console.warn(
+      `[sincronizar-catalogo modo=gravar_produto] campos exclusivos do FOP ignorados em ${codCadastro}: ${ignorados.join(", ")} | motivo: ${motivo}`
+    );
+  }
+  // Whitelist: só grava o que não é identidade nem liberação comercial do FOP.
+  const camposPedidos = Object.keys(campos).filter((c) => !CAMPOS_EXCLUSIVOS_FOP.has(c));
+  if (camposPedidos.length === 0) {
+    return jsonResponse(200, { ok: true, modo: "gravar_produto", cod_cadastro: codCadastro, gravados: [], de_para: {}, ignorados });
+  }
   // Valores atuais para o de_para da resposta.
-  const camposPedidos = Object.keys(campos);
   const { data: produto, error: errBusca } = await supabase
     .from("products")
     .select(`id, ${camposPedidos.join(", ")}`)
