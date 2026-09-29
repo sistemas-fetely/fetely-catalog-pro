@@ -517,7 +517,7 @@ function OrdersTable({
                   {o.id.replace("PED-", "#")}
                 </td>
                 <td className="px-4 py-3 text-text-primary truncate max-w-[260px]">
-                  <ClienteLink clienteId={o.cliente_snapshot?.clienteId} cnpj={o.cliente_snapshot?.cnpj} nome={o.cliente_snapshot?.nomeFantasia || o.cliente_snapshot?.razaoSocial} />
+                  <ClienteLink clienteId={(o.cliente_snapshot as { clienteId?: string } | null)?.clienteId} cnpj={(o.cliente_snapshot as { cnpj?: string } | null)?.cnpj} nome={o.cliente_snapshot?.nomeFantasia || o.cliente_snapshot?.razaoSocial} />
                 </td>
                 {showVendedor && (
                   <td className="px-4 py-3 text-text-secondary whitespace-nowrap">{o.vendedor_nome}</td>
