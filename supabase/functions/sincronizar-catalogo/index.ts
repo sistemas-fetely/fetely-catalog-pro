@@ -453,6 +453,7 @@ async function gravarProduto(req: Request, supabase: any, corpo: any) {
     cod_cadastro: codCadastro,
     gravados: camposPedidos,
     de_para: dePara,
+    ...(ignorados.length > 0 ? { ignorados } : {}),
   });
 }
 
