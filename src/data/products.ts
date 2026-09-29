@@ -9,7 +9,7 @@ const PRONTA_ENTREGA_CATEGORIES = new Set(["Celebrar à Mesa"]);
 // Catálogo carregado direto da base oficial (planilha XLSX → JSON).
 export const PRODUCTS: Product[] = (rawProducts as Product[]).map((p) => {
   const prontaEntrega = p.prontaEntrega ?? PRONTA_ENTREGA_CATEGORIES.has(p.categoria);
-  return normalizePlateNames({ ...p, prontaEntrega, liberadoParaPedido: p.liberadoParaPedido ?? false });
+  return normalizePlateNames({ ...p, prontaEntrega });
 });
 
 
