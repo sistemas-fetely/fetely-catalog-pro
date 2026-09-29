@@ -319,9 +319,9 @@ async function sincronizarFotos(supabase: any, sncfToken: string) {
 // Campos de identidade e ciclo de vida: identidade é do cartório e fase tem função
 // própria — recusados com 403 sempre, nunca ignorados em silêncio.
 const CAMPOS_PROIBIDOS = new Set(["cod_cadastro", "sku", "ean", "dun", "fase", "ativo"]);
-// Liberação comercial é do FOP (admin/master). O SNCF nunca escreve aqui:
-// campos ignorados + logados, resposta segue ok:true com `ignorados`.
-const CAMPOS_EXCLUSIVOS_FOP = new Set(["liberado_para_pedido", "liberado_em", "liberado_por", "id", "created_at"]);
+// Status de estoque e pronta entrega são decisão comercial do FOP (Thomer). O SNCF nunca escreve aqui.
+// Campos ignorados + logados, resposta segue ok:true com `ignorados`.
+const CAMPOS_EXCLUSIVOS_FOP = new Set(["status_estoque", "pronta_entrega", "id", "created_at"]);
 
 // deno-lint-ignore no-explicit-any
 async function gravarProduto(req: Request, supabase: any, corpo: any) {
@@ -379,7 +379,7 @@ async function gravarProduto(req: Request, supabase: any, corpo: any) {
       `[sincronizar-catalogo modo=gravar_produto] campos exclusivos do FOP ignorados em ${codCadastro}: ${ignorados.join(", ")} | motivo: ${motivo}`
     );
   }
-  // Whitelist: só grava o que não é identidade nem liberação comercial do FOP.
+  // Whitelist: só grava o que não é identidade nem decisão comercial do FOP.
   const camposPedidos = Object.keys(campos).filter((c) => !CAMPOS_EXCLUSIVOS_FOP.has(c));
   if (camposPedidos.length === 0) {
     return jsonResponse(200, { ok: true, modo: "gravar_produto", cod_cadastro: codCadastro, gravados: [], de_para: {}, ignorados });

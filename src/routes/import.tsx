@@ -73,7 +73,6 @@ function validate(raw: unknown): ValidationResult {
         : tipo.toLowerCase().includes("numéric") || tipo.toLowerCase().includes("numeric");
     cleaned.push(normalizePlateNames({
       sku: String(r.sku),
-      liberadoParaPedido: false,
       codCadastro: String(r.codCadastro ?? r.sku),
       ean: String(r.ean ?? ""),
       marca: String(r.marca),

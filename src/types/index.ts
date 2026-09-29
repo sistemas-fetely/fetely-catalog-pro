@@ -56,10 +56,8 @@ export interface Product {
   statusEstoque: string;
   /** Quantidade disponível em estoque para venda firme. em_estoque = estoqueDisponivel > 0 */
   estoqueDisponivel?: number;
-  /** Espelho SNCF — somente exibição/filtro. Não decide mais firme × provisão. */
+  /** V?? — Produto de pronta entrega: sempre disponível, roteia direto para pedido (sem gate de quantidade). */
   prontaEntrega?: boolean;
-  /** Liberação comercial do FOP (admin/master). true = vende firme sem limite. O SNCF nunca escreve aqui. */
-  liberadoParaPedido: boolean;
 
   // Vela numérica
   isVelaNumerica: boolean;
