@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ClienteLink } from "@/components/clientes/ClienteLink";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -350,7 +351,7 @@ function OrdersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-0.5">
-                        <span>{o.meta.cliente || "—"}</span>
+                        <span><ClienteLink clienteId={o.meta.clienteId} cnpj={o.meta.cnpj} nome={o.meta.cliente} /></span>
                         {(o.meta.telefone || o.meta.email) && (
                           <span className="text-[11px] text-text-muted">
                             {o.meta.telefone || o.meta.email}
@@ -600,7 +601,7 @@ function OrdersPage() {
                       )}
                     </div>
                     <div className="text-sm text-text-primary truncate mt-0.5">
-                      {o.meta.cliente || "—"}
+                      <ClienteLink clienteId={o.meta.clienteId} cnpj={o.meta.cnpj} nome={o.meta.cliente} />
                     </div>
                     {(o.meta.telefone || o.meta.email) && (
                       <div className="text-[11px] text-text-muted truncate">

@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ClienteLink } from "@/components/clientes/ClienteLink";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -389,7 +390,7 @@ function ProvisoesPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         <div className="text-text-primary truncate max-w-[200px]">
-                          {p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}
+                          <ClienteLink clienteId={p.clienteId} cnpj={p.clienteSnapshot.cnpj} nome={p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial} className="truncate" />
                         </div>
                         {isSncf(p) && (
                           <span
@@ -456,7 +457,7 @@ function ProvisoesPage() {
                   <div className="min-w-0 flex-1">
                     <div className="font-mono text-[11px] text-gold truncate">{p.id}</div>
                     <div className="text-sm text-text-primary truncate mt-0.5 flex items-center gap-1.5">
-                      <span className="truncate">{p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial}</span>
+                      <ClienteLink clienteId={p.clienteId} cnpj={p.clienteSnapshot.cnpj} nome={p.clienteSnapshot.nomeFantasia || p.clienteSnapshot.razaoSocial} className="truncate" />
                       {isSncf(p) && (
                         <span
                           title="Cliente possui pedido aprovado enviado ao SNCF"
