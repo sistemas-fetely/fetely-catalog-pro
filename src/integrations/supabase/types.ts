@@ -2062,9 +2062,6 @@ export type Database = {
           id: string
           is_vela_numerica: boolean
           largura_cm: number
-          liberado_em: string | null
-          liberado_para_pedido: boolean
-          liberado_por: string | null
           linha: string | null
           marca: string
           material: string | null
@@ -2120,9 +2117,6 @@ export type Database = {
           id?: string
           is_vela_numerica?: boolean
           largura_cm?: number
-          liberado_em?: string | null
-          liberado_para_pedido?: boolean
-          liberado_por?: string | null
           linha?: string | null
           marca?: string
           material?: string | null
@@ -2178,9 +2172,6 @@ export type Database = {
           id?: string
           is_vela_numerica?: boolean
           largura_cm?: number
-          liberado_em?: string | null
-          liberado_para_pedido?: boolean
-          liberado_por?: string | null
           linha?: string | null
           marca?: string
           material?: string | null
