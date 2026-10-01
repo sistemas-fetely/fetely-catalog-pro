@@ -1,3 +1,8 @@
+// 🟢 FOP — sincronizar-catalogo v8.2
+// v8.2: modo `catalogo` passa a incluir meta_descricao, tamanho_ref, sub_colecao,
+//       sub_colecao2, descricao_colecao, numero_vela e is_vela_numerica. Os sete existiam
+//       em products com dado preenchido e nunca saíram daqui — o espelho do SNCF ficou
+//       cego a eles desde sempre. Nenhum outro modo alterado.
 // 🟢 FOP — sincronizar-catalogo v8.1
 // v8.1: modo `catalogo` passa a incluir `canal_venda` (b2b/b2c/ambos) no payload.
 //       Nulo vai como nulo — 364 produtos sem canal decidido; o SNCF precisa enxergar
@@ -640,7 +645,7 @@ serve(async (req) => {
     // espelho do SNCF congela no último estado conhecido. `ativo` e `fase` vão no payload.
     const { data: produtos, error } = await supabase
       .from("products")
-      .select("sku, cod_cadastro, fase, departamento, categoria, ean, dun, nome_comercial, nome_completo, marca, linha, grupo, tipo, familia, qtd_kit, colecao, cor_nome, cor, estampa, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, preco_varejo, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm, canal_venda")
+      .select("sku, cod_cadastro, fase, departamento, categoria, ean, dun, nome_comercial, nome_completo, marca, linha, grupo, tipo, familia, qtd_kit, colecao, cor_nome, cor, estampa, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, preco_varejo, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm, canal_venda, meta_descricao, tamanho_ref, sub_colecao, sub_colecao2, descricao_colecao, numero_vela, is_vela_numerica")
       .order("sku");
 
     if (error) throw error;
@@ -725,6 +730,13 @@ serve(async (req) => {
       largura_cm:           p.largura_cm          ?? null,
       profundidade_cm:      p.profundidade_cm     ?? null,
       canal_venda:          p.canal_venda         ?? null, // b2b/b2c/ambos — nulo = pendente de decisão; SNCF precisa enxergar a pendência
+      meta_descricao:       p.meta_descricao      ?? null,
+      tamanho_ref:          p.tamanho_ref         ?? null,
+      sub_colecao:          p.sub_colecao         ?? null,
+      sub_colecao2:         p.sub_colecao2        ?? null,
+      descricao_colecao:    p.descricao_colecao   ?? null,
+      numero_vela:          p.numero_vela         ?? null,
+      is_vela_numerica:     p.is_vela_numerica    ?? null,
     });
 
     const enviarProdutos = async (lista: unknown[]) => {
