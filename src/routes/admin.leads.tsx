@@ -21,6 +21,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Pencil,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 import { Can } from "@/components/security/Can";
@@ -30,6 +31,7 @@ import {
   listarHistoricoLead,
   excluirLead,
   liberarCatalogoLead,
+  editarLeadCadastro,
 } from "@/lib/leads.functions";
 import {
   SEGMENTO_LABEL,
@@ -662,6 +664,7 @@ function LeadDrawerBody({ lead, onClose }: { lead: LeadQualificado; onClose: () 
     <Tabs defaultValue="perfil" className="mt-4">
       <TabsList className="w-full">
         <TabsTrigger value="perfil" className="flex-1"><UserIcon className="h-3 w-3 mr-1" />Perfil</TabsTrigger>
+        <TabsTrigger value="editar" className="flex-1"><Pencil className="h-3 w-3 mr-1" />Editar</TabsTrigger>
         <TabsTrigger value="crm" className="flex-1"><Settings2 className="h-3 w-3 mr-1" />CRM</TabsTrigger>
         <TabsTrigger value="historico" className="flex-1"><HistoryIcon className="h-3 w-3 mr-1" />Histórico</TabsTrigger>
       </TabsList>
@@ -746,6 +749,10 @@ function LeadDrawerBody({ lead, onClose }: { lead: LeadQualificado; onClose: () 
         </div>
       </TabsContent>
 
+      <TabsContent value="editar" className="mt-4">
+        <LeadEditarForm lead={lead} />
+      </TabsContent>
+
       <TabsContent value="crm" className="space-y-4 mt-4">
         <div>
           <Label>Status</Label>
@@ -797,6 +804,116 @@ function LeadDrawerBody({ lead, onClose }: { lead: LeadQualificado; onClose: () 
         ))}
       </TabsContent>
     </Tabs>
+  );
+}
+
+function LeadEditarForm({ lead }: { lead: LeadQualificado }) {
+  const qc = useQueryClient();
+  const editFn = useServerFn(editarLeadCadastro);
+
+  const [nome, setNome] = useState(lead.nome);
+  const [whatsapp, setWhatsapp] = useState(lead.whatsapp);
+  const [instagram, setInstagram] = useState(lead.instagram ?? "");
+  const [email, setEmail] = useState(lead.email ?? "");
+  const [cidade, setCidade] = useState(lead.cidade ?? "");
+  const [uf, setUf] = useState(lead.uf ?? "");
+  const [segmento, setSegmento] = useState<LeadSegmento>(lead.segmento);
+  const [origem, setOrigem] = useState<LeadOrigem>(lead.origem);
+  const [observacoes, setObservacoes] = useState(lead.observacoes ?? "");
+
+  const saveMut = useMutation({
+    mutationFn: () =>
+      editFn({
+        data: {
+          id: lead.id,
+          nome: nome.trim(),
+          whatsapp: whatsapp.trim(),
+          instagram: instagram.trim() || null,
+          email: email.trim() || null,
+          cidade: cidade.trim() || null,
+          uf: uf.trim() || null,
+          segmento,
+          origem,
+          observacoes: observacoes.trim() || null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Cadastro do lead atualizado");
+      qc.invalidateQueries({ queryKey: ["leads-qualificados"] });
+      qc.invalidateQueries({ queryKey: ["lead-historico", lead.id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label>Nome *</Label>
+        <Input value={nome} onChange={(e) => setNome(e.target.value)} maxLength={120} />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label>WhatsApp *</Label>
+          <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} maxLength={30} />
+        </div>
+        <div>
+          <Label>Instagram</Label>
+          <Input value={instagram} onChange={(e) => setInstagram(e.target.value)} maxLength={80} placeholder="@perfil" />
+        </div>
+      </div>
+      <div>
+        <Label>E-mail</Label>
+        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={180} />
+      </div>
+      <div className="grid grid-cols-[1fr_80px] gap-3">
+        <div>
+          <Label>Cidade</Label>
+          <Input value={cidade} onChange={(e) => setCidade(e.target.value)} maxLength={80} />
+        </div>
+        <div>
+          <Label>UF</Label>
+          <Input value={uf} onChange={(e) => setUf(e.target.value.toUpperCase())} maxLength={2} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label>Segmento</Label>
+          <Select value={segmento} onValueChange={(v) => setSegmento(v as LeadSegmento)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(SEGMENTO_LABEL).map(([k, v]) => (
+                <SelectItem key={k} value={k}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Origem</Label>
+          <Select value={origem} onValueChange={(v) => setOrigem(v as LeadOrigem)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(ORIGEM_LABEL).map(([k, v]) => (
+                <SelectItem key={k} value={k}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div>
+        <Label>Observações</Label>
+        <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={4} maxLength={2000} />
+      </div>
+      <div className="flex justify-end">
+        <Can tela="cfg_leads" acao="editar">
+          <Button
+            onClick={() => saveMut.mutate()}
+            disabled={saveMut.isPending || nome.trim().length < 2 || whatsapp.trim().length < 8}
+          >
+            {saveMut.isPending ? "Salvando..." : "Salvar cadastro"}
+          </Button>
+        </Can>
+      </div>
+    </div>
   );
 }
 

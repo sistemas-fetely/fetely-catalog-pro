@@ -275,6 +275,91 @@ export const atualizarLeadCrm = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ============= ADMIN: editar cadastro (dados de contato) =============
+const editarCadastroSchema = z.object({
+  id: z.string().uuid(),
+  nome: z.string().trim().min(2).max(120),
+  whatsapp: z.string().trim().min(8).max(30),
+  instagram: z.string().trim().max(80).nullable(),
+  email: z.string().trim().email().max(180).nullable().or(z.literal("")),
+  cidade: z.string().trim().max(80).nullable(),
+  uf: z.string().trim().max(2).nullable(),
+  segmento: segmentoSchema,
+  origem: origemSchema,
+  observacoes: z.string().max(2000).nullable(),
+});
+
+export const editarLeadCadastro = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => editarCadastroSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: antes } = await supabase
+      .from("leads_qualificados")
+      .select("nome, whatsapp, instagram, email, cidade, uf, segmento, origem, observacoes")
+      .eq("id", data.id)
+      .maybeSingle();
+
+    const patch = {
+      nome: data.nome,
+      whatsapp: data.whatsapp,
+      instagram: data.instagram || null,
+      email: data.email || null,
+      cidade: data.cidade || null,
+      uf: data.uf?.toUpperCase() || null,
+      segmento: data.segmento,
+      origem: data.origem,
+      observacoes: data.observacoes || null,
+    };
+
+    const { error } = await supabase
+      .from("leads_qualificados")
+      .update(patch)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    // histórico: registra apenas os campos que mudaram
+    const campos: Array<[keyof typeof patch, string]> = [
+      ["nome", "Nome"],
+      ["whatsapp", "WhatsApp"],
+      ["instagram", "Instagram"],
+      ["email", "E-mail"],
+      ["cidade", "Cidade"],
+      ["uf", "UF"],
+      ["segmento", "Segmento"],
+      ["origem", "Origem"],
+      ["observacoes", "Observações"],
+    ];
+    const mudancas: string[] = [];
+    if (antes) {
+      for (const [k, label] of campos) {
+        const de = (antes as Record<string, unknown>)[k] ?? null;
+        const para = patch[k] ?? null;
+        if (String(de ?? "") !== String(para ?? "")) {
+          mudancas.push(`${label}: "${de ?? "—"}" → "${para ?? "—"}"`);
+        }
+      }
+    }
+
+    if (mudancas.length > 0) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("nome_completo, email")
+        .eq("id", userId)
+        .maybeSingle();
+      const nome = (profile?.nome_completo as string) || (profile?.email as string) || "Admin";
+      await supabase.from("lead_historico").insert({
+        lead_id: data.id,
+        usuario_id: userId,
+        usuario_nome: nome,
+        descricao: `Cadastro editado — ${mudancas.join(" · ")}`,
+      });
+    }
+
+    return { ok: true };
+  });
+
 // ============= ADMIN: histórico =============
 export const listarHistoricoLead = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
