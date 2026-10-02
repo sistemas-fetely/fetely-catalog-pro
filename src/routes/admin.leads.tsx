@@ -749,6 +749,10 @@ function LeadDrawerBody({ lead, onClose }: { lead: LeadQualificado; onClose: () 
         </div>
       </TabsContent>
 
+      <TabsContent value="editar" className="mt-4">
+        <LeadEditarForm lead={lead} />
+      </TabsContent>
+
       <TabsContent value="crm" className="space-y-4 mt-4">
         <div>
           <Label>Status</Label>
