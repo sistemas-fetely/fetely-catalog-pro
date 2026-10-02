@@ -664,6 +664,7 @@ function LeadDrawerBody({ lead, onClose }: { lead: LeadQualificado; onClose: () 
     <Tabs defaultValue="perfil" className="mt-4">
       <TabsList className="w-full">
         <TabsTrigger value="perfil" className="flex-1"><UserIcon className="h-3 w-3 mr-1" />Perfil</TabsTrigger>
+        <TabsTrigger value="editar" className="flex-1"><Pencil className="h-3 w-3 mr-1" />Editar</TabsTrigger>
         <TabsTrigger value="crm" className="flex-1"><Settings2 className="h-3 w-3 mr-1" />CRM</TabsTrigger>
         <TabsTrigger value="historico" className="flex-1"><HistoryIcon className="h-3 w-3 mr-1" />Histórico</TabsTrigger>
       </TabsList>
