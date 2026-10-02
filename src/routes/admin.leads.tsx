@@ -21,6 +21,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Pencil,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 import { Can } from "@/components/security/Can";
@@ -30,6 +31,7 @@ import {
   listarHistoricoLead,
   excluirLead,
   liberarCatalogoLead,
+  editarLeadCadastro,
 } from "@/lib/leads.functions";
 import {
   SEGMENTO_LABEL,
