@@ -1834,12 +1834,14 @@ export type Database = {
           cotacao_gerada_id: string | null
           criado_em: string
           expira_em: string
+          followup_em: string | null
           id: string
           itens: Json
           nome_fantasia: string
           observacao: string | null
           pedido_gerado_id: string | null
           razao_social: string
+          resultado_motivo: string | null
           segmento: string
           sessao_id: string | null
           status: string
@@ -1864,12 +1866,14 @@ export type Database = {
           cotacao_gerada_id?: string | null
           criado_em?: string
           expira_em: string
+          followup_em?: string | null
           id: string
           itens?: Json
           nome_fantasia: string
           observacao?: string | null
           pedido_gerado_id?: string | null
           razao_social: string
+          resultado_motivo?: string | null
           segmento: string
           sessao_id?: string | null
           status?: string
@@ -1894,12 +1898,14 @@ export type Database = {
           cotacao_gerada_id?: string | null
           criado_em?: string
           expira_em?: string
+          followup_em?: string | null
           id?: string
           itens?: Json
           nome_fantasia?: string
           observacao?: string | null
           pedido_gerado_id?: string | null
           razao_social?: string
+          resultado_motivo?: string | null
           segmento?: string
           sessao_id?: string | null
           status?: string
