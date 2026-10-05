@@ -9,195 +9,65 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AnalyticsRouteImport } from './routes/analytics'
-import { Route as CartRouteImport } from './routes/cart'
-import { Route as CatalogosRouteImport } from './routes/catalogos'
-import { Route as ClientesRouteImport } from './routes/clientes'
-import { Route as CommercialRouteImport } from './routes/commercial'
-import { Route as CondicoesPagamentoRouteImport } from './routes/condicoes-pagamento'
-import { Route as ConfirmationRouteImport } from './routes/confirmation'
-import { Route as CotacoesRouteImport } from './routes/cotacoes'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as FarolRouteImport } from './routes/farol'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as ImportRouteImport } from './routes/import'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as MetasPaceRouteImport } from './routes/metas-pace'
-import { Route as NewOrderRouteImport } from './routes/new-order'
-import { Route as OrdersRouteImport } from './routes/orders'
-import { Route as PedidoOriginalRouteImport } from './routes/pedido-original'
-import { Route as PhotosRouteImport } from './routes/photos'
-import { Route as PortalRouteImport } from './routes/portal'
-import { Route as PreSelecaoRouteImport } from './routes/pre-selecao'
-import { Route as ProdutoRouteImport } from './routes/produto'
-import { Route as ProvisoesRouteImport } from './routes/provisoes'
-import { Route as QualificacaoRouteImport } from './routes/qualificacao'
-import { Route as RelatoriosRouteImport } from './routes/relatorios'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as ReunioesRouteImport } from './routes/reunioes'
-import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StandRouteImport } from './routes/stand'
-import { Route as AcademiaIndexRouteImport } from './routes/academia.index'
-import { Route as AcademiaModuloIdRouteImport } from './routes/academia.$moduloId'
-import { Route as AdminAcademiaRouteImport } from './routes/admin.academia'
-import { Route as AdminAccessLogsRouteImport } from './routes/admin.access-logs'
-import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
-import { Route as AdminCatalogosRouteImport } from './routes/admin.catalogos'
-import { Route as AdminGateAbRouteImport } from './routes/admin.gate-ab'
-import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
-import { Route as AdminPermissoesRouteImport } from './routes/admin.permissoes'
-import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
-import { Route as AdminProductsRouteImport } from './routes/admin.products'
-import { Route as AdminSincronizacaoSncfRouteImport } from './routes/admin.sincronizacao-sncf'
-import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
-import { Route as CatalogTodosRouteImport } from './routes/catalog.todos'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ReunioesRouteImport } from './routes/reunioes'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RelatoriosRouteImport } from './routes/relatorios'
+import { Route as QualificacaoRouteImport } from './routes/qualificacao'
+import { Route as ProvisoesRouteImport } from './routes/provisoes'
+import { Route as ProdutoRouteImport } from './routes/produto'
+import { Route as PreSelecaoRouteImport } from './routes/pre-selecao'
+import { Route as PortalRouteImport } from './routes/portal'
+import { Route as PhotosRouteImport } from './routes/photos'
+import { Route as PedidoOriginalRouteImport } from './routes/pedido-original'
+import { Route as OrdersRouteImport } from './routes/orders'
+import { Route as NewOrderRouteImport } from './routes/new-order'
+import { Route as MetasPaceRouteImport } from './routes/metas-pace'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ImportRouteImport } from './routes/import'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as FarolRouteImport } from './routes/farol'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CotacoesRouteImport } from './routes/cotacoes'
+import { Route as ConfirmationRouteImport } from './routes/confirmation'
+import { Route as CondicoesPagamentoRouteImport } from './routes/condicoes-pagamento'
+import { Route as CommercialRouteImport } from './routes/commercial'
+import { Route as ClientesRouteImport } from './routes/clientes'
+import { Route as CatalogosRouteImport } from './routes/catalogos'
+import { Route as CartRouteImport } from './routes/cart'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
-import { Route as PortalContaRouteImport } from './routes/portal.conta'
-import { Route as PortalCotacoesRouteImport } from './routes/portal.cotacoes'
-import { Route as PortalPedidosRouteImport } from './routes/portal.pedidos'
-import { Route as PortalProvisoesRouteImport } from './routes/portal.provisoes'
-import { Route as ReunioesImportarRouteImport } from './routes/reunioes.importar'
+import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
+import { Route as AcademiaIndexRouteImport } from './routes/academia.index'
 import { Route as StandLeadsRouteImport } from './routes/stand.leads'
-import { Route as ApiPublicAcademiaFileRouteImport } from './routes/api/public/academia-file'
-import { Route as ApiPublicCatalogoFileRouteImport } from './routes/api/public/catalogo-file'
-import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
+import { Route as ReunioesImportarRouteImport } from './routes/reunioes.importar'
+import { Route as PortalProvisoesRouteImport } from './routes/portal.provisoes'
+import { Route as PortalPedidosRouteImport } from './routes/portal.pedidos'
+import { Route as PortalCotacoesRouteImport } from './routes/portal.cotacoes'
+import { Route as PortalContaRouteImport } from './routes/portal.conta'
+import { Route as CatalogTodosRouteImport } from './routes/catalog.todos'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminSincronizacaoSncfRouteImport } from './routes/admin.sincronizacao-sncf'
+import { Route as AdminProductsRouteImport } from './routes/admin.products'
+import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
+import { Route as AdminPermissoesRouteImport } from './routes/admin.permissoes'
+import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
+import { Route as AdminGateAbRouteImport } from './routes/admin.gate-ab'
+import { Route as AdminCatalogosRouteImport } from './routes/admin.catalogos'
+import { Route as AdminCartilhasRouteImport } from './routes/admin.cartilhas'
+import { Route as AdminAccessLogsRouteImport } from './routes/admin.access-logs'
+import { Route as AdminAcademiaRouteImport } from './routes/admin.academia'
+import { Route as AcademiaModuloIdRouteImport } from './routes/academia.$moduloId'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
+import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
+import { Route as ApiPublicCatalogoFileRouteImport } from './routes/api/public/catalogo-file'
+import { Route as ApiPublicAcademiaFileRouteImport } from './routes/api/public/academia-file'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnalyticsRoute = AnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CartRoute = CartRouteImport.update({
-  id: '/cart',
-  path: '/cart',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CatalogosRoute = CatalogosRouteImport.update({
-  id: '/catalogos',
-  path: '/catalogos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ClientesRoute = ClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CommercialRoute = CommercialRouteImport.update({
-  id: '/commercial',
-  path: '/commercial',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CondicoesPagamentoRoute = CondicoesPagamentoRouteImport.update({
-  id: '/condicoes-pagamento',
-  path: '/condicoes-pagamento',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConfirmationRoute = ConfirmationRouteImport.update({
-  id: '/confirmation',
-  path: '/confirmation',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CotacoesRoute = CotacoesRouteImport.update({
-  id: '/cotacoes',
-  path: '/cotacoes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FarolRoute = FarolRouteImport.update({
-  id: '/farol',
-  path: '/farol',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ImportRoute = ImportRouteImport.update({
-  id: '/import',
-  path: '/import',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MetasPaceRoute = MetasPaceRouteImport.update({
-  id: '/metas-pace',
-  path: '/metas-pace',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NewOrderRoute = NewOrderRouteImport.update({
-  id: '/new-order',
-  path: '/new-order',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrdersRoute = OrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PedidoOriginalRoute = PedidoOriginalRouteImport.update({
-  id: '/pedido-original',
-  path: '/pedido-original',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PhotosRoute = PhotosRouteImport.update({
-  id: '/photos',
-  path: '/photos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PortalRoute = PortalRouteImport.update({
-  id: '/portal',
-  path: '/portal',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PreSelecaoRoute = PreSelecaoRouteImport.update({
-  id: '/pre-selecao',
-  path: '/pre-selecao',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProdutoRoute = ProdutoRouteImport.update({
-  id: '/produto',
-  path: '/produto',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProvisoesRoute = ProvisoesRouteImport.update({
-  id: '/provisoes',
-  path: '/provisoes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const QualificacaoRoute = QualificacaoRouteImport.update({
-  id: '/qualificacao',
-  path: '/qualificacao',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RelatoriosRoute = RelatoriosRouteImport.update({
-  id: '/relatorios',
-  path: '/relatorios',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReunioesRoute = ReunioesRouteImport.update({
-  id: '/reunioes',
-  path: '/reunioes',
+const StandRoute = StandRouteImport.update({
+  id: '/stand',
+  path: '/stand',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -205,84 +75,139 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StandRoute = StandRouteImport.update({
-  id: '/stand',
-  path: '/stand',
+const ReunioesRoute = ReunioesRouteImport.update({
+  id: '/reunioes',
+  path: '/reunioes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AcademiaIndexRoute = AcademiaIndexRouteImport.update({
-  id: '/academia/',
-  path: '/academia/',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AcademiaModuloIdRoute = AcademiaModuloIdRouteImport.update({
-  id: '/academia/$moduloId',
-  path: '/academia/$moduloId',
+const RelatoriosRoute = RelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminAcademiaRoute = AdminAcademiaRouteImport.update({
-  id: '/admin/academia',
-  path: '/admin/academia',
+const QualificacaoRoute = QualificacaoRouteImport.update({
+  id: '/qualificacao',
+  path: '/qualificacao',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminAccessLogsRoute = AdminAccessLogsRouteImport.update({
-  id: '/admin/access-logs',
-  path: '/admin/access-logs',
+const ProvisoesRoute = ProvisoesRouteImport.update({
+  id: '/provisoes',
+  path: '/provisoes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminCartilhasRoute = AdminCartilhasRouteImport.update({
-  id: '/admin/cartilhas',
-  path: '/admin/cartilhas',
+const ProdutoRoute = ProdutoRouteImport.update({
+  id: '/produto',
+  path: '/produto',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminCatalogosRoute = AdminCatalogosRouteImport.update({
-  id: '/admin/catalogos',
-  path: '/admin/catalogos',
+const PreSelecaoRoute = PreSelecaoRouteImport.update({
+  id: '/pre-selecao',
+  path: '/pre-selecao',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminGateAbRoute = AdminGateAbRouteImport.update({
-  id: '/admin/gate-ab',
-  path: '/admin/gate-ab',
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminLeadsRoute = AdminLeadsRouteImport.update({
-  id: '/admin/leads',
-  path: '/admin/leads',
+const PhotosRoute = PhotosRouteImport.update({
+  id: '/photos',
+  path: '/photos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminPermissoesRoute = AdminPermissoesRouteImport.update({
-  id: '/admin/permissoes',
-  path: '/admin/permissoes',
+const PedidoOriginalRoute = PedidoOriginalRouteImport.update({
+  id: '/pedido-original',
+  path: '/pedido-original',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminPrecosRoute = AdminPrecosRouteImport.update({
-  id: '/admin/precos',
-  path: '/admin/precos',
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminProductsRoute = AdminProductsRouteImport.update({
-  id: '/admin/products',
-  path: '/admin/products',
+const NewOrderRoute = NewOrderRouteImport.update({
+  id: '/new-order',
+  path: '/new-order',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminSincronizacaoSncfRoute = AdminSincronizacaoSncfRouteImport.update({
-  id: '/admin/sincronizacao-sncf',
-  path: '/admin/sincronizacao-sncf',
+const MetasPaceRoute = MetasPaceRouteImport.update({
+  id: '/metas-pace',
+  path: '/metas-pace',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminUsersRoute = AdminUsersRouteImport.update({
-  id: '/admin/users',
-  path: '/admin/users',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CatalogIndexRoute = CatalogIndexRouteImport.update({
-  id: '/catalog/',
-  path: '/catalog/',
+const ImportRoute = ImportRouteImport.update({
+  id: '/import',
+  path: '/import',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CatalogTodosRoute = CatalogTodosRouteImport.update({
-  id: '/catalog/todos',
-  path: '/catalog/todos',
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FarolRoute = FarolRouteImport.update({
+  id: '/farol',
+  path: '/farol',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CotacoesRoute = CotacoesRouteImport.update({
+  id: '/cotacoes',
+  path: '/cotacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfirmationRoute = ConfirmationRouteImport.update({
+  id: '/confirmation',
+  path: '/confirmation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CondicoesPagamentoRoute = CondicoesPagamentoRouteImport.update({
+  id: '/condicoes-pagamento',
+  path: '/condicoes-pagamento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommercialRoute = CommercialRouteImport.update({
+  id: '/commercial',
+  path: '/commercial',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClientesRoute = ClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatalogosRoute = CatalogosRouteImport.update({
+  id: '/catalogos',
+  path: '/catalogos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CartRoute = CartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalIndexRoute = PortalIndexRouteImport.update({
@@ -290,14 +215,29 @@ const PortalIndexRoute = PortalIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PortalRoute,
 } as any)
-const PortalContaRoute = PortalContaRouteImport.update({
-  id: '/conta',
-  path: '/conta',
-  getParentRoute: () => PortalRoute,
+const CatalogIndexRoute = CatalogIndexRouteImport.update({
+  id: '/catalog/',
+  path: '/catalog/',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const PortalCotacoesRoute = PortalCotacoesRouteImport.update({
-  id: '/cotacoes',
-  path: '/cotacoes',
+const AcademiaIndexRoute = AcademiaIndexRouteImport.update({
+  id: '/academia/',
+  path: '/academia/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StandLeadsRoute = StandLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => StandRoute,
+} as any)
+const ReunioesImportarRoute = ReunioesImportarRouteImport.update({
+  id: '/importar',
+  path: '/importar',
+  getParentRoute: () => ReunioesRoute,
+} as any)
+const PortalProvisoesRoute = PortalProvisoesRouteImport.update({
+  id: '/provisoes',
+  path: '/provisoes',
   getParentRoute: () => PortalRoute,
 } as any)
 const PortalPedidosRoute = PortalPedidosRouteImport.update({
@@ -305,34 +245,79 @@ const PortalPedidosRoute = PortalPedidosRouteImport.update({
   path: '/pedidos',
   getParentRoute: () => PortalRoute,
 } as any)
-const PortalProvisoesRoute = PortalProvisoesRouteImport.update({
-  id: '/provisoes',
-  path: '/provisoes',
+const PortalCotacoesRoute = PortalCotacoesRouteImport.update({
+  id: '/cotacoes',
+  path: '/cotacoes',
   getParentRoute: () => PortalRoute,
 } as any)
-const ReunioesImportarRoute = ReunioesImportarRouteImport.update({
-  id: '/importar',
-  path: '/importar',
-  getParentRoute: () => ReunioesRoute,
+const PortalContaRoute = PortalContaRouteImport.update({
+  id: '/conta',
+  path: '/conta',
+  getParentRoute: () => PortalRoute,
 } as any)
-const StandLeadsRoute = StandLeadsRouteImport.update({
-  id: '/leads',
-  path: '/leads',
-  getParentRoute: () => StandRoute,
-} as any)
-const ApiPublicAcademiaFileRoute = ApiPublicAcademiaFileRouteImport.update({
-  id: '/api/public/academia-file',
-  path: '/api/public/academia-file',
+const CatalogTodosRoute = CatalogTodosRouteImport.update({
+  id: '/catalog/todos',
+  path: '/catalog/todos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicCatalogoFileRoute = ApiPublicCatalogoFileRouteImport.update({
-  id: '/api/public/catalogo-file',
-  path: '/api/public/catalogo-file',
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
-  id: '/api/public/img',
-  path: '/api/public/img',
+const AdminSincronizacaoSncfRoute = AdminSincronizacaoSncfRouteImport.update({
+  id: '/admin/sincronizacao-sncf',
+  path: '/admin/sincronizacao-sncf',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminProductsRoute = AdminProductsRouteImport.update({
+  id: '/admin/products',
+  path: '/admin/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPrecosRoute = AdminPrecosRouteImport.update({
+  id: '/admin/precos',
+  path: '/admin/precos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPermissoesRoute = AdminPermissoesRouteImport.update({
+  id: '/admin/permissoes',
+  path: '/admin/permissoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLeadsRoute = AdminLeadsRouteImport.update({
+  id: '/admin/leads',
+  path: '/admin/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminGateAbRoute = AdminGateAbRouteImport.update({
+  id: '/admin/gate-ab',
+  path: '/admin/gate-ab',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCatalogosRoute = AdminCatalogosRouteImport.update({
+  id: '/admin/catalogos',
+  path: '/admin/catalogos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCartilhasRoute = AdminCartilhasRouteImport.update({
+  id: '/admin/cartilhas',
+  path: '/admin/cartilhas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAccessLogsRoute = AdminAccessLogsRouteImport.update({
+  id: '/admin/access-logs',
+  path: '/admin/access-logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAcademiaRoute = AdminAcademiaRouteImport.update({
+  id: '/admin/academia',
+  path: '/admin/academia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcademiaModuloIdRoute = AcademiaModuloIdRouteImport.update({
+  id: '/academia/$moduloId',
+  path: '/academia/$moduloId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogCategoriaCategoriaRoute =
@@ -341,6 +326,21 @@ const CatalogCategoriaCategoriaRoute =
     path: '/catalog/categoria/$categoria',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
+  id: '/api/public/img',
+  path: '/api/public/img',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCatalogoFileRoute = ApiPublicCatalogoFileRouteImport.update({
+  id: '/api/public/catalogo-file',
+  path: '/api/public/catalogo-file',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAcademiaFileRoute = ApiPublicAcademiaFileRouteImport.update({
+  id: '/api/public/academia-file',
+  path: '/api/public/academia-file',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -739,193 +739,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analytics': {
-      id: '/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cart': {
-      id: '/cart'
-      path: '/cart'
-      fullPath: '/cart'
-      preLoaderRoute: typeof CartRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/catalogos': {
-      id: '/catalogos'
-      path: '/catalogos'
-      fullPath: '/catalogos'
-      preLoaderRoute: typeof CatalogosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/clientes': {
-      id: '/clientes'
-      path: '/clientes'
-      fullPath: '/clientes'
-      preLoaderRoute: typeof ClientesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/commercial': {
-      id: '/commercial'
-      path: '/commercial'
-      fullPath: '/commercial'
-      preLoaderRoute: typeof CommercialRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/condicoes-pagamento': {
-      id: '/condicoes-pagamento'
-      path: '/condicoes-pagamento'
-      fullPath: '/condicoes-pagamento'
-      preLoaderRoute: typeof CondicoesPagamentoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/confirmation': {
-      id: '/confirmation'
-      path: '/confirmation'
-      fullPath: '/confirmation'
-      preLoaderRoute: typeof ConfirmationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cotacoes': {
-      id: '/cotacoes'
-      path: '/cotacoes'
-      fullPath: '/cotacoes'
-      preLoaderRoute: typeof CotacoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/farol': {
-      id: '/farol'
-      path: '/farol'
-      fullPath: '/farol'
-      preLoaderRoute: typeof FarolRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/import': {
-      id: '/import'
-      path: '/import'
-      fullPath: '/import'
-      preLoaderRoute: typeof ImportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/metas-pace': {
-      id: '/metas-pace'
-      path: '/metas-pace'
-      fullPath: '/metas-pace'
-      preLoaderRoute: typeof MetasPaceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/new-order': {
-      id: '/new-order'
-      path: '/new-order'
-      fullPath: '/new-order'
-      preLoaderRoute: typeof NewOrderRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/orders': {
-      id: '/orders'
-      path: '/orders'
-      fullPath: '/orders'
-      preLoaderRoute: typeof OrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pedido-original': {
-      id: '/pedido-original'
-      path: '/pedido-original'
-      fullPath: '/pedido-original'
-      preLoaderRoute: typeof PedidoOriginalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/photos': {
-      id: '/photos'
-      path: '/photos'
-      fullPath: '/photos'
-      preLoaderRoute: typeof PhotosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/portal': {
-      id: '/portal'
-      path: '/portal'
-      fullPath: '/portal'
-      preLoaderRoute: typeof PortalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pre-selecao': {
-      id: '/pre-selecao'
-      path: '/pre-selecao'
-      fullPath: '/pre-selecao'
-      preLoaderRoute: typeof PreSelecaoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/produto': {
-      id: '/produto'
-      path: '/produto'
-      fullPath: '/produto'
-      preLoaderRoute: typeof ProdutoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/provisoes': {
-      id: '/provisoes'
-      path: '/provisoes'
-      fullPath: '/provisoes'
-      preLoaderRoute: typeof ProvisoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/qualificacao': {
-      id: '/qualificacao'
-      path: '/qualificacao'
-      fullPath: '/qualificacao'
-      preLoaderRoute: typeof QualificacaoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/relatorios': {
-      id: '/relatorios'
-      path: '/relatorios'
-      fullPath: '/relatorios'
-      preLoaderRoute: typeof RelatoriosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reunioes': {
-      id: '/reunioes'
-      path: '/reunioes'
-      fullPath: '/reunioes'
-      preLoaderRoute: typeof ReunioesRouteImport
+    '/stand': {
+      id: '/stand'
+      path: '/stand'
+      fullPath: '/stand'
+      preLoaderRoute: typeof StandRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -935,116 +753,193 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/stand': {
-      id: '/stand'
-      path: '/stand'
-      fullPath: '/stand'
-      preLoaderRoute: typeof StandRouteImport
+    '/reunioes': {
+      id: '/reunioes'
+      path: '/reunioes'
+      fullPath: '/reunioes'
+      preLoaderRoute: typeof ReunioesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/academia/': {
-      id: '/academia/'
-      path: '/academia'
-      fullPath: '/academia/'
-      preLoaderRoute: typeof AcademiaIndexRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/academia/$moduloId': {
-      id: '/academia/$moduloId'
-      path: '/academia/$moduloId'
-      fullPath: '/academia/$moduloId'
-      preLoaderRoute: typeof AcademiaModuloIdRouteImport
+    '/relatorios': {
+      id: '/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof RelatoriosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/academia': {
-      id: '/admin/academia'
-      path: '/admin/academia'
-      fullPath: '/admin/academia'
-      preLoaderRoute: typeof AdminAcademiaRouteImport
+    '/qualificacao': {
+      id: '/qualificacao'
+      path: '/qualificacao'
+      fullPath: '/qualificacao'
+      preLoaderRoute: typeof QualificacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/access-logs': {
-      id: '/admin/access-logs'
-      path: '/admin/access-logs'
-      fullPath: '/admin/access-logs'
-      preLoaderRoute: typeof AdminAccessLogsRouteImport
+    '/provisoes': {
+      id: '/provisoes'
+      path: '/provisoes'
+      fullPath: '/provisoes'
+      preLoaderRoute: typeof ProvisoesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/cartilhas': {
-      id: '/admin/cartilhas'
-      path: '/admin/cartilhas'
-      fullPath: '/admin/cartilhas'
-      preLoaderRoute: typeof AdminCartilhasRouteImport
+    '/produto': {
+      id: '/produto'
+      path: '/produto'
+      fullPath: '/produto'
+      preLoaderRoute: typeof ProdutoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/catalogos': {
-      id: '/admin/catalogos'
-      path: '/admin/catalogos'
-      fullPath: '/admin/catalogos'
-      preLoaderRoute: typeof AdminCatalogosRouteImport
+    '/pre-selecao': {
+      id: '/pre-selecao'
+      path: '/pre-selecao'
+      fullPath: '/pre-selecao'
+      preLoaderRoute: typeof PreSelecaoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/gate-ab': {
-      id: '/admin/gate-ab'
-      path: '/admin/gate-ab'
-      fullPath: '/admin/gate-ab'
-      preLoaderRoute: typeof AdminGateAbRouteImport
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/leads': {
-      id: '/admin/leads'
-      path: '/admin/leads'
-      fullPath: '/admin/leads'
-      preLoaderRoute: typeof AdminLeadsRouteImport
+    '/photos': {
+      id: '/photos'
+      path: '/photos'
+      fullPath: '/photos'
+      preLoaderRoute: typeof PhotosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/permissoes': {
-      id: '/admin/permissoes'
-      path: '/admin/permissoes'
-      fullPath: '/admin/permissoes'
-      preLoaderRoute: typeof AdminPermissoesRouteImport
+    '/pedido-original': {
+      id: '/pedido-original'
+      path: '/pedido-original'
+      fullPath: '/pedido-original'
+      preLoaderRoute: typeof PedidoOriginalRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/precos': {
-      id: '/admin/precos'
-      path: '/admin/precos'
-      fullPath: '/admin/precos'
-      preLoaderRoute: typeof AdminPrecosRouteImport
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/products': {
-      id: '/admin/products'
-      path: '/admin/products'
-      fullPath: '/admin/products'
-      preLoaderRoute: typeof AdminProductsRouteImport
+    '/new-order': {
+      id: '/new-order'
+      path: '/new-order'
+      fullPath: '/new-order'
+      preLoaderRoute: typeof NewOrderRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/sincronizacao-sncf': {
-      id: '/admin/sincronizacao-sncf'
-      path: '/admin/sincronizacao-sncf'
-      fullPath: '/admin/sincronizacao-sncf'
-      preLoaderRoute: typeof AdminSincronizacaoSncfRouteImport
+    '/metas-pace': {
+      id: '/metas-pace'
+      path: '/metas-pace'
+      fullPath: '/metas-pace'
+      preLoaderRoute: typeof MetasPaceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/users': {
-      id: '/admin/users'
-      path: '/admin/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/catalog/': {
-      id: '/catalog/'
-      path: '/catalog'
-      fullPath: '/catalog/'
-      preLoaderRoute: typeof CatalogIndexRouteImport
+    '/import': {
+      id: '/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof ImportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/catalog/todos': {
-      id: '/catalog/todos'
-      path: '/catalog/todos'
-      fullPath: '/catalog/todos'
-      preLoaderRoute: typeof CatalogTodosRouteImport
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/farol': {
+      id: '/farol'
+      path: '/farol'
+      fullPath: '/farol'
+      preLoaderRoute: typeof FarolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cotacoes': {
+      id: '/cotacoes'
+      path: '/cotacoes'
+      fullPath: '/cotacoes'
+      preLoaderRoute: typeof CotacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confirmation': {
+      id: '/confirmation'
+      path: '/confirmation'
+      fullPath: '/confirmation'
+      preLoaderRoute: typeof ConfirmationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/condicoes-pagamento': {
+      id: '/condicoes-pagamento'
+      path: '/condicoes-pagamento'
+      fullPath: '/condicoes-pagamento'
+      preLoaderRoute: typeof CondicoesPagamentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/commercial': {
+      id: '/commercial'
+      path: '/commercial'
+      fullPath: '/commercial'
+      preLoaderRoute: typeof CommercialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clientes': {
+      id: '/clientes'
+      path: '/clientes'
+      fullPath: '/clientes'
+      preLoaderRoute: typeof ClientesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalogos': {
+      id: '/catalogos'
+      path: '/catalogos'
+      fullPath: '/catalogos'
+      preLoaderRoute: typeof CatalogosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cart': {
+      id: '/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof CartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal/': {
@@ -1054,18 +949,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalIndexRouteImport
       parentRoute: typeof PortalRoute
     }
-    '/portal/conta': {
-      id: '/portal/conta'
-      path: '/conta'
-      fullPath: '/portal/conta'
-      preLoaderRoute: typeof PortalContaRouteImport
-      parentRoute: typeof PortalRoute
+    '/catalog/': {
+      id: '/catalog/'
+      path: '/catalog'
+      fullPath: '/catalog/'
+      preLoaderRoute: typeof CatalogIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/portal/cotacoes': {
-      id: '/portal/cotacoes'
-      path: '/cotacoes'
-      fullPath: '/portal/cotacoes'
-      preLoaderRoute: typeof PortalCotacoesRouteImport
+    '/academia/': {
+      id: '/academia/'
+      path: '/academia'
+      fullPath: '/academia/'
+      preLoaderRoute: typeof AcademiaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stand/leads': {
+      id: '/stand/leads'
+      path: '/leads'
+      fullPath: '/stand/leads'
+      preLoaderRoute: typeof StandLeadsRouteImport
+      parentRoute: typeof StandRoute
+    }
+    '/reunioes/importar': {
+      id: '/reunioes/importar'
+      path: '/importar'
+      fullPath: '/reunioes/importar'
+      preLoaderRoute: typeof ReunioesImportarRouteImport
+      parentRoute: typeof ReunioesRoute
+    }
+    '/portal/provisoes': {
+      id: '/portal/provisoes'
+      path: '/provisoes'
+      fullPath: '/portal/provisoes'
+      preLoaderRoute: typeof PortalProvisoesRouteImport
       parentRoute: typeof PortalRoute
     }
     '/portal/pedidos': {
@@ -1075,39 +991,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalPedidosRouteImport
       parentRoute: typeof PortalRoute
     }
-    '/portal/provisoes': {
-      id: '/portal/provisoes'
-      path: '/provisoes'
-      fullPath: '/portal/provisoes'
-      preLoaderRoute: typeof PortalProvisoesRouteImport
+    '/portal/cotacoes': {
+      id: '/portal/cotacoes'
+      path: '/cotacoes'
+      fullPath: '/portal/cotacoes'
+      preLoaderRoute: typeof PortalCotacoesRouteImport
       parentRoute: typeof PortalRoute
     }
-    '/reunioes/importar': {
-      id: '/reunioes/importar'
-      path: '/importar'
-      fullPath: '/reunioes/importar'
-      preLoaderRoute: typeof ReunioesImportarRouteImport
-      parentRoute: typeof ReunioesRoute
+    '/portal/conta': {
+      id: '/portal/conta'
+      path: '/conta'
+      fullPath: '/portal/conta'
+      preLoaderRoute: typeof PortalContaRouteImport
+      parentRoute: typeof PortalRoute
     }
-    '/stand/leads': {
-      id: '/stand/leads'
-      path: '/leads'
-      fullPath: '/stand/leads'
-      preLoaderRoute: typeof StandLeadsRouteImport
-      parentRoute: typeof StandRoute
-    }
-    '/api/public/academia-file': {
-      id: '/api/public/academia-file'
-      path: '/api/public/academia-file'
-      fullPath: '/api/public/academia-file'
-      preLoaderRoute: typeof ApiPublicAcademiaFileRouteImport
+    '/catalog/todos': {
+      id: '/catalog/todos'
+      path: '/catalog/todos'
+      fullPath: '/catalog/todos'
+      preLoaderRoute: typeof CatalogTodosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/catalogo-file': {
-      id: '/api/public/catalogo-file'
-      path: '/api/public/catalogo-file'
-      fullPath: '/api/public/catalogo-file'
-      preLoaderRoute: typeof ApiPublicCatalogoFileRouteImport
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/sincronizacao-sncf': {
+      id: '/admin/sincronizacao-sncf'
+      path: '/admin/sincronizacao-sncf'
+      fullPath: '/admin/sincronizacao-sncf'
+      preLoaderRoute: typeof AdminSincronizacaoSncfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/products': {
+      id: '/admin/products'
+      path: '/admin/products'
+      fullPath: '/admin/products'
+      preLoaderRoute: typeof AdminProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/precos': {
+      id: '/admin/precos'
+      path: '/admin/precos'
+      fullPath: '/admin/precos'
+      preLoaderRoute: typeof AdminPrecosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/permissoes': {
+      id: '/admin/permissoes'
+      path: '/admin/permissoes'
+      fullPath: '/admin/permissoes'
+      preLoaderRoute: typeof AdminPermissoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/leads': {
+      id: '/admin/leads'
+      path: '/admin/leads'
+      fullPath: '/admin/leads'
+      preLoaderRoute: typeof AdminLeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/gate-ab': {
+      id: '/admin/gate-ab'
+      path: '/admin/gate-ab'
+      fullPath: '/admin/gate-ab'
+      preLoaderRoute: typeof AdminGateAbRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/catalogos': {
+      id: '/admin/catalogos'
+      path: '/admin/catalogos'
+      fullPath: '/admin/catalogos'
+      preLoaderRoute: typeof AdminCatalogosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/cartilhas': {
+      id: '/admin/cartilhas'
+      path: '/admin/cartilhas'
+      fullPath: '/admin/cartilhas'
+      preLoaderRoute: typeof AdminCartilhasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/access-logs': {
+      id: '/admin/access-logs'
+      path: '/admin/access-logs'
+      fullPath: '/admin/access-logs'
+      preLoaderRoute: typeof AdminAccessLogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/academia': {
+      id: '/admin/academia'
+      path: '/admin/academia'
+      fullPath: '/admin/academia'
+      preLoaderRoute: typeof AdminAcademiaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/academia/$moduloId': {
+      id: '/academia/$moduloId'
+      path: '/academia/$moduloId'
+      fullPath: '/academia/$moduloId'
+      preLoaderRoute: typeof AcademiaModuloIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalog/categoria/$categoria': {
+      id: '/catalog/categoria/$categoria'
+      path: '/catalog/categoria/$categoria'
+      fullPath: '/catalog/categoria/$categoria'
+      preLoaderRoute: typeof CatalogCategoriaCategoriaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/img': {
@@ -1117,11 +1110,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImgRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/catalog/categoria/$categoria': {
-      id: '/catalog/categoria/$categoria'
-      path: '/catalog/categoria/$categoria'
-      fullPath: '/catalog/categoria/$categoria'
-      preLoaderRoute: typeof CatalogCategoriaCategoriaRouteImport
+    '/api/public/catalogo-file': {
+      id: '/api/public/catalogo-file'
+      path: '/api/public/catalogo-file'
+      fullPath: '/api/public/catalogo-file'
+      preLoaderRoute: typeof ApiPublicCatalogoFileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/academia-file': {
+      id: '/api/public/academia-file'
+      path: '/api/public/academia-file'
+      fullPath: '/api/public/academia-file'
+      preLoaderRoute: typeof ApiPublicAcademiaFileRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

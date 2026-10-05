@@ -1345,7 +1345,7 @@ function CarrinhoEmMontagemDialog({
 }
 
 function ResultadoLead({ pre }: { pre: PreSelecao }) {
-  const atualizarStatus = usePreSelecaoStore((s) => s.atualizarStatus);
+  const atualizarStatus = usePreSelecao((s) => s.atualizarStatus);
   const [modo, setModo] = useState<null | "negada" | "followup">(null);
   const [motivo, setMotivo] = useState(pre.resultadoMotivo ?? "");
   const [data, setData] = useState(pre.followupEm ?? "");
