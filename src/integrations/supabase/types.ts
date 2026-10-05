@@ -2372,6 +2372,33 @@ export type Database = {
         }
         Relationships: []
       }
+      produto_exigencia_dim: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          descricao: string | null
+          nome: string
+          ordem: number
+          slug: string
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          descricao?: string | null
+          nome: string
+          ordem?: number
+          slug: string
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          descricao?: string | null
+          nome?: string
+          ordem?: number
+          slug?: string
+        }
+        Relationships: []
+      }
       produto_fase_dim: {
         Row: {
           ativo: boolean
@@ -2409,6 +2436,7 @@ export type Database = {
           campo: string
           descricao: string | null
           dono: string
+          exigido_para: string | null
           fase_exigida: string | null
           obrigatorio: boolean
           ordem: number
@@ -2419,6 +2447,7 @@ export type Database = {
           campo: string
           descricao?: string | null
           dono: string
+          exigido_para?: string | null
           fase_exigida?: string | null
           obrigatorio?: boolean
           ordem: number
@@ -2429,11 +2458,19 @@ export type Database = {
           campo?: string
           descricao?: string | null
           dono?: string
+          exigido_para?: string | null
           fase_exigida?: string | null
           obrigatorio?: boolean
           ordem?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "produto_fase_ficha_exigido_para_fkey"
+            columns: ["exigido_para"]
+            isOneToOne: false
+            referencedRelation: "produto_exigencia_dim"
+            referencedColumns: ["slug"]
+          },
           {
             foreignKeyName: "produto_fase_ficha_fase_exigida_fkey"
             columns: ["fase_exigida"]
@@ -3306,6 +3343,14 @@ export type Database = {
           p_fase: string
         }
         Returns: string[]
+      }
+      fn_produto_medicao_pendencias: {
+        Args: { p: Database["public"]["Tables"]["products"]["Row"] }
+        Returns: string[]
+      }
+      fn_produtos_para_sncf: {
+        Args: { p_colecoes?: string[]; p_token: string }
+        Returns: Json
       }
       fn_registrar_produtos_cartorio: {
         Args: { p_dry_run?: boolean; p_itens: Json }
