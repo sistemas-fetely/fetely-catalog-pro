@@ -48,7 +48,7 @@ function ErrorComponent({ error, reset }: import("@tanstack/react-router").Error
   console.error(error);
   const router = useRouter();
 
-  const msg = String(error?.message ?? "");
+  const msg = String((error as Error | undefined)?.message ?? "");
   const isChunkError =
     msg.includes("Failed to fetch dynamically imported module") ||
     msg.includes("Importing a module script failed") ||
