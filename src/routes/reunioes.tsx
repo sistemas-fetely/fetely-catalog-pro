@@ -656,8 +656,6 @@ function EstadoPill({ estado }: { estado: EstadoSessao }) {
     enviada: "bg-green-500/15 text-green-600 border-green-500/30",
     em_contato: "bg-blue-500/15 text-blue-500 border-blue-500/30",
     convertida: "bg-green-500/15 text-green-600 border-green-500/30",
-    negada: "bg-rose-500/15 text-rose-600 border-rose-500/30",
-    followup: "bg-sky-500/15 text-sky-600 border-sky-500/30",
     expirada: "bg-muted text-text-muted border-border",
     descartada: "bg-muted text-text-muted border-border",
   };
@@ -683,6 +681,8 @@ function StatusPill({ status }: { status: StatusPreSelecao }) {
   const cls: Record<StatusPreSelecao, string> = {
     nova: "bg-red-500/15 text-red-500 border-red-500/30",
     visualizada: "bg-amber-500/15 text-amber-500 border-amber-500/30",
+    negada: "bg-rose-500/15 text-rose-600 border-rose-500/30",
+    followup: "bg-sky-500/15 text-sky-600 border-sky-500/30",
     em_contato: "bg-blue-500/15 text-blue-500 border-blue-500/30",
     convertida: "bg-green-500/15 text-green-600 border-green-500/30",
     expirada: "bg-muted text-text-muted border-border",
