@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Link as LinkIcon, MessageCircle, Copy, QrCode, Trash2, CheckCircle2, Eye, ArrowRight, X, AlertTriangle, Clock, Activity, MessageSquareText, Check, ChevronDown, ChevronRight, Users, ShoppingCart } from "lucide-react";
 
