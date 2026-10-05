@@ -649,7 +649,7 @@ function SessaoRowView({ grupo, vendedorNome, nomes }: { grupo: SessaoGrupo; ven
       </tr>
       {aberto && temHistorico && (
         <tr className="border-t border-border bg-surface-2/40">
-          <td colSpan={9} className="px-4 py-3">
+          <td colSpan={10} className="px-4 py-3">
             <div className="text-[10px] uppercase tracking-wider text-text-secondary mb-2">
               Histórico de acessos ({grupo.acessos})
             </div>
