@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { X, FileText, Loader2, Check, FileSpreadsheet } from "lucide-react";
 import { useCatalog } from "@/store/catalogStore";
 import { usePhotos } from "@/store/photoStore";
@@ -24,6 +24,12 @@ interface ColecaoEntry {
 export function CatalogPdfModal({ onClose }: { onClose: () => void }) {
   const products = useCatalog((s) => s.products);
   const photos = usePhotos();
+
+  // Sempre busca preços/dados atualizados do banco ao abrir o gerador,
+  // ignorando o cache local do catálogo.
+  useEffect(() => {
+    void useCatalog.getState().hydrate({ force: true });
+  }, []);
 
   const grouped = useMemo(() => {
     const map = new Map<string, ColecaoEntry>();
