@@ -458,7 +458,25 @@ function PanelTab({
   );
 }
 
+function useNomesPerfis() {
+  const [map, setMap] = useState<Record<string, string>>({});
+  useEffect(() => {
+    void supabase
+      .from("profiles")
+      .select("id, nome_completo, login_amigavel, email")
+      .then(({ data }) => {
+        const m: Record<string, string> = {};
+        for (const p of (data ?? []) as Array<{ id: string; nome_completo: string | null; login_amigavel: string | null; email: string | null }>) {
+          m[p.id] = p.nome_completo || p.login_amigavel || p.email || p.id;
+        }
+        setMap(m);
+      });
+  }, []);
+  return map;
+}
+
 function SessoesTable({ rows, vendedorNome }: { rows: SessaoGrupo[]; vendedorNome: string }) {
+  const nomes = useNomesPerfis();
   return (
     <div className="rounded-lg border border-border overflow-hidden">
       <table className="w-full text-sm">
@@ -467,6 +485,7 @@ function SessoesTable({ rows, vendedorNome }: { rows: SessaoGrupo[]; vendedorNom
             <th className="w-8 px-2 py-2"></th>
             <th className="text-left px-3 py-2">Cliente</th>
             <th className="text-left px-3 py-2">WhatsApp</th>
+            <th className="text-left px-3 py-2">Link de origem</th>
             <th className="text-left px-3 py-2">Acessos</th>
             <th className="text-left px-3 py-2">Itens</th>
             <th className="text-left px-3 py-2">Valor (atacado)</th>
@@ -478,12 +497,12 @@ function SessoesTable({ rows, vendedorNome }: { rows: SessaoGrupo[]; vendedorNom
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={9} className="text-center py-12 text-text-secondary text-sm">
+              <td colSpan={10} className="text-center py-12 text-text-secondary text-sm">
                 Nenhuma sessão nesta aba.
               </td>
             </tr>
           ) : (
-            rows.map((g) => <SessaoRowView key={g.key} grupo={g} vendedorNome={vendedorNome} />)
+            rows.map((g) => <SessaoRowView key={g.key} grupo={g} vendedorNome={vendedorNome} nomes={nomes} />)
           )}
         </tbody>
       </table>
@@ -491,7 +510,7 @@ function SessoesTable({ rows, vendedorNome }: { rows: SessaoGrupo[]; vendedorNom
   );
 }
 
-function SessaoRowView({ grupo, vendedorNome }: { grupo: SessaoGrupo; vendedorNome: string }) {
+function SessaoRowView({ grupo, vendedorNome, nomes }: { grupo: SessaoGrupo; vendedorNome: string; nomes: Record<string, string> }) {
   const s = grupo.latest;
   const abandonado = s.estado_derivado === "formulario_abandonado";
   const nome = s.nome ?? s.razao_social ?? "— (não identificado)";
@@ -542,6 +561,20 @@ function SessaoRowView({ grupo, vendedorNome }: { grupo: SessaoGrupo; vendedorNo
           </div>
         </td>
         <td className="px-3 py-3 text-xs">{s.whatsapp || <span className="text-text-muted italic">—</span>}</td>
+        <td className="px-3 py-3 text-xs">
+          {(() => {
+            const uid = s.origem_id_snapshot || s.vendedor_responsavel;
+            if (!uid) return <span className="text-text-muted italic">link geral</span>;
+            return (
+              <div>
+                <div className="font-medium">{nomes[uid] ?? "—"}</div>
+                {s.origem_tipo_snapshot && (
+                  <div className="text-text-secondary capitalize">{s.origem_tipo_snapshot}</div>
+                )}
+              </div>
+            );
+          })()}
+        </td>
         <td className="px-3 py-3 text-xs">
           <span className={cn(
             "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border",
