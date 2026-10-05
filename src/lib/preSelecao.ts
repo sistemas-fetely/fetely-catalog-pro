@@ -165,6 +165,8 @@ type DbRow = {
   cotacao_gerada_id: string | null;
   pedido_gerado_id: string | null;
   visualizado_em: string | null;
+  followup_em?: string | null;
+  resultado_motivo?: string | null;
 };
 
 export function toDbRow(pre: PreSelecao) {
@@ -227,6 +229,8 @@ export function fromDbRow(r: DbRow): PreSelecao {
     cotacaoGeradaId: r.cotacao_gerada_id ?? undefined,
     pedidoGeradoId: r.pedido_gerado_id ?? undefined,
     visualizadoEm: r.visualizado_em ?? undefined,
+    followupEm: r.followup_em ?? undefined,
+    resultadoMotivo: r.resultado_motivo ?? undefined,
   };
 }
 
@@ -257,12 +261,16 @@ export async function updatePreSelecaoRemote(
     cotacao_gerada_id?: string | null;
     pedido_gerado_id?: string | null;
     cliente_b2b_id?: string | null;
+    followup_em?: string | null;
+    resultado_motivo?: string | null;
   } = {};
   if (patch.status !== undefined) dbPatch.status = patch.status;
   if (patch.visualizadoEm !== undefined) dbPatch.visualizado_em = patch.visualizadoEm;
   if (patch.cotacaoGeradaId !== undefined) dbPatch.cotacao_gerada_id = patch.cotacaoGeradaId;
   if (patch.pedidoGeradoId !== undefined) dbPatch.pedido_gerado_id = patch.pedidoGeradoId;
   if (patch.clienteB2bId !== undefined) dbPatch.cliente_b2b_id = patch.clienteB2bId;
+  if (patch.followupEm !== undefined) dbPatch.followup_em = patch.followupEm || null;
+  if (patch.resultadoMotivo !== undefined) dbPatch.resultado_motivo = patch.resultadoMotivo || null;
   if (Object.keys(dbPatch).length === 0) return;
   const { error } = await supabase.from("pre_selecoes").update(dbPatch).eq("id", id);
   if (error) throw error;

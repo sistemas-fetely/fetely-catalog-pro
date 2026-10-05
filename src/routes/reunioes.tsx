@@ -34,6 +34,8 @@ const TABS: { key: StatusPreSelecao | "todas"; label: string }[] = [
   { key: "visualizada", label: "Visualizadas" },
   { key: "em_contato", label: "Em contato" },
   { key: "convertida", label: "Convertidas" },
+  { key: "followup", label: "Follow-up futuro" },
+  { key: "negada", label: "Negadas" },
   { key: "todas", label: "Todas" },
 ];
 
@@ -679,6 +681,8 @@ function StatusPill({ status }: { status: StatusPreSelecao }) {
   const cls: Record<StatusPreSelecao, string> = {
     nova: "bg-red-500/15 text-red-500 border-red-500/30",
     visualizada: "bg-amber-500/15 text-amber-500 border-amber-500/30",
+    negada: "bg-rose-500/15 text-rose-600 border-rose-500/30",
+    followup: "bg-sky-500/15 text-sky-600 border-sky-500/30",
     em_contato: "bg-blue-500/15 text-blue-500 border-blue-500/30",
     convertida: "bg-green-500/15 text-green-600 border-green-500/30",
     expirada: "bg-muted text-text-muted border-border",
@@ -911,6 +915,7 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
           <Button variant="outline" className="w-full justify-start" onClick={copiarLista}>
             <Copy className="h-4 w-4" /> Copiar lista de interesse
           </Button>
+          <ResultadoLead pre={pre} />
           {pre.status !== "em_contato" && pre.status !== "convertida" && (
             <Button variant="outline" className="w-full justify-start" onClick={() => atualizarStatus(pre.id, "em_contato")}>
               <CheckCircle2 className="h-4 w-4" /> Marcar "Em contato"
@@ -1336,5 +1341,71 @@ function CarrinhoEmMontagemDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ResultadoLead({ pre }: { pre: PreSelecao }) {
+  const atualizarStatus = usePreSelecao((s) => s.atualizarStatus);
+  const [modo, setModo] = useState<null | "negada" | "followup">(null);
+  const [motivo, setMotivo] = useState(pre.resultadoMotivo ?? "");
+  const [data, setData] = useState(pre.followupEm ?? "");
+  useEffect(() => { setModo(null); setMotivo(pre.resultadoMotivo ?? ""); setData(pre.followupEm ?? ""); }, [pre.id]);
+
+  const opt = (key: "convertida" | "negada" | "followup", label: string, cls: string) => (
+    <button
+      type="button"
+      onClick={() => {
+        if (key === "convertida") { atualizarStatus(pre.id, "convertida"); toast.success("Lead marcado como convertido"); }
+        else setModo(key);
+      }}
+      className={cn("flex-1 rounded-md border px-2 py-2 text-[11px] uppercase tracking-wider transition", pre.status === key ? cls : "border-border text-text-secondary hover:border-gold/40")}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="rounded-lg border border-border p-3 space-y-2">
+      <div className="text-[10px] uppercase tracking-wider text-text-muted">Resultado do lead</div>
+      <div className="flex gap-2">
+        {opt("convertida", "Convertida", "bg-green-500/15 text-green-600 border-green-500/40")}
+        {opt("followup", "Follow-up", "bg-sky-500/15 text-sky-600 border-sky-500/40")}
+        {opt("negada", "Negada", "bg-rose-500/15 text-rose-600 border-rose-500/40")}
+      </div>
+      {pre.status === "followup" && pre.followupEm && !modo && (
+        <div className="text-xs text-sky-600">Retomar em {new Date(pre.followupEm + "T12:00:00").toLocaleDateString("pt-BR")}{pre.resultadoMotivo ? ` — ${pre.resultadoMotivo}` : ""}</div>
+      )}
+      {pre.status === "negada" && pre.resultadoMotivo && !modo && (
+        <div className="text-xs text-rose-600">Motivo: {pre.resultadoMotivo}</div>
+      )}
+      {modo && (
+        <div className="space-y-2">
+          {modo === "followup" && (
+            <Input type="date" value={data} onChange={(e) => setData(e.target.value)} />
+          )}
+          <textarea
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            rows={2}
+            placeholder={modo === "negada" ? "Motivo da negativa" : "Observação (o que combinar no retorno)"}
+            className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm resize-none outline-none"
+          />
+          <div className="flex justify-end gap-2">
+            <Button size="sm" variant="outline" onClick={() => setModo(null)}>Cancelar</Button>
+            <Button
+              size="sm"
+              disabled={modo === "followup" ? !data : motivo.trim().length < 3}
+              onClick={() => {
+                atualizarStatus(pre.id, modo, { resultadoMotivo: motivo.trim(), followupEm: modo === "followup" ? data : "" });
+                toast.success(modo === "negada" ? "Lead marcado como negado" : "Follow-up agendado");
+                setModo(null);
+              }}
+            >
+              Salvar
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

@@ -3,6 +3,8 @@ export type StatusPreSelecao =
   | "visualizada"
   | "em_contato"
   | "convertida"
+  | "negada"
+  | "followup"
   | "expirada"
   | "descartada";
 
@@ -32,6 +34,8 @@ export const STATUS_PRE_LABEL: Record<StatusPreSelecao, string> = {
   visualizada: "Visualizada",
   em_contato: "Em contato",
   convertida: "Convertida",
+  negada: "Negada",
+  followup: "Follow-up futuro",
   expirada: "Expirada",
   descartada: "Descartada",
 };
@@ -82,6 +86,8 @@ export interface PreSelecao {
   atribuidoParaVendedorId?: string;
   visualizadoEm?: string;
   sessaoId?: string;
+  followupEm?: string;
+  resultadoMotivo?: string;
 }
 
 export const EXPIRACAO_PADRAO_HORAS = 72;

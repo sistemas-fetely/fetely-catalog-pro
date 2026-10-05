@@ -1,0 +1,1 @@
+ALTER TABLE public.pre_selecoes ADD COLUMN IF NOT EXISTS followup_em date, ADD COLUMN IF NOT EXISTS resultado_motivo text;
