@@ -193,10 +193,31 @@ export function CartCommercialPanel({
   }, [faixa, ativo, liberarTodasCondicoes, bruto, premissas]);
 
   // Condição selecionada — bonificado força a condição sentinela
-  const condicao = useMemo(() => {
+  const condicaoBase = useMemo(() => {
     if (bonificado) return CONDICAO_BONIFICADO;
     return condicoesDisponiveis.find((c) => c.id === condicaoSelecionadaId) ?? null;
   }, [condicoesDisponiveis, condicaoSelecionadaId, bonificado]);
+
+  // Cartão: o vendedor escolhe em quantas vezes (1x até o máximo da condição).
+  const [parcelasCartao, setParcelasCartao] = useState<number | null>(null);
+  useEffect(() => {
+    setParcelasCartao(null);
+  }, [condicaoBase?.id]);
+  const condicao = useMemo<CondicaoPagamento | null>(() => {
+    if (!condicaoBase) return null;
+    const max = condicaoBase.numeroParcelas ?? 1;
+    if (condicaoBase.tipo !== "cartao" || max <= 1) return condicaoBase;
+    const n = Math.min(Math.max(parcelasCartao ?? max, 1), max);
+    const dias = (condicaoBase.diasParcelas ?? []).slice(0, n);
+    return {
+      ...condicaoBase,
+      numeroParcelas: n,
+      diasParcelas: dias.length === n ? dias : condicaoBase.diasParcelas,
+      descricao: condicaoBase.semJuros
+        ? `Cartão ${n}x sem juros`
+        : `Cartão ${n}x (juros do cliente)`,
+    };
+  }, [condicaoBase, parcelasCartao]);
 
   // Pré-seleciona condição preferencial do cliente quando nada está selecionado
   useEffect(() => {
