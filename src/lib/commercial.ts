@@ -65,7 +65,7 @@ export const FAIXAS_DEFAULT: Faixa[] = [
   {
     id: 1,
     nome: "Convidado",
-    valorMin: 1500,
+    valorMin: 1000,
     valorMax: 4999.99,
     frete: "FOB",
     descontoCelebra: 5,
@@ -175,7 +175,7 @@ export const CONDICOES_DEFAULT: CondicaoPagamento[] = [
 ];
 
 export const REGRAS_DEFAULT: RegrasGerais = {
-  pedidoMinimo: 1500,
+  pedidoMinimo: 1000,
   descontoMasterMax: 30,
   tentativasSenhaMaster: 3,
   bloqueioSenhaMasterMinutos: 30,
