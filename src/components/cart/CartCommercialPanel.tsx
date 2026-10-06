@@ -487,6 +487,8 @@ export function CartCommercialPanel({
             todas={ativo && liberarTodasCondicoes ? CONDICOES_PAGAMENTO : null}
             selectedId={condicao?.id ?? null}
             onSelect={setCondicaoSelecionadaId}
+            parcelasCartao={parcelasCartao}
+            onParcelasCartao={setParcelasCartao}
           />
         </div>
       )}
