@@ -954,6 +954,24 @@ function PaymentSelector({
                   </span>
                 )}
               </label>
+              {selectedId === c.id && c.tipo === "cartao" && (c.numeroParcelas ?? 1) > 1 && (
+                <div className="mt-1.5 ml-6 flex items-center gap-2">
+                  <label className="text-[10px] uppercase tracking-wider text-text-muted">
+                    Parcelas
+                  </label>
+                  <select
+                    value={parcelasCartao ?? c.numeroParcelas ?? 1}
+                    onChange={(e) => onParcelasCartao(Number(e.target.value))}
+                    className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-text-primary focus:border-gold outline-none"
+                  >
+                    {Array.from({ length: c.numeroParcelas ?? 1 }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>
+                        {n}x{c.semJuros ? " sem juros" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </li>
           );
         })}
