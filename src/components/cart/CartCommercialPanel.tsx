@@ -885,11 +885,15 @@ function PaymentSelector({
   todas,
   selectedId,
   onSelect,
+  parcelasCartao,
+  onParcelasCartao,
 }: {
   condicoes: CondicaoPagamento[];
   todas: CondicaoPagamento[] | null;
   selectedId: number | null;
   onSelect: (id: number) => void;
+  parcelasCartao: number | null;
+  onParcelasCartao: (n: number) => void;
 }) {
   const [tab, setTab] = useState<"pix" | "boleto" | "cartao">("pix");
   const pool = todas ?? condicoes;
