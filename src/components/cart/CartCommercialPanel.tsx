@@ -193,10 +193,31 @@ export function CartCommercialPanel({
   }, [faixa, ativo, liberarTodasCondicoes, bruto, premissas]);
 
   // Condição selecionada — bonificado força a condição sentinela
-  const condicao = useMemo(() => {
+  const condicaoBase = useMemo(() => {
     if (bonificado) return CONDICAO_BONIFICADO;
     return condicoesDisponiveis.find((c) => c.id === condicaoSelecionadaId) ?? null;
   }, [condicoesDisponiveis, condicaoSelecionadaId, bonificado]);
+
+  // Cartão: o vendedor escolhe em quantas vezes (1x até o máximo da condição).
+  const [parcelasCartao, setParcelasCartao] = useState<number | null>(null);
+  useEffect(() => {
+    setParcelasCartao(null);
+  }, [condicaoBase?.id]);
+  const condicao = useMemo<CondicaoPagamento | null>(() => {
+    if (!condicaoBase) return null;
+    const max = condicaoBase.numeroParcelas ?? 1;
+    if (condicaoBase.tipo !== "cartao" || max <= 1) return condicaoBase;
+    const n = Math.min(Math.max(parcelasCartao ?? max, 1), max);
+    const dias = (condicaoBase.diasParcelas ?? []).slice(0, n);
+    return {
+      ...condicaoBase,
+      numeroParcelas: n,
+      diasParcelas: dias.length === n ? dias : condicaoBase.diasParcelas,
+      descricao: condicaoBase.semJuros
+        ? `Cartão ${n}x sem juros`
+        : `Cartão ${n}x (juros do cliente)`,
+    };
+  }, [condicaoBase, parcelasCartao]);
 
   // Pré-seleciona condição preferencial do cliente quando nada está selecionado
   useEffect(() => {
@@ -466,6 +487,8 @@ export function CartCommercialPanel({
             todas={ativo && liberarTodasCondicoes ? CONDICOES_PAGAMENTO : null}
             selectedId={condicao?.id ?? null}
             onSelect={setCondicaoSelecionadaId}
+            parcelasCartao={parcelasCartao}
+            onParcelasCartao={setParcelasCartao}
           />
         </div>
       )}
@@ -862,11 +885,15 @@ function PaymentSelector({
   todas,
   selectedId,
   onSelect,
+  parcelasCartao,
+  onParcelasCartao,
 }: {
   condicoes: CondicaoPagamento[];
   todas: CondicaoPagamento[] | null;
   selectedId: number | null;
   onSelect: (id: number) => void;
+  parcelasCartao: number | null;
+  onParcelasCartao: (n: number) => void;
 }) {
   const [tab, setTab] = useState<"pix" | "boleto" | "cartao">("pix");
   const pool = todas ?? condicoes;
@@ -927,6 +954,24 @@ function PaymentSelector({
                   </span>
                 )}
               </label>
+              {selectedId === c.id && c.tipo === "cartao" && (c.numeroParcelas ?? 1) > 1 && (
+                <div className="mt-1.5 ml-6 flex items-center gap-2">
+                  <label className="text-[10px] uppercase tracking-wider text-text-muted">
+                    Parcelas
+                  </label>
+                  <select
+                    value={parcelasCartao ?? c.numeroParcelas ?? 1}
+                    onChange={(e) => onParcelasCartao(Number(e.target.value))}
+                    className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-text-primary focus:border-gold outline-none"
+                  >
+                    {Array.from({ length: c.numeroParcelas ?? 1 }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>
+                        {n}x{c.semJuros ? " sem juros" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </li>
           );
         })}
