@@ -722,6 +722,7 @@ serve(async (req) => {
       origem_prod:          p.origem_prod         ?? null,
       preco_atacado:        p.preco_atacado,
       preco_varejo:         p.preco_varejo,
+      preco_site:           p.preco_site          ?? null, // venda no site/Shopify B2C; nulo = sem preço de site decidido
       peso_g:               p.peso_g,
       multiplos:            p.multiplos,
       ativo:                p.ativo,
