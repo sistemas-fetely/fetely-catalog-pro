@@ -53,6 +53,7 @@ export function useFichaDonos(): FichaDonosEstado {
 }
 
 export const NOTA_DONO: Record<string, string> = {
+  cartorio: "emitido pelo cartório",
   fetely: "editado no SNCF — Ficha do Produto",
   sistema: "preenchido pelo sistema",
   carregando: "carregando permissões",
