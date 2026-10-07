@@ -1081,6 +1081,16 @@ function ProductEditor({
                   {...ro("preco_atacado")}
                 />
               </Field>
+              <Field label="Preço site (B2C)">
+                <Input
+                  type="number" step="0.01" min={0}
+                  value={product.precoSite ?? ""}
+                  onChange={(e) =>
+                    set("precoSite", e.target.value === "" ? null : parseFloat(e.target.value) || 0)
+                  }
+                />
+                <p className="mt-1 text-[11px] text-text-muted">preço de venda no site (Shopify)</p>
+              </Field>
             </div>
             <p className="text-xs">
               Margem implícita: <span className={`font-semibold ${margemColor}`}>{margem.toFixed(1)}%</span>
