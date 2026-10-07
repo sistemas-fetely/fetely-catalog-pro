@@ -645,7 +645,7 @@ serve(async (req) => {
     // espelho do SNCF congela no último estado conhecido. `ativo` e `fase` vão no payload.
     const { data: produtos, error } = await supabase
       .from("products")
-      .select("sku, cod_cadastro, fase, departamento, categoria, ean, dun, nome_comercial, nome_completo, marca, linha, grupo, tipo, familia, qtd_kit, colecao, cor_nome, cor, estampa, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, preco_varejo, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm, canal_venda, meta_descricao, tamanho_ref, sub_colecao, sub_colecao2, descricao_colecao, numero_vela, is_vela_numerica")
+      .select("sku, cod_cadastro, fase, departamento, categoria, ean, dun, nome_comercial, nome_completo, marca, linha, grupo, tipo, familia, qtd_kit, colecao, cor_nome, cor, estampa, tamanho_numero, descricao_produto, tipo_embalagem, material, material_descritivo, ncm, cest, origem_fisc, origem_prod, preco_atacado, preco_varejo, preco_site, peso_g, multiplos, ativo, altura_cm, largura_cm, profundidade_cm, canal_venda, meta_descricao, tamanho_ref, sub_colecao, sub_colecao2, descricao_colecao, numero_vela, is_vela_numerica")
       .order("sku");
 
     if (error) throw error;
@@ -722,6 +722,7 @@ serve(async (req) => {
       origem_prod:          p.origem_prod         ?? null,
       preco_atacado:        p.preco_atacado,
       preco_varejo:         p.preco_varejo,
+      preco_site:           p.preco_site          ?? null, // venda no site/Shopify B2C; nulo = sem preço de site decidido
       peso_g:               p.peso_g,
       multiplos:            p.multiplos,
       ativo:                p.ativo,

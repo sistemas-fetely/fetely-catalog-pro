@@ -2082,6 +2082,7 @@ export type Database = {
           origem_prod: string | null
           peso_g: number
           preco_atacado: number
+          preco_site: number | null
           preco_varejo: number
           profundidade_cm: number | null
           pronta_entrega: boolean
@@ -2137,6 +2138,7 @@ export type Database = {
           origem_prod?: string | null
           peso_g?: number
           preco_atacado?: number
+          preco_site?: number | null
           preco_varejo?: number
           profundidade_cm?: number | null
           pronta_entrega?: boolean
@@ -2192,6 +2194,7 @@ export type Database = {
           origem_prod?: string | null
           peso_g?: number
           preco_atacado?: number
+          preco_site?: number | null
           preco_varejo?: number
           profundidade_cm?: number | null
           pronta_entrega?: boolean
