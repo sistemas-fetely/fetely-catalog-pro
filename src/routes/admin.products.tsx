@@ -54,7 +54,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatBRL } from "@/lib/format";
-import { useFichaDonos, NOTA_DONO } from "@/lib/fichaDonos";
+import { NOTA_DONO } from "@/lib/fichaDonos";
 
 export const Route = createFileRoute("/admin/products")({
   component: AdminProductsPage,
@@ -941,11 +941,6 @@ function ProductEditor({
           </DialogTitle>
         </DialogHeader>
 
-        {donosErro && (
-          <p className="rounded-md bg-surface-2 px-3 py-2 text-xs text-text-secondary" role="alert">
-            Não foi possível carregar as permissões de edição — recarregue a página.
-          </p>
-        )}
 
         <Tabs defaultValue="ident" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
