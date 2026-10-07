@@ -54,7 +54,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatBRL } from "@/lib/format";
-import { useFichaDonos, NOTA_DONO } from "@/lib/fichaDonos";
+import { NOTA_DONO } from "@/lib/fichaDonos";
 
 export const Route = createFileRoute("/admin/products")({
   component: AdminProductsPage,
@@ -898,19 +898,13 @@ function ProductEditor({
   const set = <K extends keyof Product>(k: K, v: Product[K]) =>
     setProduct({ ...product, [k]: v });
 
-  // Titularidade vem da matriz produto_fase_ficha (coluna `dono`) — nunca de
-  // lista no código. Campo fora da matriz não é governado e continua como era.
-  // Falha fecha, não abre: sem mapa (em voo ou com erro) nenhum campo aparece
-  // como editável — se a tela tratasse "sem dono" como "pode editar", o usuário
-  // gravaria campo que não é dele.
-  const { donos, carregando: donosCarregando, erro: donosErro } = useFichaDonos();
-  const donoDe = (campo: string): string | undefined => {
-    if (donosErro) return "erro";
-    if (donosCarregando) return "carregando";
-    const d = donos[campo];
-    if (!d || d === "thomer") return undefined;
-    return d;
-  };
+  // Decisão D3 (Flavio 07/10/2026 — Processo de Produto v2): o FOP é o banco
+  // de cadastro e TODOS os campos são editáveis por quem tem permissão nesta
+  // tela. A única exceção é a identidade do produto (SKU, código de cadastro,
+  // EAN e DUN-14), emitida pelo cartório — esses continuam travados.
+  const CAMPOS_IDENTIDADE = new Set(["sku", "cod_cadastro", "ean", "dun"]);
+  const donoDe = (campo: string): string | undefined =>
+    CAMPOS_IDENTIDADE.has(campo) ? "cartorio" : undefined;
   const travado = (campo: string) => Boolean(donoDe(campo));
   // Somente leitura com aparência de leitura — o valor continua visível.
   const ro = (campo: string) =>
@@ -947,11 +941,6 @@ function ProductEditor({
           </DialogTitle>
         </DialogHeader>
 
-        {donosErro && (
-          <p className="rounded-md bg-surface-2 px-3 py-2 text-xs text-text-secondary" role="alert">
-            Não foi possível carregar as permissões de edição — recarregue a página.
-          </p>
-        )}
 
         <Tabs defaultValue="ident" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
@@ -1091,6 +1080,16 @@ function ProductEditor({
                   onChange={(e) => set("precoAtacado", parseFloat(e.target.value) || 0)}
                   {...ro("preco_atacado")}
                 />
+              </Field>
+              <Field label="Preço site (B2C)">
+                <Input
+                  type="number" step="0.01" min={0}
+                  value={product.precoSite ?? ""}
+                  onChange={(e) =>
+                    set("precoSite", e.target.value === "" ? null : parseFloat(e.target.value) || 0)
+                  }
+                />
+                <p className="mt-1 text-[11px] text-text-muted">preço de venda no site (Shopify)</p>
               </Field>
             </div>
             <p className="text-xs">

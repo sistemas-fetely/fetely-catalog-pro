@@ -53,6 +53,8 @@ export interface Product {
   qtdKit: number;
   precoVarejo: number;
   precoAtacado: number;
+  /** Preço de venda no site (Shopify B2C). null/undefined = sem preço de site decidido. */
+  precoSite?: number | null;
   statusEstoque: string;
   /** Quantidade disponível em estoque para venda firme. em_estoque = estoqueDisponivel > 0 */
   estoqueDisponivel?: number;
