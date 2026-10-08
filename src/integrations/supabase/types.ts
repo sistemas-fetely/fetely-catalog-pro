@@ -871,6 +871,7 @@ export type Database = {
         Row: {
           alterado_em: string
           alterado_por: string | null
+          evento: string | null
           id: string
           lead_id: string
           representante_anterior_id: string | null
@@ -881,6 +882,7 @@ export type Database = {
         Insert: {
           alterado_em?: string
           alterado_por?: string | null
+          evento?: string | null
           id?: string
           lead_id: string
           representante_anterior_id?: string | null
@@ -891,6 +893,7 @@ export type Database = {
         Update: {
           alterado_em?: string
           alterado_por?: string | null
+          evento?: string | null
           id?: string
           lead_id?: string
           representante_anterior_id?: string | null
@@ -3661,6 +3664,10 @@ export type Database = {
       }
       crm_is_gestao: { Args: { _uid: string }; Returns: boolean }
       crm_norm_nome: { Args: { t: string }; Returns: string }
+      crm_reportar_conflito_cnpj: {
+        Args: { p_cnpj: string; p_lead_id: string }
+        Returns: boolean
+      }
       crm_representantes_lista: {
         Args: never
         Returns: {

@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
+import type { Cliente } from "@/types/cliente";
+import { formatCNPJ, onlyDigits } from "@/lib/cnpj";
 import { toast } from "sonner";
 import { Plus, AlertTriangle, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import {
   carregarCrm, conflitosGestao, motivosRegua, hojeISO, diasEntre, fmtData,
+  carregarComercial, resumoComercial, sugerirNegociacao, COTACAO_ABERTA, STAGE_NEGOCIACAO, type CrmComercial,
   GRUPOS, REGIOES, TIPOS_ATIVIDADE, STAGE_AGENDA, STAGE_APRESENTADO, STAGE_PERDIDO, STAGE_FECHADO,
   type CrmStage, type CrmLead, type CrmActivity, type CrmRep, type CrmHist, type CrmGrupo, type CrmRegiao, type CrmAtividadeTipo,
 } from "@/lib/crm";
@@ -41,7 +45,8 @@ export const Route = createFileRoute("/crm")({
 const BORDO = "#7B1523";
 const TODOS = "__todos";
 
-type Dados = { stages: CrmStage[]; leads: CrmLead[]; atividades: CrmActivity[]; representantes: CrmRep[] };
+type Dados = { stages: CrmStage[]; leads: CrmLead[]; atividades: CrmActivity[]; representantes: CrmRep[]; comercial: CrmComercial };
+const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function CrmPage() {
   const roles = useAuth((s) => s.roles) as string[];
@@ -62,7 +67,9 @@ function CrmPage() {
 
   const recarregar = useCallback(async () => {
     try {
-      setDados(await carregarCrm());
+      const base = await carregarCrm();
+      const comercial = await carregarComercial(base.leads.map((l) => l.cliente_id ?? ""));
+      setDados({ ...base, comercial });
       if (gestao) setConflitos(await conflitosGestao());
       setErro(null);
     } catch (e) {
@@ -165,7 +172,7 @@ function CrmPage() {
       </Tabs>
 
       {leadAberto && (
-        <LeadDialog ctx={ctx} lead={leadAberto === "novo" ? null : leadAberto}
+        <LeadDialog key={leadAberto === "novo" ? "novo" : leadAberto.id} ctx={ctx} lead={leadAberto === "novo" ? null : (dados.leads.find((l) => l.id === leadAberto.id) ?? leadAberto)}
           repPadrao={gestao ? (repFiltro !== TODOS ? repFiltro : dados.representantes[0]?.id ?? "") : user?.id ?? ""}
           onClose={() => setLeadAberto(null)} onSalvo={recarregar} />
       )}
@@ -218,11 +225,11 @@ function Vazio({ texto, onCriar, rotulo }: { texto: string; onCriar?: () => void
   );
 }
 
-function Kpi({ label, valor, alerta }: { label: string; valor: number; alerta?: boolean }) {
+function Kpi({ label, valor, alerta, rotulo }: { label: string; valor: number; alerta?: boolean; rotulo?: string }) {
   return (
     <Card><CardContent className="p-4">
       <div className="text-xs text-text-secondary">{label}</div>
-      <div className={cn("text-2xl font-display mt-1", alerta && valor > 0 ? "text-destructive" : "text-text-primary")}>{valor}</div>
+      <div className={cn("text-2xl font-display mt-1", alerta && valor > 0 ? "text-destructive" : "text-text-primary", rotulo && "text-lg")}>{rotulo ?? valor}</div>
     </CardContent></Card>
   );
 }
@@ -250,6 +257,7 @@ function VisaoGeral({ ctx, onRep }: { ctx: Ctx; onRep: (id: string) => void }) {
       fechados: meus.filter((l) => l.stage_id === fechadoId).length,
       fora: meusAbertos.filter((l) => motivosRegua(l, ctx.stageMap.get(l.stage_id), hoje).length).length,
       prox,
+      valorPedidos: meus.reduce((a, l) => a + resumoComercial(ctx.comercial, l.cliente_id).totalPedidos, 0),
     };
   });
   const grupos = agrupar === "grupo" ? GRUPOS : REGIOES;
@@ -297,18 +305,19 @@ function VisaoGeral({ ctx, onRep }: { ctx: Ctx; onRep: (id: string) => void }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[720px]">
               <thead><tr className="text-left text-xs text-text-secondary border-b border-border">
-                <th className="py-2">Representante</th><th>Contas</th><th>Lojas</th><th>Em negociação</th><th>Pedidos fechados</th><th>Fora da régua</th><th>Próxima ação</th>
+                <th className="py-2">Representante</th><th>Contas</th><th>Lojas</th><th>Em negociação</th><th>Pedidos fechados</th><th>Fora da régua</th><th>Valor em pedidos</th><th>Próxima ação</th>
               </tr></thead>
               <tbody>
                 {grupos.map((g) => {
                   const ls = linhas.filter((x) => (agrupar === "grupo" ? x.rep.grupo : x.rep.regiao) === g);
                   if (!ls.length) return null;
                   return [
-                    <tr key={g}><td colSpan={7} className="pt-3 pb-1 text-xs uppercase tracking-wide text-gold">{g}</td></tr>,
+                    <tr key={g}><td colSpan={8} className="pt-3 pb-1 text-xs uppercase tracking-wide text-gold">{g}</td></tr>,
                     ...ls.map((x) => (
                       <tr key={x.rep.id} className="border-b border-border hover:bg-surface-hover cursor-pointer" onClick={() => onRep(x.rep.id)}>
                         <td className="py-2 text-text-primary">{x.rep.nome}</td><td>{x.contas}</td><td>{x.lojas}</td><td>{x.negociacao}</td><td>{x.fechados}</td>
                         <td className={x.fora ? "text-destructive font-medium" : ""}>{x.fora}</td>
+                        <td className="whitespace-nowrap">{brl(x.valorPedidos)}</td>
                         <td className="text-xs">{x.prox ? `${fmtData(x.prox.proxima_acao_data)} · ${x.prox.proxima_acao ?? x.prox.nome_conta}` : "—"}</td>
                       </tr>
                     )),
@@ -360,6 +369,9 @@ function Funil({ ctx, leads }: { ctx: Ctx; leads: CrmLead[] }) {
               <div className="p-2 space-y-2 flex-1 min-h-24">
                 {ls.map((l) => {
                   const m = motivosRegua(l, s, hoje);
+                  const rc = resumoComercial(ctx.comercial, l.cliente_id);
+                  const sugerir = sugerirNegociacao(s, ctx.stages, rc.cotacoesAbertas > 0);
+                  const neg = ctx.stages.find((x) => x.nome === STAGE_NEGOCIACAO);
                   return (
                     <div key={l.id} draggable onDragStart={(e) => e.dataTransfer.setData("text/plain", l.id)}
                       onClick={() => ctx.abrirLead(l)}
@@ -368,12 +380,18 @@ function Funil({ ctx, leads }: { ctx: Ctx; leads: CrmLead[] }) {
                       <div className="flex items-start gap-1 flex-wrap">
                         <span className="text-sm font-medium text-text-primary flex-1">{l.nome_conta}</span>
                         {l.tier_a && <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold border" style={{ borderColor: BORDO, color: BORDO }}>Tier A</span>}
+                        {l.cliente_id && <span className="rounded px-1.5 py-0.5 text-[10px] font-medium border border-border text-text-secondary">Cliente</span>}
+                        {rc.cotacoesAbertas > 0 && <span className="rounded px-1.5 py-0.5 text-[10px] font-medium border border-gold/50 text-gold">Cotação aberta</span>}
                         {ctx.gestao && ctx.conflitos.has(l.id) && <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-destructive/15 text-destructive">Conflito</span>}
                       </div>
                       {ctx.gestao && <div className="text-text-secondary">{nomeRep(ctx, l.representante_id)}</div>}
                       <div className="text-text-secondary">{l.numero_lojas ?? 0} lojas</div>
                       {(l.proxima_acao || l.proxima_acao_data) && <div className="text-text-primary">{fmtData(l.proxima_acao_data)} · {l.proxima_acao ?? ""}</div>}
                       {m.length > 0 && <div className="text-destructive font-medium">{m.join(", ")}</div>}
+                      {sugerir && neg && (
+                        <button type="button" className="text-gold underline text-left"
+                          onClick={(e) => { e.stopPropagation(); void ctx.moverEstagio(l, neg.id); }}>Mover para Em negociação?</button>
+                      )}
                     </div>
                   );
                 })}
@@ -553,6 +571,8 @@ function LeadDialog({ ctx, lead, repPadrao, onClose, onSalvo }: { ctx: Ctx; lead
   const [salvando, setSalvando] = useState(false);
   const [confirmarExcluir, setConfirmarExcluir] = useState(false);
   const [hist, setHist] = useState<CrmHist[] | null>(null);
+  const [vincularAberto, setVincularAberto] = useState(false);
+  const [clienteNome, setClienteNome] = useState<string | null>(null);
   const perdido = ctx.stageMap.get(f.stage_id)?.nome === STAGE_PERDIDO;
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
 
@@ -560,7 +580,18 @@ function LeadDialog({ ctx, lead, repPadrao, onClose, onSalvo }: { ctx: Ctx; lead
     if (!lead) return;
     void supabase.from("crm_stage_history").select("*").eq("lead_id", lead.id).order("alterado_em", { ascending: false })
       .then(({ data }) => setHist((data ?? []) as CrmHist[]));
+    if (lead.cliente_id) void supabase.from("clientes").select("razao_social").eq("id", lead.cliente_id).maybeSingle()
+      .then(({ data }) => setClienteNome(data?.razao_social ?? null));
+    else setClienteNome(null);
   }, [lead]);
+
+  async function desvincular() {
+    if (!lead) return;
+    const { error } = await supabase.from("crm_leads").update({ cliente_id: null }).eq("id", lead.id);
+    if (error) return toast.error(`Não foi possível desfazer o vínculo: ${error.message}`);
+    toast.success("Vínculo desfeito");
+    await onSalvo();
+  }
 
   async function salvar() {
     if (!f.nome_conta.trim()) return toast.error("Informe o nome da conta.");
@@ -604,10 +635,17 @@ function LeadDialog({ ctx, lead, repPadrao, onClose, onSalvo }: { ctx: Ctx; lead
           <TabsList>
             <TabsTrigger value="dados">Dados</TabsTrigger>
             {lead && <TabsTrigger value="hist">Histórico</TabsTrigger>}
-            <TabsTrigger value="comercial" disabled>Comercial</TabsTrigger>
+            {lead?.cliente_id && <TabsTrigger value="comercial">Comercial</TabsTrigger>}
           </TabsList>
           <TabsContent value="dados" className="space-y-3 pt-2">
             <div><Label>Conta *</Label><Input value={f.nome_conta} onChange={set("nome_conta")} /></div>
+            {lead && (
+              <div className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2 text-sm">
+                <span className="flex-1 text-text-secondary">Cliente: <span className="text-text-primary">{lead.cliente_id ? (clienteNome ?? "vinculado") : "não vinculado"}</span></span>
+                {(!lead.cliente_id || ctx.gestao) && <Button size="sm" variant="outline" onClick={() => setVincularAberto(true)}>{lead.cliente_id ? "Trocar cliente" : "Vincular cliente"}</Button>}
+                {lead.cliente_id && ctx.gestao && <Button size="sm" variant="outline" className="text-destructive" onClick={desvincular}>Desfazer vínculo</Button>}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div><Label>CNPJ</Label><Input value={f.cnpj} onChange={set("cnpj")} inputMode="numeric" /></div>
               <div><Label>Nº de lojas</Label><Input value={f.numero_lojas} onChange={set("numero_lojas")} inputMode="numeric" /></div>
@@ -645,13 +683,18 @@ function LeadDialog({ ctx, lead, repPadrao, onClose, onSalvo }: { ctx: Ctx; lead
                     const transf = h.representante_anterior_id && h.representante_novo_id && h.representante_anterior_id !== h.representante_novo_id;
                     return (
                       <tr key={h.id} className="border-b border-border">
-                        <td className="py-1.5">{transf ? nomeRep(ctx, h.representante_anterior_id) : ctx.stageMap.get(h.stage_anterior_id ?? "")?.nome ?? "—"}</td>
-                        <td>{transf ? `${nomeRep(ctx, h.representante_novo_id)} (transferência)` : ctx.stageMap.get(h.stage_novo_id ?? "")?.nome ?? "—"}</td>
+                        <td className="py-1.5">{h.evento && h.stage_anterior_id === h.stage_novo_id ? <span className="text-gold">{h.evento}</span> : transf ? nomeRep(ctx, h.representante_anterior_id) : ctx.stageMap.get(h.stage_anterior_id ?? "")?.nome ?? "—"}</td>
+                        <td>{h.evento && h.stage_anterior_id === h.stage_novo_id ? "—" : h.evento ? `${ctx.stageMap.get(h.stage_novo_id ?? "")?.nome ?? "—"} (${h.evento})` : transf ? `${nomeRep(ctx, h.representante_novo_id)} (transferência)` : ctx.stageMap.get(h.stage_novo_id ?? "")?.nome ?? "—"}</td>
                         <td>{new Date(h.alterado_em).toLocaleDateString("pt-BR")}</td><td>{nomeRep(ctx, h.alterado_por)}</td>
                       </tr>
                     );
                   })}</tbody></table>
               )}
+            </TabsContent>
+          )}
+          {lead?.cliente_id && (
+            <TabsContent value="comercial" className="pt-2">
+              <AbaComercial ctx={ctx} clienteId={lead.cliente_id} />
             </TabsContent>
           )}
         </Tabs>
@@ -662,6 +705,7 @@ function LeadDialog({ ctx, lead, repPadrao, onClose, onSalvo }: { ctx: Ctx; lead
             <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando…" : "Salvar"}</Button>
           </div>
         </DialogFooter>
+        {lead && vincularAberto && <VincularClienteDialog ctx={ctx} lead={lead} onClose={() => setVincularAberto(false)} onSalvo={onSalvo} />}
         <Confirmar aberto={confirmarExcluir} titulo="Excluir este lead?" texto="O lead, o histórico e as atividades dele serão apagados." onCancel={() => setConfirmarExcluir(false)} onOk={excluir} />
       </DialogContent>
     </Dialog>
@@ -776,5 +820,139 @@ function Confirmar({ aberto, titulo, texto, onCancel, onOk }: { aberto: boolean;
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+/* ---------------- PARTE 3: COMERCIAL ---------------- */
+function AbaComercial({ ctx, clienteId }: { ctx: Ctx; clienteId: string }) {
+  const r = resumoComercial(ctx.comercial, clienteId);
+  const dt = (iso: string) => new Date(iso).toLocaleDateString("pt-BR");
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-2">
+        <Kpi label="Total em pedidos" valor={0} rotulo={brl(r.totalPedidos)} />
+        <Kpi label="Pedidos" valor={r.pedidos.length} />
+        <Kpi label="Último pedido" valor={0} rotulo={r.ultimoPedido ? dt(r.ultimoPedido) : "—"} />
+        <Kpi label="Cotações abertas" valor={r.cotacoesAbertas} />
+      </div>
+      <div>
+        <div className="text-sm font-medium text-text-primary mb-1">Pedidos</div>
+        {r.pedidos.length === 0 ? <div className="text-xs text-text-secondary">Nenhum pedido.</div> : (
+          <table className="w-full text-xs"><thead><tr className="text-left text-text-secondary border-b border-border"><th className="py-1">Número</th><th>Data</th><th>Status</th><th className="text-right">Valor</th></tr></thead>
+            <tbody>{r.pedidos.map((p) => (
+              <tr key={p.id} className="border-b border-border">
+                <td className="py-1.5"><Link to="/confirmation" search={{ id: p.id }} className="text-gold underline">{p.id}</Link></td>
+                <td>{dt(p.data)}</td><td>{p.status ?? "—"}</td><td className="text-right">{brl(p.total)}</td>
+              </tr>
+            ))}</tbody></table>
+        )}
+      </div>
+      <div>
+        <div className="text-sm font-medium text-text-primary mb-1">Cotações</div>
+        {r.cotacoes.length === 0 ? <div className="text-xs text-text-secondary">Nenhuma cotação.</div> : (
+          <table className="w-full text-xs"><thead><tr className="text-left text-text-secondary border-b border-border"><th className="py-1">Número</th><th>Data</th><th>Status</th><th className="text-right">Valor</th></tr></thead>
+            <tbody>{r.cotacoes.map((c) => (
+              <tr key={c.id} className="border-b border-border">
+                <td className="py-1.5"><Link to="/cotacoes" search={{ id: c.id }} className="text-gold underline">{c.id}</Link></td>
+                <td>{dt(c.data)}</td><td className={COTACAO_ABERTA.includes(c.status) ? "text-gold" : ""}>{c.status}</td><td className="text-right">{brl(c.total)}</td>
+              </tr>
+            ))}</tbody></table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function VincularClienteDialog({ ctx, lead, onClose, onSalvo }: { ctx: Ctx; lead: CrmLead; onClose: () => void; onSalvo: () => Promise<void> }) {
+  const [busca, setBusca] = useState(lead.cnpj ?? lead.nome_conta);
+  const [res, setRes] = useState<{ id: string; razao_social: string | null; cnpj: string | null; cidade: string | null; estado: string | null }[] | null>(null);
+  const [buscando, setBuscando] = useState(false);
+  const [bloqueado, setBloqueado] = useState(false);
+  const [cadastrar, setCadastrar] = useState(false);
+
+  async function vincular(clienteId: string) {
+    const { error } = await supabase.from("crm_leads").update({ cliente_id: clienteId }).eq("id", lead.id);
+    if (error) {
+      if (error.message.includes("outra carteira")) setBloqueado(true);
+      return toast.error(error.message);
+    }
+    toast.success("Cliente vinculado");
+    await onSalvo();
+    onClose();
+  }
+
+  async function buscar() {
+    const termo = busca.trim();
+    if (!termo) return;
+    setBuscando(true); setBloqueado(false);
+    const dig = onlyDigits(termo);
+    // Busca sob o RLS atual de clientes: só aparece o que o usuário já pode ver hoje.
+    const q = supabase.from("clientes").select("id, razao_social, cnpj, cidade, estado").limit(20);
+    const { data, error } = dig.length >= 11
+      ? await q.or(`cnpj.eq.${dig},cnpj.eq.${formatCNPJ(dig)}`)
+      : await q.or(`razao_social.ilike.%${termo}%,nome_fantasia.ilike.%${termo}%`);
+    const lista = data ?? [];
+    if (!error && dig.length >= 11 && !lista.length && !ctx.gestao) {
+      const { data: outra } = await supabase.rpc("crm_reportar_conflito_cnpj", { p_lead_id: lead.id, p_cnpj: dig });
+      if (outra) { setBloqueado(true); setRes([]); setBuscando(false); return; }
+    }
+    setBuscando(false);
+    if (error) return toast.error(error.message);
+    setRes(lista);
+  }
+
+  const rep = ctx.repMap.get(lead.representante_id);
+  const inicial = useMemo<Cliente | null>(() => {
+    if (!cadastrar) return null;
+    const now = new Date().toISOString();
+    const dig = onlyDigits(lead.cnpj ?? "");
+    return {
+      id: crypto.randomUUID(), criadoEm: now, atualizadoEm: now,
+      cadastradoPorVendedorId: lead.representante_id, cadastradoPorVendedorNome: rep?.nome ?? "",
+      tipoPessoa: "PJ", cpf: "", cpfFormatado: "", nomeCompletoPF: "", dataNascimento: "", pontoReferencia: "",
+      tipoEndereco: "casa", observacaoEntrega: "", socialHandle: "",
+      cnpj: dig, cnpjFormatado: lead.cnpj ?? "", razaoSocial: lead.nome_conta, nomeFantasia: "",
+      inscricaoEstadual: "", isentoIE: false, situacaoCadastral: "desconhecida",
+      logradouro: "", numero: "", complemento: "", bairro: "", cidade: lead.cidade ?? "", estado: (lead.uf ?? "").toUpperCase(), cep: "",
+      enderecoEntregaIgual: true, contatoNome: "", contatoEmail: "", contatoTelefone: "", contatoWhatsapp: "",
+      telefonesInternacionais: false, financeiroNome: "", financeiroEmail: "", financeiroTelefone: "",
+      segmento: "boutique_decoracao", canal: "indicacao", regiaoAtuacao: "", observacoes: "", tags: [], ativo: true,
+      isInternacional: false, pais: "", documentoTipo: "Passport", documentoNumero: "",
+    } as Cliente;
+  }, [cadastrar, lead, rep]);
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Vincular cliente</DialogTitle>
+          <DialogDescription>Busque por CNPJ (prioridade) ou pelo nome, entre os clientes que você já pode ver.</DialogDescription>
+        </DialogHeader>
+        <div className="flex gap-2">
+          <Input value={busca} onChange={(e) => setBusca(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void buscar()} placeholder="CNPJ ou nome" />
+          <Button onClick={buscar} disabled={buscando}>{buscando ? "Buscando…" : "Buscar"}</Button>
+        </div>
+        {bloqueado && <div className="rounded-md bg-destructive/10 text-destructive text-sm p-2 flex gap-2"><AlertTriangle className="h-4 w-4 shrink-0" /> Este CNPJ já está em outra carteira. A gestão foi avisada.</div>}
+        {res && !bloqueado && (res.length === 0 ? (
+          <div className="space-y-2 text-sm">
+            <div className="text-text-secondary">Nenhum cliente encontrado.</div>
+            <Button variant="outline" onClick={() => setCadastrar(true)}><Plus className="h-4 w-4" /> Cadastrar cliente com os dados do lead</Button>
+          </div>
+        ) : (
+          <div className="space-y-1 max-h-72 overflow-y-auto">
+            {res.map((c) => (
+              <button key={c.id} onClick={() => void vincular(c.id)} className="w-full text-left rounded-md border border-border p-2 text-sm hover:bg-surface-hover">
+                <div className="text-text-primary">{c.razao_social ?? "—"}</div>
+                <div className="text-xs text-text-secondary">{c.cnpj ?? "sem CNPJ"} · {c.cidade ?? "—"}/{c.estado ?? "—"}</div>
+              </button>
+            ))}
+          </div>
+        ))}
+        {cadastrar && inicial && (
+          <ClienteFormModal open onOpenChange={(o) => !o && setCadastrar(false)} initial={inicial}
+            onSaved={(c) => { setCadastrar(false); void vincular(c.id); }} />
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -19,14 +19,14 @@ export interface CrmStage { id: string; nome: string; ordem: number; prazo_max_d
 export interface CrmLead {
   id: string; representante_id: string; nome_conta: string; cnpj: string | null; cidade: string | null; uf: string | null;
   numero_lojas: number | null; tier_a: boolean; stage_id: string; stage_desde: string; ultima_acao: string | null;
-  proxima_acao: string | null; proxima_acao_data: string | null; motivo_perda: string | null; created_by: string | null;
+  proxima_acao: string | null; proxima_acao_data: string | null; motivo_perda: string | null; created_by: string | null; cliente_id: string | null;
 }
 export interface CrmActivity {
   id: string; lead_id: string; representante_id: string; data: string; tipo: CrmAtividadeTipo;
   resultado: string | null; proximo_passo: string | null; created_by: string | null; created_at: string;
 }
 export interface CrmRep { id: string; nome: string; grupo: CrmGrupo; regiao: CrmRegiao; observacao: string | null }
-export interface CrmHist { id: string; lead_id: string; stage_anterior_id: string | null; stage_novo_id: string | null; representante_anterior_id: string | null; representante_novo_id: string | null; alterado_em: string; alterado_por: string | null }
+export interface CrmHist { id: string; lead_id: string; stage_anterior_id: string | null; stage_novo_id: string | null; representante_anterior_id: string | null; representante_novo_id: string | null; alterado_em: string; alterado_por: string | null; evento?: string | null }
 
 /** Data local de hoje em YYYY-MM-DD. */
 export function hojeISO(d = new Date()): string {
@@ -84,4 +84,43 @@ export async function carregarCrm() {
 export async function conflitosGestao(): Promise<Set<string>> {
   const { data } = await supabase.from("crm_lead_conflitos").select("lead_id").eq("resolvido", false);
   return new Set((data ?? []).map((c) => c.lead_id));
+}
+
+/* ---------------- Parte 3: vínculo comercial (somente leitura, sob o RLS de pedidos/cotações) ---------------- */
+export const STAGE_NEGOCIACAO = "Em negociação";
+export const COTACAO_ABERTA = ["aberta", "em_negociacao"];
+export interface CrmPedido { id: string; cliente_id: string; data: string; status: string | null; total: number }
+export interface CrmCotacao { id: string; cliente_id: string; data: string; status: string; total: number }
+export interface CrmComercial { pedidos: CrmPedido[]; cotacoes: CrmCotacao[] }
+
+export async function carregarComercial(clienteIds: string[]): Promise<CrmComercial> {
+  const ids = [...new Set(clienteIds.filter(Boolean))];
+  if (!ids.length) return { pedidos: [], cotacoes: [] };
+  const [o, c] = await Promise.all([
+    supabase.from("orders").select("id, cliente_id, created_at, status_pedido, total").in("cliente_id", ids).order("created_at", { ascending: false }),
+    supabase.from("cotacoes").select("id, cliente_id, criado_em, status, total").in("cliente_id", ids).order("criado_em", { ascending: false }),
+  ]);
+  if (o.error) throw o.error;
+  if (c.error) throw c.error;
+  return {
+    pedidos: (o.data ?? []).map((r) => ({ id: r.id, cliente_id: r.cliente_id!, data: r.created_at, status: r.status_pedido ?? null, total: Number(r.total ?? 0) })),
+    cotacoes: (c.data ?? []).map((r) => ({ id: r.id, cliente_id: r.cliente_id!, data: r.criado_em, status: r.status, total: Number(r.total ?? 0) })),
+  };
+}
+
+export function resumoComercial(com: CrmComercial, clienteId: string | null) {
+  const pedidos = clienteId ? com.pedidos.filter((p) => p.cliente_id === clienteId).sort((a, b) => b.data.localeCompare(a.data)) : [];
+  const cotacoes = clienteId ? com.cotacoes.filter((p) => p.cliente_id === clienteId).sort((a, b) => b.data.localeCompare(a.data)) : [];
+  return {
+    pedidos, cotacoes,
+    totalPedidos: pedidos.reduce((a, p) => a + p.total, 0),
+    ultimoPedido: pedidos[0]?.data ?? null,
+    cotacoesAbertas: cotacoes.filter((c) => COTACAO_ABERTA.includes(c.status)).length,
+  };
+}
+
+/** Sugere "Mover para Em negociação?" quando há cotação aberta e o lead está antes desse estágio. Nunca move sozinho. */
+export function sugerirNegociacao(stage: CrmStage | undefined, stages: CrmStage[], temCotacaoAberta: boolean): boolean {
+  const neg = stages.find((s) => s.nome === STAGE_NEGOCIACAO);
+  return !!(temCotacaoAberta && stage && neg && stage.ordem < neg.ordem);
 }
