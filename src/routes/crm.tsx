@@ -4,7 +4,11 @@ import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import type { Cliente } from "@/types/cliente";
 import { formatCNPJ, onlyDigits } from "@/lib/cnpj";
 import { toast } from "sonner";
-import { Plus, AlertTriangle, Trash2 } from "lucide-react";
+import { Plus, AlertTriangle, Trash2, MapPin, RefreshCw } from "lucide-react";
+import {
+  carregarMapaAtuacao, vincularRepresentanteMapa,
+  type MapaAtuacao, type MapaRep,
+} from "@/lib/mapaAtuacao.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
@@ -140,6 +144,7 @@ function CrmPage() {
             <TabsTrigger value="rep">Por representante</TabsTrigger>
             <TabsTrigger value="agenda">Agenda</TabsTrigger>
             <TabsTrigger value="ativ">Atividades</TabsTrigger>
+            <TabsTrigger value="mapa">Mapa</TabsTrigger>
           </TabsList>
         </div>
 
@@ -168,6 +173,9 @@ function CrmPage() {
         <TabsContent value="ativ" className="space-y-3">
           {seletorRep}
           <Atividades ctx={ctx} atividades={filtrar(dados.atividades)} />
+        </TabsContent>
+        <TabsContent value="mapa" className="space-y-3">
+          <MapaAtuacaoTab ctx={ctx} />
         </TabsContent>
       </Tabs>
 
@@ -954,5 +962,215 @@ function VincularClienteDialog({ ctx, lead, onClose, onSalvo }: { ctx: Ctx; lead
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/* ---------------- 6. MAPA DE ATUAÇÃO (Fetély Connect) ---------------- */
+const UFS = [
+  "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT",
+  "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO",
+];
+const SEM_VINCULO = "__nenhum";
+
+type ClienteUf = { id: string; razao_social: string | null; nome_fantasia: string | null; cidade: string | null };
+
+function MapaAtuacaoTab({ ctx }: { ctx: Ctx }) {
+  const [mapa, setMapa] = useState<MapaAtuacao | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  const [ufSel, setUfSel] = useState<string | null>(null);
+  const [clientesUf, setClientesUf] = useState<ClienteUf[] | null>(null);
+  const [vinculo, setVinculo] = useState<Record<string, string>>({});
+  const [salvando, setSalvando] = useState<string | null>(null);
+
+  const carregar = useCallback(async () => {
+    try {
+      const m = await carregarMapaAtuacao();
+      setMapa(m);
+      setVinculo(Object.fromEntries(m.representantes.map((r) => [r.id, r.orderProUserId ?? SEM_VINCULO])));
+      setErro(null);
+    } catch (e) {
+      setErro((e as Error).message);
+    }
+  }, []);
+
+  useEffect(() => { void carregar(); }, [carregar]);
+
+  useEffect(() => {
+    if (!ufSel || !ctx.gestao) { setClientesUf(null); return; }
+    let vivo = true;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("id, razao_social, nome_fantasia, cidade")
+        .eq("estado", ufSel)
+        .order("nome_fantasia", { ascending: true });
+      if (vivo) setClientesUf(error ? [] : ((data ?? []) as ClienteUf[]));
+    })();
+    return () => { vivo = false; };
+  }, [ufSel, ctx.gestao]);
+
+  async function salvarVinculo(rep: MapaRep) {
+    const escolhido = vinculo[rep.id] ?? SEM_VINCULO;
+    setSalvando(rep.id);
+    try {
+      await vincularRepresentanteMapa({
+        data: { representanteId: rep.id, orderProUserId: escolhido === SEM_VINCULO ? null : escolhido },
+      });
+      toast.success(escolhido === SEM_VINCULO ? `Vínculo de ${rep.nome} removido` : `${rep.nome} vinculado`);
+      await carregar();
+    } catch (e) {
+      toast.error(`Não foi possível vincular: ${(e as Error).message}`);
+    } finally {
+      setSalvando(null);
+    }
+  }
+
+  if (erro)
+    return (
+      <div className="py-10 text-center space-y-3">
+        <p className="text-destructive text-sm">Não foi possível carregar o mapa de atuação: {erro}</p>
+        <Button size="sm" variant="outline" onClick={() => void carregar()}><RefreshCw className="h-4 w-4" /> Tentar de novo</Button>
+      </div>
+    );
+  if (!mapa) return <div className="py-10 text-center text-text-secondary text-sm">Carregando mapa de atuação…</div>;
+
+  const repsPorUf = new Map<string, MapaRep[]>();
+  for (const uf of UFS) repsPorUf.set(uf, []);
+  for (const r of mapa.representantes) for (const uf of r.ufs) repsPorUf.get(uf)?.push(r);
+  const nacionais = mapa.representantes.filter((r) => r.nacional);
+  const meuRep = mapa.representantes.find((r) => r.orderProUserId === ctx.userId);
+  const minhasUfs = new Set(meuRep?.ufs ?? []);
+  const candidatos = new Set(mapa.ufsCandidatos);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-text-secondary">
+          Dados do Fetély Connect · atualizado em {new Date(mapa.geradoEm).toLocaleString("pt-BR")}
+        </p>
+        <Button size="sm" variant="outline" onClick={() => void carregar()}><RefreshCw className="h-4 w-4" /> Atualizar</Button>
+      </div>
+
+      {meuRep && (
+        <Card className="border-primary">
+          <CardContent className="p-4 space-y-1">
+            <div className="text-sm font-medium text-text-primary flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary" /> Sua área de atuação
+            </div>
+            <div className="text-sm text-text-secondary">
+              {meuRep.nacional ? "Atendimento nacional" : (meuRep.ufs.length ? meuRep.ufs.join(", ") : "Nenhum estado definido")}
+              {meuRep.linhas.length > 0 && ` · Linhas: ${meuRep.linhas.join(", ")}`}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-2">
+        {UFS.map((uf) => {
+          const reps = repsPorUf.get(uf) ?? [];
+          const minha = minhasUfs.has(uf);
+          const selecionada = ufSel === uf;
+          return (
+            <button
+              key={uf}
+              type="button"
+              disabled={!ctx.gestao}
+              onClick={() => setUfSel(selecionada ? null : uf)}
+              className={cn(
+                "rounded-lg border p-2 text-left transition-colors",
+                selecionada ? "border-primary bg-primary/10" : minha ? "border-primary/60 bg-primary/5" : "border-border bg-card",
+                ctx.gestao && "hover:border-primary/60 cursor-pointer",
+              )}
+            >
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-sm font-semibold text-text-primary">{uf}</span>
+                {mapa.ufPrioritaria === uf && <span className="text-[10px] text-primary font-medium">prioritária</span>}
+              </div>
+              <div className="mt-1 space-y-0.5">
+                {reps.length === 0 && <span className="block text-[11px] text-text-secondary">sem representante</span>}
+                {reps.map((r) => (
+                  <span key={r.id} className={cn("block text-[11px] truncate", r.orderProUserId === ctx.userId ? "text-primary font-medium" : "text-text-secondary")}>
+                    {r.nome}
+                  </span>
+                ))}
+                {candidatos.has(uf) && <span className="block text-[10px] text-amber-600">candidato em prospecção</span>}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {nacionais.length > 0 && (
+        <Card>
+          <CardContent className="p-4 space-y-1">
+            <div className="text-sm font-medium text-text-primary">Atendimento nacional</div>
+            {nacionais.map((r) => (
+              <div key={r.id} className="text-sm text-text-secondary">
+                {r.nome}{r.linhas.length > 0 && ` · ${r.linhas.join(", ")}`}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {ctx.gestao && ufSel && (
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <div className="text-sm font-medium text-text-primary">Estado: {ufSel}</div>
+            <div className="text-sm text-text-secondary">
+              Quem atende: {(repsPorUf.get(ufSel) ?? []).map((r) => r.nome).join(", ") || "ninguém"}
+              {nacionais.length > 0 && ` · Nacional: ${nacionais.map((r) => r.nome).join(", ")}`}
+            </div>
+            <div className="text-sm font-medium text-text-primary pt-2">Clientes em {ufSel}</div>
+            {clientesUf === null && <p className="text-sm text-text-secondary">Carregando…</p>}
+            {clientesUf?.length === 0 && <p className="text-sm text-text-secondary">Nenhum cliente cadastrado neste estado.</p>}
+            {clientesUf && clientesUf.length > 0 && (
+              <ul className="text-sm text-text-secondary space-y-0.5 max-h-64 overflow-y-auto">
+                {clientesUf.map((c) => (
+                  <li key={c.id}>{c.nome_fantasia || c.razao_social}{c.cidade ? ` — ${c.cidade}` : ""}</li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {ctx.gestao && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="text-sm font-medium text-text-primary">Vínculo com usuários do Order Pro</div>
+            <p className="text-xs text-text-secondary">
+              Vincule cada representante da rede ao usuário dele aqui no Order Pro. O vínculo destaca a área dele no mapa.
+            </p>
+            <div className="space-y-2">
+              {mapa.representantes.map((r) => {
+                const atual = r.orderProUserId ?? SEM_VINCULO;
+                const escolhido = vinculo[r.id] ?? SEM_VINCULO;
+                return (
+                  <div key={r.id} className="flex flex-wrap items-center gap-2">
+                    <div className="min-w-48">
+                      <div className="text-sm text-text-primary">{r.nome}</div>
+                      <div className="text-[11px] text-text-secondary">
+                        {r.nacional ? "Nacional" : r.ufs.join(", ") || "—"}{r.linhas.length > 0 && ` · ${r.linhas.join(", ")}`}
+                      </div>
+                    </div>
+                    <Select value={escolhido} onValueChange={(v) => setVinculo((s) => ({ ...s, [r.id]: v }))}>
+                      <SelectTrigger className="w-full sm:w-64"><SelectValue placeholder="Usuário do Order Pro" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={SEM_VINCULO}>Sem vínculo</SelectItem>
+                        {ctx.representantes.map((u) => <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Button size="sm" variant="outline" disabled={salvando === r.id || escolhido === atual} onClick={() => void salvarVinculo(r)}>
+                      {salvando === r.id ? "Salvando…" : "Salvar"}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
