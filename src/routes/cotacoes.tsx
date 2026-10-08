@@ -13,7 +13,7 @@ import { STATUS_COTACAO_LABEL } from "@/types/cotacao";
 import { CotacaoDetailDrawer } from "@/components/cotacoes/CotacaoDetailDrawer";
 
 export const Route = createFileRoute("/cotacoes")({
-  validateSearch: (s: Record<string, unknown>) => ({ id: typeof s.id === "string" ? s.id : undefined }),
+  validateSearch: (s: Record<string, unknown>): { id?: string } => (typeof s.id === "string" ? { id: s.id } : {}),
   head: () => ({
     meta: [
       { title: "Cotações — Fetély B2B" },
