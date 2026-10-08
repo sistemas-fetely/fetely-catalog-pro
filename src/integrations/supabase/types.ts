@@ -637,6 +637,332 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_activities: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: string
+          id: string
+          lead_id: string
+          proximo_passo: string | null
+          representante_id: string
+          resultado: string | null
+          tipo: Database["public"]["Enums"]["crm_atividade_tipo"]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          id?: string
+          lead_id: string
+          proximo_passo?: string | null
+          representante_id: string
+          resultado?: string | null
+          tipo: Database["public"]["Enums"]["crm_atividade_tipo"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          id?: string
+          lead_id?: string
+          proximo_passo?: string | null
+          representante_id?: string
+          resultado?: string | null
+          tipo?: Database["public"]["Enums"]["crm_atividade_tipo"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_lead_conflitos: {
+        Row: {
+          cliente_conflitante_id: string | null
+          created_at: string
+          id: string
+          lead_conflitante_id: string | null
+          lead_id: string
+          motivo: string
+          representante_conflitante_id: string | null
+          resolvido: boolean
+          tipo: string
+        }
+        Insert: {
+          cliente_conflitante_id?: string | null
+          created_at?: string
+          id?: string
+          lead_conflitante_id?: string | null
+          lead_id: string
+          motivo: string
+          representante_conflitante_id?: string | null
+          resolvido?: boolean
+          tipo: string
+        }
+        Update: {
+          cliente_conflitante_id?: string | null
+          created_at?: string
+          id?: string
+          lead_conflitante_id?: string | null
+          lead_id?: string
+          motivo?: string
+          representante_conflitante_id?: string | null
+          resolvido?: boolean
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_lead_conflitos_cliente_conflitante_id_fkey"
+            columns: ["cliente_conflitante_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_lead_conflitos_lead_conflitante_id_fkey"
+            columns: ["lead_conflitante_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_lead_conflitos_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_lead_conflitos_representante_conflitante_id_fkey"
+            columns: ["representante_conflitante_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_leads: {
+        Row: {
+          cidade: string | null
+          cliente_id: string | null
+          cnpj: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          motivo_perda: string | null
+          nome_conta: string
+          numero_lojas: number | null
+          proxima_acao: string | null
+          proxima_acao_data: string | null
+          representante_id: string
+          stage_desde: string
+          stage_id: string
+          tier_a: boolean
+          uf: string | null
+          ultima_acao: string | null
+          updated_at: string
+        }
+        Insert: {
+          cidade?: string | null
+          cliente_id?: string | null
+          cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          motivo_perda?: string | null
+          nome_conta: string
+          numero_lojas?: number | null
+          proxima_acao?: string | null
+          proxima_acao_data?: string | null
+          representante_id: string
+          stage_desde?: string
+          stage_id: string
+          tier_a?: boolean
+          uf?: string | null
+          ultima_acao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cidade?: string | null
+          cliente_id?: string | null
+          cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          motivo_perda?: string | null
+          nome_conta?: string
+          numero_lojas?: number | null
+          proxima_acao?: string | null
+          proxima_acao_data?: string | null
+          representante_id?: string
+          stage_desde?: string
+          stage_id?: string
+          tier_a?: boolean
+          uf?: string | null
+          ultima_acao?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_leads_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_leads_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_leads_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "crm_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_rep_settings: {
+        Row: {
+          grupo: Database["public"]["Enums"]["crm_rep_grupo"]
+          observacao: string | null
+          regiao: Database["public"]["Enums"]["crm_regiao"]
+          representante_id: string
+        }
+        Insert: {
+          grupo?: Database["public"]["Enums"]["crm_rep_grupo"]
+          observacao?: string | null
+          regiao?: Database["public"]["Enums"]["crm_regiao"]
+          representante_id: string
+        }
+        Update: {
+          grupo?: Database["public"]["Enums"]["crm_rep_grupo"]
+          observacao?: string | null
+          regiao?: Database["public"]["Enums"]["crm_regiao"]
+          representante_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_rep_settings_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_stage_history: {
+        Row: {
+          alterado_em: string
+          alterado_por: string | null
+          id: string
+          lead_id: string
+          representante_anterior_id: string | null
+          representante_novo_id: string | null
+          stage_anterior_id: string | null
+          stage_novo_id: string | null
+        }
+        Insert: {
+          alterado_em?: string
+          alterado_por?: string | null
+          id?: string
+          lead_id: string
+          representante_anterior_id?: string | null
+          representante_novo_id?: string | null
+          stage_anterior_id?: string | null
+          stage_novo_id?: string | null
+        }
+        Update: {
+          alterado_em?: string
+          alterado_por?: string | null
+          id?: string
+          lead_id?: string
+          representante_anterior_id?: string | null
+          representante_novo_id?: string | null
+          stage_anterior_id?: string | null
+          stage_novo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_stage_history_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_stage_history_representante_anterior_id_fkey"
+            columns: ["representante_anterior_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_stage_history_representante_novo_id_fkey"
+            columns: ["representante_novo_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_stage_history_stage_anterior_id_fkey"
+            columns: ["stage_anterior_id"]
+            isOneToOne: false
+            referencedRelation: "crm_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_stage_history_stage_novo_id_fkey"
+            columns: ["stage_novo_id"]
+            isOneToOne: false
+            referencedRelation: "crm_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_stages: {
+        Row: {
+          cor: string
+          encerrado: boolean
+          id: string
+          nome: string
+          ordem: number
+          prazo_max_dias: number | null
+        }
+        Insert: {
+          cor: string
+          encerrado?: boolean
+          id?: string
+          nome: string
+          ordem: number
+          prazo_max_dias?: number | null
+        }
+        Update: {
+          cor?: string
+          encerrado?: boolean
+          id?: string
+          nome?: string
+          ordem?: number
+          prazo_max_dias?: number | null
+        }
+        Relationships: []
+      }
       evento_catalogo: {
         Row: {
           campos_preenchidos: Json | null
@@ -3333,6 +3659,8 @@ export type Database = {
           razao_social: string
         }[]
       }
+      crm_is_gestao: { Args: { _uid: string }; Returns: boolean }
+      crm_norm_nome: { Args: { t: string }; Returns: string }
       ensure_link_instance_for_login: {
         Args: { p_login: string }
         Returns: {
@@ -3452,7 +3780,12 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "master" | "admin" | "vendedor" | "cliente"
+      app_role:
+        | "master"
+        | "admin"
+        | "vendedor"
+        | "cliente"
+        | "gestao_representantes"
       cartilha_acao:
         | "criado"
         | "editado"
@@ -3467,6 +3800,19 @@ export type Database = {
         | "reativado"
         | "duplicado"
         | "importado"
+      crm_atividade_tipo:
+        | "Reunião"
+        | "Visita"
+        | "Ligação"
+        | "E-mail ou WhatsApp"
+      crm_regiao:
+        | "Sul"
+        | "Sudeste"
+        | "Centro-Oeste"
+        | "Nordeste"
+        | "Norte"
+        | "A definir"
+      crm_rep_grupo: "Produtivo" | "Ativação" | "Ultimato" | "Trilha separada"
       lead_frequencia:
         | "pontual"
         | "mensal"
@@ -3650,7 +3996,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["master", "admin", "vendedor", "cliente"],
+      app_role: [
+        "master",
+        "admin",
+        "vendedor",
+        "cliente",
+        "gestao_representantes",
+      ],
       cartilha_acao: [
         "criado",
         "editado",
@@ -3667,6 +4019,21 @@ export const Constants = {
         "duplicado",
         "importado",
       ],
+      crm_atividade_tipo: [
+        "Reunião",
+        "Visita",
+        "Ligação",
+        "E-mail ou WhatsApp",
+      ],
+      crm_regiao: [
+        "Sul",
+        "Sudeste",
+        "Centro-Oeste",
+        "Nordeste",
+        "Norte",
+        "A definir",
+      ],
+      crm_rep_grupo: ["Produtivo", "Ativação", "Ultimato", "Trilha separada"],
       lead_frequencia: [
         "pontual",
         "mensal",

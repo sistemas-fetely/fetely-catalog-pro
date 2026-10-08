@@ -1,0 +1,1 @@
+- CRM de representantes: tabelas crm_* referenciam profiles (representante = profiles.tipo_vendedor='representante'); acesso por crm_is_gestao() (admin/master/gestao_representantes) ou representante_id = auth.uid(). Why: estende o mesmo modelo de clientes sem tocar tabelas existentes.
