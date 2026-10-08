@@ -18,6 +18,7 @@ import { Route as CommercialRouteImport } from './routes/commercial'
 import { Route as CondicoesPagamentoRouteImport } from './routes/condicoes-pagamento'
 import { Route as ConfirmationRouteImport } from './routes/confirmation'
 import { Route as CotacoesRouteImport } from './routes/cotacoes'
+import { Route as CrmRouteImport } from './routes/crm'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as FarolRouteImport } from './routes/farol'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -108,6 +109,11 @@ const ConfirmationRoute = ConfirmationRouteImport.update({
 const CotacoesRoute = CotacoesRouteImport.update({
   id: '/cotacoes',
   path: '/cotacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmRoute = CrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -352,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/condicoes-pagamento': typeof CondicoesPagamentoRoute
   '/confirmation': typeof ConfirmationRoute
   '/cotacoes': typeof CotacoesRoute
+  '/crm': typeof CrmRoute
   '/dashboard': typeof DashboardRoute
   '/farol': typeof FarolRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -409,6 +416,7 @@ export interface FileRoutesByTo {
   '/condicoes-pagamento': typeof CondicoesPagamentoRoute
   '/confirmation': typeof ConfirmationRoute
   '/cotacoes': typeof CotacoesRoute
+  '/crm': typeof CrmRoute
   '/dashboard': typeof DashboardRoute
   '/farol': typeof FarolRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -466,6 +474,7 @@ export interface FileRoutesById {
   '/condicoes-pagamento': typeof CondicoesPagamentoRoute
   '/confirmation': typeof ConfirmationRoute
   '/cotacoes': typeof CotacoesRoute
+  '/crm': typeof CrmRoute
   '/dashboard': typeof DashboardRoute
   '/farol': typeof FarolRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -525,6 +534,7 @@ export interface FileRouteTypes {
     | '/condicoes-pagamento'
     | '/confirmation'
     | '/cotacoes'
+    | '/crm'
     | '/dashboard'
     | '/farol'
     | '/forgot-password'
@@ -582,6 +592,7 @@ export interface FileRouteTypes {
     | '/condicoes-pagamento'
     | '/confirmation'
     | '/cotacoes'
+    | '/crm'
     | '/dashboard'
     | '/farol'
     | '/forgot-password'
@@ -638,6 +649,7 @@ export interface FileRouteTypes {
     | '/condicoes-pagamento'
     | '/confirmation'
     | '/cotacoes'
+    | '/crm'
     | '/dashboard'
     | '/farol'
     | '/forgot-password'
@@ -696,6 +708,7 @@ export interface RootRouteChildren {
   CondicoesPagamentoRoute: typeof CondicoesPagamentoRoute
   ConfirmationRoute: typeof ConfirmationRoute
   CotacoesRoute: typeof CotacoesRoute
+  CrmRoute: typeof CrmRoute
   DashboardRoute: typeof DashboardRoute
   FarolRoute: typeof FarolRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -800,6 +813,13 @@ declare module '@tanstack/react-router' {
       path: '/cotacoes'
       fullPath: '/cotacoes'
       preLoaderRoute: typeof CotacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm': {
+      id: '/crm'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof CrmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -1178,6 +1198,7 @@ const rootRouteChildren: RootRouteChildren = {
   CondicoesPagamentoRoute: CondicoesPagamentoRoute,
   ConfirmationRoute: ConfirmationRoute,
   CotacoesRoute: CotacoesRoute,
+  CrmRoute: CrmRoute,
   DashboardRoute: DashboardRoute,
   FarolRoute: FarolRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
