@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import type { Cliente } from "@/types/cliente";
-import { onlyDigits } from "@/lib/cnpj";
+import { formatCNPJ, onlyDigits } from "@/lib/cnpj";
 import { toast } from "sonner";
 import { Plus, AlertTriangle, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -225,11 +225,11 @@ function Vazio({ texto, onCriar, rotulo }: { texto: string; onCriar?: () => void
   );
 }
 
-function Kpi({ label, valor, alerta }: { label: string; valor: number; alerta?: boolean }) {
+function Kpi({ label, valor, alerta, rotulo }: { label: string; valor: number; alerta?: boolean; rotulo?: string }) {
   return (
     <Card><CardContent className="p-4">
       <div className="text-xs text-text-secondary">{label}</div>
-      <div className={cn("text-2xl font-display mt-1", alerta && valor > 0 ? "text-destructive" : "text-text-primary")}>{valor}</div>
+      <div className={cn("text-2xl font-display mt-1", alerta && valor > 0 ? "text-destructive" : "text-text-primary", rotulo && "text-lg")}>{rotulo ?? valor}</div>
     </CardContent></Card>
   );
 }
@@ -889,14 +889,9 @@ function VincularClienteDialog({ ctx, lead, onClose, onSalvo }: { ctx: Ctx; lead
     // Busca sob o RLS atual de clientes: só aparece o que o usuário já pode ver hoje.
     const q = supabase.from("clientes").select("id, razao_social, cnpj, cidade, estado").limit(20);
     const { data, error } = dig.length >= 11
-      ? await q.or(`cnpj.eq.${dig},cnpj.ilike.%${dig}%`)
+      ? await q.or(`cnpj.eq.${dig},cnpj.eq.${formatCNPJ(dig)}`)
       : await q.or(`razao_social.ilike.%${termo}%,nome_fantasia.ilike.%${termo}%`);
-    let lista = data ?? [];
-    if (dig.length >= 11 && !lista.length) {
-      // CNPJ pode estar salvo formatado: compara pelos dígitos.
-      const { data: todos } = await supabase.from("clientes").select("id, razao_social, cnpj, cidade, estado").ilike("cnpj", `%${dig.slice(0, 2)}%`).limit(1000);
-      lista = (todos ?? []).filter((c) => onlyDigits(c.cnpj ?? "") === dig);
-    }
+    const lista = data ?? [];
     if (!error && dig.length >= 11 && !lista.length && !ctx.gestao) {
       const { data: outra } = await supabase.rpc("crm_reportar_conflito_cnpj", { p_lead_id: lead.id, p_cnpj: dig });
       if (outra) { setBloqueado(true); setRes([]); setBuscando(false); return; }

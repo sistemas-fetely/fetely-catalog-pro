@@ -13,6 +13,7 @@ import { STATUS_COTACAO_LABEL } from "@/types/cotacao";
 import { CotacaoDetailDrawer } from "@/components/cotacoes/CotacaoDetailDrawer";
 
 export const Route = createFileRoute("/cotacoes")({
+  validateSearch: (s: Record<string, unknown>) => ({ id: typeof s.id === "string" ? s.id : undefined }),
   head: () => ({
     meta: [
       { title: "Cotações — Fetély B2B" },
@@ -52,7 +53,8 @@ function CotacoesPage() {
   const loaded = useCotacao((s) => s.loaded);
   const [filtro, setFiltro] = useState<Filtro>("abertas");
   const [busca, setBusca] = useState("");
-  const [selecionada, setSelecionada] = useState<string | null>(null);
+  const { id: idInicial } = Route.useSearch();
+  const [selecionada, setSelecionada] = useState<string | null>(idInicial ?? null);
 
   // Cache-first: a lista já carregada aparece na hora; a revalidação roda
   // em background (com TTL no store) e a expiração só uma vez por sessão.
