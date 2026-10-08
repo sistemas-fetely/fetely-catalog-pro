@@ -150,6 +150,11 @@ export function Header() {
               )}
 
               <ReunioesNavLink pathname={pathname} navLinkClass={navLinkClass} />
+              {(isRepresentante || roles.includes("admin") || roles.includes("master") || (roles as string[]).includes("gestao_representantes")) && (
+                <Link to="/crm" className={navLinkClass(pathname.startsWith("/crm"))}>
+                  CRM
+                </Link>
+              )}
               {temPermissao("clientes_lista", "ver") && (
                 <Link to="/clientes" className={navLinkClass(pathname.startsWith("/clientes"))}>
                   Clientes

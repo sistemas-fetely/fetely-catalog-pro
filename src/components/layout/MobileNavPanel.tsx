@@ -60,6 +60,7 @@ export function MobileNavPanel({ onNavigate }: { onNavigate?: () => void }) {
 
   const operacional: Item[] = [
     { to: "/reunioes", label: "Reuniões", Icon: CalendarDays, badge: reunioesNovas },
+    { to: "/crm", label: "CRM", Icon: Users },
     { to: "/clientes", label: "Clientes", Icon: Users, tela: "clientes_lista" },
     { to: "/dashboard", label: "Dashboard", Icon: BarChart3, tela: "dashboard" },
     { to: "/academia", label: "Academy", Icon: GraduationCap, tela: "academia" },
@@ -80,8 +81,10 @@ export function MobileNavPanel({ onNavigate }: { onNavigate?: () => void }) {
     roles.includes("vendedor") &&
     profile?.tipo_vendedor === "representante";
 
+  const veCrm = isRepresentante || isAdminOrMaster || (roles as string[]).includes("gestao_representantes");
   const filter = (items: Item[]) =>
     items.filter((it) => {
+      if (it.to === "/crm" && !veCrm) return false;
       if (it.adminOnly && !isAdminOrMaster) return false;
       if (isRepresentante && ["/settings", "/photos", "/import", "/dashboard"].includes(it.to))
         return false;
