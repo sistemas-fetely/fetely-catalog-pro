@@ -4,7 +4,11 @@ import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import type { Cliente } from "@/types/cliente";
 import { formatCNPJ, onlyDigits } from "@/lib/cnpj";
 import { toast } from "sonner";
-import { Plus, AlertTriangle, Trash2 } from "lucide-react";
+import { Plus, AlertTriangle, Trash2, MapPin, RefreshCw } from "lucide-react";
+import {
+  carregarMapaAtuacao, vincularRepresentanteMapa,
+  type MapaAtuacao, type MapaRep,
+} from "@/lib/mapaAtuacao.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
@@ -140,6 +144,7 @@ function CrmPage() {
             <TabsTrigger value="rep">Por representante</TabsTrigger>
             <TabsTrigger value="agenda">Agenda</TabsTrigger>
             <TabsTrigger value="ativ">Atividades</TabsTrigger>
+            <TabsTrigger value="mapa">Mapa</TabsTrigger>
           </TabsList>
         </div>
 
@@ -168,6 +173,9 @@ function CrmPage() {
         <TabsContent value="ativ" className="space-y-3">
           {seletorRep}
           <Atividades ctx={ctx} atividades={filtrar(dados.atividades)} />
+        </TabsContent>
+        <TabsContent value="mapa" className="space-y-3">
+          <MapaAtuacaoTab ctx={ctx} />
         </TabsContent>
       </Tabs>
 
