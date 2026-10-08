@@ -64,6 +64,13 @@
       "when": 1791485985456,
       "tag": "0008_crm_representantes_lista",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791487156405,
+      "tag": "0009_crm_parte3_vinculo_comercial",
+      "breakpoints": true
     }
   ]
 }
