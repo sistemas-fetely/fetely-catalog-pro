@@ -3661,6 +3661,14 @@ export type Database = {
       }
       crm_is_gestao: { Args: { _uid: string }; Returns: boolean }
       crm_norm_nome: { Args: { t: string }; Returns: string }
+      crm_representantes_lista: {
+        Args: never
+        Returns: {
+          email: string
+          id: string
+          nome: string
+        }[]
+      }
       ensure_link_instance_for_login: {
         Args: { p_login: string }
         Returns: {
