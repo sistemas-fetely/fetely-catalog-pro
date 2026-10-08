@@ -1,3 +1,4 @@
+// @ts-ignore — bun:test é fornecido pelo runner do Bun
 import { describe, expect, test } from "bun:test";
 import { motivosRegua, type CrmStage } from "./crm";
 

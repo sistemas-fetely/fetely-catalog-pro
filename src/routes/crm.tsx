@@ -95,7 +95,7 @@ function CrmPage() {
     const patch: Partial<CrmLead> = { stage_id: stageId };
     if (motivo) patch.motivo_perda = motivo;
     const { error } = await supabase.from("crm_leads").update(patch).eq("id", lead.id);
-    if (error) return toast.error(`Não foi possível mudar o estágio: ${error.message}`);
+    if (error) { toast.error(`Não foi possível mudar o estágio: ${error.message}`); return; }
     toast.success(`Movido para ${destino?.nome}`);
     await recarregar();
   }
