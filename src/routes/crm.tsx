@@ -1002,7 +1002,7 @@ function MapaAtuacaoTab({ ctx }: { ctx: Ctx }) {
       const { data, error } = await supabase
         .from("clientes")
         .select("id, razao_social, nome_fantasia, cidade")
-        .eq("uf", ufSel)
+        .eq("estado", ufSel)
         .order("nome_fantasia", { ascending: true });
       if (vivo) setClientesUf(error ? [] : ((data ?? []) as ClienteUf[]));
     })();

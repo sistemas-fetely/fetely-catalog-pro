@@ -13,12 +13,27 @@ export type MapaRep = {
   ufs: string[];
   nacional: boolean;
   linhas: string[];
-  order_pro_user_id: string | null;
+  orderProUserId: string | null;
 };
 
 export type MapaAtuacao = {
-  gerado_em: string;
+  geradoEm: string;
   representantes: MapaRep[];
+  ufPrioritaria: string | null;
+  ufsCandidatos: string[];
+};
+
+type MapaAtuacaoRaw = {
+  gerado_em: string;
+  representantes: Array<{
+    id: string;
+    nome: string;
+    whatsapp: string | null;
+    ufs: string[];
+    nacional: boolean;
+    linhas: string[];
+    order_pro_user_id: string | null;
+  }>;
   uf_prioritaria: string | null;
   ufs_candidatos: string[];
 };
@@ -66,7 +81,7 @@ export const carregarMapaAtuacao = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     await assertCrmAccess(supabase, userId);
     const res = await fetchConnect("/api/public/mapa-atuacao");
-    const json = (await res.json()) as MapaAtuacao;
+    const json = (await res.json()) as MapaAtuacaoRaw;
     return {
       geradoEm: json.gerado_em,
       representantes: (json.representantes ?? []).map((r) => ({
