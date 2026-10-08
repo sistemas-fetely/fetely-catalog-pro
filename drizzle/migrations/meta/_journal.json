@@ -43,6 +43,13 @@
       "when": 1791205508944,
       "tag": "0005_pre_selecoes_resultado",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791483620232,
+      "tag": "0006_crm_role_gestao_representantes",
+      "breakpoints": true
     }
   ]
 }
