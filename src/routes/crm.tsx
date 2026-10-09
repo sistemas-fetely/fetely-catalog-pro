@@ -666,7 +666,13 @@ function LeadDialog({ ctx, lead, repPadrao, onClose, onSalvo }: { ctx: Ctx; lead
     };
     const { error } = lead
       ? await supabase.from("crm_leads").update(payload).eq("id", lead.id)
-      : await supabase.from("crm_leads").insert(payload as typeof payload & { representante_id: string });
+      : await supabase.from("crm_leads").insert(payload as typeof payload & { representante_id: string }).select("id").single().then(async (r) => {
+          if (!r.error && r.data) {
+            const s = sugerirTarefa((ctx.stageMap.get(payload.stage_id)?.fase as Fase) ?? "0", { visita_em: null, amostra: false, cadastro_fornecedor: false, pago_em: null }, hojeISO());
+            await supabase.from("crm_tasks").insert({ lead_id: r.data.id, tipo: s.tipo, vence_em: s.vence_em, responsavel: s.responsavel, created_by: ctx.userId });
+          }
+          return r;
+        });
     setSalvando(false);
     if (error) return toast.error(`Não foi possível salvar: ${error.message}`);
     toast.success(lead ? "Lead atualizado" : "Lead criado");
