@@ -31,7 +31,7 @@ export interface LeadRegras {
   visita_em: string | null; catalogo_enviado_em: string | null; toque_d2_feito: boolean;
   valor_estimado: number | null; comissao_registrada: boolean; pago_em: string | null; forma_pagamento: string | null;
   motivo_nao_agora: string | null; retomar_em: string | null; ultimo_toque_em: string | null; stage_desde: string;
-  amostra: boolean; cadastro_fornecedor: boolean; cliente_id: string | null;
+  amostra: boolean; cadastro_fornecedor: boolean; cliente_id: string | null; sell_out_em: string | null;
 }
 
 export interface FaseInfo { fase: Fase; nome: string; repFaz: string; frase?: string; avanco?: string; prazo: number | null }
@@ -109,14 +109,15 @@ export function prioridadeDia(nivel: Nivel | null, l: LeadRegras, temp: Temperat
 
 /** Motivos do alerta vermelho. */
 export function alertasLead(fase: Fase | null, l: LeadRegras, tarefaVence: string | null, hoje: string): string[] {
-  if (!fase || fase === "X" || fase === "6") return tarefaVence && tarefaVence < hoje && fase === "6" ? ["tarefa vencida"] : [];
+  if (!fase || fase === "X") return [];
   const m: string[] = [];
   if (tarefaVence && tarefaVence < hoje) m.push("tarefa vencida");
+  if (fase === "6") return m;
   if (fase === "1") {
     if (l.visita_em && l.visita_em.slice(0, 10) < hoje) m.push("visita passou");
   } else {
     const p = FASES[fase].prazo;
-    if (p != null && dias(l.stage_desde, hoje) > p && !(fase === "2")) m.push(`${dias(l.stage_desde, hoje)}d na fase`);
+    if (p != null && dias(l.stage_desde, hoje) > p) m.push(`${dias(l.stage_desde, hoje)}d na fase`);
   }
   if (fase === "2" && !fichaCompleta(l) && dias(l.stage_desde, hoje) >= 1) m.push("visita sem ficha há +24h");
   return m;
