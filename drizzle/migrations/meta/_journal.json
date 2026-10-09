@@ -78,6 +78,13 @@
       "when": 1791511779237,
       "tag": "0010_crm_parte4_card_guiado_rodada",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791511816667,
+      "tag": "0011_crm_gondola_storage",
+      "breakpoints": true
     }
   ]
 }
