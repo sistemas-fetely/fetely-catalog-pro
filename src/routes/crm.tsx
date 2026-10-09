@@ -4,7 +4,7 @@ import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import type { Cliente } from "@/types/cliente";
 import { formatCNPJ, onlyDigits } from "@/lib/cnpj";
 import { toast } from "sonner";
-import { Plus, AlertTriangle, Trash2, MapPin, RefreshCw } from "lucide-react";
+import { Plus, AlertTriangle, Trash2, MapPin, RefreshCw, Repeat, ChevronRight } from "lucide-react";
 import {
   carregarMapaAtuacao, vincularRepresentanteMapa,
   type MapaAtuacao, type MapaRep,
@@ -27,18 +27,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import {
   carregarCrm, conflitosGestao, motivosRegua, hojeISO, diasEntre, fmtData,
-  carregarComercial, resumoComercial, sugerirNegociacao, COTACAO_ABERTA, STAGE_NEGOCIACAO, type CrmComercial,
-  GRUPOS, REGIOES, TIPOS_ATIVIDADE, STAGE_AGENDA, STAGE_APRESENTADO, STAGE_PERDIDO, STAGE_FECHADO,
+  carregarComercial, resumoComercial, COTACAO_ABERTA, type CrmComercial,
+  GRUPOS, REGIOES, TIPOS_ATIVIDADE, STAGE_AGENDA, STAGE_APRESENTADO, STAGE_PERDIDO,
   type CrmStage, type CrmLead, type CrmActivity, type CrmRep, type CrmHist, type CrmGrupo, type CrmRegiao, type CrmAtividadeTipo,
+  type CrmTask, type CrmRound,
 } from "@/lib/crm";
+import { FASES, TRILHA, SEG_ALIMENTAR, SEG_ESPECIALIZADO, fichaCompleta, sugerirTarefa, type Fase } from "@/lib/crmFases";
+import { type Ctx, BORDO, nomeRep, infoLead, faseDe, Selo, TempDot, brl } from "@/components/crm/shared";
+import { CardGuiado } from "@/components/crm/CardGuiado";
+import { Rodada, type PresetRodada } from "@/components/crm/Rodada";
+import { TarefasGestao } from "@/components/crm/Tarefas";
 
 export const Route = createFileRoute("/crm")({
   head: () => ({
     meta: [
       { title: "CRM de Representantes — Fetély B2B" },
-      { name: "description", content: "Funil, agenda e atividades dos representantes Fetély." },
+      { name: "description", content: "Funil, rodadas, tarefas e agenda dos representantes Fetély." },
       { property: "og:title", content: "CRM de Representantes — Fetély B2B" },
-      { property: "og:description", content: "Funil, agenda e atividades dos representantes Fetély." },
+      { property: "og:description", content: "Funil, rodadas, tarefas e agenda dos representantes Fetély." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -46,11 +52,9 @@ export const Route = createFileRoute("/crm")({
   component: CrmPage,
 });
 
-const BORDO = "#7B1523";
 const TODOS = "__todos";
 
-type Dados = { stages: CrmStage[]; leads: CrmLead[]; atividades: CrmActivity[]; representantes: CrmRep[]; comercial: CrmComercial };
-const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+type Dados = { stages: CrmStage[]; leads: CrmLead[]; atividades: CrmActivity[]; representantes: CrmRep[]; comercial: CrmComercial; tarefas: CrmTask[]; rodadas: CrmRound[] };
 
 function CrmPage() {
   const roles = useAuth((s) => s.roles) as string[];
@@ -65,13 +69,16 @@ function CrmPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [tab, setTab] = useState("geral");
   const [repFiltro, setRepFiltro] = useState<string>(TODOS);
-  const [leadAberto, setLeadAberto] = useState<CrmLead | "novo" | null>(null);
+  const [leadAberto, setLeadAberto] = useState<CrmLead | null>(null);
+  const [editar, setEditar] = useState<CrmLead | "novo" | null>(null);
+  const [vincular, setVincular] = useState<CrmLead | null>(null);
   const [ativAberta, setAtivAberta] = useState<CrmActivity | "nova" | null>(null);
   const [perdaPend, setPerdaPend] = useState<{ lead: CrmLead; stageId: string } | null>(null);
+  const [rodada, setRodada] = useState<{ preset: PresetRodada } | null>(null);
 
   const recarregar = useCallback(async () => {
     try {
-      const base = await carregarCrm();
+      const base = await carregarCrm(gestao);
       const comercial = await carregarComercial(base.leads.map((l) => l.cliente_id ?? ""));
       setDados({ ...base, comercial });
       if (gestao) setConflitos(await conflitosGestao());
@@ -93,27 +100,21 @@ function CrmPage() {
 
   const stageMap = new Map(dados.stages.map((s) => [s.id, s]));
   const repMap = new Map(dados.representantes.map((r) => [r.id, r]));
-  const filtrar = <T extends { representante_id: string }>(xs: T[]) =>
+  const filtrar = <T extends { representante_id: string | null }>(xs: T[]) =>
     gestao && repFiltro !== TODOS ? xs.filter((x) => x.representante_id === repFiltro) : xs;
 
   async function moverEstagio(lead: CrmLead, stageId: string, motivo?: string) {
     if (lead.stage_id === stageId) return;
     const destino = stageMap.get(stageId);
-    if (destino?.nome === STAGE_PERDIDO && !motivo) {
-      setPerdaPend({ lead, stageId });
-      return;
-    }
-    const patch: Partial<CrmLead> = { stage_id: stageId };
-    if (motivo) patch.motivo_perda = motivo;
-    const { error } = await supabase.from("crm_leads").update(patch).eq("id", lead.id);
-    if (error) { toast.error(`Não foi possível mudar o estágio: ${error.message}`); return; }
+    const { error } = await supabase.from("crm_leads").update({ stage_id: stageId, ...(motivo ? { motivo_perda: motivo } : {}) }).eq("id", lead.id);
+    if (error) { toast.error(`Não foi possível mudar a fase: ${error.message}`); return; }
     toast.success(`Movido para ${destino?.nome}`);
     await recarregar();
   }
 
   const ctx: Ctx = {
     ...dados, stageMap, repMap, gestao, conflitos, userId: user?.id ?? "",
-    abrirLead: (l) => setLeadAberto(l), abrirAtividade: (a) => setAtivAberta(a), moverEstagio,
+    abrirLead: (l) => setLeadAberto(l), abrirAtividade: (a) => setAtivAberta(a), moverEstagio, recarregar,
   };
 
   const seletorRep = gestao && (
@@ -125,22 +126,27 @@ function CrmPage() {
       </SelectContent>
     </Select>
   );
+  const leadVivo = leadAberto ? dados.leads.find((l) => l.id === leadAberto.id) ?? leadAberto : null;
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-display text-2xl text-text-primary">CRM de Representantes</h1>
         <div className="flex gap-2">
-          <Button size="sm" onClick={() => setLeadAberto("novo")}><Plus className="h-4 w-4" /> Lead</Button>
+          {gestao && <Button size="sm" onClick={() => setRodada({ preset: null })}><Repeat className="h-4 w-4" /> Iniciar rodada</Button>}
+          <Button size="sm" variant={gestao ? "outline" : "default"} onClick={() => setEditar("novo")}><Plus className="h-4 w-4" /> Lead</Button>
           <Button size="sm" variant="outline" onClick={() => setAtivAberta("nova")}><Plus className="h-4 w-4" /> Atividade</Button>
         </div>
       </div>
+
+      {gestao && <Lembretes ctx={ctx} onRodada={(p) => setRodada({ preset: p })} />}
 
       <Tabs value={tab} onValueChange={setTab}>
         <div className="overflow-x-auto -mx-3 px-3">
           <TabsList>
             <TabsTrigger value="geral">Visão geral</TabsTrigger>
             <TabsTrigger value="funil">Funil</TabsTrigger>
+            {gestao && <TabsTrigger value="tarefas">Tarefas</TabsTrigger>}
             <TabsTrigger value="rep">Por representante</TabsTrigger>
             <TabsTrigger value="agenda">Agenda</TabsTrigger>
             <TabsTrigger value="ativ">Atividades</TabsTrigger>
@@ -155,6 +161,7 @@ function CrmPage() {
           {seletorRep}
           <Funil ctx={ctx} leads={filtrar(dados.leads)} />
         </TabsContent>
+        {gestao && <TabsContent value="tarefas" className="space-y-3"><TarefasGestao ctx={ctx} /></TabsContent>}
         <TabsContent value="rep">
           <PorRepresentante ctx={ctx} repId={gestao ? (repFiltro === TODOS ? dados.representantes[0]?.id : repFiltro) : user?.id}
             seletor={gestao && (
@@ -179,10 +186,16 @@ function CrmPage() {
         </TabsContent>
       </Tabs>
 
-      {leadAberto && (
-        <LeadDialog key={leadAberto === "novo" ? "novo" : leadAberto.id} ctx={ctx} lead={leadAberto === "novo" ? null : (dados.leads.find((l) => l.id === leadAberto.id) ?? leadAberto)}
+      {leadVivo && !editar && !vincular && (
+        <CardGuiado key={leadVivo.id} ctx={ctx} lead={leadVivo} onClose={() => setLeadAberto(null)}
+          onEditar={() => setEditar(leadVivo)} onVincular={() => setVincular(leadVivo)}
+          comercial={leadVivo.cliente_id ? <AbaComercial ctx={ctx} clienteId={leadVivo.cliente_id} /> : null} />
+      )}
+      {vincular && <VincularClienteDialog ctx={ctx} lead={vincular} onClose={() => setVincular(null)} onSalvo={recarregar} />}
+      {editar && (
+        <LeadDialog key={editar === "novo" ? "novo" : editar.id} ctx={ctx} lead={editar === "novo" ? null : (dados.leads.find((l) => l.id === editar.id) ?? editar)}
           repPadrao={gestao ? (repFiltro !== TODOS ? repFiltro : dados.representantes[0]?.id ?? "") : user?.id ?? ""}
-          onClose={() => setLeadAberto(null)} onSalvo={recarregar} />
+          onClose={() => setEditar(null)} onSalvo={recarregar} />
       )}
       {ativAberta && (
         <AtividadeDialog ctx={ctx} atividade={ativAberta === "nova" ? null : ativAberta}
@@ -192,22 +205,11 @@ function CrmPage() {
         <MotivoPerdaDialog onCancel={() => setPerdaPend(null)}
           onConfirm={async (m) => { const p = perdaPend; setPerdaPend(null); await moverEstagio(p.lead, p.stageId, m); }} />
       )}
+      {rodada && <Rodada ctx={ctx} preset={rodada.preset} onClose={() => { setRodada(null); void recarregar(); }} />}
     </div>
   );
 }
 
-interface Ctx extends Dados {
-  stageMap: Map<string, CrmStage>;
-  repMap: Map<string, CrmRep>;
-  gestao: boolean;
-  conflitos: Set<string>;
-  userId: string;
-  abrirLead: (l: CrmLead) => void;
-  abrirAtividade: (a: CrmActivity) => void;
-  moverEstagio: (l: CrmLead, stageId: string, motivo?: string) => Promise<void>;
-}
-
-const nomeRep = (ctx: Ctx, id: string | null) => (id && ctx.repMap.get(id)?.nome) || "Gestão";
 const aberto = (ctx: Ctx, l: CrmLead) => !ctx.stageMap.get(l.stage_id)?.encerrado;
 
 function StageChip({ stage }: { stage?: CrmStage }) {
@@ -233,73 +235,119 @@ function Vazio({ texto, onCriar, rotulo }: { texto: string; onCriar?: () => void
   );
 }
 
-function Kpi({ label, valor, alerta, rotulo }: { label: string; valor: number; alerta?: boolean; rotulo?: string }) {
+function Kpi({ label, valor, alerta, rotulo, sub }: { label: string; valor: number; alerta?: boolean; rotulo?: string; sub?: string }) {
   return (
     <Card><CardContent className="p-4">
       <div className="text-xs text-text-secondary">{label}</div>
       <div className={cn("text-2xl font-display mt-1", alerta && valor > 0 ? "text-destructive" : "text-text-primary", rotulo && "text-lg")}>{rotulo ?? valor}</div>
+      {sub && <div className="text-[11px] text-text-secondary mt-0.5">{sub}</div>}
     </CardContent></Card>
   );
+}
+
+/* ---------------- LEMBRETES DA GESTÃO ---------------- */
+function Lembretes({ ctx, onRodada }: { ctx: Ctx; onRodada: (p: PresetRodada) => void }) {
+  const dow = new Date().getDay();
+  const amanha = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const vespera = ctx.leads.filter((l) => faseDe(ctx, l) === "1" && l.visita_em?.slice(0, 10) === amanha && !l.visita_confirmada);
+  const itens: React.ReactNode[] = [];
+  if (dow === 1) itens.push(<button key="seg" className="flex items-center gap-1 text-left" onClick={() => onRodada("segunda")}>Segunda: <b>Montar a rota com os reps</b> <ChevronRight className="h-4 w-4" /></button>);
+  if (dow === 5) itens.push(<button key="sex" className="flex items-center gap-1 text-left" onClick={() => onRodada("sexta")}>Sexta: <b>Fechar as devolutivas</b> <ChevronRight className="h-4 w-4" /></button>);
+  if (vespera.length) itens.push(<span key="v">Confirmar visitas de amanhã: {vespera.map((l) => <button key={l.id} className="underline mr-2" onClick={() => ctx.abrirLead(l)}>{l.nome_conta}</button>)}</span>);
+  if (!itens.length) return null;
+  return <div className="rounded-md border border-gold/50 bg-gold/5 px-3 py-2 text-sm text-text-primary flex flex-wrap gap-x-6 gap-y-1">{itens}</div>;
 }
 
 /* ---------------- 1. VISÃO GERAL ---------------- */
 function VisaoGeral({ ctx, onRep }: { ctx: Ctx; onRep: (id: string) => void }) {
   const hoje = hojeISO();
   const [agrupar, setAgrupar] = useState<"grupo" | "regiao">("grupo");
-  const abertos = ctx.leads.filter((l) => aberto(ctx, l));
-  const fora = abertos.filter((l) => motivosRegua(l, ctx.stageMap.get(l.stage_id), hoje).length > 0);
-  const reunioes7 = abertos.filter((l) => {
-    if (ctx.stageMap.get(l.stage_id)?.nome !== STAGE_AGENDA || !l.proxima_acao_data) return false;
-    const d = diasEntre(hoje, l.proxima_acao_data);
-    return d >= 0 && d <= 7;
+  // Visita sem ficha não conta nos indicadores até a ficha ser registrada.
+  const conta = (l: CrmLead) => !(faseDe(ctx, l) === "2" && !fichaCompleta(l));
+  const leads = ctx.leads.filter(conta);
+  const inf = new Map(ctx.leads.map((l) => [l.id, infoLead(ctx, l, hoje)]));
+  const desde7 = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+  const visitas = ctx.atividades.filter((a) => a.tipo === "Visita" && a.data >= desde7);
+  const visitasFicha = new Set(visitas.filter((a) => { const l = ctx.leads.find((x) => x.id === a.lead_id); return l && fichaCompleta(l); }).map((a) => a.lead_id)).size;
+  const f3 = leads.filter((l) => faseDe(ctx, l) === "3");
+  const f4 = leads.filter((l) => faseDe(ctx, l) === "4");
+  const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
+  const semVoltar = leads.filter((l) => {
+    if (!l.cliente_id) return false;
+    const r = resumoComercial(ctx.comercial, l.cliente_id);
+    return !!r.ultimoPedido && diasEntre(r.ultimoPedido.slice(0, 10), hoje) > 60;
   });
-  const fechadoId = ctx.stages.find((s) => s.nome === STAGE_FECHADO)?.id;
-  const lojas = (ls: CrmLead[]) => ls.reduce((a, l) => a + (l.numero_lojas ?? 0), 0);
+  const porFase = (f: Fase) => leads.filter((l) => faseDe(ctx, l) === f);
+  const max = Math.max(1, ...TRILHA.map((f) => porFase(f).length));
 
   const linhas = ctx.representantes.map((r) => {
     const meus = ctx.leads.filter((l) => l.representante_id === r.id);
     const meusAbertos = meus.filter((l) => aberto(ctx, l));
-    const prox = meusAbertos.filter((l) => l.proxima_acao_data).sort((a, b) => a.proxima_acao_data!.localeCompare(b.proxima_acao_data!))[0];
+    const ult = ctx.rodadas.filter((x) => x.representante_id === r.id || (!x.representante_id && x.lead_ids.some((id) => meus.some((m) => m.id === id))))
+      .map((x) => x.iniciada_em).sort().pop();
     return {
-      rep: r, contas: meus.length, lojas: lojas(meus), negociacao: meusAbertos.length,
-      fechados: meus.filter((l) => l.stage_id === fechadoId).length,
-      fora: meusAbertos.filter((l) => motivosRegua(l, ctx.stageMap.get(l.stage_id), hoje).length).length,
-      prox,
+      rep: r, contas: meus.length, abertas: meusAbertos.length,
+      fechados: meus.filter((l) => ["5", "6"].includes(faseDe(ctx, l) ?? "")).length,
+      alerta: meusAbertos.filter((l) => inf.get(l.id)!.alertas.length).length,
+      vencidas: ctx.tarefas.filter((t) => t.status === "Aberta" && t.representante_id === r.id && t.vence_em < hoje).length,
+      ultimaRodada: ult ?? null,
       valorPedidos: meus.reduce((a, l) => a + resumoComercial(ctx.comercial, l.cliente_id).totalPedidos, 0),
     };
   });
   const grupos = agrupar === "grupo" ? GRUPOS : REGIOES;
-
-  const proximas = abertos.filter((l) => l.proxima_acao || l.proxima_acao_data)
-    .sort((a, b) => (a.proxima_acao_data ?? "9999").localeCompare(b.proxima_acao_data ?? "9999"));
+  const classes = (["A", "B", "C"] as const).map((c) => ({ c, n: leads.filter((l) => aberto(ctx, l) && inf.get(l.id)!.classe === c).length }));
+  const seg = (lista: string[]) => lista.map((s) => ({ s, n: leads.filter((l) => l.segmento === s).length })).filter((x) => x.n);
+  const redes = ctx.gestao ? [...new Set(ctx.leads.map((l) => l.rede_grupo).filter(Boolean))] as string[] : [];
 
   return (
     <div className="space-y-6 pt-2">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {ctx.gestao && <Kpi label="Representantes com funil ativo" valor={new Set(abertos.map((l) => l.representante_id)).size} />}
-        {ctx.gestao && <Kpi label="Representantes com pedido fechado" valor={new Set(ctx.leads.filter((l) => l.stage_id === fechadoId).map((l) => l.representante_id)).size} />}
-        <Kpi label="Contas em negociação" valor={abertos.length} />
-        <Kpi label="Lojas nessas contas" valor={lojas(abertos)} />
-        <Kpi label="Reuniões nos próximos 7 dias" valor={reunioes7.length} />
-        <Kpi label="Contas fora da régua" valor={fora.length} alerta />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Kpi label="Visitas da semana" valor={visitas.length} sub={`${visitasFicha} viraram ficha`} />
+        <Kpi label="Devolutivas em 48h" valor={0} rotulo={pct(f3.filter((l) => l.toque_d2_feito).length, f3.length)} sub={`${f3.length} em Catálogo e condições`} />
+        <Kpi label="Oportunidades com valor no card" valor={0} rotulo={pct(f4.filter((l) => l.valor_estimado).length, f4.length)} sub={`${f4.length} em negociação`} />
+        <Kpi label="Compraram e não voltaram (60d+)" valor={semVoltar.length} alerta />
       </div>
 
       <Card><CardContent className="p-4 space-y-2">
         <div className="text-sm font-medium text-text-primary">Funil</div>
-        {ctx.stages.map((s) => {
-          const ls = ctx.leads.filter((l) => l.stage_id === s.id);
-          const max = Math.max(1, ...ctx.stages.map((x) => ctx.leads.filter((l) => l.stage_id === x.id).length));
+        {[...TRILHA, "X" as Fase].map((f) => {
+          const ls = porFase(f);
+          const s = ctx.stages.find((x) => x.fase === f);
           return (
-            <div key={s.id} className="flex items-center gap-2 text-xs">
-              <div className="w-32 sm:w-40 shrink-0 text-text-secondary truncate">{s.nome}</div>
+            <div key={f} className="flex items-center gap-2 text-xs">
+              <div className="w-36 sm:w-44 shrink-0 text-text-secondary truncate">{f} · {FASES[f].nome}</div>
               <div className="flex-1 h-5 bg-muted rounded">
-                <div className="h-5 rounded" style={{ width: `${(ls.length / max) * 100}%`, background: s.cor, minWidth: ls.length ? 6 : 0 }} />
+                <div className="h-5 rounded" style={{ width: `${(ls.length / max) * 100}%`, background: s?.cor, minWidth: ls.length ? 6 : 0 }} />
               </div>
-              <div className="w-28 text-right text-text-primary whitespace-nowrap">{ls.length} contas · {lojas(ls)} lojas</div>
+              <div className="w-20 text-right text-text-primary whitespace-nowrap">{ls.length} contas</div>
             </div>
           );
         })}
       </CardContent></Card>
+
+      <div className="grid md:grid-cols-2 gap-3">
+        <Card><CardContent className="p-4 space-y-2">
+          <div className="text-sm font-medium text-text-primary">Por classe (abertas)</div>
+          <div className="flex gap-3">{classes.map((x) => <div key={x.c} className="flex-1 rounded-md border border-border p-2 text-center"><div className="text-xs text-text-secondary">Classe {x.c}</div><div className="text-xl font-display">{x.n}</div></div>)}</div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 space-y-1 text-xs">
+          <div className="text-sm font-medium text-text-primary">Por segmento</div>
+          <div className="text-gold">Varejo alimentar</div>
+          {seg(SEG_ALIMENTAR).map((x) => <div key={x.s} className="flex justify-between"><span>{x.s}</span><span>{x.n}</span></div>)}
+          <div className="text-gold pt-1">Varejo especializado</div>
+          {seg([...SEG_ESPECIALIZADO, "Outro"]).map((x) => <div key={x.s} className="flex justify-between"><span>{x.s}</span><span>{x.n}</span></div>)}
+          <div className="flex justify-between text-text-secondary pt-1"><span>Sem segmento</span><span>{leads.filter((l) => !l.segmento).length}</span></div>
+        </CardContent></Card>
+      </div>
+
+      {ctx.gestao && redes.length > 0 && (
+        <Card><CardContent className="p-4 space-y-2">
+          <div className="text-sm font-medium text-text-primary">Redes (uma negociação só)</div>
+          {redes.map((r) => (
+            <div key={r} className="text-xs"><b>{r}:</b> {ctx.leads.filter((l) => l.rede_grupo === r).map((l) => <button key={l.id} className="underline mr-2" onClick={() => ctx.abrirLead(l)}>{l.nome_conta} ({nomeRep(ctx, l.representante_id)})</button>)}</div>
+          ))}
+        </CardContent></Card>
+      )}
 
       {ctx.gestao ? (
         <Card><CardContent className="p-4 space-y-3">
@@ -311,9 +359,9 @@ function VisaoGeral({ ctx, onRep }: { ctx: Ctx; onRep: (id: string) => void }) {
             </Select>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[720px]">
+            <table className="w-full text-sm min-w-[760px]">
               <thead><tr className="text-left text-xs text-text-secondary border-b border-border">
-                <th className="py-2">Representante</th><th>Contas</th><th>Lojas</th><th>Em negociação</th><th>Pedidos fechados</th><th>Fora da régua</th><th>Valor em pedidos</th><th>Próxima ação</th>
+                <th className="py-2">Representante</th><th>Contas</th><th>Abertas</th><th>Pedido/pós-venda</th><th>Com alerta</th><th>Tarefas vencidas</th><th>Valor em pedidos</th><th>Última rodada</th>
               </tr></thead>
               <tbody>
                 {grupos.map((g) => {
@@ -323,10 +371,11 @@ function VisaoGeral({ ctx, onRep }: { ctx: Ctx; onRep: (id: string) => void }) {
                     <tr key={g}><td colSpan={8} className="pt-3 pb-1 text-xs uppercase tracking-wide text-gold">{g}</td></tr>,
                     ...ls.map((x) => (
                       <tr key={x.rep.id} className="border-b border-border hover:bg-surface-hover cursor-pointer" onClick={() => onRep(x.rep.id)}>
-                        <td className="py-2 text-text-primary">{x.rep.nome}</td><td>{x.contas}</td><td>{x.lojas}</td><td>{x.negociacao}</td><td>{x.fechados}</td>
-                        <td className={x.fora ? "text-destructive font-medium" : ""}>{x.fora}</td>
+                        <td className="py-2 text-text-primary">{x.rep.nome}</td><td>{x.contas}</td><td>{x.abertas}</td><td>{x.fechados}</td>
+                        <td className={x.alerta ? "text-destructive font-medium" : ""}>{x.alerta}</td>
+                        <td className={x.vencidas ? "text-destructive font-medium" : ""}>{x.vencidas}</td>
                         <td className="whitespace-nowrap">{brl(x.valorPedidos)}</td>
-                        <td className="text-xs">{x.prox ? `${fmtData(x.prox.proxima_acao_data)} · ${x.prox.proxima_acao ?? x.prox.nome_conta}` : "—"}</td>
+                        <td className="text-xs">{x.ultimaRodada ? new Date(x.ultimaRodada).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "—"}</td>
                       </tr>
                     )),
                   ];
@@ -337,77 +386,79 @@ function VisaoGeral({ ctx, onRep }: { ctx: Ctx; onRep: (id: string) => void }) {
         </CardContent></Card>
       ) : (
         <Card><CardContent className="p-4 space-y-2">
-          <div className="text-sm font-medium text-text-primary">Minhas próximas ações</div>
-          {proximas.length === 0 ? <Vazio texto="Nenhuma próxima ação registrada." /> : proximas.map((l) => (
-            <button key={l.id} onClick={() => ctx.abrirLead(l)} className="w-full text-left flex items-center justify-between gap-2 py-2 border-b border-border text-sm">
-              <span><span className="text-text-primary">{l.nome_conta}</span> <span className="text-text-secondary">— {l.proxima_acao ?? "—"}</span></span>
-              <span className="text-xs whitespace-nowrap">{fmtData(l.proxima_acao_data)}</span>
-            </button>
-          ))}
+          <div className="text-sm font-medium text-text-primary">Minhas próximas atividades</div>
+          {(() => {
+            const minhas = ctx.tarefas.filter((t) => t.status === "Aberta").sort((a, b) => a.vence_em.localeCompare(b.vence_em));
+            if (!minhas.length) return <Vazio texto="Nenhuma próxima atividade." />;
+            return minhas.map((t) => {
+              const l = ctx.leads.find((x) => x.id === t.lead_id);
+              if (!l) return null;
+              return (
+                <button key={t.id} onClick={() => ctx.abrirLead(l)} className="w-full text-left flex items-center justify-between gap-2 py-2 border-b border-border text-sm">
+                  <span><span className="text-text-primary">{l.nome_conta}</span> <span className="text-text-secondary">— {t.tipo} ({t.responsavel})</span></span>
+                  <span className={cn("text-xs whitespace-nowrap", t.vence_em < hoje && "text-destructive")}>{fmtData(t.vence_em)}</span>
+                </button>
+              );
+            });
+          })()}
         </CardContent></Card>
       )}
     </div>
   );
 }
 
-/* ---------------- 2. FUNIL ---------------- */
+/* ---------------- 2. FUNIL (kanban das 7 fases) ---------------- */
 function Funil({ ctx, leads }: { ctx: Ctx; leads: CrmLead[] }) {
   const hoje = hojeISO();
-  const [sobre, setSobre] = useState<string | null>(null);
+  const [verX, setVerX] = useState(false);
   if (!ctx.leads.length) return <Vazio texto="Nenhum lead ainda." />;
+  const xs = leads.filter((l) => faseDe(ctx, l) === "X");
+  const card = (l: CrmLead) => {
+    const i = infoLead(ctx, l, hoje);
+    return (
+      <button type="button" key={l.id} onClick={() => ctx.abrirLead(l)}
+        className={cn("w-full text-left rounded-md bg-background p-2.5 text-xs space-y-1 active:opacity-70", i.alertas.length ? "border-destructive" : "border-border")}
+        style={{ borderColor: l.tier_a ? BORDO : undefined, borderWidth: l.tier_a || i.alertas.length ? 2 : 1, borderStyle: "solid" }}>
+        <div className="flex items-start gap-1">
+          <span className="text-sm font-medium text-text-primary flex-1">{l.nome_conta}</span>
+          <Selo tom="gold">{i.classe}</Selo>
+        </div>
+        <div className="text-text-secondary">{[l.segmento, l.numero_lojas == null ? "lojas?" : l.numero_lojas > 0 ? `${l.numero_lojas} ${l.numero_lojas === 1 ? "loja" : "lojas"}` : null].filter(Boolean).join(" · ") || "lojas?"}</div>
+        <div className={cn("text-text-primary", i.tarefa && i.tarefa.vence_em < hoje && "text-destructive")}>{i.tarefa ? `${i.tarefa.tipo} · ${fmtData(i.tarefa.vence_em)}` : "sem próxima atividade"}</div>
+        {i.alertas.length > 0 && <div className="text-destructive font-medium">{i.alertas.join(", ")}</div>}
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <TempDot t={i.temp} />
+          {i.prio && <Selo tom="gold">{i.prio}</Selo>}
+          {l.valor_estimado ? <span className="text-text-primary">{brl(l.valor_estimado)}</span> : null}
+          {ctx.gestao && ctx.conflitos.has(l.id) && <Selo tom="alerta">Conflito</Selo>}
+          {ctx.gestao && <span className="text-text-secondary ml-auto">{nomeRep(ctx, l.representante_id)}</span>}
+        </div>
+      </button>
+    );
+  };
   return (
     <div className="overflow-x-auto pb-2 -mx-3 px-3">
       <div className="flex gap-3 min-w-max">
-        {ctx.stages.map((s) => {
-          const ls = leads.filter((l) => l.stage_id === s.id);
+        {TRILHA.map((f) => {
+          const s = ctx.stages.find((x) => x.fase === f);
+          const ls = leads.filter((l) => faseDe(ctx, l) === f);
           return (
-            <div key={s.id}
-              onDragOver={(e) => { e.preventDefault(); setSobre(s.id); }}
-              onDragLeave={() => setSobre(null)}
-              onDrop={(e) => {
-                e.preventDefault(); setSobre(null);
-                const lead = ctx.leads.find((l) => l.id === e.dataTransfer.getData("text/plain"));
-                if (lead) void ctx.moverEstagio(lead, s.id);
-              }}
-              className={cn("w-64 shrink-0 rounded-lg border border-border bg-surface flex flex-col", sobre === s.id && "ring-2 ring-gold")}>
-              <div className="px-3 py-2 border-b border-border flex items-center gap-2" style={{ borderTop: `4px solid ${s.cor}` }}>
-                <span className="text-sm font-medium text-text-primary flex-1">{s.nome}</span>
+            <div key={f} className="w-64 shrink-0 rounded-lg border border-border bg-surface flex flex-col">
+              <div className="px-3 py-2 border-b border-border flex items-center gap-2" style={{ borderTop: `4px solid ${s?.cor}` }}>
+                <span className="text-sm font-medium text-text-primary flex-1">{f} · {FASES[f].nome}</span>
                 <span className="text-xs text-text-secondary">{ls.length}</span>
               </div>
-              <div className="p-2 space-y-2 flex-1 min-h-24">
-                {ls.map((l) => {
-                  const m = motivosRegua(l, s, hoje);
-                  const rc = resumoComercial(ctx.comercial, l.cliente_id);
-                  const sugerir = sugerirNegociacao(s, ctx.stages, rc.cotacoesAbertas > 0);
-                  const neg = ctx.stages.find((x) => x.nome === STAGE_NEGOCIACAO);
-                  return (
-                    <div key={l.id} draggable onDragStart={(e) => e.dataTransfer.setData("text/plain", l.id)}
-                      onClick={() => ctx.abrirLead(l)}
-                      className="rounded-md border bg-background p-2.5 text-xs space-y-1 cursor-pointer active:opacity-70"
-                      style={{ borderColor: l.tier_a ? BORDO : undefined, borderWidth: l.tier_a ? 2 : 1 }}>
-                      <div className="flex items-start gap-1 flex-wrap">
-                        <span className="text-sm font-medium text-text-primary flex-1">{l.nome_conta}</span>
-                        {l.tier_a && <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold border" style={{ borderColor: BORDO, color: BORDO }}>Tier A</span>}
-                        {l.cliente_id && <span className="rounded px-1.5 py-0.5 text-[10px] font-medium border border-border text-text-secondary">Cliente</span>}
-                        {rc.cotacoesAbertas > 0 && <span className="rounded px-1.5 py-0.5 text-[10px] font-medium border border-gold/50 text-gold">Cotação aberta</span>}
-                        {ctx.gestao && ctx.conflitos.has(l.id) && <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-destructive/15 text-destructive">Conflito</span>}
-                      </div>
-                      {ctx.gestao && <div className="text-text-secondary">{nomeRep(ctx, l.representante_id)}</div>}
-                      <div className="text-text-secondary">{l.numero_lojas ?? 0} lojas</div>
-                      {(l.proxima_acao || l.proxima_acao_data) && <div className="text-text-primary">{fmtData(l.proxima_acao_data)} · {l.proxima_acao ?? ""}</div>}
-                      {m.length > 0 && <div className="text-destructive font-medium">{m.join(", ")}</div>}
-                      {sugerir && neg && (
-                        <button type="button" className="text-gold underline text-left"
-                          onClick={(e) => { e.stopPropagation(); void ctx.moverEstagio(l, neg.id); }}>Mover para Em negociação?</button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              {s.prazo_max_dias != null && <div className="px-3 py-1.5 border-t border-border text-[11px] text-text-secondary">Régua: até {s.prazo_max_dias} dias</div>}
+              <div className="p-2 space-y-2 flex-1 min-h-24">{ls.map(card)}</div>
+              {FASES[f].prazo != null && <div className="px-3 py-1.5 border-t border-border text-[11px] text-text-secondary">Régua: até {FASES[f].prazo} {FASES[f].prazo === 1 ? "dia" : "dias"}</div>}
             </div>
           );
         })}
+        <div className={cn("shrink-0 rounded-lg border border-border bg-surface flex flex-col", verX ? "w-64" : "w-14")}>
+          <button type="button" onClick={() => setVerX(!verX)} className="px-2 py-2 border-b border-border text-sm font-medium text-text-primary text-left">
+            {verX ? `X · Não vai agora (${xs.length})` : <span className="block text-center">X<br /><span className="text-xs text-text-secondary">{xs.length}</span></span>}
+          </button>
+          {verX && <div className="p-2 space-y-2">{xs.map(card)}</div>}
+        </div>
       </div>
     </div>
   );
