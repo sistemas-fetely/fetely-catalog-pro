@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtData, hojeISO, resumoComercial, type CrmLead, type CrmHist } from "@/lib/crm";
@@ -201,4 +201,3 @@ function Historico({ ctx, lead }: { ctx: Ctx; lead: CrmLead }) {
   );
 }
 
-export { Input as _InputUnused, Chip as _ChipUnused };
