@@ -71,6 +71,13 @@
       "when": 1791487156405,
       "tag": "0009_crm_parte3_vinculo_comercial",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791511779237,
+      "tag": "0010_crm_parte4_card_guiado_rodada",
+      "breakpoints": true
     }
   ]
 }
