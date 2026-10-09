@@ -117,7 +117,7 @@ export function alertasLead(fase: Fase | null, l: LeadRegras, tarefaVence: strin
     if (l.visita_em && l.visita_em.slice(0, 10) < hoje) m.push("visita passou");
   } else {
     const p = FASES[fase].prazo;
-    if (p != null && dias(l.stage_desde, hoje) > p) m.push(`${dias(l.stage_desde, hoje)}d na fase`);
+    if (p != null && dias(l.stage_desde, hoje) > p && (fase !== "2" || fichaCompleta(l))) m.push(`${dias(l.stage_desde, hoje)}d na fase`);
   }
   if (fase === "2" && !fichaCompleta(l) && dias(l.stage_desde, hoje) >= 1) m.push("visita sem ficha há +24h");
   return m;

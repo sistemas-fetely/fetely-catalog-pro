@@ -1,6 +1,7 @@
 // CRM de representantes — tipos, régua (calculada na tela) e acesso a dados.
 // O RLS da Parte 1 decide o que chega: aqui nada é filtrado só no front.
 import { supabase } from "@/integrations/supabase/client";
+import type { Classe, EmQuePe, Fase, MotivoNaoAgora, Nivel, Segmento, TaskResp, TaskTipo } from "./crmFases";
 
 export type CrmGrupo = "Produtivo" | "Ativação" | "Ultimato" | "Trilha separada";
 export type CrmRegiao = "Sul" | "Sudeste" | "Centro-Oeste" | "Nordeste" | "Norte" | "A definir";
@@ -15,12 +16,28 @@ export const STAGE_APRESENTADO = "Apresentado";
 export const STAGE_PERDIDO = "Perdido";
 export const STAGE_FECHADO = "Pedido fechado";
 
-export interface CrmStage { id: string; nome: string; ordem: number; prazo_max_dias: number | null; encerrado: boolean; cor: string }
+export interface CrmStage { id: string; nome: string; ordem: number; prazo_max_dias: number | null; encerrado: boolean; cor: string; fase?: Fase | null; ativo?: boolean }
 export interface CrmLead {
   id: string; representante_id: string; nome_conta: string; cnpj: string | null; cidade: string | null; uf: string | null;
   numero_lojas: number | null; tier_a: boolean; stage_id: string; stage_desde: string; ultima_acao: string | null;
   proxima_acao: string | null; proxima_acao_data: string | null; motivo_perda: string | null; created_by: string | null; cliente_id: string | null;
+  // Parte 4
+  visita_em: string | null; visita_confirmada: boolean; segmento: Segmento | null; categorias: string[]; faturamento_esperado_mes: number | null;
+  em_que_pe_ficou: EmQuePe | null; rede_grupo: string | null; classe: Classe | null; nivel: Nivel | null; catalogo_enviado_em: string | null;
+  toque_d2_feito: boolean; toque_d5_feito: boolean; valor_estimado: number | null; amostra: boolean; cadastro_fornecedor: boolean; comite: boolean;
+  comissao_registrada: boolean; pago_em: string | null; forma_pagamento: string | null; foto_gondola: string | null; sell_out_em: string | null;
+  motivo_nao_agora: MotivoNaoAgora | null; retomar_em: string | null; descobertas: string | null; ultimo_toque_em: string | null;
 }
+export interface CrmTask {
+  id: string; lead_id: string; representante_id: string | null; tipo: TaskTipo; descricao: string | null; vence_em: string;
+  responsavel: TaskResp; status: "Aberta" | "Feita" | "Cancelada"; feita_em: string | null; created_by: string | null; created_at: string;
+}
+export interface CrmRound {
+  id: string; representante_id: string | null; feita_por: string | null; iniciada_em: string; concluida_em: string | null;
+  total_leads: number; atualizados: number; avancos: number; sem_novidade: number; encerrados: number;
+  lead_ids: string[]; salvos: string[]; pulados: string[]; filtros: Record<string, unknown>; detalhes: RoundDetalhe[];
+}
+export interface RoundDetalhe { lead_id: string; loja: string; rep_id: string; acao: "avanco" | "sem_novidade" | "encerrado" | "atualizado"; de?: string; para?: string; motivo?: string; descobertas?: string[] }
 export interface CrmActivity {
   id: string; lead_id: string; representante_id: string; data: string; tipo: CrmAtividadeTipo;
   resultado: string | null; proximo_passo: string | null; created_by: string | null; created_at: string;
@@ -58,15 +75,18 @@ export function motivosRegua(lead: Pick<CrmLead, "proxima_acao_data" | "stage_de
   return m;
 }
 
-export async function carregarCrm() {
-  const [st, ld, at, reps, sets] = await Promise.all([
-    supabase.from("crm_stages").select("*").order("ordem"),
+export async function carregarCrm(gestao = false) {
+  await supabase.rpc("crm_processar_retomadas"); // "Não vai agora" com data vencida volta para "A agendar"
+  const [st, ld, at, reps, sets, tk, rd] = await Promise.all([
+    supabase.from("crm_stages").select("*").eq("ativo", true).order("ordem"),
     supabase.from("crm_leads").select("*").order("nome_conta"),
     supabase.from("crm_activities").select("*").order("data", { ascending: false }).order("created_at", { ascending: false }),
     supabase.rpc("crm_representantes_lista"),
     supabase.from("crm_rep_settings").select("*"),
+    supabase.from("crm_tasks").select("*").order("vence_em"),
+    gestao ? supabase.from("crm_rounds").select("*").order("iniciada_em", { ascending: false }).limit(200) : Promise.resolve({ data: [], error: null }),
   ]);
-  const err = st.error || ld.error || at.error || reps.error || sets.error;
+  const err = st.error || ld.error || at.error || reps.error || sets.error || tk.error || rd.error;
   if (err) throw err;
   const setMap = new Map((sets.data ?? []).map((s) => [s.representante_id, s]));
   const representantes: CrmRep[] = (reps.data ?? []).map((r) => {
@@ -78,6 +98,8 @@ export async function carregarCrm() {
     leads: (ld.data ?? []) as CrmLead[],
     atividades: (at.data ?? []) as CrmActivity[],
     representantes,
+    tarefas: (tk.data ?? []) as CrmTask[],
+    rodadas: (rd.data ?? []) as unknown as CrmRound[],
   };
 }
 
