@@ -647,6 +647,7 @@ export type Database = {
           proximo_passo: string | null
           representante_id: string
           resultado: string | null
+          round_id: string | null
           tipo: Database["public"]["Enums"]["crm_atividade_tipo"]
         }
         Insert: {
@@ -658,6 +659,7 @@ export type Database = {
           proximo_passo?: string | null
           representante_id: string
           resultado?: string | null
+          round_id?: string | null
           tipo: Database["public"]["Enums"]["crm_atividade_tipo"]
         }
         Update: {
@@ -669,6 +671,7 @@ export type Database = {
           proximo_passo?: string | null
           representante_id?: string
           resultado?: string | null
+          round_id?: string | null
           tipo?: Database["public"]["Enums"]["crm_atividade_tipo"]
         }
         Relationships: [
@@ -684,6 +687,13 @@ export type Database = {
             columns: ["representante_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "crm_rounds"
             referencedColumns: ["id"]
           },
         ]
@@ -755,64 +765,145 @@ export type Database = {
       }
       crm_leads: {
         Row: {
+          amostra: boolean
+          cadastro_fornecedor: boolean
+          catalogo_enviado_em: string | null
+          categorias: string[]
           cidade: string | null
+          classe: Database["public"]["Enums"]["crm_classe"] | null
           cliente_id: string | null
           cnpj: string | null
+          comissao_registrada: boolean
+          comite: boolean
           created_at: string
           created_by: string | null
+          descobertas: string | null
+          em_que_pe_ficou: Database["public"]["Enums"]["crm_em_que_pe"] | null
+          faturamento_esperado_mes: number | null
+          forma_pagamento: string | null
+          foto_gondola: string | null
           id: string
+          motivo_nao_agora:
+            | Database["public"]["Enums"]["crm_motivo_nao_agora"]
+            | null
           motivo_perda: string | null
+          nivel: Database["public"]["Enums"]["crm_nivel"] | null
           nome_conta: string
           numero_lojas: number | null
+          pago_em: string | null
           proxima_acao: string | null
           proxima_acao_data: string | null
+          rede_grupo: string | null
           representante_id: string
+          retomar_em: string | null
+          segmento: Database["public"]["Enums"]["crm_segmento"] | null
+          sell_out_em: string | null
           stage_desde: string
           stage_id: string
           tier_a: boolean
+          toque_d2_feito: boolean
+          toque_d5_feito: boolean
           uf: string | null
           ultima_acao: string | null
+          ultimo_toque_em: string | null
           updated_at: string
+          valor_estimado: number | null
+          visita_confirmada: boolean
+          visita_em: string | null
         }
         Insert: {
+          amostra?: boolean
+          cadastro_fornecedor?: boolean
+          catalogo_enviado_em?: string | null
+          categorias?: string[]
           cidade?: string | null
+          classe?: Database["public"]["Enums"]["crm_classe"] | null
           cliente_id?: string | null
           cnpj?: string | null
+          comissao_registrada?: boolean
+          comite?: boolean
           created_at?: string
           created_by?: string | null
+          descobertas?: string | null
+          em_que_pe_ficou?: Database["public"]["Enums"]["crm_em_que_pe"] | null
+          faturamento_esperado_mes?: number | null
+          forma_pagamento?: string | null
+          foto_gondola?: string | null
           id?: string
+          motivo_nao_agora?:
+            | Database["public"]["Enums"]["crm_motivo_nao_agora"]
+            | null
           motivo_perda?: string | null
+          nivel?: Database["public"]["Enums"]["crm_nivel"] | null
           nome_conta: string
           numero_lojas?: number | null
+          pago_em?: string | null
           proxima_acao?: string | null
           proxima_acao_data?: string | null
+          rede_grupo?: string | null
           representante_id: string
+          retomar_em?: string | null
+          segmento?: Database["public"]["Enums"]["crm_segmento"] | null
+          sell_out_em?: string | null
           stage_desde?: string
           stage_id: string
           tier_a?: boolean
+          toque_d2_feito?: boolean
+          toque_d5_feito?: boolean
           uf?: string | null
           ultima_acao?: string | null
+          ultimo_toque_em?: string | null
           updated_at?: string
+          valor_estimado?: number | null
+          visita_confirmada?: boolean
+          visita_em?: string | null
         }
         Update: {
+          amostra?: boolean
+          cadastro_fornecedor?: boolean
+          catalogo_enviado_em?: string | null
+          categorias?: string[]
           cidade?: string | null
+          classe?: Database["public"]["Enums"]["crm_classe"] | null
           cliente_id?: string | null
           cnpj?: string | null
+          comissao_registrada?: boolean
+          comite?: boolean
           created_at?: string
           created_by?: string | null
+          descobertas?: string | null
+          em_que_pe_ficou?: Database["public"]["Enums"]["crm_em_que_pe"] | null
+          faturamento_esperado_mes?: number | null
+          forma_pagamento?: string | null
+          foto_gondola?: string | null
           id?: string
+          motivo_nao_agora?:
+            | Database["public"]["Enums"]["crm_motivo_nao_agora"]
+            | null
           motivo_perda?: string | null
+          nivel?: Database["public"]["Enums"]["crm_nivel"] | null
           nome_conta?: string
           numero_lojas?: number | null
+          pago_em?: string | null
           proxima_acao?: string | null
           proxima_acao_data?: string | null
+          rede_grupo?: string | null
           representante_id?: string
+          retomar_em?: string | null
+          segmento?: Database["public"]["Enums"]["crm_segmento"] | null
+          sell_out_em?: string | null
           stage_desde?: string
           stage_id?: string
           tier_a?: boolean
+          toque_d2_feito?: boolean
+          toque_d5_feito?: boolean
           uf?: string | null
           ultima_acao?: string | null
+          ultimo_toque_em?: string | null
           updated_at?: string
+          valor_estimado?: number | null
+          visita_confirmada?: boolean
+          visita_em?: string | null
         }
         Relationships: [
           {
@@ -862,6 +953,68 @@ export type Database = {
             foreignKeyName: "crm_rep_settings_representante_id_fkey"
             columns: ["representante_id"]
             isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_rounds: {
+        Row: {
+          atualizados: number
+          avancos: number
+          concluida_em: string | null
+          detalhes: Json
+          encerrados: number
+          feita_por: string | null
+          filtros: Json
+          id: string
+          iniciada_em: string
+          lead_ids: string[]
+          pulados: string[]
+          representante_id: string | null
+          salvos: string[]
+          sem_novidade: number
+          total_leads: number
+        }
+        Insert: {
+          atualizados?: number
+          avancos?: number
+          concluida_em?: string | null
+          detalhes?: Json
+          encerrados?: number
+          feita_por?: string | null
+          filtros?: Json
+          id?: string
+          iniciada_em?: string
+          lead_ids?: string[]
+          pulados?: string[]
+          representante_id?: string | null
+          salvos?: string[]
+          sem_novidade?: number
+          total_leads?: number
+        }
+        Update: {
+          atualizados?: number
+          avancos?: number
+          concluida_em?: string | null
+          detalhes?: Json
+          encerrados?: number
+          feita_por?: string | null
+          filtros?: Json
+          id?: string
+          iniciada_em?: string
+          lead_ids?: string[]
+          pulados?: string[]
+          representante_id?: string | null
+          salvos?: string[]
+          sem_novidade?: number
+          total_leads?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_rounds_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -941,30 +1094,93 @@ export type Database = {
       }
       crm_stages: {
         Row: {
+          ativo: boolean
           cor: string
           encerrado: boolean
+          fase: string | null
           id: string
           nome: string
           ordem: number
           prazo_max_dias: number | null
         }
         Insert: {
+          ativo?: boolean
           cor: string
           encerrado?: boolean
+          fase?: string | null
           id?: string
           nome: string
           ordem: number
           prazo_max_dias?: number | null
         }
         Update: {
+          ativo?: boolean
           cor?: string
           encerrado?: boolean
+          fase?: string | null
           id?: string
           nome?: string
           ordem?: number
           prazo_max_dias?: number | null
         }
         Relationships: []
+      }
+      crm_tasks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          feita_em: string | null
+          id: string
+          lead_id: string
+          representante_id: string | null
+          responsavel: Database["public"]["Enums"]["crm_task_resp"]
+          status: Database["public"]["Enums"]["crm_task_status"]
+          tipo: Database["public"]["Enums"]["crm_task_tipo"]
+          vence_em: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          feita_em?: string | null
+          id?: string
+          lead_id: string
+          representante_id?: string | null
+          responsavel?: Database["public"]["Enums"]["crm_task_resp"]
+          status?: Database["public"]["Enums"]["crm_task_status"]
+          tipo: Database["public"]["Enums"]["crm_task_tipo"]
+          vence_em: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          feita_em?: string | null
+          id?: string
+          lead_id?: string
+          representante_id?: string | null
+          responsavel?: Database["public"]["Enums"]["crm_task_resp"]
+          status?: Database["public"]["Enums"]["crm_task_status"]
+          tipo?: Database["public"]["Enums"]["crm_task_tipo"]
+          vence_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_tasks_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       evento_catalogo: {
         Row: {
@@ -3662,8 +3878,13 @@ export type Database = {
           razao_social: string
         }[]
       }
+      crm_calc_classe: {
+        Args: { p_cnpj: string; p_fat: number; p_lojas: number }
+        Returns: Database["public"]["Enums"]["crm_classe"]
+      }
       crm_is_gestao: { Args: { _uid: string }; Returns: boolean }
       crm_norm_nome: { Args: { t: string }; Returns: string }
+      crm_processar_retomadas: { Args: never; Returns: number }
       crm_reportar_conflito_cnpj: {
         Args: { p_cnpj: string; p_lead_id: string }
         Returns: boolean
@@ -3820,6 +4041,22 @@ export type Database = {
         | "Visita"
         | "Ligação"
         | "E-mail ou WhatsApp"
+      crm_classe: "A" | "B" | "C"
+      crm_em_que_pe:
+        | "Pediu catálogo"
+        | "Pediu preço"
+        | "Quer amostra"
+        | "Vai levar ao comitê"
+        | "Só olhou"
+      crm_motivo_nao_agora:
+        | "Preço"
+        | "Prazo"
+        | "Sem retorno"
+        | "Não é perfil"
+        | "Já tem fornecedor"
+        | "Migrado"
+        | "Outro"
+      crm_nivel: "Lead" | "MQL" | "SQL" | "CLIENTE" | "NUTRIÇÃO"
       crm_regiao:
         | "Sul"
         | "Sudeste"
@@ -3828,6 +4065,30 @@ export type Database = {
         | "Norte"
         | "A definir"
       crm_rep_grupo: "Produtivo" | "Ativação" | "Ultimato" | "Trilha separada"
+      crm_segmento:
+        | "Supermercado"
+        | "Hortifruti"
+        | "Empório"
+        | "Padaria e confeitaria"
+        | "Loja de departamento"
+        | "Festas"
+        | "Casa & decoração"
+        | "Papelaria e presentes"
+        | "Buffet"
+        | "Decoradora"
+        | "Outro"
+      crm_task_resp: "Representante" | "Gestão"
+      crm_task_status: "Aberta" | "Feita" | "Cancelada"
+      crm_task_tipo:
+        | "Ligar"
+        | "Visitar"
+        | "Enviar catálogo"
+        | "Enviar amostra"
+        | "Cobrar devolutiva"
+        | "Cobrar cadastro"
+        | "Cobrar pagamento"
+        | "Ver gôndola"
+        | "Outro"
       lead_frequencia:
         | "pontual"
         | "mensal"
@@ -4040,6 +4301,24 @@ export const Constants = {
         "Ligação",
         "E-mail ou WhatsApp",
       ],
+      crm_classe: ["A", "B", "C"],
+      crm_em_que_pe: [
+        "Pediu catálogo",
+        "Pediu preço",
+        "Quer amostra",
+        "Vai levar ao comitê",
+        "Só olhou",
+      ],
+      crm_motivo_nao_agora: [
+        "Preço",
+        "Prazo",
+        "Sem retorno",
+        "Não é perfil",
+        "Já tem fornecedor",
+        "Migrado",
+        "Outro",
+      ],
+      crm_nivel: ["Lead", "MQL", "SQL", "CLIENTE", "NUTRIÇÃO"],
       crm_regiao: [
         "Sul",
         "Sudeste",
@@ -4049,6 +4328,32 @@ export const Constants = {
         "A definir",
       ],
       crm_rep_grupo: ["Produtivo", "Ativação", "Ultimato", "Trilha separada"],
+      crm_segmento: [
+        "Supermercado",
+        "Hortifruti",
+        "Empório",
+        "Padaria e confeitaria",
+        "Loja de departamento",
+        "Festas",
+        "Casa & decoração",
+        "Papelaria e presentes",
+        "Buffet",
+        "Decoradora",
+        "Outro",
+      ],
+      crm_task_resp: ["Representante", "Gestão"],
+      crm_task_status: ["Aberta", "Feita", "Cancelada"],
+      crm_task_tipo: [
+        "Ligar",
+        "Visitar",
+        "Enviar catálogo",
+        "Enviar amostra",
+        "Cobrar devolutiva",
+        "Cobrar cadastro",
+        "Cobrar pagamento",
+        "Ver gôndola",
+        "Outro",
+      ],
       lead_frequencia: [
         "pontual",
         "mensal",
