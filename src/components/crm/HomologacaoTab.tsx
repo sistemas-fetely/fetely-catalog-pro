@@ -19,7 +19,7 @@ function Barra({ feitas, total }: { feitas: number; total: number }) {
   return (
     <div className="flex items-center gap-2">
       <div className="h-2 w-40 rounded bg-muted overflow-hidden">
-        <div className={cn("h-full", pct === 100 ? "bg-success" : "bg-primary")} style={{ width: `${pct}%` }} />
+        <div className={cn("h-full", pct === 100 ? "bg-primary" : "bg-primary/60")} style={{ width: `${pct}%` }} />
       </div>
       <span className="text-xs text-muted-foreground w-20">{pct}% · {feitas}/{total}</span>
     </div>
