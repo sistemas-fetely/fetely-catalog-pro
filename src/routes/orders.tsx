@@ -528,6 +528,15 @@ function OrdersPage() {
                             <Trash2 className="h-3 w-3" />
                           </button>
                         )}
+                        {canReprovar && !o.sncfPedidoId && !o.reprovado && (
+                          <button
+                            onClick={() => void editarPedido(o)}
+                            title="Editar pedido (ainda não sincronizado com o SNCF)"
+                            className="inline-flex items-center gap-1 rounded-md gold-border px-2 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                        )}
                         <button
                           onClick={() => setExportOrders([o])}
                           title="Exportar pedido"
@@ -658,6 +667,15 @@ function OrdersPage() {
                   >
                     <Eye className="h-3 w-3" /> Ver
                   </Link>
+                  {canReprovar && !o.sncfPedidoId && !o.reprovado && (
+                    <button
+                      onClick={() => void editarPedido(o)}
+                      title="Editar pedido"
+                      className="inline-flex items-center gap-1 rounded-md gold-border px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
+                    >
+                      <Pencil className="h-3 w-3" /> Editar
+                    </button>
+                  )}
                   <button
                     onClick={() => setExportOrders([o])}
                     title="Exportar pedido"
