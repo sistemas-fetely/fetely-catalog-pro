@@ -48,6 +48,8 @@ interface OrderState {
   clearItemNegociacao: (sku: string) => void;
   clearAllItemNegociacoes: () => void;
   saveOrder: (commercial?: OrderCommercial, itemsOverride?: CartItem[]) => Promise<SavedOrder>;
+  /** Atualiza um pedido existente (só enquanto não sincronizado com o SNCF). */
+  atualizarPedido: (orderId: string, commercial: OrderCommercial, items: CartItem[]) => Promise<SavedOrder>;
   reassignOrder: (
     orderId: string,
     novo: { vendedorId: string; vendedorNome?: string | null; vendedorLogin?: string | null; vendedorTipo?: "interno" | "representante" | null },
@@ -676,6 +678,63 @@ export const useOrder = create<OrderState>()(
         }
 
         return order;
+      },
+      atualizarPedido: async (orderId, commercial, items) => {
+        assertCommercialMatchesItems(commercial, items, "atualizarPedido");
+        const { data: atual, error: errA } = await supabase
+          .from("orders")
+          .select("sncf_pedido_id")
+          .eq("id", orderId)
+          .maybeSingle();
+        if (errA) throw errA;
+        if (!atual) throw new Error(`Pedido ${orderId} não encontrado.`);
+        if ((atual as { sncf_pedido_id: string | null }).sncf_pedido_id) {
+          throw new Error("Este pedido já foi sincronizado com o SNCF e não pode mais ser editado.");
+        }
+        const anterior = get().history.find((o) => o.id === orderId);
+        const metaRaw = { ...get().meta } as OrderMeta & Record<string, unknown>;
+        delete metaRaw.pedidoEditandoId;
+        const meta = metaRaw as OrderMeta;
+        const base: SavedOrder = {
+          ...(anterior ?? ({ id: orderId, createdAt: new Date().toISOString() } as SavedOrder)),
+          items,
+          meta,
+          total: commercial.totalFinal,
+          commercial,
+          bonificado: commercial.bonificado ?? false,
+          motivoBonificacao: commercial.motivoBonificacao ?? null,
+          naturezaOperacao: commercial.naturezaOperacao ?? "venda",
+          campanha: commercial.campanha ?? null,
+          entregaB2C: commercial.entregaB2C ?? false,
+          cfop: commercial.cfop ?? null,
+        };
+        const itemRows = await orderItemsToRows(base);
+        const row = orderToRow(base);
+        const upd = {
+          cliente_id: row.cliente_id,
+          meta: row.meta,
+          cliente_snapshot: row.cliente_snapshot,
+          commercial: row.commercial,
+          total: row.total,
+          total_unidades: row.total_unidades,
+          total_skus: row.total_skus,
+          bonificado: row.bonificado,
+          motivo_bonificacao: row.motivo_bonificacao,
+          natureza_operacao: row.natureza_operacao,
+          campanha: row.campanha,
+          entrega_b2c: row.entrega_b2c,
+          cfop: row.cfop,
+        };
+        const { error: errU } = await supabase.from("orders").update(upd as never).eq("id", orderId);
+        if (errU) throw new Error(`Não foi possível atualizar o pedido: ${errU.message}`);
+        const { error: errD } = await supabase.from("order_items").delete().eq("order_id", orderId);
+        if (errD) throw new Error(`Não foi possível atualizar os itens: ${errD.message}`);
+        if (itemRows.length > 0) {
+          const { error: errI } = await supabase.from("order_items").insert(itemRows as never);
+          if (errI) throw new Error(`Não foi possível gravar os itens do pedido: ${errI.message}`);
+        }
+        set((s) => ({ history: s.history.map((o) => (o.id === orderId ? base : o)) }));
+        return base;
       },
       reassignOrder: (orderId, novo) => {
         set((s) => ({
