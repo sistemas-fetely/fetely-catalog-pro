@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { HomologacaoTab } from "@/components/crm/HomologacaoTab";
 import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import type { Cliente } from "@/types/cliente";
 import { formatCNPJ, onlyDigits } from "@/lib/cnpj";
@@ -145,6 +146,7 @@ function CrmPage() {
             <TabsTrigger value="agenda">Agenda</TabsTrigger>
             <TabsTrigger value="ativ">Atividades</TabsTrigger>
             <TabsTrigger value="mapa">Mapa</TabsTrigger>
+            <TabsTrigger value="homolog">Homologação</TabsTrigger>
           </TabsList>
         </div>
 
@@ -176,6 +178,9 @@ function CrmPage() {
         </TabsContent>
         <TabsContent value="mapa" className="space-y-3">
           <MapaAtuacaoTab ctx={ctx} />
+        </TabsContent>
+        <TabsContent value="homolog" className="space-y-3">
+          <HomologacaoTab gestao={gestao} />
         </TabsContent>
       </Tabs>
 
