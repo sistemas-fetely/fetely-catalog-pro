@@ -47,7 +47,16 @@ export function ExportModal({
   const handleExport = async () => {
     setBusy(true);
     try {
-      const pedidos = orders.map(buildPedidoExportavel);
+      // A lista de pedidos carrega sem os itens; busca antes de exportar.
+      const { useOrder } = await import("@/store/orderStore");
+      const completos = await useOrder.getState().ensureItemsFor(orders.map((o) => o.id));
+      const porId = new Map(completos.map((o) => [o.id, o]));
+      const pedidos = orders
+        .map((o) => {
+          const f = porId.get(o.id);
+          return f && f.items.length > 0 ? f : o;
+        })
+        .map(buildPedidoExportavel);
       if (formato === "pdf_cliente") await exportarPDF(pedidos[0], "cliente", opts);
       else if (formato === "pdf_interno") await exportarPDF(pedidos[0], "interno", opts);
       else if (formato === "csv") exportarCSV(pedidos);
