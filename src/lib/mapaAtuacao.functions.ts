@@ -123,3 +123,73 @@ export const vincularRepresentanteMapa = createServerFn({ method: "POST" })
     await res.json().catch(() => null);
     return { ok: true };
   });
+
+/* ---------------- Homologação: checklist de atividades do Connect (/painel/atividades) ---------------- */
+export type TarefaHomolog = {
+  id: string;
+  representanteId: string;
+  titulo: string;
+  concluida: boolean;
+  concluidaEm: string | null;
+  concluidaPor: string | null;
+  ordem: number;
+  origem: string;
+};
+export type HomologRep = { id: string; nome: string; nacional: boolean; orderProUserId: string | null };
+export type Homologacao = { representantes: HomologRep[]; tarefas: TarefaHomolog[] };
+
+export const carregarHomologacao = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<Homologacao> => {
+    const { supabase, userId } = context;
+    const { gestao } = await assertCrmAccess(supabase, userId);
+    const res = await fetchConnect("/api/public/atividades-representantes");
+    const json = (await res.json()) as {
+      representantes: Array<{ id: string; nome: string; nacional?: boolean; order_pro_user_id?: string | null }>;
+      tarefas: Array<{ id: string; representante_id: string; titulo: string; concluida: boolean; concluida_em?: string | null; concluida_por?: string | null; ordem?: number; origem?: string }>;
+    };
+    let reps: HomologRep[] = (json.representantes ?? []).map((r) => ({
+      id: r.id, nome: (r.nome ?? "").trim(), nacional: !!r.nacional, orderProUserId: r.order_pro_user_id ?? null,
+    }));
+    // Representante só enxerga o próprio checklist (via vínculo feito na aba Mapa).
+    if (!gestao) reps = reps.filter((r) => r.orderProUserId === userId);
+    const ids = new Set(reps.map((r) => r.id));
+    const tarefas = (json.tarefas ?? [])
+      .filter((t) => ids.has(t.representante_id))
+      .map((t) => ({
+        id: t.id, representanteId: t.representante_id, titulo: t.titulo, concluida: !!t.concluida,
+        concluidaEm: t.concluida_em ?? null, concluidaPor: t.concluida_por ?? null, ordem: t.ordem ?? 0, origem: t.origem ?? "",
+      }))
+      .sort((a, b) => a.ordem - b.ordem);
+    return { representantes: reps, tarefas };
+  });
+
+export const alterarHomologacao = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.discriminatedUnion("acao", [
+      z.object({ acao: z.literal("marcar"), tarefaId: z.string().uuid(), concluida: z.boolean() }),
+      z.object({ acao: z.literal("adicionar"), representanteId: z.string().uuid(), titulo: z.string().trim().min(1).max(200) }),
+      z.object({ acao: z.literal("remover"), tarefaId: z.string().uuid() }),
+      z.object({ acao: z.literal("aplicar_padrao") }),
+    ]).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { gestao } = await assertCrmAccess(supabase, userId);
+    if (!gestao) throw new Error("Só a gestão pode alterar as atividades de homologação.");
+    const { data: prof } = await supabase.from("profiles").select("email").eq("id", userId).maybeSingle();
+    const por = (prof as { email?: string } | null)?.email ?? "";
+    const body =
+      data.acao === "marcar" ? { acao: "marcar", tarefa_id: data.tarefaId, concluida: data.concluida, concluida_por: por }
+      : data.acao === "adicionar" ? { acao: "adicionar", representante_id: data.representanteId, titulo: data.titulo }
+      : data.acao === "remover" ? { acao: "remover", tarefa_id: data.tarefaId }
+      : { acao: "aplicar_padrao" };
+    const res = await fetchConnect("/api/public/tarefa-representante", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    await res.json().catch(() => null);
+    return { ok: true };
+  });
