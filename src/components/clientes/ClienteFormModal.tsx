@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { safeLocalStorage } from "@/lib/safeStorage";
 import { Loader2, Search, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -143,12 +144,40 @@ export function ClienteFormModal({
   const podeDirecionar = !repAtual;
   const [vendedores, setVendedores] = useState<VendedorCarteira[]>([]);
 
+  // Rascunho: o que foi digitado sobrevive a fechar o modal, trocar de aba ou recarregar.
+  const draftKey = `fetely_cliente_rascunho_v1:${user?.id ?? "anon"}:${initial?.id ?? "novo"}`;
+  const [draftPronto, setDraftPronto] = useState(false);
+
   useEffect(() => {
-    if (open) {
-      setCliente(
-        initial ??
-          emptyCliente(user?.id ?? "", profile?.nome_completo ?? profile?.email ?? ""),
-      );
+    if (!open) {
+      setDraftPronto(false);
+      return;
+    }
+    if (draftPronto) return; // só reinicia ao abrir, nunca no meio do preenchimento
+    const base =
+      initial ??
+      emptyCliente(user?.id ?? "", profile?.nome_completo ?? profile?.email ?? "");
+    let restaurado: Cliente | null = null;
+    try {
+      const raw = safeLocalStorage.getItem(draftKey);
+      if (raw) restaurado = { ...base, ...(JSON.parse(raw) as Cliente) };
+    } catch {
+      /* rascunho inválido */
+    }
+    setCliente(restaurado ?? base);
+    if (restaurado) {
+      toast.info("Recuperamos o que você já tinha preenchido.", {
+        action: {
+          label: "Começar do zero",
+          onClick: () => {
+            safeLocalStorage.removeItem(draftKey);
+            setCliente(base);
+          },
+        },
+      });
+    }
+    setDraftPronto(true);
+    {
       setTab("fiscal");
       setCnpjError(null);
       setDuplicateWarn(null);
@@ -160,7 +189,15 @@ export function ClienteFormModal({
       setCpfDuplicado(null);
       setCepErro(null);
     }
-  }, [open, initial, user, profile]);
+  }, [open, initial, user, profile, draftKey, draftPronto]);
+
+  useEffect(() => {
+    if (!open || !draftPronto) return;
+    const t = setTimeout(() => {
+      safeLocalStorage.setItem(draftKey, JSON.stringify(cliente));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [cliente, open, draftPronto, draftKey]);
 
   useEffect(() => {
     if (!open || !podeDirecionar || vendedores.length > 0) return;
@@ -451,6 +488,7 @@ export function ClienteFormModal({
     setSalvando(true);
     try {
       await upsert(saved);
+      safeLocalStorage.removeItem(draftKey);
       toast.success("Cliente salvo.");
       onSaved?.(saved);
       onOpenChange(false);
