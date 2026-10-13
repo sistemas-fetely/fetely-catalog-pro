@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useEditPrefill, parcelasDaDescricao } from "@/store/editPrefillStore";
 import { syncFreteFromDb } from "@/lib/freteUf";
 import { Award, ChevronDown, Gift, Lock, Settings2, Sparkles, X } from "lucide-react";
 import {
@@ -200,7 +201,13 @@ export function CartCommercialPanel({
 
   // Cartão: o vendedor escolhe em quantas vezes (1x até o máximo da condição).
   const [parcelasCartao, setParcelasCartao] = useState<number | null>(null);
+  const parcelasPendentesRef = useRef<number | null>(null);
   useEffect(() => {
+    if (parcelasPendentesRef.current != null && condicaoBase?.tipo === "cartao") {
+      setParcelasCartao(parcelasPendentesRef.current);
+      parcelasPendentesRef.current = null;
+      return;
+    }
     setParcelasCartao(null);
   }, [condicaoBase?.id]);
   const condicao = useMemo<CondicaoPagamento | null>(() => {
@@ -238,9 +245,61 @@ export function CartCommercialPanel({
   // V21 — acréscimo por isenção de Inscrição Estadual (puxa do cadastro do cliente)
   const clienteIsentoIE = !!cliente?.isentoIE;
   const [aplicarIsentoIE, setAplicarIsentoIE] = useState(false);
+  const isentoIEPrefillRef = useRef<boolean | null>(null);
   useEffect(() => {
+    if (isentoIEPrefillRef.current != null) {
+      setAplicarIsentoIE(isentoIEPrefillRef.current);
+      return;
+    }
     setAplicarIsentoIE(clienteIsentoIE);
   }, [clienteIsentoIE, clienteId]);
+
+  // Edição de pedido/cotação: abre o painel com tudo que já estava escolhido.
+  useEffect(() => {
+    const c = useEditPrefill.getState().consume();
+    if (!c) return;
+    const neg = useNegotiation.getState();
+    const temNegociacao =
+      c.negociacao || (c.descontoMasterPct ?? 0) > 0 || !!c.freteAjusteAplicado || c.usouReservada;
+    if (temNegociacao) {
+      ativarSemSenha();
+      neg.setDescontoModo(c.descontoMasterModo ?? "percent");
+      neg.setDescontoPct(c.descontoMasterPct ?? 0);
+      neg.setDescontoValor(c.descontoMasterValor ?? 0);
+      neg.setJustificativa(c.justificativa ?? "");
+      neg.setObservacaoInterna(c.observacaoInterna ?? "");
+      neg.setUsarReservada(!!c.usouReservada);
+      neg.setFreteGratis(c.freteOrigem === "negociacao_master" && !!c.freteIsento);
+      if (c.freteAjusteAplicado) {
+        neg.setFreteAjusteModo(c.freteAjusteModo ?? "percent");
+        neg.setFreteAjusteQtd(
+          (c.freteAjusteModo ?? "percent") === "valor"
+            ? c.freteAjusteValor ?? 0
+            : c.freteAjustePercent ?? 0,
+        );
+      }
+      setAplicarNegociacao((c.descontoMasterPct ?? 0) > 0);
+    }
+    setAplicarCelebra((c.descontoCelebraPct ?? 0) > 0);
+    setAplicarPix(!!c.aplicouPix);
+    if (c.naturezaOperacao) setNaturezaManual(c.naturezaOperacao);
+    if (c.campanha) setCampanha(c.campanha);
+    if (c.bonificado && c.naturezaOperacao !== "remessa_brinde") {
+      setBonificadoManual(true);
+      const m = c.motivoBonificacao ?? "";
+      if (m.startsWith("outro")) {
+        setMotivoBonif("outro");
+        setMotivoOutroTxt(m.replace(/^outro:\s*/, ""));
+      } else setMotivoBonif(m);
+    }
+    isentoIEPrefillRef.current = !!c.acrescimoIsentoIEAplicado;
+    setAplicarIsentoIE(!!c.acrescimoIsentoIEAplicado);
+    if (c.condicaoId != null && c.condicaoId !== CONDICAO_BONIFICADO_ID) {
+      parcelasPendentesRef.current = parcelasDaDescricao(c.condicaoDescricao);
+      neg.setCondicaoSelecionadaId(c.condicaoId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   const calculo = useMemo(
