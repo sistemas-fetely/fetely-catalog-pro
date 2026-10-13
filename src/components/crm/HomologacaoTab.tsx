@@ -11,6 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { carregarHomologacao, alterarHomologacao, type Homologacao, type TarefaHomolog } from "@/lib/mapaAtuacao.functions";
 
+type AlterarInput =
+  | { acao: "marcar"; tarefaId: string; concluida: boolean }
+  | { acao: "adicionar"; representanteId: string; titulo: string }
+  | { acao: "remover"; tarefaId: string }
+  | { acao: "aplicar_padrao" };
 type Vista = "rep" | "ativ";
 type Filtro = "todos" | "pendentes" | "concluidos";
 
@@ -47,7 +52,7 @@ export function HomologacaoTab({ gestao }: { gestao: boolean }) {
   }, []);
   useEffect(() => { void carregar(); }, [carregar]);
 
-  const executar = async (input: Parameters<typeof alterarHomologacao>[0]["data"], otimista?: (d: Homologacao) => Homologacao) => {
+  const executar = async (input: AlterarInput, otimista?: (d: Homologacao) => Homologacao) => {
     if (otimista && dados) setDados(otimista(dados));
     try {
       await alterarHomologacao({ data: input });
