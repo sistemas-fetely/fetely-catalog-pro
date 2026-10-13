@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEditPrefill, carregarItensNoCarrinho } from "@/store/editPrefillStore";
+import { Pencil } from "lucide-react";
 import { ClienteLink } from "@/components/clientes/ClienteLink";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -78,6 +80,35 @@ function OrdersPage() {
   });
   const badges: Record<string, number> = badgesData ?? {};
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const navigateTo = useNavigate();
+  const editarPedido = async (o: (typeof history)[number]) => {
+    if (o.sncfPedidoId) {
+      toast.error("Este pedido já foi sincronizado com o SNCF e não pode mais ser editado.");
+      return;
+    }
+    try {
+      const [full] = await useOrder.getState().ensureItemsFor([o.id]);
+      const itens = (full?.items ?? o.items).filter((i) => i && i.product && i.quantity > 0);
+      if (itens.length === 0) {
+        toast.error("Este pedido não possui itens para edição.");
+        return;
+      }
+      const store = useOrder.getState();
+      store.clearCart();
+      useNegotiation.getState().resetSession();
+      carregarItensNoCarrinho(itens);
+      useEditPrefill.getState().setCommercial(o.commercial ?? null);
+      const metaLimpa = { ...o.meta } as typeof o.meta & Record<string, unknown>;
+      delete metaLimpa.cotacaoOrigemId;
+      delete metaLimpa.provisaoEditandoId;
+      delete metaLimpa.provisaoOrigemId;
+      store.setMeta({ ...metaLimpa, pedidoEditandoId: o.id } as typeof o.meta);
+      toast.message(`Editando pedido ${o.id}`);
+      navigateTo({ to: "/cart" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível abrir o pedido para edição.");
+    }
+  };
   useEffect(() => {
     setHydrated(true);
     // Revalidação em background (o store ignora se o cache ainda está fresco).
@@ -497,6 +528,15 @@ function OrdersPage() {
                             <Trash2 className="h-3 w-3" />
                           </button>
                         )}
+                        {canReprovar && !o.sncfPedidoId && !o.reprovado && (
+                          <button
+                            onClick={() => void editarPedido(o)}
+                            title="Editar pedido (ainda não sincronizado com o SNCF)"
+                            className="inline-flex items-center gap-1 rounded-md gold-border px-2 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                        )}
                         <button
                           onClick={() => setExportOrders([o])}
                           title="Exportar pedido"
@@ -627,6 +667,15 @@ function OrdersPage() {
                   >
                     <Eye className="h-3 w-3" /> Ver
                   </Link>
+                  {canReprovar && !o.sncfPedidoId && !o.reprovado && (
+                    <button
+                      onClick={() => void editarPedido(o)}
+                      title="Editar pedido"
+                      className="inline-flex items-center gap-1 rounded-md gold-border px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
+                    >
+                      <Pencil className="h-3 w-3" /> Editar
+                    </button>
+                  )}
                   <button
                     onClick={() => setExportOrders([o])}
                     title="Exportar pedido"

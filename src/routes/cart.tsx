@@ -470,7 +470,10 @@ function CartPage() {
         provisaoId = prov.id;
       }
 
-      const order = await saveOrder(orderCommercial, itensFirmes);
+      const pedidoEditandoId = (meta as OrderMeta & { pedidoEditandoId?: string }).pedidoEditandoId;
+      const order = pedidoEditandoId
+        ? await useOrder.getState().atualizarPedido(pedidoEditandoId, orderCommercial, itensFirmes)
+        : await saveOrder(orderCommercial, itensFirmes);
 
       if (orderCommercial.negociacao && orderCommercial.descontoMasterPct > 0) {
         registrarNegociacao({
@@ -769,6 +772,24 @@ function CartPage() {
                 clearCart();
                 resetNegotiation();
                 navigate({ to: "/provisoes" });
+              }
+            }}
+            className="shrink-0 text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-out"
+          >
+            Cancelar edição
+          </button>
+        </div>
+      )}
+
+      {(meta as OrderMeta & { pedidoEditandoId?: string }).pedidoEditandoId && (
+        <div className="mb-4 rounded-md border border-gold/40 bg-gold/10 px-3 py-2.5 sm:px-4 sm:py-3 text-xs text-gold flex items-center justify-between gap-3">
+          <span>✏️ Editando o pedido <strong>{(meta as OrderMeta & { pedidoEditandoId?: string }).pedidoEditandoId}</strong>. Ajuste o que precisar e confirme para salvar as alterações.</span>
+          <button
+            onClick={() => {
+              if (confirm("Descartar edição e limpar o carrinho?")) {
+                clearCart();
+                resetNegotiation();
+                navigate({ to: "/orders" });
               }
             }}
             className="shrink-0 text-[10px] uppercase tracking-wider text-text-muted hover:text-stock-out"

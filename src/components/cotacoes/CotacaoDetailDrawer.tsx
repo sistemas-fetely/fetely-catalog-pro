@@ -7,7 +7,8 @@ import type { Cotacao } from "@/types/cotacao";
 import { STATUS_COTACAO_LABEL } from "@/types/cotacao";
 import { useCotacao, diasAteExpirar } from "@/store/cotacaoStore";
 import { useOrder } from "@/store/orderStore";
-import { useCatalog } from "@/store/catalogStore";
+import { useNegotiation } from "@/store/negotiationStore";
+import { useEditPrefill, carregarItensNoCarrinho } from "@/store/editPrefillStore";
 import { MarcarPerdidaModal } from "./MarcarPerdidaModal";
 import { ConverterEmPedidoModal } from "./ConverterEmPedidoModal";
 import { generateCotacaoPDF } from "@/lib/orderPdf";
@@ -52,14 +53,9 @@ export function CotacaoDetailDrawer({
     // qualquer interferência de re-render / unmount do drawer.
     const store = useOrder.getState();
     store.clearCart();
-    const catalog = useCatalog.getState().products;
-    const bySku = new Map(catalog.map((p) => [p.sku, p]));
-    store.addBulk(
-      itens.map((i) => ({
-        product: bySku.get(i.sku) ?? i.product,
-        quantity: i.quantity,
-      })),
-    );
+    useNegotiation.getState().resetSession();
+    carregarItensNoCarrinho(itens);
+    useEditPrefill.getState().setCommercial(cotacao.commercial ?? null);
     store.setMeta({
       ...cotacao.meta,
       cotacaoOrigemId: cotacao.id,
