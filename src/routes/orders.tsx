@@ -237,14 +237,25 @@ function OrdersPage() {
           <button
             type="button"
             onClick={() => setBonificadoOnly((v) => !v)}
-            className={`rounded-md border px-3 py-2 text-[11px] uppercase tracking-wider transition ${
+            aria-pressed={bonificadoOnly}
+            className={`flex items-center gap-1.5 rounded-md border px-3 py-2 text-[11px] uppercase tracking-wider transition ${
               bonificadoOnly
                 ? "border-purple-500/50 bg-purple-500/10 text-purple-300"
                 : "border-border text-text-secondary hover:text-text-primary"
             }`}
-            title="Mostrar apenas pedidos bonificados"
+            title={
+              bonificadoOnly
+                ? "Filtro de bonificados ligado — clique para ver todos os pedidos"
+                : "Filtro de bonificados desligado — clique para ver só os bonificados"
+            }
           >
-            ✨ Bonificados
+            <span
+              aria-hidden
+              className={`h-2 w-2 shrink-0 rounded-full ${
+                bonificadoOnly ? "bg-purple-400" : "bg-border"
+              }`}
+            />
+            ✨ Bonificados: {bonificadoOnly ? "ligado" : "desligado"}
           </button>
           <button
             type="button"
