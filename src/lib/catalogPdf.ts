@@ -31,6 +31,7 @@ export type CatalogFieldKey =
   | "peso"
   | "multiplos"
   | "qtdKit"
+  | "dun"
   | "ncm"
   | "cest"
   | "origemFisc"
@@ -49,6 +50,7 @@ export const CATALOG_FIELDS: { key: CatalogFieldKey; label: string; group: strin
   { key: "sku", label: "SKU", group: "Identificação" },
   { key: "codCadastro", label: "Cód. Cadastro", group: "Identificação" },
   { key: "ean", label: "EAN", group: "Identificação" },
+  { key: "dun", label: "DUN-14", group: "Identificação" },
   { key: "linha", label: "Linha", group: "Hierarquia" },
   { key: "categoria", label: "Categoria", group: "Hierarquia" },
   { key: "departamento", label: "Departamento", group: "Hierarquia" },
@@ -345,6 +347,8 @@ function fieldValue(p: Product, key: CatalogFieldKey): string | null {
       return p.sku || null;
     case "ean":
       return p.ean || null;
+    case "dun":
+      return p.dun || null;
     case "codCadastro":
       return p.codCadastro || null;
     case "corNome":
