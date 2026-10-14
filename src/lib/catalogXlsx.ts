@@ -164,7 +164,7 @@ export async function buildCatalogXLSX(opts: BuildOpts): Promise<Blob> {
     const w =
       k === "nomeComercial" || k === "descricaoProduto" || k === "materialDescritivo"
         ? 34
-        : k === "ean" || k === "sku" || k === "codCadastro"
+        : k === "ean" || k === "sku" || k === "codCadastro" || k === "dun"
           ? 18
           : 14;
     widths.push(w);
