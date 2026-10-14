@@ -50,6 +50,7 @@ function fieldValue(p: Product, key: CatalogFieldKey): string | number | null {
     }
     case "sku": return p.sku || null;
     case "ean": return p.ean || null;
+    case "dun": return p.dun || null;
     case "codCadastro": return p.codCadastro || null;
     case "corNome": return p.corNome || null;
     case "cor": return p.cor || null;
