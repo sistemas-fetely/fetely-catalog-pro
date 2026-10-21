@@ -35,6 +35,10 @@ export const Route = createFileRoute("/cart")({
     meta: [
       { title: "Carrinho — Fetély B2B" },
       { name: "description", content: "Revise e finalize o pedido em andamento." },
+      { property: "og:title", content: "Carrinho — Fetély B2B" },
+      { property: "og:description", content: "Revise e finalize o pedido Fetély em andamento." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: CartPage,

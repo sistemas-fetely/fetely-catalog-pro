@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/format";
@@ -44,6 +44,7 @@ export function ConverterEmPedidoModal({
   const createProvisao = useProvisao((s) => s.createProvisao);
   const [saving, setSaving] = useState(false);
   const catalog = useCatalog((s) => s.products);
+  useEffect(() => { void useCatalog.getState().hydrate({ force: true }); }, []);
 
   const { itensFirmes, itensProvisao, itensHidratados, itensBloqueados } = useMemo(() => {
     const bySku = new Map(catalog.map((p) => [p.sku, p]));

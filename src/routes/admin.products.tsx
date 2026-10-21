@@ -58,6 +58,14 @@ import { vendaBloqueada, emEstoque } from "@/lib/classifyItem";
 import { NOTA_DONO } from "@/lib/fichaDonos";
 
 export const Route = createFileRoute("/admin/products")({
+  head: () => ({ meta: [
+    { title: "Gestão de produtos — Fetély B2B" },
+    { name: "description", content: "Consulte e edite o cadastro e a disponibilidade dos produtos Fetély." },
+    { property: "og:title", content: "Gestão de produtos — Fetély B2B" },
+    { property: "og:description", content: "Cadastro e disponibilidade dos produtos Fetély." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AdminProductsPage,
 });
 

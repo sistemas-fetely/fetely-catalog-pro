@@ -8,6 +8,7 @@ import { useVisibleGrupos } from "@/store/grupoStore";
 import { useVisibleModelos } from "@/store/modeloStore";
 import { useCotacao } from "@/store/cotacaoStore";
 import { useDuplicacao } from "@/store/duplicacaoStore";
+import { useCatalog } from "@/store/catalogStore";
 import { recalcularItens, itensDePedido, itensDeModelo } from "@/lib/duplicar";
 import { formatBRL } from "@/lib/format";
 import type { SavedOrder, OrderMeta } from "@/types";
@@ -137,9 +138,10 @@ export function DuplicarPedidoModal({
     if (itens.length === 0) { toast.error("Escolha a origem dos itens"); return; }
     if (clientesSelecionados.size === 0) { toast.error("Selecione ao menos um cliente destino"); return; }
 
+    await useCatalog.getState().hydrate({ force: true });
     const recalc = recalcularItens(itens);
     if (recalc.itens.length === 0) {
-      toast.error("Nenhum item válido após recálculo (todos descontinuados).");
+      toast.error("Nenhum item disponível após recálculo.", { description: recalc.itensRemovidos.map((i) => `${i.sku}: ${i.motivo}`).join(", ") });
       return;
     }
     if (recalc.itensRemovidos.length > 0) {

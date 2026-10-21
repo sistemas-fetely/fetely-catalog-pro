@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { SavedOrder } from "@/types";
 import type { Cliente } from "@/types/cliente";
 import type { ProvisaoFutura } from "@/types/provisao";
+import { validarEstoqueAtual } from "@/lib/salesStock";
 
 const MIGRATION_FLAG = "fetely_migracao_v1_concluida";
 const CATALOG_SEED_FLAG = "fetely_catalog_seed_v1";
@@ -90,6 +91,7 @@ async function retrySyncLocalCache(): Promise<void> {
     const missing = localOrders.filter((o) => !existing.has(o.id));
     if (missing.length > 0) {
       console.info(`[fopBootstrap] retrySync: empurrando ${missing.length} pedidos ausentes`);
+      for (const order of missing) await validarEstoqueAtual(order.items, order.origemPerfil !== "cliente");
       const { error: errO } = await supabase
         .from("orders")
         .upsert(missing.map(orderToRow) as never, { onConflict: "id" });
@@ -117,6 +119,7 @@ async function retrySyncLocalCache(): Promise<void> {
     const missing = localProvisoes.filter((p) => !existing.has(p.id));
     if (missing.length > 0) {
       console.info(`[fopBootstrap] retrySync: empurrando ${missing.length} provisões ausentes`);
+      for (const prov of missing) await validarEstoqueAtual(prov.itens.map((i) => ({ sku: i.sku, quantity: i.quantidade, product: {} })));
       const { error: errP } = await supabase
         .from("provisoes")
         .upsert(missing.map(provisaoToRow) as never, { onConflict: "id" });
@@ -200,6 +203,7 @@ async function maybeRunMigration(): Promise<void> {
   }
 
   if (oldOrders.length > 0) {
+    for (const order of oldOrders) await validarEstoqueAtual(order.items, order.origemPerfil !== "cliente");
     const orderRows = oldOrders.map(orderToRow);
     const { error: errO } = await supabase
       .from("orders")
@@ -220,6 +224,7 @@ async function maybeRunMigration(): Promise<void> {
   }
 
   if (oldProvisoes.length > 0) {
+    for (const prov of oldProvisoes) await validarEstoqueAtual(prov.itens.map((i) => ({ sku: i.sku, quantity: i.quantidade, product: {} })));
     const provRows = oldProvisoes.map(provisaoToRow);
     const { error: errP } = await supabase
       .from("provisoes")

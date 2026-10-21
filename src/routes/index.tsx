@@ -8,6 +8,10 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Fetély — Sistema B2B de Pedidos" },
+      { property: "og:title", content: "Fetély — Sistema B2B de Pedidos" },
+      { property: "og:description", content: "Painel do sistema de pedidos para representantes Fetély." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content: "Painel inicial do sistema de pedidos para representantes Fetély.",
