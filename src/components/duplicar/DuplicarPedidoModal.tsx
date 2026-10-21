@@ -8,6 +8,7 @@ import { useVisibleGrupos } from "@/store/grupoStore";
 import { useVisibleModelos } from "@/store/modeloStore";
 import { useCotacao } from "@/store/cotacaoStore";
 import { useDuplicacao } from "@/store/duplicacaoStore";
+import { useCatalog } from "@/store/catalogStore";
 import { recalcularItens, itensDePedido, itensDeModelo } from "@/lib/duplicar";
 import { formatBRL } from "@/lib/format";
 import type { SavedOrder, OrderMeta } from "@/types";
@@ -137,13 +138,14 @@ export function DuplicarPedidoModal({
     if (itens.length === 0) { toast.error("Escolha a origem dos itens"); return; }
     if (clientesSelecionados.size === 0) { toast.error("Selecione ao menos um cliente destino"); return; }
 
-    const recalc = recalcularItens(itensBase);
+    await useCatalog.getState().hydrate({ force: true });
+    const recalc = recalcularItens(itens);
     if (recalc.itens.length === 0) {
-      toast.error("Nenhum item válido após recálculo (todos descontinuados).");
+      toast.error("Nenhum item disponível após recálculo.", { description: recalc.itensRemovidos.map((i) => `${i.sku}: ${i.motivo}`).join(", ") });
       return;
     }
     if (recalc.itensRemovidos.length > 0) {
-      toast.warning(`${recalc.itensRemovidos.length} item(ns) descontinuado(s) removido(s).`);
+      toast.warning("Itens indisponíveis não foram incluídos", { description: recalc.itensRemovidos.map((i) => `${i.sku}: ${i.motivo}`).join(", "), duration: 7000 });
     }
     if (recalc.itensComPrecoAlterado.length > 0) {
       toast.info(`${recalc.itensComPrecoAlterado.length} item(ns) com preço atualizado.`);

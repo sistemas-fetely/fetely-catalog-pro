@@ -1,6 +1,7 @@
 import type { CartItem, SavedOrder } from "@/types";
 import type { Product } from "@/types";
 import type { ModeloPedido } from "@/types/modelo";
+import { vendaBloqueada } from "@/lib/classifyItem";
 import { useCatalog } from "@/store/catalogStore";
 
 export interface RecalculoResultado {
@@ -27,6 +28,10 @@ export function recalcularItens(base: CartItem[]): RecalculoResultado {
     }
     if (atual.ativo === false) {
       removidos.push({ sku: it.sku, nome: atual.nomeComercial, motivo: "Produto inativo" });
+      continue;
+    }
+    if (vendaBloqueada(atual)) {
+      removidos.push({ sku: it.sku, nome: atual.nomeComercial, motivo: "Esgotado" });
       continue;
     }
     const precoAntigo = it.product.precoAtacado;

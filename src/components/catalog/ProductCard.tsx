@@ -8,7 +8,8 @@ import { useOrder } from "@/store/orderStore";
 import { useAuth } from "@/store/authStore";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
-import { roteamentoQtd } from "@/lib/classifyItem";
+import { Button } from "@/components/ui/button";
+import { roteamentoQtd, vendaBloqueada } from "@/lib/classifyItem";
 import type { Product } from "@/types";
 import { productGroupLabel } from "@/lib/plateNames";
 
@@ -42,7 +43,8 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
   const indisponivel = isPublic
     ? product.precoVarejo <= 0
     : product.precoAtacado <= 0;
-  const canAdd = qty > 0 && isValidMultiple(qty, product.multiplos) && !indisponivel;
+  const bloqueado = vendaBloqueada(product);
+  const canAdd = qty > 0 && isValidMultiple(qty, product.multiplos) && !indisponivel && !bloqueado;
 
   useEffect(() => {
     if (!lightbox) return;
@@ -218,7 +220,7 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
           const split = qty > 0 ? roteamentoQtd(product, qty) : { firme: 0, provisao: 0 };
           const isMisto = split.firme > 0 && split.provisao > 0;
           const isSoProvisao = split.firme === 0 && split.provisao > 0;
-          const btnLabel = indisponivel
+          const btnLabel = bloqueado ? "Esgotado" : indisponivel
             ? "Indisponível"
             : qty === 0
             ? "Adicionar"
@@ -236,14 +238,14 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
                 value={qty}
                 onChange={setQty}
                 multiplos={product.multiplos}
-                disabled={indisponivel}
+                disabled={indisponivel || bloqueado}
               />
               {qty > 0 && isMisto && (
                 <div className="rounded-md border border-stock-pre/40 bg-stock-pre/10 px-2 py-1 text-[10px] text-stock-pre text-center">
                   Parte do pedido irá para provisão (excede estoque disponível)
                 </div>
               )}
-              <button
+              <Button
                 type="button"
                 disabled={!canAdd}
                 onClick={() => {
@@ -257,7 +259,7 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
                 }`}
               >
                 {btnLabel}
-              </button>
+              </Button>
             </div>
           );
         })()}
@@ -280,7 +282,7 @@ export function ProductCard({ product, preSelecao }: ProductCardProps) {
                 value={preSelecao.qty ?? 0}
                 onChange={preSelecao.onQty}
                 multiplos={product.multiplos}
-                disabled={indisponivel}
+                disabled={indisponivel || bloqueado}
               />
               {isInterest && (
                 <div className="rounded-md border border-gold/40 bg-gold/10 px-3 py-1.5 text-[10px] text-gold text-center">

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useOrder } from "@/store/orderStore";
 import { formatBRL } from "@/lib/format";
+import { emEstoque, vendaBloqueada } from "@/lib/classifyItem";
+import { Button } from "@/components/ui/button";
 import type { Product } from "@/types";
 
 interface Props {
@@ -21,14 +23,14 @@ export function CollectionBulkFiller({ products }: Props) {
   const buildBoxes = (perItem: number): Pending => ({
     label: `${perItem} caixa${perItem > 1 ? "s" : ""} por item`,
     entries: products
-      .filter((p) => p.precoAtacado > 0)
+      .filter((p) => p.precoAtacado > 0 && !vendaBloqueada(p))
       .map((p) => ({ product: p, quantity: perItem * Math.max(1, p.multiplos) })),
   });
 
   const buildUnits = (units: number): Pending => ({
     label: `${units} unidades por item`,
     entries: products
-      .filter((p) => p.precoAtacado > 0)
+      .filter((p) => p.precoAtacado > 0 && !vendaBloqueada(p))
       .map((p) => ({ product: p, quantity: units })),
   });
 
@@ -120,10 +122,6 @@ export function CollectionBulkFiller({ products }: Props) {
   );
 }
 
-function isProntaEntrega(status: string) {
-  return status.toLowerCase().includes("em estoque");
-}
-
 function PreviewModal({
   pending,
   onCancel,
@@ -133,8 +131,8 @@ function PreviewModal({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const pronta = pending.entries.filter((e) => isProntaEntrega(e.product.statusEstoque));
-  const programacao = pending.entries.filter((e) => !isProntaEntrega(e.product.statusEstoque));
+  const pronta = pending.entries.filter((e) => emEstoque(e.product));
+  const programacao = pending.entries.filter((e) => !emEstoque(e.product));
 
   const sum = (arr: typeof pending.entries) => ({
     units: arr.reduce((s, e) => s + e.quantity, 0),
@@ -201,13 +199,14 @@ function PreviewModal({
             >
               Cancelar
             </button>
-            <button
+            <Button
               type="button"
+              disabled={pending.entries.length === 0}
               onClick={onConfirm}
               className="rounded-md bg-gold px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-background hover:bg-gold-light transition"
             >
-              Confirmar e adicionar
-            </button>
+              {pending.entries.length === 0 ? "Esgotado" : "Confirmar e adicionar"}
+            </Button>
           </div>
         </footer>
       </div>

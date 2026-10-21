@@ -4,6 +4,7 @@ import { Search, X } from "lucide-react";
 import { useCatalog } from "@/store/catalogStore";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
+import { StockBadge } from "@/components/ui/StockBadge";
 import { formatBRL } from "@/lib/format";
 
 export function GlobalSearch() {
@@ -110,6 +111,7 @@ export function GlobalSearch() {
                   <div className="text-[10px] text-text-muted truncate">
                     {p.colecao} · {p.corNome}
                   </div>
+                  <StockBadge status={p.statusEstoque} estoqueDisponivel={p.estoqueDisponivel} prontaEntrega={p.prontaEntrega} />
                 </div>
                 <div className="text-xs text-gold font-medium whitespace-nowrap">
                   {p.precoAtacado > 0 ? formatBRL(p.precoAtacado) : "—"}

@@ -5,6 +5,8 @@ import { COLLECTION_ACCENT } from "@/data/productConstants";
 import { formatBRL, halfBox } from "@/lib/format";
 import { useOrder } from "@/store/orderStore";
 import { ColorVariantChips } from "@/components/catalog/ColorVariantChips";
+import { vendaBloqueada } from "@/lib/classifyItem";
+import { Button } from "@/components/ui/button";
 import type { Product } from "@/types";
 
 interface Props {
@@ -50,14 +52,15 @@ export function NumericalCandleGrid({ products, colecao, onColorChange }: Props)
 
   const accent = COLLECTION_ACCENT[colecao] ?? "oklch(0.5 0 0)";
 
-  const total = filtered.reduce(
+  const vendaveis = filtered.filter((p) => !vendaBloqueada(p));
+  const total = vendaveis.reduce(
     (sum, p) => sum + (qtys[p.sku] ?? 0) * p.precoAtacado,
     0,
   );
-  const totalUnits = filtered.reduce((sum, p) => sum + (qtys[p.sku] ?? 0), 0);
+  const totalUnits = vendaveis.reduce((sum, p) => sum + (qtys[p.sku] ?? 0), 0);
 
   const handleAdd = () => {
-    const entries = filtered
+    const entries = vendaveis
       .filter((p) => (qtys[p.sku] ?? 0) > 0)
       .map((p) => ({ product: p, quantity: qtys[p.sku] }));
     if (!entries.length) return;
@@ -111,7 +114,7 @@ export function NumericalCandleGrid({ products, colecao, onColorChange }: Props)
       <BulkFiller
         onApplyBoxes={(perItem) => {
           const next: Record<string, number> = { ...qtys };
-          filtered.forEach((p) => {
+          vendaveis.forEach((p) => {
             const step = Math.max(1, halfBox(p.multiplos));
             next[p.sku] = perItem * step;
           });
@@ -119,7 +122,7 @@ export function NumericalCandleGrid({ products, colecao, onColorChange }: Props)
         }}
         onApplyUnits={(units) => {
           const next: Record<string, number> = { ...qtys };
-          filtered.forEach((p) => {
+          vendaveis.forEach((p) => {
             next[p.sku] = units;
           });
           setQtys(next);
@@ -167,6 +170,7 @@ export function NumericalCandleGrid({ products, colecao, onColorChange }: Props)
                   value={qty}
                   onChange={(v) => setQtys((q) => ({ ...q, [p.sku]: v }))}
                   multiplos={p.multiplos}
+                  disabled={vendaBloqueada(p)}
                   compact
                 />
               </div>
@@ -186,14 +190,14 @@ export function NumericalCandleGrid({ products, colecao, onColorChange }: Props)
             <span className="text-xs text-text-secondary">{totalUnits} unidades</span>
           </div>
         </div>
-        <button
+        <Button
           type="button"
           disabled={totalUnits === 0}
           onClick={handleAdd}
           className="rounded-md bg-gold px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-background transition hover:bg-gold-light disabled:opacity-30"
         >
-          Adicionar seleção ao carrinho
-        </button>
+          {vendaveis.length === 0 ? "Esgotado" : "Adicionar seleção ao carrinho"}
+        </Button>
       </div>
     </div>
   );

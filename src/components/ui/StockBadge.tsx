@@ -4,7 +4,7 @@ interface StockBadgeProps {
   status: string;
   /** Fatia 3: quando informado, mostra a quantidade disponível no rótulo "Em estoque · N". */
   estoqueDisponivel?: number;
-  /** Produto de pronta entrega (ex.: Celebrar à Mesa) — mostra "Pronta Entrega" e ignora estoque numérico. */
+  /** Selo visual, exibido somente com estoque positivo. */
   prontaEntrega?: boolean;
   className?: string;
 }
@@ -15,12 +15,12 @@ export function StockBadge({ status, estoqueDisponivel, prontaEntrega, className
   let color = "bg-muted text-text-muted";
   let label = "Consultar";
 
-  if (prontaEntrega) {
+  if (prontaEntrega && disp > 0) {
     color = "bg-stock-in/15 text-stock-in border border-stock-in/30";
     label = "Pronta Entrega";
-  } else if (s === "em estoque") {
+  } else if (disp > 0) {
     color = "bg-stock-in/15 text-stock-in border border-stock-in/30";
-    label = disp > 0 ? `Em Estoque · ${disp}` : "Em Estoque";
+    label = `Em Estoque · ${disp}`;
   } else if (s.startsWith("prev")) {
     if (disp > 0) {
       color = "bg-stock-in/15 text-stock-in border border-stock-in/30";
@@ -29,12 +29,9 @@ export function StockBadge({ status, estoqueDisponivel, prontaEntrega, className
       color = "bg-stock-pre/15 text-stock-pre border border-stock-pre/30";
       label = status;
     }
-  } else if (s === "indisponivel" || s === "indisponível") {
+  } else {
     color = "bg-stock-out/15 text-stock-out border border-stock-out/30";
-    label = "Indisponível";
-  } else if (disp > 0) {
-    color = "bg-stock-in/15 text-stock-in border border-stock-in/30";
-    label = `Em Estoque · ${disp}`;
+    label = "Esgotado";
   }
 
   return (

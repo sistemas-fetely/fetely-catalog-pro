@@ -14,6 +14,8 @@ import { useClientes } from "@/store/clienteStore";
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeStorage } from "@/lib/safeStorage";
 import { formatBRL } from "@/lib/format";
+import { vendaBloqueada } from "@/lib/classifyItem";
+import { produtoAtual, avisarEsgotados, validarEstoqueAtual } from "@/lib/salesStock";
 
 
 
@@ -375,6 +377,8 @@ export const useOrder = create<OrderState>()(
       setHistoryFromRows: (orders) => set({ history: orders }),
       addItem: (product, quantity) => {
         if (quantity <= 0) return;
+        product = produtoAtual(product);
+        if (vendaBloqueada(product)) { avisarEsgotados([product]); return; }
         set((s) => {
           const existing = s.items.find((i) => i.sku === product.sku);
           if (existing) {
@@ -388,7 +392,9 @@ export const useOrder = create<OrderState>()(
         });
       },
       addBulk: (entries) => {
-        const valid = entries.filter((e) => e.quantity > 0);
+        const atuais = entries.map((e) => ({ ...e, product: produtoAtual(e.product) }));
+        avisarEsgotados(atuais.filter((e) => e.quantity > 0 && vendaBloqueada(e.product)).map((e) => e.product));
+        const valid = atuais.filter((e) => e.quantity > 0 && !vendaBloqueada(e.product));
         if (valid.length === 0) return;
         set((s) => {
           const next = [...s.items];
@@ -405,6 +411,8 @@ export const useOrder = create<OrderState>()(
       },
       updateQty: (sku, quantity) => {
         if (quantity <= 0) return get().removeItem(sku);
+        const item = get().items.find((i) => i.sku === sku);
+        if (item && vendaBloqueada(produtoAtual(item.product))) { avisarEsgotados([item.product]); return; }
         set((s) => ({
           items: s.items.map((i) => (i.sku === sku ? { ...i, quantity } : i)),
         }));
@@ -467,6 +475,7 @@ export const useOrder = create<OrderState>()(
       saveOrder: async (commercial, itemsOverride) => {
         const { items: allItems, meta } = get();
         const items = itemsOverride ?? allItems;
+        await validarEstoqueAtual(items, true);
         const total =
           commercial?.totalFinal ??
           items.reduce((sum, i) => sum + effectiveItemSubtotal(i), 0);
@@ -680,6 +689,7 @@ export const useOrder = create<OrderState>()(
         return order;
       },
       atualizarPedido: async (orderId, commercial, items) => {
+        await validarEstoqueAtual(items, true);
         assertCommercialMatchesItems(commercial, items, "atualizarPedido");
         const { data: atual, error: errA } = await supabase
           .from("orders")
@@ -848,6 +858,7 @@ export const useOrder = create<OrderState>()(
       // V16 — Aprovação de pedidos do portal do cliente
       // ====================================================================
       saveOrderAsCliente: async (commercial, items) => {
+        await validarEstoqueAtual(items);
         const auth = useAuth.getState();
         if (!auth.user?.id) throw new Error("Sessão expirada. Faça login novamente.");
         const profile = auth.profile;
@@ -927,11 +938,14 @@ export const useOrder = create<OrderState>()(
           throw new Error("Pedido não está mais aguardando aprovação.");
         }
 
+        await validarEstoqueAtual(order.items);
         // Lazy imports para não criar dependência circular
         const { emEstoque } = await import("@/lib/classifyItem");
         const { useProvisao } = await import("@/store/provisaoStore");
-        const itensFirmes = order.items.filter((i) => emEstoque(i.product));
-        const itensProvisao = order.items.filter((i) => !emEstoque(i.product));
+        const atuais = order.items.map((i) => ({ ...i, product: produtoAtual(i.product) }));
+        const itensFirmes = atuais.filter((i) => emEstoque(i.product));
+        const itensProvisao = atuais.filter((i) => !emEstoque(i.product) && !vendaBloqueada(i.product));
+        if (itensFirmes.length) await validarEstoqueAtual(itensFirmes, true);
 
         const aprovadoEm = new Date().toISOString();
         const aprovadoPorNome =
