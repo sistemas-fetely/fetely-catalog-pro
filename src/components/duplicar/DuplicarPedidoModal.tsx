@@ -137,13 +137,13 @@ export function DuplicarPedidoModal({
     if (itens.length === 0) { toast.error("Escolha a origem dos itens"); return; }
     if (clientesSelecionados.size === 0) { toast.error("Selecione ao menos um cliente destino"); return; }
 
-    const recalc = recalcularItens(itensBase);
+    const recalc = recalcularItens(itens);
     if (recalc.itens.length === 0) {
       toast.error("Nenhum item válido após recálculo (todos descontinuados).");
       return;
     }
     if (recalc.itensRemovidos.length > 0) {
-      toast.warning(`${recalc.itensRemovidos.length} item(ns) descontinuado(s) removido(s).`);
+      toast.warning("Itens indisponíveis não foram incluídos", { description: recalc.itensRemovidos.map((i) => `${i.sku}: ${i.motivo}`).join(", "), duration: 7000 });
     }
     if (recalc.itensComPrecoAlterado.length > 0) {
       toast.info(`${recalc.itensComPrecoAlterado.length} item(ns) com preço atualizado.`);

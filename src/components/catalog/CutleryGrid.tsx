@@ -6,6 +6,8 @@ import { useOrder } from "@/store/orderStore";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import { CollectionBulkFiller } from "@/components/catalog/CollectionBulkFiller";
+import { vendaBloqueada } from "@/lib/classifyItem";
+import { Button } from "@/components/ui/button";
 import type { Product } from "@/types";
 
 interface Props {
@@ -42,14 +44,15 @@ export function CutleryGrid({ products, colecao, onColorChange }: Props) {
     [products, color],
   );
 
-  const total = filtered.reduce(
+  const vendaveis = filtered.filter((p) => !vendaBloqueada(p));
+  const total = vendaveis.reduce(
     (sum, p) => sum + (qtys[p.sku] ?? 0) * p.precoAtacado,
     0,
   );
-  const totalUnits = filtered.reduce((sum, p) => sum + (qtys[p.sku] ?? 0), 0);
+  const totalUnits = vendaveis.reduce((sum, p) => sum + (qtys[p.sku] ?? 0), 0);
 
   const handleAdd = () => {
-    const entries = filtered
+    const entries = vendaveis
       .filter((p) => (qtys[p.sku] ?? 0) > 0)
       .map((p) => ({ product: p, quantity: qtys[p.sku] }));
     if (!entries.length) return;
@@ -59,7 +62,7 @@ export function CutleryGrid({ products, colecao, onColorChange }: Props) {
 
   const applyBoxes = (boxes: number) => {
     const next: Record<string, number> = { ...qtys };
-    filtered.forEach((p) => {
+    vendaveis.forEach((p) => {
       const step = Math.max(1, halfBox(p.multiplos));
       next[p.sku] = boxes * step;
     });
@@ -174,6 +177,7 @@ export function CutleryGrid({ products, colecao, onColorChange }: Props) {
                   value={qty}
                   onChange={(v) => setQtys((q) => ({ ...q, [p.sku]: v }))}
                   multiplos={p.multiplos}
+                  disabled={vendaBloqueada(p)}
                   compact
                 />
               </div>
@@ -197,14 +201,14 @@ export function CutleryGrid({ products, colecao, onColorChange }: Props) {
             </span>
           </div>
         </div>
-        <button
+        <Button
           type="button"
           disabled={totalUnits === 0}
           onClick={handleAdd}
           className="rounded-md bg-gold px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-background transition hover:bg-gold-light disabled:opacity-30"
         >
-          Adicionar seleção ao carrinho
-        </button>
+          {vendaveis.length === 0 ? "Esgotado" : "Adicionar seleção ao carrinho"}
+        </Button>
       </div>
     </div>
   );

@@ -11,6 +11,8 @@ import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import { QuantityInput } from "@/components/ui/QuantityInput";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { formatBRL, halfBox, isValidMultiple } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { vendaBloqueada } from "@/lib/classifyItem";
 import { productGroupLabel } from "@/lib/plateNames";
 
 const searchSchema = z.object({
@@ -65,8 +67,9 @@ function ProductPage() {
   const indisponivel = isPublic
     ? product.precoVarejo <= 0
     : product.precoAtacado <= 0;
+  const bloqueado = vendaBloqueada(product);
   const canAdd =
-    qty > 0 && isValidMultiple(qty, product.multiplos) && !indisponivel;
+    qty > 0 && isValidMultiple(qty, product.multiplos) && !indisponivel && !bloqueado;
 
   const specs: { label: string; value: string | number | undefined }[] = [
     { label: "SKU", value: product.sku },
@@ -215,9 +218,9 @@ function ProductPage() {
               value={qty}
               onChange={setQty}
               multiplos={product.multiplos}
-              disabled={indisponivel}
+              disabled={indisponivel || bloqueado}
             />
-            <button
+            <Button
               type="button"
               disabled={!canAdd}
               onClick={() => {
@@ -226,8 +229,8 @@ function ProductPage() {
               }}
               className="w-full rounded-md bg-gold py-3 text-xs font-semibold uppercase tracking-[0.15em] text-background transition hover:bg-gold-light disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              {indisponivel ? "Indisponível" : "Adicionar ao pedido"}
-            </button>
+              {bloqueado ? "Esgotado" : indisponivel ? "Indisponível" : "Adicionar ao pedido"}
+            </Button>
             <button
               type="button"
               onClick={() => navigate({ to: "/catalog", search: { colecao: product.colecao } })}

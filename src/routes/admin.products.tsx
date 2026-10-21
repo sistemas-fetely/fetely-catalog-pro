@@ -54,6 +54,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatBRL } from "@/lib/format";
+import { vendaBloqueada, emEstoque } from "@/lib/classifyItem";
 import { NOTA_DONO } from "@/lib/fichaDonos";
 
 export const Route = createFileRoute("/admin/products")({
@@ -111,6 +112,11 @@ function faseBadge(p: Product) {
 
 function statusBadge(p: Product) {
   const iconProps = { className: "h-3.5 w-3.5" };
+  if (vendaBloqueada(p)) return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-stock-out">
+      <Ban {...iconProps} /> Esgotado
+    </span>
+  );
   if (!p.precoAtacado || p.precoAtacado <= 0)
     return (
       <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-text-muted">
@@ -118,7 +124,7 @@ function statusBadge(p: Product) {
       </span>
     );
   const s = (p.statusEstoque || "").toLowerCase();
-  if (s === "em estoque")
+  if (emEstoque(p))
     return (
       <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-stock-in">
         <Package {...iconProps} /> Em estoque

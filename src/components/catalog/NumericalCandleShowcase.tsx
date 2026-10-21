@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { COLLECTION_ACCENT } from "@/data/productConstants";
 import { formatBRL } from "@/lib/format";
 import { ColorVariantChips } from "@/components/catalog/ColorVariantChips";
+import { StockBadge } from "@/components/ui/StockBadge";
 import type { Product } from "@/types";
 
 interface Props {
@@ -114,6 +115,7 @@ export function NumericalCandleShowcase({ products, colecao, onColorChange }: Pr
             <div className="px-4 py-3 min-w-0">
               <div className="text-sm text-text-primary truncate">{p.nomeComercial}</div>
               <div className="text-[10px] font-mono text-text-muted mt-1">{p.sku}</div>
+              <StockBadge status={p.statusEstoque} estoqueDisponivel={p.estoqueDisponivel} prontaEntrega={p.prontaEntrega} />
             </div>
             <div className="px-4 py-3 text-right">
               {p.precoVarejo > 0 ? (
