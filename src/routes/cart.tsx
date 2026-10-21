@@ -17,7 +17,10 @@ import { MixedCartBanner } from "@/components/cart/MixedCartBanner";
 import { ProvisaoSection } from "@/components/cart/ProvisaoSection";
 import { FinalConfirmModal } from "@/components/cart/FinalConfirmModal";
 import { SalvarModeloModal } from "@/components/duplicar/SalvarModeloModal";
-import { extrairDataPrevisao, compararPrevisao, roteamentoQtd } from "@/lib/classifyItem";
+import { extrairDataPrevisao, compararPrevisao, roteamentoQtd, vendaBloqueada } from "@/lib/classifyItem";
+import { useCatalog } from "@/store/catalogStore";
+import { validarEstoqueAtual } from "@/lib/salesStock";
+import { Button } from "@/components/ui/button";
 import { useProvisao } from "@/store/provisaoStore";
 import { useCotacao } from "@/store/cotacaoStore";
 import type { CartItem, OrderCommercial, OrderMeta } from "@/types";
@@ -138,6 +141,12 @@ function toItemProvisao(i: CartItem): ItemProvisao {
 
 function CartPage() {
   const items = useOrder((s) => s.items);
+  const catalog = useCatalog((s) => s.products);
+  const itensAtuais = useMemo(() => {
+    const bySku = new Map(catalog.map((p) => [p.sku, p]));
+    return items.map((i) => ({ ...i, product: bySku.get(i.sku) ?? i.product }));
+  }, [items, catalog]);
+  const itensBloqueados = itensAtuais.filter((i) => vendaBloqueada(i.product));
   const photos = usePhotos();
   const meta = useOrder((s) => s.meta);
   const setMeta = useOrder((s) => s.setMeta);
@@ -193,18 +202,18 @@ function CartPage() {
   const provisaoOrigemId = (meta as OrderMeta & { provisaoOrigemId?: string }).provisaoOrigemId;
 
   // Split firme / provisao — split parcial por quantidade conforme estoque_disponivel.
-  // Vale também ao converter uma provisão: itens com pronta entrega descem como firme e
+  // Vale também ao converter uma provisão: itens com estoque positivo descem como firme e
   // itens que continuam em previsão permanecem na fila de provisão.
   const { itensFirmes, itensProvisao } = useMemo(() => {
     const firmes: CartItem[] = [];
     const provisao: CartItem[] = [];
-    items.forEach((i) => {
+    itensAtuais.forEach((i) => {
       const { firme, provisao: prov } = roteamentoQtd(i.product, i.quantity);
       if (firme > 0) firmes.push({ ...i, quantity: firme });
       if (prov > 0) provisao.push({ ...i, quantity: prov });
     });
     return { itensFirmes: firmes, itensProvisao: provisao };
-  }, [items]);
+  }, [itensAtuais]);
 
   const isMisto = itensFirmes.length > 0 && itensProvisao.length > 0;
   const apenasProvisao = itensFirmes.length === 0 && itensProvisao.length > 0;
@@ -366,9 +375,22 @@ function CartPage() {
     };
   }, [isClientePortal, profile?.cliente_id, clientesAll, meta.clienteId, setMeta]);
 
+  const conferirEstoque = async () => {
+    try {
+      await validarEstoqueAtual(itensAtuais);
+      if (itensFirmes.length) await validarEstoqueAtual(itensFirmes, true);
+      return true;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Revise o estoque do carrinho.");
+      await useCatalog.getState().hydrate({ force: true });
+      return false;
+    }
+  };
+
   const executeConfirm = async () => {
 
     if (salvandoPedido) return;
+    if (!(await conferirEstoque())) return;
     const snapshot = await ensureClienteSnapshot();
     if (!snapshot) {
       toast.error("Selecione um cliente cadastrado", {
@@ -522,6 +544,7 @@ function CartPage() {
   };
 
   const handleConfirm = () => {
+    if (itensBloqueados.length) { toast.error("Remova os produtos esgotados antes de continuar."); return; }
     if (!meta.clienteId) return alert("Selecione um cliente cadastrado.");
     if (!commercial?.podeFinalizar || !commercial.calculo.faixa || !commercial.condicao) {
       return alert(commercial?.motivoBloqueio ?? "Revise o pedido.");
@@ -531,6 +554,7 @@ function CartPage() {
 
   const handleSalvarCotacao = async () => {
     if (salvandoPedido) return;
+    if (!(await conferirEstoque())) return;
     const snapshot = await ensureClienteSnapshot();
     if (!snapshot) {
       toast.error("Selecione um cliente cadastrado", {
@@ -661,6 +685,7 @@ function CartPage() {
   // Salvar tudo como provisão (carrinho 100% previsão)
   const handleSaveOnlyProvisao = async () => {
     if (salvandoPedido) return;
+    if (!(await conferirEstoque())) return;
     const snapshot = await ensureClienteSnapshot();
     if (!snapshot) {
       toast.error("Selecione um cliente cadastrado", {
@@ -695,6 +720,7 @@ function CartPage() {
   const editandoProvisaoId = (meta as OrderMeta & { provisaoEditandoId?: string }).provisaoEditandoId;
   const handleSalvarEdicaoProvisao = async () => {
     if (!editandoProvisaoId || salvandoPedido) return;
+    if (!(await conferirEstoque())) return;
     if (items.length === 0) {
       toast.error("A provisão precisa ter pelo menos um item");
       return;
@@ -802,6 +828,15 @@ function CartPage() {
       {provisaoOrigemId && !editandoProvisaoId && (
         <div className="mb-4 rounded-md border border-stock-pre/40 bg-stock-pre/10 px-3 py-2.5 sm:px-4 sm:py-3 text-xs text-stock-pre">
           ⚡ Estes itens vieram da Provisão <strong>{provisaoOrigemId}</strong>. Verifique quantidades e condições antes de confirmar.
+        </div>
+      )}
+
+      {itensBloqueados.length > 0 && (
+        <div role="alert" className="mb-4 border border-stock-out/40 bg-stock-out/10 p-3 text-sm text-stock-out">
+          <p>Esgotados — remova para continuar: {itensBloqueados.map((i) => i.product.codCadastro || i.sku).join(", ")}.</p>
+          <Button variant="destructive" size="sm" className="mt-2" onClick={() => removeItems(itensBloqueados.map((i) => i.sku))}>
+            <Trash2 /> Remover esgotados
+          </Button>
         </div>
       )}
 

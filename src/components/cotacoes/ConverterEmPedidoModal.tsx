@@ -9,7 +9,8 @@ import { useOrder } from "@/store/orderStore";
 import { useCotacao } from "@/store/cotacaoStore";
 import { useProvisao } from "@/store/provisaoStore";
 import { useCatalog } from "@/store/catalogStore";
-import { emEstoque, extrairDataPrevisao } from "@/lib/classifyItem";
+import { roteamentoQtd, vendaBloqueada, extrairDataPrevisao } from "@/lib/classifyItem";
+import { validarEstoqueAtual, avisarEsgotados } from "@/lib/salesStock";
 import { recalcularComercialParaItens } from "@/lib/recalcComercial";
 
 function toItemProvisao(i: CartItem): ItemProvisao {
@@ -42,9 +43,9 @@ export function ConverterEmPedidoModal({
   const marcarConvertida = useCotacao((s) => s.marcarConvertida);
   const createProvisao = useProvisao((s) => s.createProvisao);
   const [saving, setSaving] = useState(false);
+  const catalog = useCatalog((s) => s.products);
 
-  const { itensFirmes, itensProvisao, itensHidratados } = useMemo(() => {
-    const catalog = useCatalog.getState().products;
+  const { itensFirmes, itensProvisao, itensHidratados, itensBloqueados } = useMemo(() => {
     const bySku = new Map(catalog.map((p) => [p.sku, p]));
     const hidratados: CartItem[] = cotacao.items.map((i) => ({
       ...i,
@@ -52,12 +53,14 @@ export function ConverterEmPedidoModal({
     }));
     const firmes: CartItem[] = [];
     const provisao: CartItem[] = [];
+    const bloqueados = hidratados.filter((i) => vendaBloqueada(i.product));
     hidratados.forEach((i) => {
-      if (emEstoque(i.product)) firmes.push(i);
-      else provisao.push(i);
+      const split = roteamentoQtd(i.product, i.quantity);
+      if (split.firme > 0) firmes.push({ ...i, quantity: split.firme });
+      if (split.provisao > 0) provisao.push({ ...i, quantity: split.provisao });
     });
-    return { itensFirmes: firmes, itensProvisao: provisao, itensHidratados: hidratados };
-  }, [cotacao.items]);
+    return { itensFirmes: firmes, itensProvisao: provisao, itensHidratados: hidratados.filter((i) => !vendaBloqueada(i.product)), itensBloqueados: bloqueados };
+  }, [cotacao.items, catalog]);
 
   const isMisto = itensFirmes.length > 0 && itensProvisao.length > 0;
   const apenasProvisao = itensFirmes.length === 0 && itensProvisao.length > 0;
@@ -78,6 +81,9 @@ export function ConverterEmPedidoModal({
     if (saving) return;
     setSaving(true);
     try {
+      avisarEsgotados(itensBloqueados.map((i) => i.product));
+      await validarEstoqueAtual(itensHidratados);
+      if (itensFirmes.length) await validarEstoqueAtual(itensFirmes, true);
       // Carrega o cart com TODOS os itens (firmes + provisão) p/ preservar UI/estado se algo der errado
       clearCart();
       addBulk(itensHidratados.map((i) => ({ product: i.product, quantity: i.quantity })));
@@ -185,6 +191,12 @@ export function ConverterEmPedidoModal({
           </div>
         )}
 
+        {itensBloqueados.length > 0 && (
+          <div className="text-xs text-stock-out" role="alert">
+            Esgotados — não serão incluídos: {itensBloqueados.map((i) => i.product.codCadastro || i.sku).join(", ")}.
+          </div>
+        )}
+
         {houveDiferenca && (
           <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 space-y-1">
             <div className="text-[10px] uppercase tracking-[0.2em] text-amber-500 font-semibold">
@@ -231,7 +243,7 @@ export function ConverterEmPedidoModal({
           </button>
           <button
             onClick={handleConvert}
-            disabled={saving}
+            disabled={saving || itensHidratados.length === 0}
             className="flex-1 rounded-md bg-gold py-2.5 text-xs font-semibold uppercase tracking-[0.15em] text-background hover:bg-gold-light disabled:opacity-40"
           >
             {saving ? "Convertendo…" : "✦ Confirmar conversão"}

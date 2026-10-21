@@ -7,6 +7,7 @@ import { useClientes } from "@/store/clienteStore";
 import { compararPrevisao } from "@/lib/classifyItem";
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeStorage } from "@/lib/safeStorage";
+import { validarEstoqueAtual } from "@/lib/salesStock";
 
 
 interface CreateProvisaoInput {
@@ -272,6 +273,7 @@ export const useProvisao = create<ProvisaoState>()(
       setProvisoesFromRows: (p, maxCounter) => set({ provisoes: p, counter: maxCounter }),
 
       createProvisao: async (input) => {
+        await validarEstoqueAtual(input.itens.map((i) => ({ sku: i.sku, quantity: i.quantidade, product: {} })));
         const auth = useAuth.getState();
         if (!auth.session || !auth.user?.id) {
           throw new Error("Sua sessão expirou ou ainda está carregando. Atualize a página e tente novamente.");
@@ -412,6 +414,7 @@ export const useProvisao = create<ProvisaoState>()(
           });
       },
       atualizarProvisao: async (id, patch) => {
+        await validarEstoqueAtual(patch.itens.map((i) => ({ sku: i.sku, quantity: i.quantidade, product: {} })));
         const atual = get().provisoes.find((p) => p.id === id);
         if (!atual) throw new Error("Provisão não encontrada");
         if (atual.status === "convertido_em_pedido") {

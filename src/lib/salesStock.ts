@@ -1,4 +1,4 @@
-import type { CartItem, Product } from "@/types";
+import type { Product } from "@/types";
 import { useCatalog } from "@/store/catalogStore";
 import { supabase } from "@/integrations/supabase/client";
 import { vendaBloqueada } from "@/lib/classifyItem";
@@ -17,7 +17,7 @@ export function avisarEsgotados(products: Product[]) {
 }
 
 /** Confirma o sinal atual do SNCF antes de qualquer gravação de venda/provisão. */
-export async function validarEstoqueAtual(items: CartItem[], somenteFirme = false): Promise<void> {
+export async function validarEstoqueAtual(items: { sku: string; quantity: number; product: { codCadastro?: string } }[], somenteFirme = false): Promise<void> {
   if (!items.length) throw new Error("Não há itens disponíveis para salvar.");
   const { data, error } = await supabase.from("products")
     .select("sku, estoque_disponivel, status_estoque")
