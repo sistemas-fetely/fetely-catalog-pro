@@ -40,6 +40,7 @@ const ROTAS: RotaProtegida[] = [
 
   { prefix: "/analytics", telaId: "relatorios" },
   { prefix: "/orders", telaId: "pedidos_lista" },
+  { prefix: "/venda-b2c", telaId: "venda_b2c" },
   { prefix: "/farol", telaId: "pedidos_lista" },
   { prefix: "/new-order", telaId: "pedidos_novo", acao: "criar" },
   { prefix: "/cotacoes", telaId: "cotacoes_lista" },
@@ -72,6 +73,7 @@ export function regraDaRota(
  * pedidos/cotações/provisões/clientes. Nada de visão agregada ou configuração.
  */
 const BLOQUEADOS_REPRESENTANTE: string[] = [
+  "/venda-b2c",
   "/dashboard",
   "/metas-pace",
   "/relatorios",
