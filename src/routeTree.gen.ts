@@ -39,6 +39,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReunioesRouteImport } from './routes/reunioes'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StandRouteImport } from './routes/stand'
+import { Route as VendaB2cRouteImport } from './routes/venda-b2c'
 import { Route as AcademiaIndexRouteImport } from './routes/academia.index'
 import { Route as AcademiaModuloIdRouteImport } from './routes/academia.$moduloId'
 import { Route as AdminAcademiaRouteImport } from './routes/admin.academia'
@@ -216,6 +217,11 @@ const StandRoute = StandRouteImport.update({
   path: '/stand',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VendaB2cRoute = VendaB2cRouteImport.update({
+  id: '/venda-b2c',
+  path: '/venda-b2c',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AcademiaIndexRoute = AcademiaIndexRouteImport.update({
   id: '/academia/',
   path: '/academia/',
@@ -379,6 +385,7 @@ export interface FileRoutesByFullPath {
   '/reunioes': typeof ReunioesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
+  '/venda-b2c': typeof VendaB2cRoute
   '/academia/$moduloId': typeof AcademiaModuloIdRoute
   '/admin/academia': typeof AdminAcademiaRoute
   '/admin/access-logs': typeof AdminAccessLogsRoute
@@ -436,6 +443,7 @@ export interface FileRoutesByTo {
   '/reunioes': typeof ReunioesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
+  '/venda-b2c': typeof VendaB2cRoute
   '/academia/$moduloId': typeof AcademiaModuloIdRoute
   '/admin/academia': typeof AdminAcademiaRoute
   '/admin/access-logs': typeof AdminAccessLogsRoute
@@ -495,6 +503,7 @@ export interface FileRoutesById {
   '/reunioes': typeof ReunioesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/stand': typeof StandRouteWithChildren
+  '/venda-b2c': typeof VendaB2cRoute
   '/academia/$moduloId': typeof AcademiaModuloIdRoute
   '/admin/academia': typeof AdminAcademiaRoute
   '/admin/access-logs': typeof AdminAccessLogsRoute
@@ -555,6 +564,7 @@ export interface FileRouteTypes {
     | '/reunioes'
     | '/settings'
     | '/stand'
+    | '/venda-b2c'
     | '/academia/$moduloId'
     | '/admin/academia'
     | '/admin/access-logs'
@@ -612,6 +622,7 @@ export interface FileRouteTypes {
     | '/reunioes'
     | '/settings'
     | '/stand'
+    | '/venda-b2c'
     | '/academia/$moduloId'
     | '/admin/academia'
     | '/admin/access-logs'
@@ -670,6 +681,7 @@ export interface FileRouteTypes {
     | '/reunioes'
     | '/settings'
     | '/stand'
+    | '/venda-b2c'
     | '/academia/$moduloId'
     | '/admin/academia'
     | '/admin/access-logs'
@@ -729,6 +741,7 @@ export interface RootRouteChildren {
   ReunioesRoute: typeof ReunioesRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   StandRoute: typeof StandRouteWithChildren
+  VendaB2cRoute: typeof VendaB2cRoute
   AcademiaModuloIdRoute: typeof AcademiaModuloIdRoute
   AdminAcademiaRoute: typeof AdminAcademiaRoute
   AdminAccessLogsRoute: typeof AdminAccessLogsRoute
@@ -960,6 +973,13 @@ declare module '@tanstack/react-router' {
       path: '/stand'
       fullPath: '/stand'
       preLoaderRoute: typeof StandRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/venda-b2c': {
+      id: '/venda-b2c'
+      path: '/venda-b2c'
+      fullPath: '/venda-b2c'
+      preLoaderRoute: typeof VendaB2cRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/academia/': {
@@ -1219,6 +1239,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReunioesRoute: ReunioesRouteWithChildren,
   SettingsRoute: SettingsRoute,
   StandRoute: StandRouteWithChildren,
+  VendaB2cRoute: VendaB2cRoute,
   AcademiaModuloIdRoute: AcademiaModuloIdRoute,
   AdminAcademiaRoute: AdminAcademiaRoute,
   AdminAccessLogsRoute: AdminAccessLogsRoute,
