@@ -9,6 +9,7 @@ import {
   BarChart3,
   Settings,
   ShoppingBag,
+  Store,
   Home,
   Image as ImageIcon,
   Upload,
@@ -56,6 +57,7 @@ export function MobileNavPanel({ onNavigate }: { onNavigate?: () => void }) {
     { to: "/orders", label: "Pedidos", Icon: ClipboardList, tela: "pedidos_lista" },
     { to: "/cotacoes", label: "Cotações", Icon: FileText, tela: "cotacoes_lista" },
     { to: "/provisoes", label: "Provisões", Icon: FileClock, tela: "provisoes_lista" },
+    { to: "/venda-b2c", label: "Venda B2C", Icon: Store, tela: "venda_b2c" },
   ];
 
   const operacional: Item[] = [

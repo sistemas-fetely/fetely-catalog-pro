@@ -244,6 +244,75 @@ Deno.serve(async (req) => {
     }
     // ── fim branch canal ──
 
+    // ── Branch: Balcão B2C (proxy FOP → SNCF, venda direta consumidor final) ──
+    if (typeof body?.tipo === "string" && body.tipo.startsWith("balcao_")) {
+      // Guarda de papel: apenas master / admin / vendedor
+      const jwtBalcao = req.headers.get("Authorization")?.substring(7).trim();
+      if (!jwtBalcao) return jsonResponse(401, { error: "JWT ausente" });
+
+      const { data: { user: userBalcao }, error: userErrBalcao } =
+        await supabase.auth.getUser(jwtBalcao);
+      if (userErrBalcao || !userBalcao) {
+        return jsonResponse(401, { error: "Token inválido" });
+      }
+
+      const { data: rolesBalcao } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userBalcao.id);
+      const papeisBalcao = (rolesBalcao ?? []).map((r: any) => r.role as string);
+      if (!papeisBalcao.some((r) => ["master", "admin", "vendedor"].includes(r))) {
+        return jsonResponse(403, { error: "Acesso restrito a usuários internos" });
+      }
+
+      // Token SNCF do cofre (mesma chave dos demais branches)
+      const { data: senhaBalcao, error: vaultErrBalcao } = await supabase
+        .rpc("get_vault_secret", { p_name: "SNCF_OUTBOUND_TOKEN" });
+      if (vaultErrBalcao || !senhaBalcao) {
+        console.error("[enviar-para-sncf] balcao: falha ao ler SNCF_OUTBOUND_TOKEN", vaultErrBalcao);
+        return jsonResponse(500, { error: "Erro de configuração interna" });
+      }
+
+      // Identidade do vendedor SEMPRE pelo login — nunca pelo que veio da tela.
+      const { data: profBalcao } = await supabase
+        .from("profiles")
+        .select("nome_completo")
+        .eq("id", userBalcao.id)
+        .maybeSingle();
+
+      const balcaoForward: Record<string, unknown> = {
+        ...body,
+        fop_profile_id: userBalcao.id,
+        vendedor_email: userBalcao.email ?? null,
+        vendedor_nome: profBalcao?.nome_completo ?? userBalcao.email ?? "Comercial",
+      };
+
+      const sncfBalcaoResp = await fetch(SNCF_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${senhaBalcao}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(balcaoForward),
+      });
+
+      const sncfBalcaoBody = await sncfBalcaoResp.json().catch(() => ({
+        error: "Resposta sem JSON do SNCF",
+      }));
+
+      if (!sncfBalcaoResp.ok) {
+        console.error(
+          "[enviar-para-sncf] balcao: SNCF retornou erro",
+          sncfBalcaoResp.status,
+          sncfBalcaoBody,
+        );
+      }
+
+      // Repassa status e corpo como vieram do SNCF (fail-loud)
+      return jsonResponse(sncfBalcaoResp.status, sncfBalcaoBody);
+    }
+    // ── fim branch balcao ──
+
     orderId = body?.order_id;
     if (!orderId) return jsonResponse(400, { error: "order_id obrigatório" });
 

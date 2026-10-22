@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BarChart3, ChevronDown, ClipboardList, FileClock, FileText, KeyRound, Lock, LogOut, Menu, Moon, Search, Settings, ShoppingBag, Sun, User } from "lucide-react";
+import { BarChart3, ChevronDown, ClipboardList, FileClock, FileText, KeyRound, Lock, LogOut, Menu, Moon, Search, Settings, ShoppingBag, Store, Sun, User } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePreSelecao, usePreSelecoesEscopo } from "@/store/preSelecaoStore";
 import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
@@ -141,7 +141,8 @@ export function Header() {
 
               {(temPermissao("pedidos_lista", "ver") ||
                 temPermissao("cotacoes_lista", "ver") ||
-                temPermissao("provisoes_lista", "ver")) && (
+                temPermissao("provisoes_lista", "ver") ||
+                temPermissao("venda_b2c", "ver")) && (
                 <ComercialNav
                   pathname={pathname}
                   temPermissao={temPermissao}
@@ -448,7 +449,8 @@ function ComercialNav({
   const active =
     pathname.startsWith("/orders") ||
     pathname.startsWith("/cotacoes") ||
-    pathname.startsWith("/provisoes");
+    pathname.startsWith("/provisoes") ||
+    pathname.startsWith("/venda-b2c");
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -490,6 +492,14 @@ function ComercialNav({
             <Link to="/provisoes" className="flex items-center gap-2">
               <FileClock className="h-4 w-4" />
               <span className="text-xs uppercase tracking-wider">Provisões</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {temPermissao("venda_b2c", "ver") && (
+          <DropdownMenuItem asChild className="cursor-pointer focus:text-gold">
+            <Link to="/venda-b2c" className="flex items-center gap-2">
+              <Store className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-wider">Venda B2C</span>
             </Link>
           </DropdownMenuItem>
         )}

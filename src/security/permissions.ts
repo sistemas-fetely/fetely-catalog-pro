@@ -54,6 +54,7 @@ export const TELAS_SISTEMA: TelaDefinicao[] = [
   { id: "pedidos_exportar", nome: "Exportar Pedidos", grupo: "Pedidos", acoes: ["exportar"] },
   { id: "pedidos_aprovar", nome: "Aprovar Pedidos (portal)", grupo: "Pedidos", acoes: ["ver", "aprovar"] },
   { id: "pedidos_todos", nome: "Ver Pedidos de Todos", grupo: "Pedidos", acoes: V },
+  { id: "venda_b2c", nome: "Venda B2C (Balcão)", grupo: "Pedidos", acoes: VC },
 
   // COTAÇÕES
   { id: "cotacoes_lista", nome: "Lista de Cotações", grupo: "Cotações", acoes: VE },
@@ -150,6 +151,7 @@ export const PERMISSOES_PADRAO: Record<
     { telaId: "pedidos_novo", acoes: VC },
     { telaId: "pedidos_detalhe", acoes: ["ver", "editar", "exportar"] },
     { telaId: "pedidos_exportar", acoes: ["exportar"] },
+    { telaId: "venda_b2c", acoes: VC },
     { telaId: "cotacoes_lista", acoes: VE },
     { telaId: "cotacoes_nova", acoes: VC },
     { telaId: "cotacoes_converter", acoes: V },
