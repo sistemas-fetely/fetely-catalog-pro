@@ -108,6 +108,7 @@ type PedidoCriado = {
   link_pagamento: string | null;
   pix_copia_cola?: string | null;
   link_erro?: string | null;
+  endereco_gravado_no_cadastro?: boolean;
   avisos?: { sku?: string; aviso: string }[];
 };
 
@@ -145,6 +146,8 @@ const maskCpf = (v: string) => {
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 };
+
+const maskCep = (v: string) => soDigitos(v).slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
 
 const MODO_LABEL: Record<ModoEntrega, string> = {
   retirada: "Retirada no Site SP",
@@ -336,7 +339,7 @@ function NovoPedidoTab() {
     return () => clearTimeout(t);
   }, [buscaProduto]);
 
-  // ----- CEP → ViaCEP (cliente novo) -----
+  // ----- CEP → ViaCEP (endereço de entrega compartilhado) -----
   useEffect(() => {
     const cep = soDigitos(form.cep);
     if (cep.length !== 8) return;
@@ -363,18 +366,7 @@ function NovoPedidoTab() {
   }, [form.cep]);
 
   const enderecoAtual = useMemo(() => {
-    if (clienteSel) {
-      return {
-        cep: soDigitos(clienteSel.cep ?? ""),
-        logradouro: clienteSel.logradouro ?? "",
-        numero: clienteSel.numero ?? "",
-        complemento: clienteSel.complemento ?? "",
-        bairro: clienteSel.bairro ?? "",
-        cidade: clienteSel.cidade ?? "",
-        uf: clienteSel.uf ?? "",
-      };
-    }
-    if (modoNovoCliente) {
+    if (clienteSel || modoNovoCliente) {
       return {
         cep: soDigitos(form.cep),
         logradouro: form.logradouro,
@@ -536,10 +528,13 @@ function NovoPedidoTab() {
             uf: form.uf,
           };
 
+      if (modoSel !== "retirada" && (!cot || !enderecoAtual)) {
+        throw new Error("Informe o endereço e recalcule a entrega. Tente de novo.");
+      }
       const entregaPayload =
         modoSel === "retirada"
           ? { modo: "retirada", beneficio }
-          : { modo: modoSel, cotacao_id: cot!.cotacao_id, endereco: enderecoAtual, beneficio };
+          : { modo: modoSel, cotacao_id: cot?.cotacao_id, endereco: enderecoAtual, beneficio };
 
       const r = await balcao<PedidoCriado & { ok: true }>("balcao_criar", {
         cliente: clientePayload,
@@ -557,6 +552,7 @@ function NovoPedidoTab() {
         link_pagamento: r.link_pagamento ?? null,
         pix_copia_cola: r.pix_copia_cola ?? null,
         link_erro: r.link_erro ?? null,
+        endereco_gravado_no_cadastro: r.endereco_gravado_no_cadastro === true,
         avisos: r.avisos ?? [],
       });
       toast.success(`Pedido ${r.id_externo} criado`);
@@ -623,6 +619,10 @@ function NovoPedidoTab() {
             <span className="text-lg font-semibold text-gold">{criado.id_externo}</span>
             <span className="text-text-primary">{brl(criado.valor_total)}</span>
           </div>
+
+          {criado.endereco_gravado_no_cadastro && (
+            <p className="text-sm text-text-secondary">Endereço salvo no cadastro do cliente</p>
+          )}
 
           {criado.link_pagamento && (
             <div className="space-y-2">
@@ -726,6 +726,18 @@ function NovoPedidoTab() {
                         className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-surface-hover"
                         onClick={() => {
                           setClienteSel(c);
+                          setForm({
+                            ...FORM_VAZIO,
+                            ...(soDigitos(c.cep ?? "").length > 0 ? {
+                              cep: maskCep(c.cep ?? ""),
+                              logradouro: c.logradouro ?? "",
+                              numero: c.numero ?? "",
+                              complemento: c.complemento ?? "",
+                              bairro: c.bairro ?? "",
+                              cidade: c.cidade ?? "",
+                              uf: c.uf ?? "",
+                            } : {}),
+                          });
                           setClientesAchados([]);
                         }}
                       >
@@ -740,7 +752,7 @@ function NovoPedidoTab() {
                   ))}
                 </ul>
               )}
-              <Button variant="outline" size="sm" onClick={() => setModoNovoCliente(true)}>
+              <Button variant="outline" size="sm" onClick={() => { setForm(FORM_VAZIO); setModoNovoCliente(true); }}>
                 <UserPlus className="mr-1 h-4 w-4" /> Cadastrar novo cliente
               </Button>
             </>
@@ -770,6 +782,7 @@ function NovoPedidoTab() {
                   size="sm"
                   onClick={() => {
                     setClienteSel(null);
+                    setForm(FORM_VAZIO);
                     setBuscaCliente("");
                   }}
                 >
@@ -816,64 +829,6 @@ function NovoPedidoTab() {
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                   />
                 </div>
-                <div>
-                  <Label>CEP</Label>
-                  <Input
-                    inputMode="numeric"
-                    placeholder="00000-000"
-                    value={form.cep}
-                    onChange={(e) =>
-                      setForm({ ...form, cep: soDigitos(e.target.value).slice(0, 8) })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Logradouro</Label>
-                  <Input
-                    value={form.logradouro}
-                    onChange={(e) => setForm({ ...form, logradouro: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Número</Label>
-                  <Input
-                    value={form.numero}
-                    onChange={(e) => setForm({ ...form, numero: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Complemento</Label>
-                  <Input
-                    value={form.complemento}
-                    onChange={(e) => setForm({ ...form, complemento: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Bairro</Label>
-                  <Input
-                    value={form.bairro}
-                    onChange={(e) => setForm({ ...form, bairro: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="col-span-2">
-                    <Label>Cidade</Label>
-                    <Input
-                      value={form.cidade}
-                      onChange={(e) => setForm({ ...form, cidade: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>UF</Label>
-                    <Input
-                      maxLength={2}
-                      value={form.uf}
-                      onChange={(e) =>
-                        setForm({ ...form, uf: e.target.value.toUpperCase() })
-                      }
-                    />
-                  </div>
-                </div>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setModoNovoCliente(false)}>
@@ -887,6 +842,80 @@ function NovoPedidoTab() {
               </div>
             </div>
           )}
+
+          <section className="space-y-3 border-t border-border pt-4" aria-labelledby="balcao-endereco-titulo">
+            <h2 id="balcao-endereco-titulo" className="text-sm font-medium text-text-primary">Endereço de entrega</h2>
+            {clienteSel && !soDigitos(clienteSel.cep ?? "") && (
+              <p className="text-xs text-text-secondary">Cliente sem endereço no cadastro — informe para cotar a entrega</p>
+            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="balcao-entrega-cep">CEP</Label>
+                  <Input
+                    id="balcao-entrega-cep"
+                    inputMode="numeric"
+                    placeholder="00000-000"
+                    value={form.cep}
+                    onChange={(e) =>
+                      setForm({ ...form, cep: maskCep(e.target.value) })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="balcao-entrega-logradouro">Logradouro</Label>
+                  <Input
+                    id="balcao-entrega-logradouro"
+                      value={form.logradouro}
+                    onChange={(e) => setForm({ ...form, logradouro: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="balcao-entrega-numero">Número</Label>
+                  <Input
+                    id="balcao-entrega-numero"
+                      value={form.numero}
+                    onChange={(e) => setForm({ ...form, numero: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="balcao-entrega-complemento">Complemento</Label>
+                  <Input
+                    id="balcao-entrega-complemento"
+                      value={form.complemento}
+                    onChange={(e) => setForm({ ...form, complemento: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="balcao-entrega-bairro">Bairro</Label>
+                  <Input
+                    id="balcao-entrega-bairro"
+                      value={form.bairro}
+                    onChange={(e) => setForm({ ...form, bairro: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2">
+                    <Label htmlFor="balcao-entrega-cidade">Cidade</Label>
+                    <Input
+                      id="balcao-entrega-cidade"
+                      value={form.cidade}
+                      onChange={(e) => setForm({ ...form, cidade: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="balcao-entrega-uf">UF</Label>
+                    <Input
+                      maxLength={2}
+                      id="balcao-entrega-uf"
+                      value={form.uf}
+                      onChange={(e) =>
+                        setForm({ ...form, uf: e.target.value.toUpperCase() })
+                      }
+                    />
+                  </div>
+                </div>
+            </div>
+          </section>
         </CardContent>
       </Card>
 
