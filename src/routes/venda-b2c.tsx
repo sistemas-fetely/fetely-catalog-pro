@@ -23,6 +23,8 @@ import {
   Search, Store, Trash2, UserPlus,
 } from "lucide-react";
 import { balcao } from "@/hooks/useBalcao";
+import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
+import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 
 export const Route = createFileRoute("/venda-b2c")({
   head: () => ({
@@ -62,6 +64,8 @@ type BalcaoProduto = {
   nome: string;
   preco_varejo: number;
   disponivel_site_sp: number;
+  colecao: string | null;
+  cor_nome: string | null;
 };
 
 type Item = BalcaoProduto & { quantidade: number };
@@ -165,6 +169,45 @@ function copiar(texto: string, rotulo = "Copiado") {
     .catch(() => toast.error("Não foi possível copiar"));
 }
 
+// Miniatura 40x40 do produto: foto do catálogo FOP, mesma fonte do ProductCard
+// (photos store por coleção+sku, com fallback coleção+cor). Sem foto: placeholder.
+function ProdutoThumb({
+  colecao,
+  corNome,
+  sku,
+  nome,
+}: {
+  colecao: string | null;
+  corNome: string | null;
+  sku: string;
+  nome: string;
+}) {
+  const photos = usePhotos();
+  const foto = colecao
+    ? (getProdutoPhoto(photos, colecao, sku) ??
+      getProdutoPhoto(photos, colecao, corNome ?? ""))
+    : undefined;
+  if (foto) {
+    return (
+      <img
+        loading="lazy"
+        decoding="async"
+        src={foto}
+        alt={nome}
+        className="h-10 w-10 shrink-0 rounded object-cover"
+      />
+    );
+  }
+  return (
+    <PhotoPlaceholder
+      colecao={colecao ?? nome}
+      label={nome}
+      className="h-10 w-10 shrink-0 rounded"
+      showIcon={false}
+    />
+  );
+}
+
 // ============ Página ============
 
 function VendaB2cPage() {
@@ -220,6 +263,12 @@ function NovoPedidoTab() {
   const [produtosAchados, setProdutosAchados] = useState<BalcaoProduto[]>([]);
   const [buscandoProduto, setBuscandoProduto] = useState(false);
   const [itens, setItens] = useState<Item[]>([]);
+
+  // Fotos do catálogo (mesma fonte do catálogo): garante o store carregado nesta rota.
+  const photos = usePhotos();
+  useEffect(() => {
+    if (!photos.loaded && !photos.loading) void photos.fetchAll();
+  }, [photos.loaded, photos.loading, photos.fetchAll]);
 
   // (c) Entrega
   const [cotacao, setCotacao] = useState<Cotacao | null>(null);
@@ -865,7 +914,13 @@ function NovoPedidoTab() {
                     className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left hover:bg-surface-hover"
                     onClick={() => adicionarItem(p)}
                   >
-                    <span>
+                    <ProdutoThumb
+                      colecao={p.colecao}
+                      corNome={p.cor_nome}
+                      sku={p.sku}
+                      nome={p.nome}
+                    />
+                    <span className="min-w-0">
                       <span className="block text-sm text-text-primary">{p.nome}</span>
                       <span className="block text-xs text-text-secondary">
                         {p.cod_cadastro ?? "—"} · SKU {p.sku} · saldo Site SP: {p.disponivel_site_sp}
@@ -888,6 +943,7 @@ function NovoPedidoTab() {
                   key={i.sku}
                   className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2"
                 >
+                  <ProdutoThumb colecao={i.colecao} corNome={i.cor_nome} sku={i.sku} nome={i.nome} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm text-text-primary">{i.nome}</p>
                     <p className="text-xs text-text-secondary">
