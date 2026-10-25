@@ -64,9 +64,19 @@ type BalcaoProduto = {
   nome: string;
   preco_varejo: number;
   disponivel_site_sp: number;
+  /** Saldo do CD escolhido (SNCF novo); cai para disponivel_site_sp quando ausente. */
+  disponivel?: number;
+  /** CD que respondeu o saldo (informativo). */
+  centro?: string;
   colecao: string | null;
   cor_nome: string | null;
 };
+
+type CdInfo = { codigo: string; rotulo: string; padrao: boolean };
+
+const CD_PADRAO: CdInfo = { codigo: "SITE-SP", rotulo: "Site SP", padrao: true };
+
+const saldoDo = (p: BalcaoProduto) => p.disponivel ?? p.disponivel_site_sp;
 
 type Item = BalcaoProduto & { quantidade: number };
 
@@ -174,7 +184,7 @@ const maskCpf = (v: string) => {
 const maskCep = (v: string) => soDigitos(v).slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
 
 const MODO_LABEL: Record<ModoEntrega, string> = {
-  retirada: "Retirada no Site SP",
+  retirada: "Retirada no balcão",
   sedex: "SEDEX",
   pac: "PAC",
   frete_fetely: "Frete Fetély",
@@ -291,11 +301,42 @@ function NovoPedidoTab() {
   const [buscandoProduto, setBuscandoProduto] = useState(false);
   const [itens, setItens] = useState<Item[]>([]);
 
+  // (b0) CD de origem (Site SP / Show Room) — vem do SNCF; fallback Site SP
+  const [cds, setCds] = useState<CdInfo[]>([CD_PADRAO]);
+  const [cdSel, setCdSel] = useState<string>(CD_PADRAO.codigo);
+  const cdRotulo = cds.find((c) => c.codigo === cdSel)?.rotulo ?? CD_PADRAO.rotulo;
+
   // Fotos do catálogo (mesma fonte do catálogo): garante o store carregado nesta rota.
   const photos = usePhotos();
   useEffect(() => {
     if (!photos.loaded && !photos.loading) void photos.fetchAll();
   }, [photos.loaded, photos.loading, photos.fetchAll]);
+
+  // ----- CDs disponíveis (uma vez; falha mantém Site SP e avisa) -----
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await balcao<{ cds: CdInfo[] }>("balcao_cds");
+        if (cancelled) return;
+        const lista = r.cds ?? [];
+        if (lista.length > 0) {
+          setCds(lista);
+          const padrao = lista.find((c) => c.padrao);
+          if (padrao) setCdSel(padrao.codigo);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          toast.error(
+            `${e instanceof Error ? e.message : "Erro ao carregar CDs"} — usando ${CD_PADRAO.rotulo}`,
+          );
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // (c) Entrega
   const [cotacao, setCotacao] = useState<Cotacao | null>(null);
@@ -352,7 +393,10 @@ function NovoPedidoTab() {
     const t = setTimeout(async () => {
       setBuscandoProduto(true);
       try {
-        const r = await balcao<{ produtos: BalcaoProduto[] }>("balcao_produto_buscar", { termo });
+        const r = await balcao<{ produtos: BalcaoProduto[] }>("balcao_produto_buscar", {
+          termo,
+          centro_codigo: cdSel,
+        });
         setProdutosAchados(r.produtos ?? []);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Erro ao buscar produto");
@@ -361,7 +405,7 @@ function NovoPedidoTab() {
       }
     }, 300);
     return () => clearTimeout(t);
-  }, [buscaProduto]);
+  }, [buscaProduto, cdSel]);
 
   // ----- CEP → ViaCEP (endereço de entrega compartilhado) -----
   useEffect(() => {
@@ -441,6 +485,7 @@ function NovoPedidoTab() {
       const cep = enderecoAtual?.cep ?? "";
       const r = await balcao<Cotacao & { ok: true }>("balcao_calcular", {
         itens: itens.map((i) => ({ sku: i.sku, quantidade: i.quantidade })),
+        centro_codigo: cdSel,
         ...(clienteSel ? { cliente: { parceiro_id: clienteSel.id } } : {}),
         ...(cep.length === 8 && enderecoAtual ? { endereco: enderecoAtual } : {}),
         beneficio,
@@ -466,7 +511,7 @@ function NovoPedidoTab() {
     } finally {
       setCalculando(false);
     }
-  }, [itens, enderecoAtual, clienteSel, beneficio]);
+  }, [itens, enderecoAtual, clienteSel, beneficio, cdSel]);
 
   const itensKey = itens.map((i) => `${i.sku}:${i.quantidade}`).join("|");
   const cepKey = enderecoAtual?.cep ?? "";
@@ -505,6 +550,37 @@ function NovoPedidoTab() {
         : atual.map((i) => (i.sku === sku ? { ...i, quantidade: qtd } : i)),
     );
   };
+
+  // ----- trocar o CD com itens na lista: refaz o saldo de cada item -----
+  // (a entrega recalcula sozinha, porque recotar depende de cdSel)
+  useEffect(() => {
+    if (itens.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const atualizados = await Promise.all(
+          itens.map(async (i) => {
+            const r = await balcao<{ produtos: BalcaoProduto[] }>("balcao_produto_buscar", {
+              termo: i.sku,
+              centro_codigo: cdSel,
+            });
+            const p = r.produtos?.find((x) => x.sku === i.sku);
+            return p ? { ...p, quantidade: i.quantidade } : i;
+          }),
+        );
+        if (!cancelled) setItens(atualizados);
+      } catch (e) {
+        if (!cancelled) {
+          toast.error(e instanceof Error ? e.message : "Erro ao atualizar saldo do CD");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // intencional: reage só à troca de CD; itens entram por adicionarItem
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cdSel]);
 
   // ----- totais -----
   const subtotalLocal = itens.reduce((s, i) => s + i.preco_varejo * i.quantidade, 0);
@@ -557,8 +633,14 @@ function NovoPedidoTab() {
       }
       const entregaPayload =
         modoSel === "retirada"
-          ? { modo: "retirada", beneficio }
-          : { modo: modoSel, cotacao_id: cot?.cotacao_id, endereco: enderecoAtual, beneficio };
+          ? { modo: "retirada", centro_codigo: cdSel, beneficio }
+          : {
+              modo: modoSel,
+              centro_codigo: cdSel,
+              cotacao_id: cot?.cotacao_id,
+              endereco: enderecoAtual,
+              beneficio,
+            };
 
       const r = await balcao<PedidoCriado & { ok: true }>("balcao_criar", {
         cliente: clientePayload,
@@ -950,6 +1032,28 @@ function NovoPedidoTab() {
         </CardContent>
       </Card>
 
+      {/* (b0) CD de origem */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base text-text-primary">CD</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select value={cdSel} onValueChange={setCdSel}>
+            <SelectTrigger className="w-full sm:w-72">
+              <SelectValue placeholder="Selecione o CD" />
+            </SelectTrigger>
+            <SelectContent>
+              {cds.map((c) => (
+                <SelectItem key={c.codigo} value={c.codigo}>
+                  {c.rotulo}
+                  {c.padrao ? " (padrão)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
       {/* (b) Itens */}
       <Card>
         <CardHeader>
@@ -983,7 +1087,7 @@ function NovoPedidoTab() {
                     <span className="min-w-0">
                       <span className="block text-sm text-text-primary">{p.nome}</span>
                       <span className="block text-xs text-text-secondary">
-                        {p.cod_cadastro ?? "—"} · SKU {p.sku} · saldo Site SP: {p.disponivel_site_sp}
+                        {p.cod_cadastro ?? "—"} · SKU {p.sku} · saldo {cdRotulo}: {saldoDo(p)}
                       </span>
                     </span>
                     <span className="flex items-center gap-2">
@@ -1009,9 +1113,9 @@ function NovoPedidoTab() {
                     <p className="text-xs text-text-secondary">
                       {i.cod_cadastro ?? i.sku} · {brl(i.preco_varejo)}
                     </p>
-                    {i.quantidade > i.disponivel_site_sp && (
+                    {i.quantidade > saldoDo(i) && (
                       <Badge className="mt-1 border-amber-500/40 bg-amber-500/10 text-amber-400">
-                        sem saldo no Site SP
+                        sem saldo no {cdRotulo}
                       </Badge>
                     )}
                   </div>
@@ -1055,7 +1159,7 @@ function NovoPedidoTab() {
           <CardContent className="space-y-3">
             {!cepValido && (
               <p className="text-xs text-text-secondary">
-                Sem CEP válido no endereço — disponível apenas retirada no Site SP.
+                Sem CEP válido no endereço — disponível apenas retirada no balcão.
               </p>
             )}
             {cotacao?.correios_erro && (
