@@ -64,9 +64,19 @@ type BalcaoProduto = {
   nome: string;
   preco_varejo: number;
   disponivel_site_sp: number;
+  /** Saldo do CD escolhido (SNCF novo); cai para disponivel_site_sp quando ausente. */
+  disponivel?: number;
+  /** CD que respondeu o saldo (informativo). */
+  centro?: string;
   colecao: string | null;
   cor_nome: string | null;
 };
+
+type CdInfo = { codigo: string; rotulo: string; padrao: boolean };
+
+const CD_PADRAO: CdInfo = { codigo: "SITE-SP", rotulo: "Site SP", padrao: true };
+
+const saldoDo = (p: BalcaoProduto) => p.disponivel ?? p.disponivel_site_sp;
 
 type Item = BalcaoProduto & { quantidade: number };
 
@@ -174,7 +184,7 @@ const maskCpf = (v: string) => {
 const maskCep = (v: string) => soDigitos(v).slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
 
 const MODO_LABEL: Record<ModoEntrega, string> = {
-  retirada: "Retirada no Site SP",
+  retirada: "Retirada no balcão",
   sedex: "SEDEX",
   pac: "PAC",
   frete_fetely: "Frete Fetély",
