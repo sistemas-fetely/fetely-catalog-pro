@@ -551,6 +551,37 @@ function NovoPedidoTab() {
     );
   };
 
+  // ----- trocar o CD com itens na lista: refaz o saldo de cada item -----
+  // (a entrega recalcula sozinha, porque recotar depende de cdSel)
+  useEffect(() => {
+    if (itens.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const atualizados = await Promise.all(
+          itens.map(async (i) => {
+            const r = await balcao<{ produtos: BalcaoProduto[] }>("balcao_produto_buscar", {
+              termo: i.sku,
+              centro_codigo: cdSel,
+            });
+            const p = r.produtos?.find((x) => x.sku === i.sku);
+            return p ? { ...p, quantidade: i.quantidade } : i;
+          }),
+        );
+        if (!cancelled) setItens(atualizados);
+      } catch (e) {
+        if (!cancelled) {
+          toast.error(e instanceof Error ? e.message : "Erro ao atualizar saldo do CD");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // intencional: reage só à troca de CD; itens entram por adicionarItem
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cdSel]);
+
   // ----- totais -----
   const subtotalLocal = itens.reduce((s, i) => s + i.preco_varejo * i.quantidade, 0);
   const opcaoSel = cotacao?.opcoes.find((o) => o.modo === modoSel && o.ok) ?? null;
@@ -602,8 +633,14 @@ function NovoPedidoTab() {
       }
       const entregaPayload =
         modoSel === "retirada"
-          ? { modo: "retirada", beneficio }
-          : { modo: modoSel, cotacao_id: cot?.cotacao_id, endereco: enderecoAtual, beneficio };
+          ? { modo: "retirada", centro_codigo: cdSel, beneficio }
+          : {
+              modo: modoSel,
+              centro_codigo: cdSel,
+              cotacao_id: cot?.cotacao_id,
+              endereco: enderecoAtual,
+              beneficio,
+            };
 
       const r = await balcao<PedidoCriado & { ok: true }>("balcao_criar", {
         cliente: clientePayload,
