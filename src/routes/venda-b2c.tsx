@@ -101,6 +101,30 @@ type BeneficioNivel = {
 
 type Beneficio = { frete: BeneficioNivel; pedido: BeneficioNivel };
 
+type MeioPagamento = "pix" | "cartao" | "cartao_maquininha";
+
+const MEIO_LABEL: Record<MeioPagamento, string> = {
+  pix: "PIX",
+  cartao: "Cartão (link)",
+  cartao_maquininha: "Cartão maquininha",
+};
+
+const MEIO_LEGENDA: Record<MeioPagamento, string> = {
+  pix: "QR/link · cliente paga pelo celular",
+  cartao: "Link SafraPay · parcelas · confirma sozinho",
+  cartao_maquininha: "Passa na loja · sem link · comprovante anexado no SNCF",
+};
+
+// Coluna "Pagamento" da aba Meus pedidos: meios conhecidos viram rótulo;
+// qualquer outro valor vem como veio do SNCF.
+function rotuloPagamento(p: string | null) {
+  if (!p) return "—";
+  if (p === "pix") return "PIX";
+  if (p === "cartao") return "Cartão (link)";
+  if (p === "cartao_maquininha") return "Maquininha";
+  return p;
+}
+
 type PedidoCriado = {
   pedido_id: string;
   id_externo: string;
@@ -288,7 +312,7 @@ function NovoPedidoTab() {
   const [benFreteMotivo, setBenFreteMotivo] = useState("");
 
   // (e) Pagamento
-  const [pagamento, setPagamento] = useState<"pix" | "cartao">("pix");
+  const [pagamento, setPagamento] = useState<MeioPagamento>("pix");
   const [maxParcelas, setMaxParcelas] = useState(1);
   const [observacao, setObservacao] = useState("");
 
@@ -624,7 +648,14 @@ function NovoPedidoTab() {
             <p className="text-sm text-text-secondary">Endereço salvo no cadastro do cliente</p>
           )}
 
-          {criado.link_pagamento && (
+          {pagamento === "cartao_maquininha" && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-400">
+              Aguardando comprovante da maquininha — passe o cartão e anexe o comprovante no SNCF ›
+              Pedidos Site SP para liberar o pedido.
+            </div>
+          )}
+
+          {pagamento !== "cartao_maquininha" && criado.link_pagamento && (
             <div className="space-y-2">
               <Label>Link de pagamento</Label>
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -668,7 +699,7 @@ function NovoPedidoTab() {
             </div>
           )}
 
-          {criado.link_erro && (
+          {pagamento !== "cartao_maquininha" && criado.link_erro && (
             <div className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-400">
               {criado.link_erro}
               <div className="mt-2">
@@ -1183,18 +1214,20 @@ function NovoPedidoTab() {
           <CardTitle className="text-base text-text-primary">Pagamento</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex gap-2">
-            {(["pix", "cartao"] as const).map((p) => (
+          <div className="flex flex-wrap gap-2">
+            {(["pix", "cartao", "cartao_maquininha"] as const).map((p) => (
               <Button
                 key={p}
                 variant={pagamento === p ? "default" : "outline"}
                 className={pagamento === p ? "bg-gold text-background hover:bg-gold/90" : ""}
                 onClick={() => setPagamento(p)}
               >
-                {p === "pix" ? "PIX" : "Cartão"}
+                {MEIO_LABEL[p]}
               </Button>
             ))}
           </div>
+          <p className="text-xs text-text-secondary">{MEIO_LEGENDA[pagamento]}</p>
+
           {pagamento === "cartao" && (
             <div className="max-w-40">
               <Label>Parcelas</Label>
@@ -1245,7 +1278,7 @@ function NovoPedidoTab() {
             onClick={criarPedido}
           >
             {criando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            Criar pedido e gerar link
+            {pagamento === "cartao_maquininha" ? "Criar pedido" : "Criar pedido e gerar link"}
           </Button>
         </div>
       </div>
@@ -1389,8 +1422,8 @@ function MeusPedidosTab() {
                         {brl(p.valor_liquido)}
                       </TableCell>
                       <TableCell>
-                        <span className="block text-xs uppercase text-text-secondary">
-                          {p.pagamento ?? "—"}
+                        <span className="block text-xs text-text-secondary">
+                          {rotuloPagamento(p.pagamento)}
                         </span>
                         {pago ? (
                           <span className="text-xs text-emerald-400">
