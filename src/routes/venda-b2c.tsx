@@ -1032,6 +1032,28 @@ function NovoPedidoTab() {
         </CardContent>
       </Card>
 
+      {/* (b0) CD de origem */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base text-text-primary">CD</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select value={cdSel} onValueChange={setCdSel}>
+            <SelectTrigger className="w-full sm:w-72">
+              <SelectValue placeholder="Selecione o CD" />
+            </SelectTrigger>
+            <SelectContent>
+              {cds.map((c) => (
+                <SelectItem key={c.codigo} value={c.codigo}>
+                  {c.rotulo}
+                  {c.padrao ? " (padrão)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
       {/* (b) Itens */}
       <Card>
         <CardHeader>
