@@ -301,11 +301,42 @@ function NovoPedidoTab() {
   const [buscandoProduto, setBuscandoProduto] = useState(false);
   const [itens, setItens] = useState<Item[]>([]);
 
+  // (b0) CD de origem (Site SP / Show Room) — vem do SNCF; fallback Site SP
+  const [cds, setCds] = useState<CdInfo[]>([CD_PADRAO]);
+  const [cdSel, setCdSel] = useState<string>(CD_PADRAO.codigo);
+  const cdRotulo = cds.find((c) => c.codigo === cdSel)?.rotulo ?? CD_PADRAO.rotulo;
+
   // Fotos do catálogo (mesma fonte do catálogo): garante o store carregado nesta rota.
   const photos = usePhotos();
   useEffect(() => {
     if (!photos.loaded && !photos.loading) void photos.fetchAll();
   }, [photos.loaded, photos.loading, photos.fetchAll]);
+
+  // ----- CDs disponíveis (uma vez; falha mantém Site SP e avisa) -----
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await balcao<{ cds: CdInfo[] }>("balcao_cds");
+        if (cancelled) return;
+        const lista = r.cds ?? [];
+        if (lista.length > 0) {
+          setCds(lista);
+          const padrao = lista.find((c) => c.padrao);
+          if (padrao) setCdSel(padrao.codigo);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          toast.error(
+            `${e instanceof Error ? e.message : "Erro ao carregar CDs"} — usando ${CD_PADRAO.rotulo}`,
+          );
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // (c) Entrega
   const [cotacao, setCotacao] = useState<Cotacao | null>(null);
