@@ -393,7 +393,10 @@ function NovoPedidoTab() {
     const t = setTimeout(async () => {
       setBuscandoProduto(true);
       try {
-        const r = await balcao<{ produtos: BalcaoProduto[] }>("balcao_produto_buscar", { termo });
+        const r = await balcao<{ produtos: BalcaoProduto[] }>("balcao_produto_buscar", {
+          termo,
+          centro_codigo: cdSel,
+        });
         setProdutosAchados(r.produtos ?? []);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Erro ao buscar produto");
@@ -402,7 +405,7 @@ function NovoPedidoTab() {
       }
     }, 300);
     return () => clearTimeout(t);
-  }, [buscaProduto]);
+  }, [buscaProduto, cdSel]);
 
   // ----- CEP → ViaCEP (endereço de entrega compartilhado) -----
   useEffect(() => {
@@ -482,6 +485,7 @@ function NovoPedidoTab() {
       const cep = enderecoAtual?.cep ?? "";
       const r = await balcao<Cotacao & { ok: true }>("balcao_calcular", {
         itens: itens.map((i) => ({ sku: i.sku, quantidade: i.quantidade })),
+        centro_codigo: cdSel,
         ...(clienteSel ? { cliente: { parceiro_id: clienteSel.id } } : {}),
         ...(cep.length === 8 && enderecoAtual ? { endereco: enderecoAtual } : {}),
         beneficio,
@@ -507,7 +511,7 @@ function NovoPedidoTab() {
     } finally {
       setCalculando(false);
     }
-  }, [itens, enderecoAtual, clienteSel, beneficio]);
+  }, [itens, enderecoAtual, clienteSel, beneficio, cdSel]);
 
   const itensKey = itens.map((i) => `${i.sku}:${i.quantidade}`).join("|");
   const cepKey = enderecoAtual?.cep ?? "";
