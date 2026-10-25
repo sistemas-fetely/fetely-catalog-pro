@@ -1065,7 +1065,7 @@ function NovoPedidoTab() {
                     <span className="min-w-0">
                       <span className="block text-sm text-text-primary">{p.nome}</span>
                       <span className="block text-xs text-text-secondary">
-                        {p.cod_cadastro ?? "—"} · SKU {p.sku} · saldo Site SP: {p.disponivel_site_sp}
+                        {p.cod_cadastro ?? "—"} · SKU {p.sku} · saldo {cdRotulo}: {saldoDo(p)}
                       </span>
                     </span>
                     <span className="flex items-center gap-2">
@@ -1091,9 +1091,9 @@ function NovoPedidoTab() {
                     <p className="text-xs text-text-secondary">
                       {i.cod_cadastro ?? i.sku} · {brl(i.preco_varejo)}
                     </p>
-                    {i.quantidade > i.disponivel_site_sp && (
+                    {i.quantidade > saldoDo(i) && (
                       <Badge className="mt-1 border-amber-500/40 bg-amber-500/10 text-amber-400">
-                        sem saldo no Site SP
+                        sem saldo no {cdRotulo}
                       </Badge>
                     )}
                   </div>
@@ -1137,7 +1137,7 @@ function NovoPedidoTab() {
           <CardContent className="space-y-3">
             {!cepValido && (
               <p className="text-xs text-text-secondary">
-                Sem CEP válido no endereço — disponível apenas retirada no Site SP.
+                Sem CEP válido no endereço — disponível apenas retirada no balcão.
               </p>
             )}
             {cotacao?.correios_erro && (
