@@ -1183,18 +1183,20 @@ function NovoPedidoTab() {
           <CardTitle className="text-base text-text-primary">Pagamento</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex gap-2">
-            {(["pix", "cartao"] as const).map((p) => (
+          <div className="flex flex-wrap gap-2">
+            {(["pix", "cartao", "cartao_maquininha"] as const).map((p) => (
               <Button
                 key={p}
                 variant={pagamento === p ? "default" : "outline"}
                 className={pagamento === p ? "bg-gold text-background hover:bg-gold/90" : ""}
                 onClick={() => setPagamento(p)}
               >
-                {p === "pix" ? "PIX" : "Cartão"}
+                {MEIO_LABEL[p]}
               </Button>
             ))}
           </div>
+          <p className="text-xs text-text-secondary">{MEIO_LEGENDA[pagamento]}</p>
+
           {pagamento === "cartao" && (
             <div className="max-w-40">
               <Label>Parcelas</Label>
@@ -1245,7 +1247,7 @@ function NovoPedidoTab() {
             onClick={criarPedido}
           >
             {criando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            Criar pedido e gerar link
+            {pagamento === "cartao_maquininha" ? "Criar pedido" : "Criar pedido e gerar link"}
           </Button>
         </div>
       </div>
@@ -1389,8 +1391,8 @@ function MeusPedidosTab() {
                         {brl(p.valor_liquido)}
                       </TableCell>
                       <TableCell>
-                        <span className="block text-xs uppercase text-text-secondary">
-                          {p.pagamento ?? "—"}
+                        <span className="block text-xs text-text-secondary">
+                          {rotuloPagamento(p.pagamento)}
                         </span>
                         {pago ? (
                           <span className="text-xs text-emerald-400">
