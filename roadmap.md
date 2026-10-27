@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Abrir e editar próprios pedidos B2C pela ponte SNCF, conforme permissões retornadas — bloqueado: confirmar os tipos/payloads das quatro novas RPCs na porta recebe-pedido do SNCF; a versão consultada expõe apenas busca/cálculo/criação/listagem/link
-- [ ] Testar alterações parciais, meio de pagamento, motivo e atualização da lista — depende do contrato da porta SNCF
+- [x] Abrir e editar próprios pedidos B2C pela ponte SNCF, conforme permissões retornadas
+- [ ] Testar alterações parciais, meio de pagamento, motivo e atualização da lista
 
 - [x] Centralizar regra de estoque e testes de venda firme/provisão/bloqueio
 - [x] Aplicar bloqueio em catálogo, duplicação, cotação, carrinho e checkout
