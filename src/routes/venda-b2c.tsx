@@ -112,18 +112,20 @@ type BeneficioNivel = {
 
 type Beneficio = { frete: BeneficioNivel; pedido: BeneficioNivel };
 
-type MeioPagamento = "pix" | "cartao" | "cartao_maquininha";
+type MeioPagamento = "pix" | "cartao" | "cartao_maquininha" | "bonificacao";
 
 const MEIO_LABEL: Record<MeioPagamento, string> = {
   pix: "PIX",
   cartao: "Cartão (link)",
   cartao_maquininha: "Cartão maquininha",
+  bonificacao: "Bonificação",
 };
 
 const MEIO_LEGENDA: Record<MeioPagamento, string> = {
   pix: "QR/link · cliente paga pelo celular",
   cartao: "Link SafraPay · parcelas · confirma sozinho",
   cartao_maquininha: "Passa na loja · sem link · comprovante anexado no SNCF",
+  bonificacao: "Influenciadora / ação de marketing · sem cobrança",
 };
 
 // Coluna "Pagamento" da aba Meus pedidos: meios conhecidos viram rótulo;
@@ -133,6 +135,7 @@ function rotuloPagamento(p: string | null) {
   if (p === "pix") return "PIX";
   if (p === "cartao") return "Cartão (link)";
   if (p === "cartao_maquininha") return "Maquininha";
+  if (p === "bonificacao") return "Bonificação";
   return p;
 }
 
@@ -519,6 +522,35 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
     [benFreteTipo, benFreteValor, benFreteMotivo, benPedidoTipo, benPedidoValor, benPedidoMotivo],
   );
 
+  // ----- bonificação (regra e desconto pertencem ao SNCF) -----
+  const bonif = pagamento === "bonificacao";
+  const [bonifAutorizado, setBonifAutorizado] = useState("");
+  const [bonifMotivo, setBonifMotivo] = useState("");
+  const [bonifObs, setBonifObs] = useState("");
+  const motivosBonif = useQuery({
+    queryKey: ["balcao", "bonif_motivos"],
+    enabled: bonif && !detalhe,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const r = await balcao<{ motivos: { codigo: string; nome: string; padrao?: boolean }[] }>("balcao_bonif_motivos", {});
+      return r.motivos ?? [];
+    },
+  });
+  useEffect(() => {
+    if (bonifMotivo || !motivosBonif.data?.length) return;
+    const m = motivosBonif.data.find((x) => x.padrao) ?? motivosBonif.data.find((x) => x.codigo === "brinde") ?? motivosBonif.data[0];
+    setBonifMotivo(m.codigo);
+  }, [motivosBonif.data, bonifMotivo]);
+  const bonifOk = bonifAutorizado.trim().length >= 2 && !!bonifMotivo;
+  const escolherMeio = (p: MeioPagamento) => {
+    setPagamento(p);
+    if (p === "bonificacao") {
+      setBenPedidoTipo("nenhum");
+      setBenFreteTipo("nenhum");
+      setBenAberto(false);
+    }
+  };
+
   const beneficioAtivo = benPedidoTipo !== "nenhum" || benFreteTipo !== "nenhum";
   const motivoOk =
     (!beneficioAtivo ||
@@ -743,6 +775,9 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
         pagamento,
         ...(observacao.trim() ? { observacao: observacao.trim() } : {}),
         ...(pagamento === "cartao" ? { max_parcelas: maxParcelas } : {}),
+        ...(pagamento === "bonificacao"
+          ? { bonificacao: { autorizado_por: bonifAutorizado.trim(), motivo: bonifMotivo, observacao: bonifObs.trim() || null } }
+          : {}),
       });
 
       setCriado({
@@ -800,6 +835,8 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
     setBenFreteValor("");
     setBenFreteMotivo("");
     setPagamento("pix");
+    setBonifAutorizado("");
+    setBonifObs("");
     setMaxParcelas(1);
     setObservacao("");
     setCriado(null);
@@ -827,6 +864,12 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
           )}
           {criado.endereco_gravado_no_cadastro && (
             <p className="text-sm text-text-secondary">Endereço salvo no cadastro do cliente</p>
+          )}
+
+          {bonif && (
+            <div className="rounded-md border border-sky-500/40 bg-sky-500/10 p-3 text-sm text-sky-400">
+              Pedido bonificado criado — segue para faturamento
+            </div>
           )}
 
           {pagamento === "cartao_maquininha" && (
@@ -1332,7 +1375,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
       )}
 
       {/* (d) Benefício */}
-      <Collapsible open={benAberto} onOpenChange={setBenAberto}>
+      {!bonif && <Collapsible open={benAberto} onOpenChange={setBenAberto}>
         <Card>
           <CollapsibleTrigger asChild>
             <CardHeader className="cursor-pointer">
@@ -1421,7 +1464,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
             </CardContent>
           </CollapsibleContent>
         </Card>
-      </Collapsible>
+      </Collapsible>}
 
       </fieldset>
       {/* (e) Pagamento */}
@@ -1431,19 +1474,51 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            {(["pix", "cartao", "cartao_maquininha"] as const).map((p) => (
+            {(detalhe && !bonif ? (["pix", "cartao", "cartao_maquininha"] as const) : detalhe ? (["bonificacao"] as const) : (["pix", "cartao", "cartao_maquininha", "bonificacao"] as const)).map((p) => (
               <Button
                 key={p}
                 variant={pagamento === p ? "default" : "outline"}
                 className={pagamento === p ? "bg-gold text-background hover:bg-gold/90" : ""}
-                disabled={!podeMeio || criando}
-                onClick={() => setPagamento(p)}
+                disabled={!podeMeio || criando || (!!detalhe && bonif)}
+                onClick={() => escolherMeio(p)}
               >
                 {MEIO_LABEL[p]}
               </Button>
             ))}
           </div>
           <p className="text-xs text-text-secondary">{MEIO_LEGENDA[pagamento]}</p>
+
+          {!detalhe && bonif && (
+            <div className="space-y-3 rounded-md border border-sky-500/40 bg-sky-500/5 p-3">
+              <p className="text-sm text-sky-400">
+                Pedido sem cobrança. Preço de tabela com desconto de bonificação; frete por conta da Fetely. Segue direto para faturamento.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="bonif-autorizado">Autorizado por *</Label>
+                  <Input id="bonif-autorizado" value={bonifAutorizado} onChange={(e) => setBonifAutorizado(e.target.value)} disabled={criando} />
+                </div>
+                <div>
+                  <Label>Motivo *</Label>
+                  <Select value={bonifMotivo} onValueChange={setBonifMotivo} disabled={criando || motivosBonif.isLoading}>
+                    <SelectTrigger aria-label="Motivo da bonificação">
+                      <SelectValue placeholder={motivosBonif.isLoading ? "Carregando…" : "Selecione"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(motivosBonif.data ?? []).map((m) => (
+                        <SelectItem key={m.codigo} value={m.codigo}>{m.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {motivosBonif.error && <p className="mt-1 text-xs text-red-400">{(motivosBonif.error as Error).message}</p>}
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="bonif-obs">Observação da bonificação</Label>
+                <Textarea id="bonif-obs" rows={2} value={bonifObs} onChange={(e) => setBonifObs(e.target.value)} disabled={criando} />
+              </div>
+            </div>
+          )}
 
           {!detalhe && pagamento === "cartao" && (
             <div className="max-w-40">
@@ -1493,15 +1568,16 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
             {opcaoSel ? (opcaoSel.gratis ? "grátis" : brl(opcaoSel.frete_cobrado)) : "—"}
           </span>
           <span className="text-sm font-semibold text-gold">
-            Total: {brl(opcaoSel ? opcaoSel.valor_total : subtotalLocal)}
+            {bonif ? "Prévia: " : "Total: "}{brl(opcaoSel ? opcaoSel.valor_total : subtotalLocal)}
+            {bonif && <span className="ml-1 text-xs font-normal text-text-secondary">(valor final calculado pelo SNCF)</span>}
           </span>
           <Button
             className="ml-auto bg-gold text-background hover:bg-gold/90"
-            disabled={detalhe ? !podeSalvar : !podeCriar}
+            disabled={detalhe ? !podeSalvar : !podeCriar || (bonif && !bonifOk)}
             onClick={detalhe ? salvarEdicao : criarPedido}
           >
             {criando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            {detalhe ? (podeEditar ? "Salvar alterações" : "Somente leitura") : pagamento === "cartao_maquininha" ? "Criar pedido" : "Criar pedido e gerar link"}
+            {detalhe ? (podeEditar ? "Salvar alterações" : "Somente leitura") : bonif ? "Criar pedido bonificado" : pagamento === "cartao_maquininha" ? "Criar pedido" : "Criar pedido e gerar link"}
           </Button>
         </div>
       </div>
@@ -1544,7 +1620,7 @@ function MeusPedidosTab({ escopo }: { escopo: "meus" | "todos" }) {
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return pedidos.filter((p) => {
-      if (filtro === "aguardando" && p.pagamento_confirmado_em) return false;
+      if (filtro === "aguardando" && (p.pagamento_confirmado_em || p.pagamento === "bonificacao")) return false;
       if (filtro === "pagos" && !p.pagamento_confirmado_em) return false;
       if (todos && vendedorFiltro !== "__todos" && nomeVendedor(p) !== vendedorFiltro) return false;
       if (!termo) return true;
@@ -1703,7 +1779,9 @@ function MeusPedidosTab({ escopo }: { escopo: "meus" | "todos" }) {
                         <span className="block text-xs text-text-secondary">
                           {rotuloPagamento(p.pagamento)}
                         </span>
-                        {pago ? (
+                        {p.pagamento === "bonificacao" ? (
+                          <Badge className="border-sky-500/40 bg-sky-500/10 text-sky-400">Bonificação</Badge>
+                        ) : pago ? (
                           <span className="whitespace-nowrap text-xs text-emerald-400">
                             pago em{" "}
                             {new Date(p.pagamento_confirmado_em!).toLocaleDateString("pt-BR")}
