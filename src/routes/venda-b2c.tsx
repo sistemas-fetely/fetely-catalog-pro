@@ -1399,10 +1399,12 @@ function MeusPedidosTab() {
   const [filtro, setFiltro] = useState<FiltroRapido>("todos");
   const [gerandoLinkId, setGerandoLinkId] = useState<string | null>(null);
 
-  const { data, isLoading, refetch, isFetching } = useQuery({
+  const { data, error, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["balcao-meus-pedidos"],
     queryFn: () => balcao<{ pedidos: MeuPedido[] }>("balcao_meus_pedidos", { dias: 90 }),
     refetchInterval: 60_000,
+    throwOnError: false,
+    retry: false,
   });
 
   const pedidos = useMemo(() => data?.pedidos ?? [], [data]);
@@ -1478,9 +1480,18 @@ function MeusPedidosTab() {
           </div>
         </div>
 
+        {error && (
+          <div role="alert" className="space-y-2 rounded-md border border-border p-3 text-sm text-text-primary">
+            <p>{error.message}</p>
+            <Button variant="outline" size="sm" disabled={isFetching} onClick={() => void refetch()}>
+              <RefreshCw className={`mr-1 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+              Tentar novamente
+            </Button>
+          </div>
+        )}
         {isLoading ? (
           <p className="text-sm text-text-secondary">Carregando…</p>
-        ) : filtrados.length === 0 ? (
+        ) : error && !data ? null : filtrados.length === 0 ? (
           <p className="text-sm text-text-secondary">Nenhum pedido encontrado.</p>
         ) : (
           <div className="overflow-x-auto">
