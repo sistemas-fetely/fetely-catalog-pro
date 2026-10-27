@@ -1,7 +1,8 @@
 # Roadmap
 
 - [x] Abrir e editar próprios pedidos B2C pela ponte SNCF, conforme permissões retornadas
-- [ ] Testar alterações parciais, meio de pagamento, motivo e atualização da lista
+- [x] Testar alterações parciais, meio de pagamento e motivo (6 testes); pré-preenchimento, sequência, CD, total atualizado e leitura bloqueada em desktop/celular com SNCF simulado
+- [ ] Validar edição real com usuário comercial — depende da publicação dos quatro tipos no SNCF e de sessão comercial autorizada
 
 - [x] Centralizar regra de estoque e testes de venda firme/provisão/bloqueio
 - [x] Aplicar bloqueio em catálogo, duplicação, cotação, carrinho e checkout
