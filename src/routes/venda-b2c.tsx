@@ -708,7 +708,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
         if (!cot || !cot.opcoes.some(o => o.modo === modoSel && o.ok)) throw new Error("Não foi possível recalcular a entrega. Tente de novo.");
       }
       const entrega = modoSel === "retirada" ? { modo: modoSel, centro_codigo: cdSel, beneficio } : { modo: modoSel, centro_codigo: cdSel, cotacao_id: cot?.cotacao_id, endereco: enderecoAtual, beneficio };
-      const r = await salvarAlteracaoBalcao({ fop_profile_id: userId, pedido_id: detalhe.pedido.id, motivo: motivoAlteracao, cliente: clientePatch, pedidoAlterado: pedidoMudou, meioAlterado: meioMudou, itens: itensPayload, entrega, observacao, meio: pagamento });
+      const r = await salvarAlteracaoBalcao({ fop_profile_id: userId, pedido_id: detalhe.pedido.id, motivo: motivoAlteracao, cliente: clientePatch, pedidoAlterado: pedidoMudou, meioAlterado: meioMudou, itens: itensPayload, entrega, observacao, meio: pagamento as AlteracaoBalcao["meio"] });
       setResultadoEdicao(r);
       setCriado({ pedido_id: detalhe.pedido.id, id_externo: detalhe.pedido.id_externo, valor_total: Number(r.valor_total ?? detalhe.pedido.valor_liquido), link_pagamento: typeof r.link_pagamento === "string" ? r.link_pagamento : null, pix_copia_cola: typeof r.pix_copia_cola === "string" ? r.pix_copia_cola : null, link_erro: typeof r.link_erro === "string" ? r.link_erro : null, avisos: Array.isArray(r.avisos) ? r.avisos as PedidoCriado["avisos"] : [] });
       toast.success("Pedido atualizado");
