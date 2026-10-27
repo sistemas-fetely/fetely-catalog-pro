@@ -159,6 +159,8 @@ type MeuPedido = {
   pagamento: string | null;
   pagamento_confirmado_em: string | null;
   link_pagamento: string | null;
+  vendedor_nome?: string | null;
+  eh_dono?: boolean;
   modal: string | null;
   frete_tipo: string | null;
   nf_numero: string | null;
@@ -269,7 +271,7 @@ function ProdutoThumb({
 
 function VendaB2cPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6 pb-40">
+    <div className="mx-auto w-full max-w-screen-2xl px-4 py-6 pb-40">
       <div className="mb-4 flex items-center gap-2">
         <Store className="h-5 w-5 text-gold" />
         <h1 className="font-display text-2xl text-text-primary">Venda B2C (Balcão)</h1>
@@ -278,12 +280,16 @@ function VendaB2cPage() {
         <TabsList className="mb-4">
           <TabsTrigger value="novo">Novo pedido</TabsTrigger>
           <TabsTrigger value="meus">Meus pedidos</TabsTrigger>
+          <TabsTrigger value="todos">Todos os pedidos</TabsTrigger>
         </TabsList>
         <TabsContent value="novo">
           <NovoPedidoTab />
         </TabsContent>
         <TabsContent value="meus">
-          <MeusPedidosTab />
+          <MeusPedidosTab escopo="meus" />
+        </TabsContent>
+        <TabsContent value="todos">
+          <MeusPedidosTab escopo="todos" />
         </TabsContent>
       </Tabs>
     </div>
@@ -1475,7 +1481,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
       </div>}
       {/* (f) Resumo fixo */}
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-5 gap-y-1 px-4 py-3">
+        <div className="mx-auto flex w-full max-w-screen-2xl flex-wrap items-center gap-x-5 gap-y-1 px-4 py-3">
           <span className="text-xs text-text-secondary">
             Itens: {brl(opcaoSel ? opcaoSel.valor_itens : subtotalLocal)}
           </span>
@@ -1507,7 +1513,12 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
 
 type FiltroRapido = "todos" | "aguardando" | "pagos";
 
-function MeusPedidosTab() {
+const SNCF_VENDEDOR = "SNCF";
+const nomeVendedor = (p: MeuPedido) => p.vendedor_nome?.trim() || SNCF_VENDEDOR;
+
+function MeusPedidosTab({ escopo }: { escopo: "meus" | "todos" }) {
+  const todos = escopo === "todos";
+  const [vendedorFiltro, setVendedorFiltro] = useState("__todos");
   const userId = useAuth(s => s.user?.id);
   const [detalhe, setDetalhe] = useState<PedidoDetalhe | null>(null);
   const [abrindoId, setAbrindoId] = useState<string | null>(null);
@@ -1516,8 +1527,8 @@ function MeusPedidosTab() {
   const [gerandoLinkId, setGerandoLinkId] = useState<string | null>(null);
 
   const { data, error, isLoading, refetch, isFetching } = useQuery({
-    queryKey: ["balcao-meus-pedidos", userId],
-    queryFn: () => balcao<{ pedidos: MeuPedido[] }>("balcao_meus_pedidos", { dias: 90 }),
+    queryKey: ["balcao-meus-pedidos", escopo, userId],
+    queryFn: () => balcao<{ pedidos: MeuPedido[] }>("balcao_meus_pedidos", todos ? { dias: 90, escopo: "todos" } : { dias: 90 }),
     refetchInterval: 60_000,
     throwOnError: false,
     retry: false,
@@ -1525,18 +1536,25 @@ function MeusPedidosTab() {
 
   const pedidos = useMemo(() => data?.pedidos ?? [], [data]);
 
+  const vendedores = useMemo(
+    () => Array.from(new Set(pedidos.map(nomeVendedor))).sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [pedidos],
+  );
+
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return pedidos.filter((p) => {
       if (filtro === "aguardando" && p.pagamento_confirmado_em) return false;
       if (filtro === "pagos" && !p.pagamento_confirmado_em) return false;
+      if (todos && vendedorFiltro !== "__todos" && nomeVendedor(p) !== vendedorFiltro) return false;
       if (!termo) return true;
       return (
         (p.id_externo ?? "").toLowerCase().includes(termo) ||
-        (p.cliente_nome ?? "").toLowerCase().includes(termo)
+        (p.cliente_nome ?? "").toLowerCase().includes(termo) ||
+        (todos && nomeVendedor(p).toLowerCase().includes(termo))
       );
     });
-  }, [pedidos, busca, filtro]);
+  }, [pedidos, busca, filtro, todos, vendedorFiltro]);
 
   const gerarNovoLink = async (p: MeuPedido) => {
     setGerandoLinkId(p.id);
@@ -1569,7 +1587,7 @@ function MeusPedidosTab() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base text-text-primary">
-          Meus pedidos (90 dias)
+          {todos ? "Todos os pedidos" : "Meus pedidos"} (90 dias)
           <Button variant="ghost" size="sm" onClick={() => void refetch()} aria-label="Atualizar">
             <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
           </Button>
@@ -1581,12 +1599,23 @@ function MeusPedidosTab() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
             <Input
               className="pl-9"
-              placeholder="Buscar por pedido ou cliente"
+              placeholder={todos ? "Buscar por pedido, cliente ou vendedor" : "Buscar por pedido ou cliente"}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
           </div>
-          <div className="flex gap-1">
+          {todos && (
+            <select
+              aria-label="Filtrar por vendedor"
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm text-text-primary"
+              value={vendedorFiltro}
+              onChange={(e) => setVendedorFiltro(e.target.value)}
+            >
+              <option value="__todos">Todos os vendedores</option>
+              {vendedores.map((v) => <option key={v} value={v}>{v}</option>)}
+            </select>
+          )}
+          <div className="flex flex-wrap gap-1">
             {(
               [
                 ["aguardando", "Aguardando pagamento"],
@@ -1621,38 +1650,40 @@ function MeusPedidosTab() {
         ) : error && !data ? null : filtrados.length === 0 ? (
           <p className="text-sm text-text-secondary">Nenhum pedido encontrado.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
+          <div className="[&_td]:px-2 [&_th]:px-2">
+            <Table className="min-w-[900px] xl:min-w-0">
               <TableHeader>
                 <TableRow>
                   <TableHead>Pedido</TableHead>
                   <TableHead>Cliente</TableHead>
+                  {todos && <TableHead>Vendedor</TableHead>}
                   <TableHead>Valor</TableHead>
                   <TableHead>Pagamento</TableHead>
                   <TableHead>Entrega</TableHead>
                   <TableHead>Situação</TableHead>
                   <TableHead>NF</TableHead>
                   <TableHead>Rastreio</TableHead>
-                  <TableHead></TableHead>
+                  <TableHead className="w-24"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtrados.map((p) => {
                   const pago = !!p.pagamento_confirmado_em;
                   const cancelado = !!p.cancelado_em;
+                  const dono = p.eh_dono !== false;
                   return (
                     <TableRow key={p.id}>
                       <TableCell>
-                        <span className="block text-sm font-medium text-text-primary">
+                        <span className="block whitespace-nowrap text-sm font-medium text-text-primary">
                           {p.id_externo ?? "—"}
                         </span>
-                        <span className="text-xs text-text-secondary">
+                        <span className="whitespace-nowrap text-xs text-text-secondary">
                           {p.recebido_em
                             ? new Date(p.recebido_em).toLocaleDateString("pt-BR")
                             : ""}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="min-w-32 whitespace-normal break-words">
                         <span className="block text-sm text-text-primary">
                           {p.cliente_nome ?? "—"}
                         </span>
@@ -1660,7 +1691,12 @@ function MeusPedidosTab() {
                           {p.cliente_telefone ?? ""}
                         </span>
                       </TableCell>
-                      <TableCell className="text-sm text-text-primary">
+                      {todos && (
+                        <TableCell className="min-w-24 whitespace-normal break-words text-xs text-text-primary">
+                          {nomeVendedor(p)}
+                        </TableCell>
+                      )}
+                      <TableCell className="whitespace-nowrap text-sm text-text-primary">
                         {brl(p.valor_liquido)}
                       </TableCell>
                       <TableCell>
@@ -1668,7 +1704,7 @@ function MeusPedidosTab() {
                           {rotuloPagamento(p.pagamento)}
                         </span>
                         {pago ? (
-                          <span className="text-xs text-emerald-400">
+                          <span className="whitespace-nowrap text-xs text-emerald-400">
                             pago em{" "}
                             {new Date(p.pagamento_confirmado_em!).toLocaleDateString("pt-BR")}
                           </span>
@@ -1676,7 +1712,7 @@ function MeusPedidosTab() {
                           <span className="text-xs text-amber-400">aguardando</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-xs text-text-secondary">
+                      <TableCell className="whitespace-normal break-words text-xs text-text-secondary">
                         {p.modal ?? "—"}
                         {p.frete_tipo ? ` · ${p.frete_tipo}` : ""}
                       </TableCell>
@@ -1686,7 +1722,7 @@ function MeusPedidosTab() {
                             cancelado
                           </Badge>
                         ) : (
-                          <span className="text-xs text-text-secondary">
+                          <span className="whitespace-normal text-xs text-text-secondary">
                             {p.situacao ?? p.estagio ?? "—"}
                           </span>
                         )}
@@ -1697,7 +1733,7 @@ function MeusPedidosTab() {
                       <TableCell>
                         {p.codigo_rastreio ? (
                           <button
-                            className="flex items-center gap-1 text-xs text-gold hover:underline"
+                            className="flex items-center gap-1 break-all text-left text-xs text-gold hover:underline"
                             onClick={() => copiar(p.codigo_rastreio!, "Rastreio copiado")}
                           >
                             {p.codigo_rastreio}
@@ -1712,12 +1748,12 @@ function MeusPedidosTab() {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="w-24 align-top">
                         <Button variant="outline" size="sm" disabled={abrindoId !== null} onClick={() => void abrir(p.id)}>
                           {abrindoId === p.id && <Loader2 className="mr-1 h-3 w-3 animate-spin" />} Abrir
                         </Button>
-                        {!pago && !cancelado && (
-                          <div className="flex flex-col gap-1">
+                        {dono && !pago && !cancelado && (
+                          <div className="mt-1 flex flex-col items-start gap-1">
                             {p.link_pagamento && (
                               <>
                                 <Button
