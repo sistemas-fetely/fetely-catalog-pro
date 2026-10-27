@@ -23,7 +23,7 @@ import {
   Search, Store, Trash2, UserPlus,
 } from "lucide-react";
 import { useAuth } from "@/store/authStore";
-import { balcao, salvarAlteracaoBalcao } from "@/hooks/useBalcao";
+import { balcao, salvarAlteracaoBalcao, type AlteracaoBalcao } from "@/hooks/useBalcao";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 
