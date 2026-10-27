@@ -656,7 +656,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
   const enderecoMudou = Object.keys(FORM_VAZIO).slice(4).some(k => normalizarCampo(k, form[k as keyof typeof form]) !== normalizarCampo(k, formInicial[k as keyof typeof form]));
   const benInicial = { frete: { tipo: benF.tipo ?? "nenhum", ...(benF.valor != null ? { valor: Number(benF.valor) } : {}), motivo: benF.motivo ?? "" }, pedido: { tipo: benP.tipo ?? "nenhum", ...(benP.valor != null ? { valor: Number(benP.valor) } : {}), motivo: benP.motivo ?? "" } };
   const entregaMudou = !!detalhe && (modoSel !== modoInicial || cdSel !== cdInicial || enderecoMudou || JSON.stringify(beneficio) !== JSON.stringify(benInicial));
-  const pedidoMudou = !!detalhe && (itensMudaram || entregaMudou || observacao !== (detalhe.pedido.observacao ?? ""));
+  const pedidoMudou = !!detalhe && podeItens && (itensMudaram || entregaMudou || observacao !== (detalhe.pedido.observacao ?? ""));
   const meioMudou = !!detalhe && pagamento !== detalhe.pedido.pagamento;
   const temAlteracao = pedidoMudou || meioMudou || Object.keys(clientePatch).length > 0;
   const podeSalvar = podeEditar && temAlteracao && motivoAlteracao.trim().length >= 3 && !criando && (!pedidoMudou || (itens.length > 0 && (!entregaMudou || entregaOk) && !calculando && motivoOk));
@@ -665,7 +665,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
     setCriando(true);
     try {
       let cot = cotacao;
-      if (pedidoMudou && modoSel !== "retirada") {
+      if ((pedidoMudou || (meioMudou && Object.keys(clientePatch).length > 0)) && modoSel !== "retirada") {
         cot = await recotar();
         if (!cot || !cot.opcoes.some(o => o.modo === modoSel && o.ok)) throw new Error("Não foi possível recalcular a entrega. Tente de novo.");
       }
@@ -908,7 +908,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
         <Button variant="outline" onClick={onVoltar}>Voltar para meus pedidos</Button>
         <h2 className="text-lg font-medium text-text-primary">{detalhe.pedido.id_externo}</h2>
         <p className="text-sm text-text-secondary">{detalhe.pedido.situacao ?? detalhe.pedido.estagio} · {rotuloPagamento(detalhe.pedido.pagamento)} · Total {brl(detalhe.pedido.valor_liquido)}{detalhe.pedido.nf_numero ? ` · NF ${detalhe.pedido.nf_numero}` : ""}</p>
-        {detalhe.permissoes.motivo_bloqueio && <p role="status" className="rounded-md border border-border p-3 text-sm text-text-primary">{detalhe.permissoes.motivo_bloqueio}</p>}
+        {(detalhe.permissoes.motivo_bloqueio || !podeEditar) && <p role="status" className="rounded-md border border-border p-3 text-sm text-text-primary">{detalhe.permissoes.motivo_bloqueio ?? "Pedido disponível somente para leitura"}</p>}
       </div>}
       {/* (a) Cliente */}
       <Card>
@@ -1060,7 +1060,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
             </div>
           )}
 
-          <fieldset disabled={!!detalhe && !podeItens || criando}><section className="space-y-3 border-t border-border pt-4" aria-labelledby="balcao-endereco-titulo">
+          <fieldset disabled={!!detalhe && !podeItens && !podeCliente || criando}><section className="space-y-3 border-t border-border pt-4" aria-labelledby="balcao-endereco-titulo">
             <h2 id="balcao-endereco-titulo" className="text-sm font-medium text-text-primary">Endereço de entrega</h2>
             {clienteSel && !soDigitos(clienteSel.cep ?? "") && (
               <p className="text-xs text-text-secondary">Cliente sem endereço no cadastro — informe para cotar a entrega</p>
