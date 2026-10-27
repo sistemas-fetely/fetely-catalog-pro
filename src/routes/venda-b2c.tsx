@@ -22,7 +22,8 @@ import {
   ChevronDown, Copy, Loader2, MessageCircle, Plus, RefreshCw,
   Search, Store, Trash2, UserPlus,
 } from "lucide-react";
-import { balcao } from "@/hooks/useBalcao";
+import { useAuth } from "@/store/authStore";
+import { balcao, salvarAlteracaoBalcao } from "@/hooks/useBalcao";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 
@@ -166,6 +167,25 @@ type MeuPedido = {
   cancelado_em: string | null;
 };
 
+type PedidoDetalhe = {
+  pedido: {
+    id: string; id_externo: string; estagio: string | null; situacao: string | null;
+    valor_bruto: number; valor_frete: number; valor_liquido: number;
+    frete_tipo: string | null; modal: string | null;
+    endereco_entrega: Record<string, unknown> | null;
+    itens: { sku: string; descricao: string; quantidade: number; valor_unitario: number }[];
+    observacao: string | null; pagamento: MeioPagamento; link_pagamento: string | null;
+    pagamento_confirmado_em: string | null; nf_numero: string | null;
+    vendedor_nome: string | null; cancelado_em: string | null;
+  };
+  cliente: BalcaoCliente;
+  permissoes: { eh_dono: boolean; editar_itens: boolean; trocar_meio: boolean; editar_cliente: boolean; motivo_bloqueio: string | null };
+};
+
+function objeto(v: unknown): Record<string, unknown> {
+  return v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, unknown> : {};
+}
+
 // ============ Helpers ============
 
 const brl = (v: number | null | undefined) =>
@@ -286,24 +306,49 @@ const FORM_VAZIO = {
   uf: "",
 };
 
-function NovoPedidoTab() {
+function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
+  detalhe?: PedidoDetalhe; onVoltar?: () => void; onSalvo?: () => Promise<unknown>;
+} = {}) {
+  const userId = useAuth(s => s.user?.id);
+  const podeItens = !detalhe || detalhe.permissoes.editar_itens;
+  const podeCliente = !detalhe || detalhe.permissoes.editar_cliente;
+  const podeMeio = !detalhe || detalhe.permissoes.trocar_meio;
+  const podeEditar = !!detalhe && (podeItens || podeCliente || podeMeio);
+  const enderecoOriginal = objeto(detalhe?.pedido.endereco_entrega);
+  const enderecoCampos = Object.keys(objeto(enderecoOriginal.endereco)).length ? objeto(enderecoOriginal.endereco) : enderecoOriginal;
+  const beneficioOriginal = objeto(enderecoOriginal.beneficio);
+  const freteOriginal = objeto(enderecoOriginal.frete);
+  const benP = objeto(beneficioOriginal.pedido ?? enderecoOriginal.desconto);
+  const benF = objeto(beneficioOriginal.frete ?? freteOriginal.beneficio);
+  const formInicial = { ...FORM_VAZIO };
+  for (const k of Object.keys(formInicial) as (keyof typeof FORM_VAZIO)[]) {
+    formInicial[k] = String((k in enderecoCampos ? enderecoCampos[k] : undefined) ?? detalhe?.cliente[k] ?? "");
+  }
+  formInicial.cpf = maskCpf(formInicial.cpf);
+  formInicial.cep = maskCep(formInicial.cep);
+  const cdInicial = String(enderecoOriginal.centro_codigo ?? freteOriginal.centro_codigo ?? CD_PADRAO.codigo);
+  const modoInicialRaw = String(enderecoOriginal.modo ?? enderecoOriginal.modal ?? detalhe?.pedido.modal ?? "retirada").toLowerCase();
+  const modoInicial: ModoEntrega = modoInicialRaw === "sedex" || modoInicialRaw === "pac" || modoInicialRaw === "frete_fetely" ? modoInicialRaw : "retirada";
+  const [motivoAlteracao, setMotivoAlteracao] = useState("");
+  const [resultadoEdicao, setResultadoEdicao] = useState<Record<string, unknown> | null>(null);
+  const [clienteBase, setClienteBase] = useState(formInicial);
   // (a) Cliente
   const [buscaCliente, setBuscaCliente] = useState("");
   const [clientesAchados, setClientesAchados] = useState<BalcaoCliente[]>([]);
   const [buscandoCliente, setBuscandoCliente] = useState(false);
-  const [clienteSel, setClienteSel] = useState<BalcaoCliente | null>(null);
+  const [clienteSel, setClienteSel] = useState<BalcaoCliente | null>(detalhe?.cliente ?? null);
   const [modoNovoCliente, setModoNovoCliente] = useState(false);
-  const [form, setForm] = useState(FORM_VAZIO);
+  const [form, setForm] = useState(formInicial);
 
   // (b) Itens
   const [buscaProduto, setBuscaProduto] = useState("");
   const [produtosAchados, setProdutosAchados] = useState<BalcaoProduto[]>([]);
   const [buscandoProduto, setBuscandoProduto] = useState(false);
-  const [itens, setItens] = useState<Item[]>([]);
+  const [itens, setItens] = useState<Item[]>(() => detalhe?.pedido.itens.map(i => ({ sku: i.sku, nome: i.descricao, quantidade: i.quantidade, preco_varejo: i.valor_unitario, cod_cadastro: null, ean: null, disponivel_site_sp: 0, colecao: null, cor_nome: null })) ?? []);
 
   // (b0) CD de origem (Site SP / Show Room) — vem do SNCF; fallback Site SP
   const [cds, setCds] = useState<CdInfo[]>([CD_PADRAO]);
-  const [cdSel, setCdSel] = useState<string>(CD_PADRAO.codigo);
+  const [cdSel, setCdSel] = useState<string>(cdInicial);
   const cdRotulo = cds.find((c) => c.codigo === cdSel)?.rotulo ?? CD_PADRAO.rotulo;
 
   // Fotos do catálogo (mesma fonte do catálogo): garante o store carregado nesta rota.
@@ -323,7 +368,7 @@ function NovoPedidoTab() {
         if (lista.length > 0) {
           setCds(lista);
           const padrao = lista.find((c) => c.padrao);
-          if (padrao) setCdSel(padrao.codigo);
+          if (padrao && !detalhe) setCdSel(padrao.codigo);
         }
       } catch (e) {
         if (!cancelled) {
@@ -341,21 +386,21 @@ function NovoPedidoTab() {
   // (c) Entrega
   const [cotacao, setCotacao] = useState<Cotacao | null>(null);
   const [calculando, setCalculando] = useState(false);
-  const [modoSel, setModoSel] = useState<ModoEntrega>("retirada");
+  const [modoSel, setModoSel] = useState<ModoEntrega>(modoInicial);
 
   // (d) Benefício
   const [benAberto, setBenAberto] = useState(false);
-  const [benPedidoTipo, setBenPedidoTipo] = useState<"nenhum" | "pct" | "valor">("nenhum");
-  const [benPedidoValor, setBenPedidoValor] = useState("");
-  const [benPedidoMotivo, setBenPedidoMotivo] = useState("");
-  const [benFreteTipo, setBenFreteTipo] = useState<"nenhum" | "pct" | "valor" | "gratis">("nenhum");
-  const [benFreteValor, setBenFreteValor] = useState("");
-  const [benFreteMotivo, setBenFreteMotivo] = useState("");
+  const [benPedidoTipo, setBenPedidoTipo] = useState<"nenhum" | "pct" | "valor">(benP.tipo === "pct" || benP.tipo === "valor" ? benP.tipo : "nenhum");
+  const [benPedidoValor, setBenPedidoValor] = useState(String(benP.valor ?? ""));
+  const [benPedidoMotivo, setBenPedidoMotivo] = useState(String(benP.motivo ?? ""));
+  const [benFreteTipo, setBenFreteTipo] = useState<"nenhum" | "pct" | "valor" | "gratis">(benF.tipo === "pct" || benF.tipo === "valor" || benF.tipo === "gratis" ? benF.tipo : "nenhum");
+  const [benFreteValor, setBenFreteValor] = useState(String(benF.valor ?? ""));
+  const [benFreteMotivo, setBenFreteMotivo] = useState(String(benF.motivo ?? ""));
 
   // (e) Pagamento
-  const [pagamento, setPagamento] = useState<MeioPagamento>("pix");
+  const [pagamento, setPagamento] = useState<MeioPagamento>(detalhe?.pedido.pagamento ?? "pix");
   const [maxParcelas, setMaxParcelas] = useState(1);
-  const [observacao, setObservacao] = useState("");
+  const [observacao, setObservacao] = useState(detalhe?.pedido.observacao ?? "");
 
   // (f) Resultado
   const [criando, setCriando] = useState(false);
@@ -410,7 +455,7 @@ function NovoPedidoTab() {
   // ----- CEP → ViaCEP (endereço de entrega compartilhado) -----
   useEffect(() => {
     const cep = soDigitos(form.cep);
-    if (cep.length !== 8) return;
+    if (cep.length !== 8 || (detalhe && soDigitos(formInicial.cep) === cep)) return;
     let cancelled = false;
     (async () => {
       try {
@@ -498,6 +543,7 @@ function NovoPedidoTab() {
       };
       setCotacao(c);
       setModoSel((atual) => {
+        if (detalhe) return atual;
         const aindaOk = c.opcoes.some((o) => o.modo === atual && o.ok);
         if (aindaOk) return atual;
         const primeira = c.opcoes.find((o) => o.ok);
@@ -517,7 +563,7 @@ function NovoPedidoTab() {
   const cepKey = enderecoAtual?.cep ?? "";
   const benKey = JSON.stringify(beneficio);
   useEffect(() => {
-    if (itens.length === 0) {
+    if (!podeItens || itens.length === 0) {
       setCotacao(null);
       return;
     }
@@ -534,7 +580,9 @@ function NovoPedidoTab() {
       const ix = atual.findIndex((i) => i.sku === p.sku);
       if (ix >= 0) {
         const copia = [...atual];
-        copia[ix] = { ...copia[ix]!, quantidade: copia[ix]!.quantidade + 1 };
+        const item = copia[ix];
+        if (!item) return atual;
+        copia[ix] = { ...item, quantidade: item.quantidade + 1 };
         return copia;
       }
       return [...atual, { ...p, quantidade: 1 }];
@@ -554,7 +602,7 @@ function NovoPedidoTab() {
   // ----- trocar o CD com itens na lista: refaz o saldo de cada item -----
   // (a entrega recalcula sozinha, porque recotar depende de cdSel)
   useEffect(() => {
-    if (itens.length === 0) return;
+    if (!podeItens || itens.length === 0) return;
     let cancelled = false;
     (async () => {
       try {
@@ -565,7 +613,7 @@ function NovoPedidoTab() {
               centro_codigo: cdSel,
             });
             const p = r.produtos?.find((x) => x.sku === i.sku);
-            return p ? { ...p, quantidade: i.quantidade } : i;
+            return p ? { ...p, preco_varejo: detalhe ? i.preco_varejo : p.preco_varejo, quantidade: i.quantidade } : i;
           }),
         );
         if (!cancelled) setItens(atualizados);
@@ -597,6 +645,46 @@ function NovoPedidoTab() {
   const entregaOk = modoSel === "retirada" || (cotacao !== null && opcaoSel !== null && cepValido);
   const podeCriar =
     clienteOk && itens.length > 0 && entregaOk && motivoOk && !criando && !calculando;
+
+  const normalizarCampo = (k: string, v: string) => ["cpf", "cep", "telefone"].includes(k) ? soDigitos(v) : v.trim();
+  const clientePatch: Record<string, string> = {};
+  if (detalhe && podeCliente) for (const k of Object.keys(form) as (keyof typeof form)[]) {
+    if (normalizarCampo(k, form[k]) !== normalizarCampo(k, clienteBase[k])) clientePatch[k] = normalizarCampo(k, form[k]);
+  }
+  const itensPayload = itens.map(i => ({ sku: i.sku, quantidade: i.quantidade }));
+  const itensMudaram = !!detalhe && JSON.stringify(itensPayload) !== JSON.stringify(detalhe.pedido.itens.map(i => ({ sku: i.sku, quantidade: i.quantidade })));
+  const enderecoMudou = Object.keys(FORM_VAZIO).slice(4).some(k => normalizarCampo(k, form[k as keyof typeof form]) !== normalizarCampo(k, formInicial[k as keyof typeof form]));
+  const benInicial = { frete: { tipo: benF.tipo ?? "nenhum", ...(benF.valor != null ? { valor: Number(benF.valor) } : {}), motivo: benF.motivo ?? "" }, pedido: { tipo: benP.tipo ?? "nenhum", ...(benP.valor != null ? { valor: Number(benP.valor) } : {}), motivo: benP.motivo ?? "" } };
+  const entregaMudou = !!detalhe && (modoSel !== modoInicial || cdSel !== cdInicial || enderecoMudou || JSON.stringify(beneficio) !== JSON.stringify(benInicial));
+  const pedidoMudou = !!detalhe && podeItens && (itensMudaram || entregaMudou || observacao !== (detalhe.pedido.observacao ?? ""));
+  const meioMudou = !!detalhe && pagamento !== detalhe.pedido.pagamento;
+  const temAlteracao = pedidoMudou || meioMudou || Object.keys(clientePatch).length > 0;
+  const podeSalvar = podeEditar && temAlteracao && motivoAlteracao.trim().length >= 3 && !criando && (!pedidoMudou || (itens.length > 0 && (!entregaMudou || entregaOk) && !calculando && motivoOk));
+  const salvarEdicao = async () => {
+    if (!detalhe || !userId || !podeSalvar) return;
+    setCriando(true);
+    try {
+      let cot = cotacao;
+      if ((pedidoMudou || (meioMudou && Object.keys(clientePatch).length > 0)) && modoSel !== "retirada") {
+        cot = await recotar();
+        if (!cot || !cot.opcoes.some(o => o.modo === modoSel && o.ok)) throw new Error("Não foi possível recalcular a entrega. Tente de novo.");
+      }
+      const entrega = modoSel === "retirada" ? { modo: modoSel, centro_codigo: cdSel, beneficio } : { modo: modoSel, centro_codigo: cdSel, cotacao_id: cot?.cotacao_id, endereco: enderecoAtual, beneficio };
+      const r = await salvarAlteracaoBalcao({ fop_profile_id: userId, pedido_id: detalhe.pedido.id, motivo: motivoAlteracao, cliente: clientePatch, pedidoAlterado: pedidoMudou, meioAlterado: meioMudou, itens: itensPayload, entrega, observacao, meio: pagamento });
+      setResultadoEdicao(r);
+      setCriado({ pedido_id: detalhe.pedido.id, id_externo: detalhe.pedido.id_externo, valor_total: Number(r.valor_total ?? detalhe.pedido.valor_liquido), link_pagamento: typeof r.link_pagamento === "string" ? r.link_pagamento : null, pix_copia_cola: typeof r.pix_copia_cola === "string" ? r.pix_copia_cola : null, link_erro: typeof r.link_erro === "string" ? r.link_erro : null, avisos: Array.isArray(r.avisos) ? r.avisos as PedidoCriado["avisos"] : [] });
+      toast.success("Pedido atualizado");
+      await onSalvo?.();
+    } catch (e) {
+      // Cliente pode ter sido salvo antes de uma falha comercial: releia a base sem perder o formulário.
+      try {
+        const atual = await balcao<PedidoDetalhe>("balcao_detalhe", { fop_profile_id: userId, pedido_id: detalhe.pedido.id });
+        setClienteBase(prev => { const next = { ...prev }; for (const k of Object.keys(clientePatch) as (keyof typeof prev)[]) next[k] = atual.cliente[k] ?? ""; return next; });
+      } catch { /* o erro original deve continuar visível */ }
+      await onSalvo?.();
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar pedido");
+    } finally { setCriando(false); }
+  };
 
   // ----- criar pedido -----
   const criarPedido = async () => {
@@ -718,7 +806,7 @@ function NovoPedidoTab() {
     return (
       <Card className="border-gold/40">
         <CardHeader>
-          <CardTitle className="text-text-primary">Pedido criado</CardTitle>
+          <CardTitle className="text-text-primary">{detalhe ? "Pedido atualizado" : "Pedido criado"}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
@@ -726,6 +814,11 @@ function NovoPedidoTab() {
             <span className="text-text-primary">{brl(criado.valor_total)}</span>
           </div>
 
+          {detalhe && resultadoEdicao && (resultadoEdicao.pagamento_refeito === true || criado.link_pagamento || criado.pix_copia_cola) && (
+            <p role="status" className="rounded-md border border-gold/40 bg-gold/10 p-3 text-sm text-text-primary">
+              Total mudou de {brl(Number(resultadoEdicao.valor_anterior ?? detalhe.pedido.valor_liquido))} para {brl(criado.valor_total)} — envie o novo link/PIX ao cliente
+            </p>
+          )}
           {criado.endereco_gravado_no_cadastro && (
             <p className="text-sm text-text-secondary">Endereço salvo no cadastro do cliente</p>
           )}
@@ -745,7 +838,7 @@ function NovoPedidoTab() {
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => copiar(criado.link_pagamento!, "Link copiado")}
+                    onClick={() => criado.link_pagamento && copiar(criado.link_pagamento, "Link copiado")}
                   >
                     <Copy className="mr-1 h-4 w-4" /> Copiar
                   </Button>
@@ -773,7 +866,7 @@ function NovoPedidoTab() {
                 <Input readOnly value={criado.pix_copia_cola} className="flex-1 font-mono text-xs" />
                 <Button
                   variant="outline"
-                  onClick={() => copiar(criado.pix_copia_cola!, "Código PIX copiado")}
+                  onClick={() => criado.pix_copia_cola && copiar(criado.pix_copia_cola, "Código PIX copiado")}
                 >
                   <Copy className="mr-1 h-4 w-4" /> Copiar
                 </Button>
@@ -801,8 +894,8 @@ function NovoPedidoTab() {
             </ul>
           )}
 
-          <Button onClick={limparTudo} variant="outline">
-            Novo pedido
+          <Button onClick={detalhe ? onVoltar : limparTudo} variant="outline">
+            {detalhe ? "Voltar para meus pedidos" : "Novo pedido"}
           </Button>
         </CardContent>
       </Card>
@@ -811,6 +904,12 @@ function NovoPedidoTab() {
 
   return (
     <div className="space-y-6">
+      {detalhe && <div className="space-y-2">
+        <Button variant="outline" onClick={onVoltar}>Voltar para meus pedidos</Button>
+        <h2 className="text-lg font-medium text-text-primary">{detalhe.pedido.id_externo}</h2>
+        <p className="text-sm text-text-secondary">{detalhe.pedido.situacao ?? detalhe.pedido.estagio} · {rotuloPagamento(detalhe.pedido.pagamento)} · Total {brl(detalhe.pedido.valor_liquido)}{detalhe.pedido.nf_numero ? ` · NF ${detalhe.pedido.nf_numero}` : ""}</p>
+        {(detalhe.permissoes.motivo_bloqueio || !podeEditar) && <p role="status" className="rounded-md border border-border p-3 text-sm text-text-primary">{detalhe.permissoes.motivo_bloqueio ?? "Pedido disponível somente para leitura"}</p>}
+      </div>}
       {/* (a) Cliente */}
       <Card>
         <CardHeader>
@@ -871,7 +970,7 @@ function NovoPedidoTab() {
             </>
           )}
 
-          {clienteSel && (
+          {clienteSel && !detalhe && (
             <div className="rounded-md border border-gold/30 bg-gold/5 p-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -905,45 +1004,50 @@ function NovoPedidoTab() {
             </div>
           )}
 
-          {modoNovoCliente && !clienteSel && (
+          {(detalhe || (modoNovoCliente && !clienteSel)) && (
             <div className="space-y-3 rounded-md border border-border p-3">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <fieldset disabled={!podeCliente || criando} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <Label>Nome *</Label>
+                  <Label htmlFor="balcao-cliente-nome">Nome *</Label>
                   <Input
+                    id="balcao-cliente-nome"
                     value={form.nome}
                     onChange={(e) => setForm({ ...form, nome: e.target.value })}
                   />
                 </div>
                 <div>
-                  <Label>CPF *</Label>
+                  <Label htmlFor="balcao-cliente-cpf">CPF{detalhe ? "" : " *"}</Label>
                   <Input
                     inputMode="numeric"
+                    id="balcao-cliente-cpf"
+                    disabled={!!detalhe?.cliente.cpf}
                     placeholder="000.000.000-00"
                     value={form.cpf}
                     onChange={(e) => setForm({ ...form, cpf: maskCpf(e.target.value) })}
                   />
                 </div>
                 <div>
-                  <Label>Telefone</Label>
+                  <Label htmlFor="balcao-cliente-telefone">Telefone</Label>
                   <Input
+                    id="balcao-cliente-telefone"
                     inputMode="tel"
                     value={form.telefone}
                     onChange={(e) => setForm({ ...form, telefone: e.target.value })}
                   />
                 </div>
                 <div>
-                  <Label>
+                  <Label htmlFor="balcao-cliente-email">
                     E-mail{emailObrigatorio ? " * (obrigatório no cartão)" : ""}
                   </Label>
                   <Input
+                    id="balcao-cliente-email"
                     type="email"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                   />
                 </div>
-              </div>
-              <div className="flex gap-2">
+              </fieldset>
+              {!detalhe && <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setModoNovoCliente(false)}>
                   Voltar para busca
                 </Button>
@@ -952,11 +1056,11 @@ function NovoPedidoTab() {
                     Preencha nome e CPF{emailObrigatorio ? " (e e-mail, obrigatório no cartão)" : ""}.
                   </p>
                 )}
-              </div>
+              </div>}
             </div>
           )}
 
-          <section className="space-y-3 border-t border-border pt-4" aria-labelledby="balcao-endereco-titulo">
+          <fieldset disabled={!!detalhe && !podeItens && !podeCliente || criando}><section className="space-y-3 border-t border-border pt-4" aria-labelledby="balcao-endereco-titulo">
             <h2 id="balcao-endereco-titulo" className="text-sm font-medium text-text-primary">Endereço de entrega</h2>
             {clienteSel && !soDigitos(clienteSel.cep ?? "") && (
               <p className="text-xs text-text-secondary">Cliente sem endereço no cadastro — informe para cotar a entrega</p>
@@ -1028,10 +1132,11 @@ function NovoPedidoTab() {
                   </div>
                 </div>
             </div>
-          </section>
+          </section></fieldset>
         </CardContent>
       </Card>
 
+      <fieldset disabled={!podeItens || criando} className="space-y-6">
       {/* (b0) CD de origem */}
       <Card>
         <CardHeader>
@@ -1312,6 +1417,7 @@ function NovoPedidoTab() {
         </Card>
       </Collapsible>
 
+      </fieldset>
       {/* (e) Pagamento */}
       <Card>
         <CardHeader>
@@ -1324,6 +1430,7 @@ function NovoPedidoTab() {
                 key={p}
                 variant={pagamento === p ? "default" : "outline"}
                 className={pagamento === p ? "bg-gold text-background hover:bg-gold/90" : ""}
+                disabled={!podeMeio || criando}
                 onClick={() => setPagamento(p)}
               >
                 {MEIO_LABEL[p]}
@@ -1332,7 +1439,7 @@ function NovoPedidoTab() {
           </div>
           <p className="text-xs text-text-secondary">{MEIO_LEGENDA[pagamento]}</p>
 
-          {pagamento === "cartao" && (
+          {!detalhe && pagamento === "cartao" && (
             <div className="max-w-40">
               <Label>Parcelas</Label>
               <Select value={String(maxParcelas)} onValueChange={(v) => setMaxParcelas(Number(v))}>
@@ -1350,8 +1457,10 @@ function NovoPedidoTab() {
             </div>
           )}
           <div>
-            <Label>Observação</Label>
+            <Label htmlFor="balcao-observacao">Observação</Label>
             <Textarea
+              id="balcao-observacao"
+              disabled={!podeItens || criando}
               rows={2}
               value={observacao}
               onChange={(e) => setObservacao(e.target.value)}
@@ -1360,6 +1469,10 @@ function NovoPedidoTab() {
         </CardContent>
       </Card>
 
+      {detalhe && podeEditar && <div className="space-y-2">
+        <Label htmlFor="balcao-motivo-alteracao">Motivo da alteração *</Label>
+        <Textarea id="balcao-motivo-alteracao" value={motivoAlteracao} onChange={e => setMotivoAlteracao(e.target.value)} disabled={criando} rows={2} />
+      </div>}
       {/* (f) Resumo fixo */}
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-5 gap-y-1 px-4 py-3">
@@ -1378,11 +1491,11 @@ function NovoPedidoTab() {
           </span>
           <Button
             className="ml-auto bg-gold text-background hover:bg-gold/90"
-            disabled={!podeCriar}
-            onClick={criarPedido}
+            disabled={detalhe ? !podeSalvar : !podeCriar}
+            onClick={detalhe ? salvarEdicao : criarPedido}
           >
             {criando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            {pagamento === "cartao_maquininha" ? "Criar pedido" : "Criar pedido e gerar link"}
+            {detalhe ? (podeEditar ? "Salvar alterações" : "Somente leitura") : pagamento === "cartao_maquininha" ? "Criar pedido" : "Criar pedido e gerar link"}
           </Button>
         </div>
       </div>
@@ -1395,12 +1508,15 @@ function NovoPedidoTab() {
 type FiltroRapido = "todos" | "aguardando" | "pagos";
 
 function MeusPedidosTab() {
+  const userId = useAuth(s => s.user?.id);
+  const [detalhe, setDetalhe] = useState<PedidoDetalhe | null>(null);
+  const [abrindoId, setAbrindoId] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<FiltroRapido>("todos");
   const [gerandoLinkId, setGerandoLinkId] = useState<string | null>(null);
 
   const { data, error, isLoading, refetch, isFetching } = useQuery({
-    queryKey: ["balcao-meus-pedidos"],
+    queryKey: ["balcao-meus-pedidos", userId],
     queryFn: () => balcao<{ pedidos: MeuPedido[] }>("balcao_meus_pedidos", { dias: 90 }),
     refetchInterval: 60_000,
     throwOnError: false,
@@ -1437,6 +1553,17 @@ function MeusPedidosTab() {
       setGerandoLinkId(null);
     }
   };
+
+  const abrir = async (pedidoId: string) => {
+    if (!userId) { toast.error("Faça login para abrir o pedido."); return; }
+    setAbrindoId(pedidoId);
+    try {
+      const r = await balcao<PedidoDetalhe>("balcao_detalhe", { fop_profile_id: userId, pedido_id: pedidoId });
+      setDetalhe(r);
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Erro ao abrir pedido"); }
+    finally { setAbrindoId(null); }
+  };
+  if (detalhe) return <NovoPedidoTab key={detalhe.pedido.id} detalhe={detalhe} onVoltar={() => { setDetalhe(null); void refetch(); }} onSalvo={refetch} />;
 
   return (
     <Card>
@@ -1586,6 +1713,9 @@ function MeusPedidosTab() {
                         )}
                       </TableCell>
                       <TableCell>
+                        <Button variant="outline" size="sm" disabled={abrindoId !== null} onClick={() => void abrir(p.id)}>
+                          {abrindoId === p.id && <Loader2 className="mr-1 h-3 w-3 animate-spin" />} Abrir
+                        </Button>
                         {!pago && !cancelado && (
                           <div className="flex flex-col gap-1">
                             {p.link_pagamento && (
