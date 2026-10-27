@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Abrir e editar próprios pedidos B2C pela ponte SNCF, conforme permissões retornadas
+- [ ] Testar alterações parciais, meio de pagamento, motivo e atualização da lista
+
 - [x] Centralizar regra de estoque e testes de venda firme/provisão/bloqueio
 - [x] Aplicar bloqueio em catálogo, duplicação, cotação, carrinho e checkout
 - [x] Derivar status no banco e normalizar produtos existentes
