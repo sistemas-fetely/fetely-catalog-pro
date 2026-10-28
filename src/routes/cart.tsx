@@ -485,15 +485,25 @@ function CartPage() {
       }
 
       let provisaoId: string | undefined;
+      // Conversão de provisão: o que ainda está em previsão permanece NA MESMA
+      // provisão (sem criar cópia); só o que tem saldo desce para o pedido.
+      const origemConversao = provisaoOrigemId && !editandoProvisaoId ? provisaoOrigemId : undefined;
 
       if (itensProvisao.length > 0) {
-        const prov = await createProvisao({
-          clienteId: meta.clienteId!,
-          clienteSnapshot: snapshot,
-          itens: itensProvisao.map(toItemProvisao),
-          observacoes: meta.observacoes || undefined,
-        });
-        provisaoId = prov.id;
+        if (origemConversao) {
+          await atualizarProvisao(origemConversao, {
+            itens: itensProvisao.map(toItemProvisao),
+          });
+          provisaoId = origemConversao;
+        } else {
+          const prov = await createProvisao({
+            clienteId: meta.clienteId!,
+            clienteSnapshot: snapshot,
+            itens: itensProvisao.map(toItemProvisao),
+            observacoes: meta.observacoes || undefined,
+          });
+          provisaoId = prov.id;
+        }
       }
 
       const pedidoEditandoId = (meta as OrderMeta & { pedidoEditandoId?: string }).pedidoEditandoId;
@@ -520,7 +530,7 @@ function CartPage() {
       }
 
       const provisaoConvertidaId = provisaoOrigemId ?? editandoProvisaoId;
-      if (provisaoConvertidaId) {
+      if (provisaoConvertidaId && provisaoConvertidaId !== provisaoId) {
         updateProvisaoStatus(provisaoConvertidaId, "convertido_em_pedido", {
           pedidoConvertidoId: order.id,
         });
