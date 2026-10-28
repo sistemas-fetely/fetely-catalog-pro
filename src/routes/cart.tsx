@@ -485,42 +485,29 @@ function CartPage() {
       }
 
       let provisaoId: string | undefined;
+      // Conversão de provisão: o que ainda está em previsão permanece NA MESMA
+      // provisão (sem criar cópia); só o que tem saldo desce para o pedido.
+      const origemConversao = provisaoOrigemId && !editandoProvisaoId ? provisaoOrigemId : undefined;
 
       if (itensProvisao.length > 0) {
-        const prov = await createProvisao({
-          clienteId: meta.clienteId!,
-          clienteSnapshot: snapshot,
-          itens: itensProvisao.map(toItemProvisao),
-          observacoes: meta.observacoes || undefined,
-        });
-        provisaoId = prov.id;
+        if (origemConversao) {
+          await atualizarProvisao(origemConversao, {
+            itens: itensProvisao.map(toItemProvisao),
+          });
+          provisaoId = origemConversao;
+        } else {
+          const prov = await createProvisao({
+            clienteId: meta.clienteId!,
+            clienteSnapshot: snapshot,
+            itens: itensProvisao.map(toItemProvisao),
+            observacoes: meta.observacoes || undefined,
+          });
+          provisaoId = prov.id;
+        }
       }
-
-      const pedidoEditandoId = (meta as OrderMeta & { pedidoEditandoId?: string }).pedidoEditandoId;
-      const order = pedidoEditandoId
-        ? await useOrder.getState().atualizarPedido(pedidoEditandoId, orderCommercial, itensFirmes)
-        : await saveOrder(orderCommercial, itensFirmes);
-
-      if (orderCommercial.negociacao && orderCommercial.descontoMasterPct > 0) {
-        registrarNegociacao({
-          id: order.id,
-          timestamp: order.createdAt,
-          valorBruto: orderCommercial.bruto,
-          descontoPct: orderCommercial.descontoMasterPct,
-          descontoValor: orderCommercial.descontoMasterValor,
-          justificativa: orderCommercial.justificativa,
-          faixaUsada: orderCommercial.faixaNome,
-        });
-      }
-
-      if (provisaoId) {
-        updateProvisaoStatus(provisaoId, "aguardando_estoque", {
-          pedidoFirmeId: order.id,
-        });
-      }
-
+...
       const provisaoConvertidaId = provisaoOrigemId ?? editandoProvisaoId;
-      if (provisaoConvertidaId) {
+      if (provisaoConvertidaId && provisaoConvertidaId !== provisaoId) {
         updateProvisaoStatus(provisaoConvertidaId, "convertido_em_pedido", {
           pedidoConvertidoId: order.id,
         });
