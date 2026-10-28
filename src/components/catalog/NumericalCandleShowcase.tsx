@@ -115,7 +115,7 @@ export function NumericalCandleShowcase({ products, colecao, onColorChange }: Pr
             <div className="px-4 py-3 min-w-0">
               <div className="text-sm text-text-primary truncate">{p.nomeComercial}</div>
               <div className="text-[10px] font-mono text-text-muted mt-1">{p.sku}</div>
-              <StockBadge status={p.statusEstoque} estoqueDisponivel={p.estoqueDisponivel} prontaEntrega={p.prontaEntrega} />
+              <StockBadge colecao={p.colecao} status={p.statusEstoque} estoqueDisponivel={p.estoqueDisponivel} prontaEntrega={p.prontaEntrega} />
             </div>
             <div className="px-4 py-3 text-right">
               {p.precoVarejo > 0 ? (
