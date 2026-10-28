@@ -505,7 +505,30 @@ function CartPage() {
           provisaoId = prov.id;
         }
       }
-...
+
+      const pedidoEditandoId = (meta as OrderMeta & { pedidoEditandoId?: string }).pedidoEditandoId;
+      const order = pedidoEditandoId
+        ? await useOrder.getState().atualizarPedido(pedidoEditandoId, orderCommercial, itensFirmes)
+        : await saveOrder(orderCommercial, itensFirmes);
+
+      if (orderCommercial.negociacao && orderCommercial.descontoMasterPct > 0) {
+        registrarNegociacao({
+          id: order.id,
+          timestamp: order.createdAt,
+          valorBruto: orderCommercial.bruto,
+          descontoPct: orderCommercial.descontoMasterPct,
+          descontoValor: orderCommercial.descontoMasterValor,
+          justificativa: orderCommercial.justificativa,
+          faixaUsada: orderCommercial.faixaNome,
+        });
+      }
+
+      if (provisaoId) {
+        updateProvisaoStatus(provisaoId, "aguardando_estoque", {
+          pedidoFirmeId: order.id,
+        });
+      }
+
       const provisaoConvertidaId = provisaoOrigemId ?? editandoProvisaoId;
       if (provisaoConvertidaId && provisaoConvertidaId !== provisaoId) {
         updateProvisaoStatus(provisaoConvertidaId, "convertido_em_pedido", {
