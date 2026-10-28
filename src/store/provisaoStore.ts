@@ -99,6 +99,7 @@ async function encontrarProvisaoEquivalente(
 /** Dedup de hidratação de provisões. */
 let inflightProvItens: Promise<void> | null = null;
 let inflightProvHydrate: Promise<void> | null = null;
+const inflightCreate = new Map<string, Promise<ProvisaoFutura>>();
 
 interface ProvisaoState {
   provisoes: ProvisaoFutura[];
@@ -279,7 +280,13 @@ export const useProvisao = create<ProvisaoState>()(
       },
       setProvisoesFromRows: (p, maxCounter) => set({ provisoes: p, counter: maxCounter }),
 
-      createProvisao: async (input) => {
+      createProvisao: (input) => {
+        // Trava em memória: duas gravações simultâneas do mesmo carrinho
+        // (ex.: cotação e pedido disparados juntos) reaproveitam a mesma tarefa.
+        const chave = `${input.clienteId}|${assinaturaItens(input.itens)}`;
+        const emAndamento = inflightCreate.get(chave);
+        if (emAndamento) return emAndamento;
+        const tarefa = (async (): Promise<ProvisaoFutura> => {
         await validarEstoqueAtual(input.itens.map((i) => ({ sku: i.sku, quantity: i.quantidade, product: {} })));
         const auth = useAuth.getState();
         if (!auth.session || !auth.user?.id) {
@@ -385,6 +392,9 @@ export const useProvisao = create<ProvisaoState>()(
           counter: next,
         }));
         return provisao;
+        })().finally(() => inflightCreate.delete(chave));
+        inflightCreate.set(chave, tarefa);
+        return tarefa;
       },
       updateStatus: (id, status, extra) => {
         const atualizadoEm = new Date().toISOString();
