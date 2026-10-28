@@ -43,16 +43,15 @@ async function encontrarProvisaoEquivalente(
     // Janela curta: a trava serve para tentativas repetidas do MESMO salvamento
     // (duplo clique, pedido que falhou e foi refeito). Recompra legítima do mesmo
     // cliente com os mesmos itens depois disso precisa gerar provisão nova.
-    const desde = new Date(Date.now() - JANELA_DEDUP_MS).toISOString();
+    const desde = Date.now() - JANELA_DEDUP_MS;
     const { data: provs, error } = await supabase
       .from("provisoes")
       .select("*")
       .eq("cliente_id", input.clienteId)
       .eq("status", "aguardando_estoque")
       .eq("reprovado", false)
-      .gte("criado_em", desde)
       .order("criado_em", { ascending: false })
-      .limit(20);
+      .limit(50);
     if (error || !provs || provs.length === 0) return null;
 
     const ids = (provs as Record<string, unknown>[]).map((r) => r.id as string);
@@ -80,7 +79,15 @@ async function encontrarProvisaoEquivalente(
       if (cotacaoLigada && input.cotacaoOrigemId && cotacaoLigada !== input.cotacaoOrigemId) continue;
       if (pedidoLigado && !input.pedidoFirmeId) continue;
       if (cotacaoLigada && !input.cotacaoOrigemId) continue;
-      if (assinaturaItens(itens) === assinatura) return rowToProvisao(row, input.itens);
+      if (assinaturaItens(itens) !== assinatura) continue;
+      const mesmoVinculo =
+        (!!input.cotacaoOrigemId && cotacaoLigada === input.cotacaoOrigemId) ||
+        (!!input.pedidoFirmeId && pedidoLigado === input.pedidoFirmeId);
+      // Provisão solta sendo "promovida" a pedido/cotação (ex.: cotação salva
+      // dias antes e convertida agora) é a MESMA demanda, sem limite de tempo.
+      const promocao = !pedidoLigado && !cotacaoLigada && (!!input.pedidoFirmeId || !!input.cotacaoOrigemId);
+      const recente = new Date(row.criado_em as string).getTime() >= desde;
+      if (mesmoVinculo || promocao || recente) return rowToProvisao(row, input.itens);
     }
     return null;
   } catch (err) {
@@ -92,6 +99,7 @@ async function encontrarProvisaoEquivalente(
 /** Dedup de hidratação de provisões. */
 let inflightProvItens: Promise<void> | null = null;
 let inflightProvHydrate: Promise<void> | null = null;
+const inflightCreate = new Map<string, Promise<ProvisaoFutura>>();
 
 interface ProvisaoState {
   provisoes: ProvisaoFutura[];
@@ -272,7 +280,13 @@ export const useProvisao = create<ProvisaoState>()(
       },
       setProvisoesFromRows: (p, maxCounter) => set({ provisoes: p, counter: maxCounter }),
 
-      createProvisao: async (input) => {
+      createProvisao: (input) => {
+        // Trava em memória: duas gravações simultâneas do mesmo carrinho
+        // (ex.: cotação e pedido disparados juntos) reaproveitam a mesma tarefa.
+        const chave = `${input.clienteId}|${assinaturaItens(input.itens)}`;
+        const emAndamento = inflightCreate.get(chave);
+        if (emAndamento) return emAndamento;
+        const tarefa = (async (): Promise<ProvisaoFutura> => {
         await validarEstoqueAtual(input.itens.map((i) => ({ sku: i.sku, quantity: i.quantidade, product: {} })));
         const auth = useAuth.getState();
         if (!auth.session || !auth.user?.id) {
@@ -378,6 +392,9 @@ export const useProvisao = create<ProvisaoState>()(
           counter: next,
         }));
         return provisao;
+        })().finally(() => inflightCreate.delete(chave));
+        inflightCreate.set(chave, tarefa);
+        return tarefa;
       },
       updateStatus: (id, status, extra) => {
         const atualizadoEm = new Date().toISOString();
