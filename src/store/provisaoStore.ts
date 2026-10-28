@@ -43,16 +43,15 @@ async function encontrarProvisaoEquivalente(
     // Janela curta: a trava serve para tentativas repetidas do MESMO salvamento
     // (duplo clique, pedido que falhou e foi refeito). Recompra legítima do mesmo
     // cliente com os mesmos itens depois disso precisa gerar provisão nova.
-    const desde = new Date(Date.now() - JANELA_DEDUP_MS).toISOString();
+    const desde = Date.now() - JANELA_DEDUP_MS;
     const { data: provs, error } = await supabase
       .from("provisoes")
       .select("*")
       .eq("cliente_id", input.clienteId)
       .eq("status", "aguardando_estoque")
       .eq("reprovado", false)
-      .gte("criado_em", desde)
       .order("criado_em", { ascending: false })
-      .limit(20);
+      .limit(50);
     if (error || !provs || provs.length === 0) return null;
 
     const ids = (provs as Record<string, unknown>[]).map((r) => r.id as string);
@@ -80,7 +79,15 @@ async function encontrarProvisaoEquivalente(
       if (cotacaoLigada && input.cotacaoOrigemId && cotacaoLigada !== input.cotacaoOrigemId) continue;
       if (pedidoLigado && !input.pedidoFirmeId) continue;
       if (cotacaoLigada && !input.cotacaoOrigemId) continue;
-      if (assinaturaItens(itens) === assinatura) return rowToProvisao(row, input.itens);
+      if (assinaturaItens(itens) !== assinatura) continue;
+      const mesmoVinculo =
+        (!!input.cotacaoOrigemId && cotacaoLigada === input.cotacaoOrigemId) ||
+        (!!input.pedidoFirmeId && pedidoLigado === input.pedidoFirmeId);
+      // Provisão solta sendo "promovida" a pedido/cotação (ex.: cotação salva
+      // dias antes e convertida agora) é a MESMA demanda, sem limite de tempo.
+      const promocao = !pedidoLigado && !cotacaoLigada && (!!input.pedidoFirmeId || !!input.cotacaoOrigemId);
+      const recente = new Date(row.criado_em as string).getTime() >= desde;
+      if (mesmoVinculo || promocao || recente) return rowToProvisao(row, input.itens);
     }
     return null;
   } catch (err) {

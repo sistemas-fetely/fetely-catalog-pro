@@ -657,6 +657,7 @@ function CartPage() {
             clienteSnapshot: snapshot,
             itens: itensProvisao.map(toItemProvisao),
             observacoes: meta.observacoes || `Cotação ${cot.id}`,
+            cotacaoOrigemId: cot.id,
           });
         } catch (errProv) {
           console.error("[cart] falha ao salvar provisão da cotação:", errProv);
