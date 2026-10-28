@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { colecaoLiberada } from "@/lib/classifyItem";
 
 interface StockBadgeProps {
   status: string;
@@ -6,16 +7,18 @@ interface StockBadgeProps {
   estoqueDisponivel?: number;
   /** Selo visual, exibido somente com estoque positivo. */
   prontaEntrega?: boolean;
+  /** Coleções liberadas sem estoque aparecem como Pronta Entrega. */
+  colecao?: string;
   className?: string;
 }
 
-export function StockBadge({ status, estoqueDisponivel, prontaEntrega, className }: StockBadgeProps) {
+export function StockBadge({ status, estoqueDisponivel, prontaEntrega, colecao, className }: StockBadgeProps) {
   const s = (status || "").trim().toLowerCase();
   const disp = Number(estoqueDisponivel ?? 0);
   let color = "bg-muted text-text-muted";
   let label = "Consultar";
 
-  if (prontaEntrega && disp > 0) {
+  if (colecaoLiberada(colecao) || (prontaEntrega && disp > 0)) {
     color = "bg-stock-in/15 text-stock-in border border-stock-in/30";
     label = "Pronta Entrega";
   } else if (disp > 0) {

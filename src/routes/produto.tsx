@@ -166,7 +166,7 @@ function ProductPage() {
               />
             )}
             <div className="absolute top-3 right-3">
-              <StockBadge status={product.statusEstoque} estoqueDisponivel={product.estoqueDisponivel} prontaEntrega={product.prontaEntrega} />
+              <StockBadge colecao={product.colecao} status={product.statusEstoque} estoqueDisponivel={product.estoqueDisponivel} prontaEntrega={product.prontaEntrega} />
             </div>
           </div>
         </div>

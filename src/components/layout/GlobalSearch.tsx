@@ -111,7 +111,7 @@ export function GlobalSearch() {
                   <div className="text-[10px] text-text-muted truncate">
                     {p.colecao} · {p.corNome}
                   </div>
-                  <StockBadge status={p.statusEstoque} estoqueDisponivel={p.estoqueDisponivel} prontaEntrega={p.prontaEntrega} />
+                  <StockBadge colecao={p.colecao} status={p.statusEstoque} estoqueDisponivel={p.estoqueDisponivel} prontaEntrega={p.prontaEntrega} />
                 </div>
                 <div className="text-xs text-gold font-medium whitespace-nowrap">
                   {p.precoAtacado > 0 ? formatBRL(p.precoAtacado) : "—"}
