@@ -6,17 +6,34 @@ export function classificarItem(statusEstoque: string): "firme" | "provisao" {
   return "provisao";
 }
 
-/** Estoque numérico do SNCF é a única autoridade da venda firme. */
-export function disponivelParaVenda(product: Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega">): number {
+type ProdutoEstoque = Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega"> & { colecao?: string };
+
+/**
+ * Coleções de velas liberadas para venda firme mesmo com estoque zero
+ * (decisão Thomer 28/10/2026). Jingle Pop fica de fora e segue a regra normal.
+ */
+export const COLECOES_LIBERADAS_SEM_ESTOQUE = [
+  "classique", "fine pure", "le moment", "dots doux", "spirale",
+  "twist", "lumi star", "pattern", "amour",
+];
+const SALDO_LIBERADO = 999999;
+
+export function colecaoLiberada(colecao?: string): boolean {
+  return COLECOES_LIBERADAS_SEM_ESTOQUE.includes((colecao || "").trim().toLowerCase());
+}
+
+/** Estoque numérico do SNCF é a autoridade da venda firme, salvo coleções liberadas. */
+export function disponivelParaVenda(product: ProdutoEstoque): number {
+  if (colecaoLiberada(product.colecao)) return SALDO_LIBERADO;
   const q = Number(product.estoqueDisponivel ?? 0);
   return Number.isFinite(q) && q > 0 ? q : 0;
 }
 
-export function vendaBloqueada(product: Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega">): boolean {
+export function vendaBloqueada(product: ProdutoEstoque): boolean {
   return disponivelParaVenda(product) === 0 && !(product.statusEstoque || "").trim().toLowerCase().startsWith("prev");
 }
 
-export function emEstoque(product: Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega">): boolean {
+export function emEstoque(product: ProdutoEstoque): boolean {
   return disponivelParaVenda(product) > 0;
 }
 
@@ -25,7 +42,7 @@ export function emEstoque(product: Pick<Product, "estoqueDisponivel" | "statusEs
  * estoque disponível. Não altera o produto — apenas calcula.
  */
 export function roteamentoQtd(
-  product: Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega">,
+  product: ProdutoEstoque,
   quantidade: number,
 ): { firme: number; provisao: number } {
   const qtd = Math.max(0, Math.floor(quantidade));

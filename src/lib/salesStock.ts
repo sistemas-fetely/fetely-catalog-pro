@@ -20,16 +20,16 @@ export function avisarEsgotados(products: Product[]) {
 export async function validarEstoqueAtual(items: { sku: string; quantity: number; product: { codCadastro?: string } }[], somenteFirme = false): Promise<void> {
   if (!items.length) throw new Error("Não há itens disponíveis para salvar.");
   const { data, error } = await supabase.from("products")
-    .select("sku, estoque_disponivel, status_estoque")
+    .select("sku, estoque_disponivel, status_estoque, colecao")
     .in("sku", [...new Set(items.map((i) => i.sku))]);
   if (error) throw new Error("Não foi possível conferir o estoque. Tente novamente.");
   const bySku = new Map((data ?? []).map((p) => [p.sku, p]));
   for (const item of items) {
     const row = bySku.get(item.sku);
     if (!row) throw new Error(`Produto ${item.sku} não está disponível no catálogo.`);
-    const product = { estoqueDisponivel: Number(row.estoque_disponivel ?? 0), statusEstoque: row.status_estoque ?? "" };
+    const product = { estoqueDisponivel: Number(row.estoque_disponivel ?? 0), statusEstoque: row.status_estoque ?? "", colecao: row.colecao ?? "" };
     if (vendaBloqueada(product)) throw new Error(`Produto ${item.product.codCadastro || item.sku}: Esgotado. Remova-o antes de salvar.`);
-    if (somenteFirme && product.estoqueDisponivel < item.quantity) {
+    if (somenteFirme && disponivelParaVenda(product) < item.quantity) {
       throw new Error(`O estoque de ${item.sku} mudou. Revise o carrinho antes de salvar.`);
     }
   }
