@@ -1,7 +1,7 @@
 import type { Product } from "@/types";
 import { useCatalog } from "@/store/catalogStore";
 import { supabase } from "@/integrations/supabase/client";
-import { vendaBloqueada } from "@/lib/classifyItem";
+import { disponivelParaVenda, vendaBloqueada } from "@/lib/classifyItem";
 import { toast } from "sonner";
 
 export function produtoAtual(product: Product): Product {
