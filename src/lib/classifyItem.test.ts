@@ -32,15 +32,15 @@ describe("autoridade do estoque — Flavio 21/10/2026", () => {
     expect(vendaBloqueada({ estoqueDisponivel: 0, statusEstoque: "Sem previsão" })).toBe(true);
   });
 });
-import { emEstoque as _em, roteamentoQtd as _rot } from "./classifyItem";
+import { emEstoque as _em } from "./classifyItem";
 describe("coleções de velas liberadas sem estoque", () => {
-  it("Classique com estoque zero e Prev vai inteiro para pedido", () => {
+  test("Classique com estoque zero e Prev vai inteiro para pedido", () => {
     const p = { estoqueDisponivel: 0, statusEstoque: "Prev. Nov 2026", prontaEntrega: false, colecao: "Classique" };
     expect(_em(p)).toBe(true);
-    expect(_rot(p, 12)).toEqual({ firme: 12, provisao: 0 });
+    expect(roteamentoQtd(p, 12)).toEqual({ firme: 12, provisao: 0 });
   });
-  it("Jingle Pop com estoque zero e Prev continua em provisão", () => {
+  test("Jingle Pop com estoque zero e Prev continua em provisão", () => {
     const p = { estoqueDisponivel: 0, statusEstoque: "Prev. Nov 2026", prontaEntrega: false, colecao: "Jingle Pop" };
-    expect(_rot(p, 12)).toEqual({ firme: 0, provisao: 12 });
+    expect(roteamentoQtd(p, 12)).toEqual({ firme: 0, provisao: 12 });
   });
 });
