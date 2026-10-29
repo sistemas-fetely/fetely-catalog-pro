@@ -26,6 +26,7 @@ import { useAuth } from "@/store/authStore";
 import { balcao, salvarAlteracaoBalcao, type AlteracaoBalcao } from "@/hooks/useBalcao";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
+import { orderPayment } from "@/lib/bonificationPayment";
 
 export const Route = createFileRoute("/venda-b2c")({
   head: () => ({
@@ -135,7 +136,7 @@ function rotuloPagamento(p: string | null) {
   if (p === "pix") return "PIX";
   if (p === "cartao") return "Cartão (link)";
   if (p === "cartao_maquininha") return "Maquininha";
-  if (p === "bonificacao") return "Bonificação";
+  if (p === "bonificacao" || p === "sem_pagamento") return "Bonificação";
   return p;
 }
 
@@ -179,7 +180,7 @@ type PedidoDetalhe = {
     frete_tipo: string | null; modal: string | null;
     endereco_entrega: Record<string, unknown> | null;
     itens: { sku: string; descricao: string; quantidade: number; valor_unitario: number }[];
-    observacao: string | null; pagamento: MeioPagamento; link_pagamento: string | null;
+    observacao: string | null; pagamento: MeioPagamento | "sem_pagamento"; link_pagamento: string | null;
     pagamento_confirmado_em: string | null; nf_numero: string | null;
     vendedor_nome: string | null; cancelado_em: string | null;
   };
@@ -407,7 +408,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
   const [benFreteMotivo, setBenFreteMotivo] = useState(String(benF.motivo ?? ""));
 
   // (e) Pagamento
-  const [pagamento, setPagamento] = useState<MeioPagamento>(detalhe?.pedido.pagamento ?? "pix");
+  const [pagamento, setPagamento] = useState<MeioPagamento | null>(detalhe?.pedido.pagamento === "sem_pagamento" ? "bonificacao" : detalhe?.pedido.pagamento ?? "pix");
   const [maxParcelas, setMaxParcelas] = useState(1);
   const [observacao, setObservacao] = useState(detalhe?.pedido.observacao ?? "");
 
@@ -550,6 +551,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
       setBenAberto(false);
     }
   };
+  const sairBonificacao = () => setPagamento(null);
 
   const beneficioAtivo = benPedidoTipo !== "nenhum" || benFreteTipo !== "nenhum";
   const motivoOk =
@@ -682,7 +684,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
   const clienteOk = clienteSel !== null || (modoNovoCliente && novoClienteValido);
   const entregaOk = modoSel === "retirada" || (cotacao !== null && opcaoSel !== null && cepValido);
   const podeCriar =
-    clienteOk && itens.length > 0 && entregaOk && motivoOk && !criando && !calculando;
+    clienteOk && itens.length > 0 && entregaOk && motivoOk && pagamento !== null && !criando && !calculando;
 
   const normalizarCampo = (k: string, v: string) => ["cpf", "cep", "telefone"].includes(k) ? soDigitos(v) : v.trim();
   const clientePatch: Record<string, string> = {};
@@ -695,7 +697,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
   const benInicial = { frete: { tipo: benF.tipo ?? "nenhum", ...(benF.valor != null ? { valor: Number(benF.valor) } : {}), motivo: benF.motivo ?? "" }, pedido: { tipo: benP.tipo ?? "nenhum", ...(benP.valor != null ? { valor: Number(benP.valor) } : {}), motivo: benP.motivo ?? "" } };
   const entregaMudou = !!detalhe && (modoSel !== modoInicial || cdSel !== cdInicial || enderecoMudou || JSON.stringify(beneficio) !== JSON.stringify(benInicial));
   const pedidoMudou = !!detalhe && podeItens && (itensMudaram || entregaMudou || observacao !== (detalhe.pedido.observacao ?? ""));
-  const meioMudou = !!detalhe && pagamento !== detalhe.pedido.pagamento;
+  const meioMudou = !!detalhe && !bonif && pagamento !== detalhe.pedido.pagamento;
   const temAlteracao = pedidoMudou || meioMudou || Object.keys(clientePatch).length > 0;
   const podeSalvar = podeEditar && temAlteracao && motivoAlteracao.trim().length >= 3 && !criando && (!pedidoMudou || (itens.length > 0 && (!entregaMudou || entregaOk) && !calculando && motivoOk));
   const salvarEdicao = async () => {
@@ -773,6 +775,9 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
         itens: itens.map((i) => ({ sku: i.sku, quantidade: i.quantidade })),
         entrega: entregaPayload,
         pagamento,
+        // O discriminador bonificacao mantém a regra/desconto existente do SNCF;
+        // a forma de cobrança é enviada separadamente, sem pagamento.
+        ...(bonif ? { forma_solicitada: orderPayment({ bonificado: true }, ""), condicao_solicitada: "Pedido bonificado" } : {}),
         ...(observacao.trim() ? { observacao: observacao.trim() } : {}),
         ...(pagamento === "cartao" ? { max_parcelas: maxParcelas } : {}),
         ...(pagamento === "bonificacao"
@@ -879,7 +884,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
             </div>
           )}
 
-          {pagamento !== "cartao_maquininha" && criado.link_pagamento && (
+          {!bonif && pagamento !== "cartao_maquininha" && criado.link_pagamento && (
             <div className="space-y-2">
               <Label>Link de pagamento</Label>
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -923,7 +928,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
             </div>
           )}
 
-          {pagamento !== "cartao_maquininha" && criado.link_erro && (
+          {!bonif && pagamento !== "cartao_maquininha" && criado.link_erro && (
             <div className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-400">
               {criado.link_erro}
               <div className="mt-2">
@@ -1473,7 +1478,10 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
           <CardTitle className="text-base text-text-primary">Pagamento</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex flex-wrap gap-2">
+          {bonif ? <div className="space-y-2">
+            <p className="text-sm text-text-secondary">Sem pagamento — bonificação</p>
+            {!detalhe && <Button variant="outline" disabled={criando} onClick={sairBonificacao}>Alterar condição</Button>}
+          </div> : <div className="flex flex-wrap gap-2">
             {(detalhe && !bonif ? (["pix", "cartao", "cartao_maquininha"] as const) : detalhe ? (["bonificacao"] as const) : (["pix", "cartao", "cartao_maquininha", "bonificacao"] as const)).map((p) => (
               <Button
                 key={p}
@@ -1485,8 +1493,8 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
                 {MEIO_LABEL[p]}
               </Button>
             ))}
-          </div>
-          <p className="text-xs text-text-secondary">{MEIO_LEGENDA[pagamento]}</p>
+          </div>}
+          {!bonif && <p className="text-xs text-text-secondary">{pagamento ? MEIO_LEGENDA[pagamento] : "Selecione a forma de pagamento"}</p>}
 
           {!detalhe && bonif && (
             <div className="space-y-3 rounded-md border border-sky-500/40 bg-sky-500/5 p-3">
@@ -1620,7 +1628,7 @@ function MeusPedidosTab({ escopo }: { escopo: "meus" | "todos" }) {
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return pedidos.filter((p) => {
-      if (filtro === "aguardando" && (p.pagamento_confirmado_em || p.pagamento === "bonificacao")) return false;
+      if (filtro === "aguardando" && (p.pagamento_confirmado_em || p.pagamento === "bonificacao" || p.pagamento === "sem_pagamento")) return false;
       if (filtro === "pagos" && !p.pagamento_confirmado_em) return false;
       if (todos && vendedorFiltro !== "__todos" && nomeVendedor(p) !== vendedorFiltro) return false;
       if (!termo) return true;
@@ -1779,7 +1787,7 @@ function MeusPedidosTab({ escopo }: { escopo: "meus" | "todos" }) {
                         <span className="block text-xs text-text-secondary">
                           {rotuloPagamento(p.pagamento)}
                         </span>
-                        {p.pagamento === "bonificacao" ? (
+                        {p.pagamento === "bonificacao" || p.pagamento === "sem_pagamento" ? (
                           <Badge className="border-sky-500/40 bg-sky-500/10 text-sky-400">Bonificação</Badge>
                         ) : pago ? (
                           <span className="whitespace-nowrap text-xs text-emerald-400">
