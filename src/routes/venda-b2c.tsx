@@ -913,7 +913,7 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
             </div>
           )}
 
-          {criado.pix_copia_cola && (
+          {!bonif && criado.pix_copia_cola && (
             <div className="space-y-2">
               <Label>PIX copia e cola</Label>
               <div className="flex flex-col gap-2 sm:flex-row">

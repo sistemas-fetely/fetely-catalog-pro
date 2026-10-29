@@ -166,6 +166,7 @@ export function CartCommercialPanel({
       saiuDaBonificacao.current = true;
       setCondicaoSelecionadaId(selectionAfterBonification(true, false, condicaoSelecionadaId));
     }
+    if (condicaoSelecionadaId === CONDICAO_BONIFICADO_ID) setBonificadoManual(true);
     if (bonificado) setCondicaoSelecionadaId(null);
     bonificadoAnterior.current = bonificado;
   }, [bonificado, condicaoSelecionadaId, setCondicaoSelecionadaId]);
