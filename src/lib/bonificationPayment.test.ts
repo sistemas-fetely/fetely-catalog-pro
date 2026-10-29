@@ -24,7 +24,7 @@ test("demais condições e seleções não mudam", () => {
 });
 test("serialização de criação/edição/conversão preserva condição e total", () => {
   const order = { id: "PED-teste", createdAt: "2026-10-29", items: [], meta: { cliente: "Teste", cnpj: "", observacoes: "", vendedor: "Teste", condicaoPagamento: "Pedido bonificado" }, total: 123,
-    commercial: { condicaoDescricao: "Pedido bonificado", totalFinal: 123, descontoMasterValor: 20 }, bonificado: true } as SavedOrder;
+    commercial: { faixaId: 1, faixaNome: "Teste", frete: "FOB", condicaoId: 999, bruto: 143, descontoCelebraPct: 0, descontoCelebraValor: 0, descontoMasterPct: 0, bonusPixValor: 0, aplicouPix: false, totalSemPix: 123, negociacao: false, justificativa: "", observacaoInterna: "", usouReservada: false, condicaoDescricao: "Pedido bonificado", totalFinal: 123, descontoMasterValor: 20 }, bonificado: true } as SavedOrder;
   const row = orderToRow(order);
   expect(row.forma_pagamento).toBe("sem_pagamento");
   expect(row.commercial).toEqual(order.commercial);
