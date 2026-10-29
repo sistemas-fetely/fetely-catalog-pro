@@ -590,6 +590,8 @@ function CartPage() {
       frete: c.freteEfetivo ?? faixa.frete,
       condicaoId: condicaoCot.id,
       condicaoDescricao: condicaoCot.descricao,
+      bonificado: !!commercial.bonificado,
+      motivoBonificacao: commercial.motivoBonificacao,
       bruto: c.bruto,
       descontoCelebraPct: faixa.descontoCelebra,
       descontoCelebraValor: c.descontoCelebraValor,

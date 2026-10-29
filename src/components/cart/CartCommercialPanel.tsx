@@ -25,6 +25,7 @@ import { useClientes } from "@/store/clienteStore";
 import { useAuth } from "@/store/authStore";
 import { getPremissasVigentes } from "@/lib/premissas";
 import { NATUREZA_LABEL, cfopDe, type NaturezaOperacao } from "@/lib/fiscal";
+import { isBonification, selectionAfterBonification } from "@/lib/bonificationPayment";
 
 
 export interface CommercialState {
@@ -157,7 +158,17 @@ export function CartCommercialPanel({
   const cfop = cfopDe(naturezaOperacao, ufDestino);
   // Remessa/brinde não gera cobrança: segue a mesma trilha do pedido bonificado
   // (sem pedido mínimo, sem meta/pace/comissão).
-  const bonificado = bonificadoManual || ehRemessa;
+  const bonificado = bonificadoManual || ehRemessa || condicaoSelecionadaId === CONDICAO_BONIFICADO_ID;
+  const bonificadoAnterior = useRef(false);
+  const saiuDaBonificacao = useRef(false);
+  useEffect(() => {
+    if (bonificadoAnterior.current && !bonificado) {
+      saiuDaBonificacao.current = true;
+      setCondicaoSelecionadaId(selectionAfterBonification(true, false, condicaoSelecionadaId));
+    }
+    if (bonificado) setCondicaoSelecionadaId(null);
+    bonificadoAnterior.current = bonificado;
+  }, [bonificado, condicaoSelecionadaId, setCondicaoSelecionadaId]);
 
 
   // Faixa atual — faixa fixa do cliente tem prioridade
@@ -228,7 +239,7 @@ export function CartCommercialPanel({
 
   // Pré-seleciona condição preferencial do cliente quando nada está selecionado
   useEffect(() => {
-    if (bonificado) return;
+    if (bonificado || saiuDaBonificacao.current) return;
     if (!condicaoSelecionadaId && premissas?.condicaoPreferencialId) {
       const existe = condicoesDisponiveis.some(
         (c) => c.id === premissas.condicaoPreferencialId,
@@ -284,7 +295,7 @@ export function CartCommercialPanel({
     setAplicarPix(!!c.aplicouPix);
     if (c.naturezaOperacao) setNaturezaManual(c.naturezaOperacao);
     if (c.campanha) setCampanha(c.campanha);
-    if (c.bonificado && c.naturezaOperacao !== "remessa_brinde") {
+    if (isBonification(c) && c.naturezaOperacao !== "remessa_brinde") {
       setBonificadoManual(true);
       const m = c.motivoBonificacao ?? "";
       if (m.startsWith("outro")) {
@@ -538,6 +549,7 @@ export function CartCommercialPanel({
       </div>
 
       {/* ---------- PAGAMENTO ---------- */}
+      {bonificado && <p className="text-sm text-text-secondary">Sem pagamento — bonificação</p>}
       {faixa && !bonificado && (
         <div className="rounded-lg gold-border bg-surface p-4 space-y-2.5">
           <h3 className="text-xs uppercase tracking-[0.2em] text-gold-muted">Forma de pagamento</h3>
