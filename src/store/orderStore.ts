@@ -16,6 +16,7 @@ import { createSafeStorage } from "@/lib/safeStorage";
 import { formatBRL } from "@/lib/format";
 import { vendaBloqueada } from "@/lib/classifyItem";
 import { produtoAtual, avisarEsgotados, validarEstoqueAtual } from "@/lib/salesStock";
+import { isBonification, orderPayment } from "@/lib/bonificationPayment";
 
 
 
@@ -152,6 +153,9 @@ export function orderToRow(o: SavedOrder): Record<string, unknown> {
     meta: o.meta,
     cliente_snapshot: o.meta.clienteSnapshot ?? null,
     commercial: o.commercial ?? null,
+    ...(isBonification(o.commercial) || o.bonificado
+      ? { forma_pagamento: orderPayment({ bonificado: true }, "") }
+      : {}),
     total: o.total,
     total_unidades: totalUnidades,
     total_skus: totalSkus,
@@ -725,6 +729,7 @@ export const useOrder = create<OrderState>()(
           meta: row.meta,
           cliente_snapshot: row.cliente_snapshot,
           commercial: row.commercial,
+          ...(row.forma_pagamento ? { forma_pagamento: row.forma_pagamento } : {}),
           total: row.total,
           total_unidades: row.total_unidades,
           total_skus: row.total_skus,

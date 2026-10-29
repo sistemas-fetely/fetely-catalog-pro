@@ -31,6 +31,7 @@ function jsonResponse(status: number, body: unknown) {
 function normalizarForma(s: string | null | undefined): string | null {
   if (!s) return null;
   const lower = s.toLowerCase().trim();
+  if (lower === "sem_pagamento") return "sem_pagamento";
   if (lower.includes("pix")) return "pix";
   if (lower.includes("cartao") || lower.includes("cartão")) return "cartao";
   if (lower.includes("boleto")) return "boleto";
@@ -405,8 +406,10 @@ Deno.serve(async (req) => {
     }
 
 
-    // Pedido bonificado bypassa validação (é sempre boleto sentinela).
-    const formaNormalizada = (pedido as any).bonificado ? "boleto" : normalizarForma(pedido.forma_pagamento);
+    // Bonificação nunca gera cobrança, inclusive pedidos antigos sem o indicador.
+    const ehBonificado = pedido.bonificado === true ||
+      (pedido.commercial as any)?.condicaoDescricao === "Pedido bonificado";
+    const formaNormalizada = ehBonificado ? "sem_pagamento" : normalizarForma(pedido.forma_pagamento);
     if (!formaNormalizada) {
       return jsonResponse(400, {
         error: `Forma de pagamento inválida ou ausente: '${pedido.forma_pagamento}'. Aceita: pix, cartão, boleto.`,
