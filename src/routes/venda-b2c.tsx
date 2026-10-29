@@ -26,7 +26,6 @@ import { useAuth } from "@/store/authStore";
 import { balcao, salvarAlteracaoBalcao, type AlteracaoBalcao } from "@/hooks/useBalcao";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
-import { orderPayment } from "@/lib/bonificationPayment";
 
 export const Route = createFileRoute("/venda-b2c")({
   head: () => ({
@@ -775,9 +774,8 @@ function NovoPedidoTab({ detalhe, onVoltar, onSalvo }: {
         itens: itens.map((i) => ({ sku: i.sku, quantidade: i.quantidade })),
         entrega: entregaPayload,
         pagamento,
-        // O discriminador bonificacao mantém a regra/desconto existente do SNCF;
-        // a forma de cobrança é enviada separadamente, sem pagamento.
-        ...(bonif ? { forma_solicitada: orderPayment({ bonificado: true }, ""), condicao_solicitada: "Pedido bonificado" } : {}),
+        // bonificacao é o discriminador aceito pelo SNCF: ele grava
+        // forma_solicitada=sem_pagamento e mantém seu cálculo de bonificação.
         ...(observacao.trim() ? { observacao: observacao.trim() } : {}),
         ...(pagamento === "cartao" ? { max_parcelas: maxParcelas } : {}),
         ...(pagamento === "bonificacao"

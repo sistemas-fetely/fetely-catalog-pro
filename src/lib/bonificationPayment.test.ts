@@ -1,6 +1,8 @@
 // @ts-ignore — bun:test é fornecido pelo runner do Bun
 import { expect, test } from "bun:test";
 import { isBonification, orderPayment, selectionAfterBonification } from "./bonificationPayment";
+import { orderToRow } from "@/store/orderStore";
+import type { SavedOrder } from "@/types";
 
 test("Pedido bonificado grava sem_pagamento em vez de boleto ou vazio", () => {
   for (const current of ["boleto", "", "pix"]) {
@@ -19,4 +21,12 @@ test("demais condições e seleções não mudam", () => {
     expect(orderPayment({ condicaoDescricao: "Outra condição" }, method)).toBe(method);
   }
   expect(selectionAfterBonification(false, false, 2)).toBe(2);
+});
+test("serialização de criação/edição/conversão preserva condição e total", () => {
+  const order = { id: "PED-teste", createdAt: "2026-10-29", items: [], meta: { condicaoPagamento: "Pedido bonificado" }, total: 123,
+    commercial: { condicaoDescricao: "Pedido bonificado", totalFinal: 123, descontoMasterValor: 20 }, bonificado: true } as SavedOrder;
+  const row = orderToRow(order);
+  expect(row.forma_pagamento).toBe("sem_pagamento");
+  expect(row.commercial).toEqual(order.commercial);
+  expect(row.total).toBe(123);
 });
