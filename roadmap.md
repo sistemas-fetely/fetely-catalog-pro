@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Garantir pagamento sem_pagamento em bonificação, edição, conversão de cotação e Balcão; testar preservação das demais condições
+
 - [x] Abrir e editar próprios pedidos B2C pela ponte SNCF, conforme permissões retornadas
 - [x] Testar alterações parciais, meio de pagamento e motivo (6 testes); pré-preenchimento, sequência, CD, total atualizado e leitura bloqueada em desktop/celular com SNCF simulado
 - [ ] Validar edição real com usuário comercial — depende da publicação dos quatro tipos no SNCF e de sessão comercial autorizada
