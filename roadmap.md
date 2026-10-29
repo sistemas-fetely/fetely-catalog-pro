@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Garantir pagamento sem_pagamento em bonificação, edição, conversão de cotação e Balcão; testar preservação das demais condições
+- [x] Garantir pagamento sem_pagamento em bonificação na gravação e ponte; manter contrato Balcão que já grava sem_pagamento no SNCF; testes e apresentação de Carrinho/Balcão com perfil simulado
+- [ ] Validar criação/edição/conversão real de bonificação — sessão disponível é cliente, sem acesso comercial; não foi criado pedido real
 
 - [x] Abrir e editar próprios pedidos B2C pela ponte SNCF, conforme permissões retornadas
 - [x] Testar alterações parciais, meio de pagamento e motivo (6 testes); pré-preenchimento, sequência, CD, total atualizado e leitura bloqueada em desktop/celular com SNCF simulado
