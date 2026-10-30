@@ -245,8 +245,8 @@ Deno.serve(async (req) => {
     }
     // ── fim branch canal ──
 
-    // ── Branch: Balcão B2C (proxy FOP → SNCF, venda direta consumidor final) ──
-    if (typeof body?.tipo === "string" && body.tipo.startsWith("balcao_")) {
+    // ── Branch: Balcão B2C / ajustes B2B (proxy FOP → SNCF) ──
+    if (typeof body?.tipo === "string" && (body.tipo.startsWith("balcao_") || body.tipo.startsWith("b2b_"))) {
       // Guarda de papel: apenas master / admin / vendedor
       const jwtBalcao = req.headers.get("Authorization")?.substring(7).trim();
       if (!jwtBalcao) return jsonResponse(401, { error: "JWT ausente" });

@@ -21,6 +21,11 @@ import { DuplicarPedidoModal } from "@/components/duplicar/DuplicarPedidoModal";
 import { supabase } from "@/integrations/supabase/client";
 import { CanalDialog } from "@/components/canal/CanalDialog";
 import { useNegotiation } from "@/store/negotiationStore";
+import { b2b, canAdjust, type B2BPermissions } from "@/lib/b2bAdjustment";
+import { useB2BAdjustment } from "@/store/b2bAdjustmentStore";
+import { B2BAdjustmentPanel } from "@/components/cart/B2BAdjustmentPanel";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 
 export const Route = createFileRoute("/orders")({
@@ -28,12 +33,18 @@ export const Route = createFileRoute("/orders")({
     meta: [
       { title: "Pedidos salvos — Fetély B2B" },
       { name: "description", content: "Histórico de pedidos salvos." },
+      { property: "og:title", content: "Pedidos e ajustes — Fetély B2B" },
+      { property: "og:description", content: "Consulte seus pedidos e solicite ajustes autorizados pelo SNCF." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: OrdersPage,
 });
 
 function OrdersPage() {
+  const adjustment = useB2BAdjustment();
+  const [openingAdjustment, setOpeningAdjustment] = useState(false);
   const [showReprovados, setShowReprovados] = useState(false);
   const [bonificadoOnly, setBonificadoOnly] = useState(false);
   const [b2cOnly, setB2cOnly] = useState(false);
@@ -83,7 +94,14 @@ function OrdersPage() {
   const navigateTo = useNavigate();
   const editarPedido = async (o: (typeof history)[number]) => {
     if (o.sncfPedidoId) {
-      toast.error("Este pedido já foi sincronizado com o SNCF e não pode mais ser editado.");
+      if (openingAdjustment) return;
+      setOpeningAdjustment(true);
+      try {
+        const permissions = await b2b<B2BPermissions>("b2b_permissoes", { pedido_id: o.sncfPedidoId });
+        if (!canAdjust(permissions)) toast.warning(permissions.motivo_bloqueio || "SNCF não autorizou ajustes neste pedido.");
+        else adjustment.open(o, permissions);
+      } catch (error) { toast.error(error instanceof Error ? error.message : String(error)); }
+      finally { setOpeningAdjustment(false); }
       return;
     }
     try {
@@ -539,14 +557,14 @@ function OrdersPage() {
                             <Trash2 className="h-3 w-3" />
                           </button>
                         )}
-                        {canReprovar && !o.sncfPedidoId && !o.reprovado && (
-                          <button
+                        {(o.sncfPedidoId ? !o.entregaB2C && o.vendedorId === currentUserId : canReprovar && !o.reprovado) && (
+                          <Button variant="outline" size="icon" disabled={openingAdjustment}
                             onClick={() => void editarPedido(o)}
-                            title="Editar pedido (ainda não sincronizado com o SNCF)"
+                            title="Editar pedido"
                             className="inline-flex items-center gap-1 rounded-md gold-border px-2 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
                           >
                             <Pencil className="h-3 w-3" />
-                          </button>
+                          </Button>
                         )}
                         <button
                           onClick={() => setExportOrders([o])}
@@ -678,14 +696,14 @@ function OrdersPage() {
                   >
                     <Eye className="h-3 w-3" /> Ver
                   </Link>
-                  {canReprovar && !o.sncfPedidoId && !o.reprovado && (
-                    <button
+                  {(o.sncfPedidoId ? !o.entregaB2C && o.vendedorId === currentUserId : canReprovar && !o.reprovado) && (
+                    <Button variant="outline" size="sm" disabled={openingAdjustment}
                       onClick={() => void editarPedido(o)}
                       title="Editar pedido"
                       className="inline-flex items-center gap-1 rounded-md gold-border px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10"
                     >
                       <Pencil className="h-3 w-3" /> Editar
-                    </button>
+                    </Button>
                   )}
                   <button
                     onClick={() => setExportOrders([o])}
@@ -808,6 +826,10 @@ function OrdersPage() {
           })}
         </div>
       )}
+
+      <Dialog open={!!adjustment.target} onOpenChange={open => { if (!open) adjustment.close(); }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto"><DialogTitle className="sr-only">Ajustar pedido</DialogTitle><DialogDescription className="sr-only">Ajustes autorizados pelo SNCF</DialogDescription><B2BAdjustmentPanel /></DialogContent>
+      </Dialog>
 
       {reassignTarget && (isAdmin || isMaster) && (
         <ReassignModal

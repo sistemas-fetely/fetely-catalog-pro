@@ -29,6 +29,8 @@ import type { ItemProvisao } from "@/types/provisao";
 import { getPremissasVigentes } from "@/lib/premissas";
 import { usePhotos, getProdutoPhoto, getColecaoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
+import { useB2BAdjustment } from "@/store/b2bAdjustmentStore";
+import { B2BAdjustmentPanel } from "@/components/cart/B2BAdjustmentPanel";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -144,6 +146,12 @@ function toItemProvisao(i: CartItem): ItemProvisao {
 }
 
 function CartPage() {
+  const adjustmentTarget = useB2BAdjustment(s => s.target);
+  if (adjustmentTarget) return <main className="mx-auto max-w-screen-2xl px-4 py-8"><B2BAdjustmentPanel cartMode /></main>;
+  return <NormalCartPage />;
+}
+
+function NormalCartPage() {
   const items = useOrder((s) => s.items);
   const catalog = useCatalog((s) => s.products);
   const itensAtuais = useMemo(() => {
