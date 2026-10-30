@@ -275,6 +275,7 @@ export const useOrder = create<OrderState>()(
       items: [],
       meta: defaultMeta,
       history: [],
+      sncfOverrides: {},
       hidratado: false,
       itemsCarregados: false,
       lastSyncAt: 0,

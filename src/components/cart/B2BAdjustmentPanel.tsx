@@ -28,6 +28,7 @@ export function B2BAdjustmentPanel({ cartMode = false }: { cartMode?: boolean })
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState<{ warning: boolean; message: string } | null>(null);
+  const [refreshFailed, setRefreshFailed] = useState(false);
   const currentItems = useMemo(() => items.map(i => ({ ...i, product: products.find(p => p.sku === i.sku) ?? i.product })), [items, products]);
   const customer = clientes.find(c => c.id === target?.meta.clienteId);
   const calculation = calcularPedido({ bruto: cartTotal(currentItems), premissas: getPremissasVigentes(customer ?? null),
@@ -54,7 +55,9 @@ export function B2BAdjustmentPanel({ cartMode = false }: { cartMode?: boolean })
       setMotivos(m => ({ ...m, [kind]: "" }));
       try {
         await refreshAdjustedOrder(target);
+        setRefreshFailed(false);
       } catch (error) {
+        setRefreshFailed(true);
         toast.warning("Ajuste salvo; não foi possível atualizar a consulta", { description: error instanceof Error ? error.message : String(error) });
       }
     } catch (error) { toast.error(error instanceof Error ? error.message : String(error)); }
@@ -66,6 +69,7 @@ export function B2BAdjustmentPanel({ cartMode = false }: { cartMode?: boolean })
   return <div className="space-y-5">
     <header><h1 className="font-display text-2xl">Ajustar pedido {target.id}</h1><p className="text-sm text-text-secondary">{target.meta.cliente} · {formatBRL(target.total)}</p></header>
     {notice && <p role="status" className={notice.warning ? "border border-stock-pre p-3 text-stock-pre" : "border border-stock-in p-3 text-stock-in"}>{notice.message}</p>}
+    {refreshFailed && <Button variant="outline" disabled={busy} onClick={async () => { setBusy(true); try { await refreshAdjustedOrder(target); setRefreshFailed(false); } catch (error) { toast.error(error instanceof Error ? error.message : String(error)); } finally { setBusy(false); } }}>Atualizar consulta do SNCF</Button>}
     <section className="border-t border-border pt-4">
       <h2 className="font-display text-xl">Itens</h2>
       {!permissions.editar_itens && <p className="text-sm text-text-muted">{permissions.motivo_bloqueio || "Edição de itens não autorizada pelo SNCF."}</p>}

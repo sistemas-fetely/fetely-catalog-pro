@@ -24,7 +24,8 @@ export async function refreshAdjustedOrder(order: SavedOrder) {
     commercial: (local ?? order).commercial ? { ...(local ?? order).commercial as NonNullable<SavedOrder["commercial"]>, totalFinal: Number(remote.valor_liquido), freteValor: permissions.frete.valor,
       condicaoDescricao: permissions.condicoes.find(c => c.slug === permissions.condicao_atual)?.rotulo ?? permissions.condicao_atual } : undefined,
   };
-  useOrder.setState(s => ({ history: s.history.map(o => o.id === order.id ? updated : o) }));
+  useOrder.setState(s => ({ history: s.history.map(o => o.id === order.id ? updated : o),
+    sncfOverrides: { ...s.sncfOverrides, [order.id]: { total: updated.total, meta: updated.meta, commercial: updated.commercial } } }));
   useB2BAdjustment.setState({ target: updated, permissions });
   return updated;
 }
