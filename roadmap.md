@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Ajustar pedidos B2B enviados pela ponte SNCF: permissões, carrinho de ajuste, frete total, pagamento, motivo e atualização de lista/detalhe; deploy somente da edge
+- [ ] Verificar testes e prévia do ajuste B2B, documentando qualquer bloqueio de validação real
+
 - [x] Garantir pagamento sem_pagamento em bonificação na gravação e ponte; manter contrato Balcão que já grava sem_pagamento no SNCF; testes e apresentação de Carrinho/Balcão com perfil simulado
 - [ ] Validar criação/edição/conversão real de bonificação — sessão disponível é cliente, sem acesso comercial; não foi criado pedido real
 
