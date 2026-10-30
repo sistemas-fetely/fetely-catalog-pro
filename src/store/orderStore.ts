@@ -29,6 +29,7 @@ interface OrderState {
   items: CartItem[];
   meta: OrderMeta;
   history: SavedOrder[];
+  sncfOverrides: Record<string, Partial<SavedOrder>>;
   hidratado: boolean;
   lastSyncAt: number;
   itemsCarregados: boolean;
@@ -301,9 +302,10 @@ export const useOrder = create<OrderState>()(
             if (!page || page.length < PAGE) break;
           }
           const prevItems = new Map(get().history.map((o) => [o.id, o.items]));
-          const history = orderRows.map((r) =>
-            rowToOrder(r, prevItems.get(r.id as string) ?? []),
-          );
+          const history = orderRows.map((r) => ({
+            ...rowToOrder(r, prevItems.get(r.id as string) ?? []),
+            ...get().sncfOverrides[r.id as string],
+          }));
           set({ history, hidratado: true, lastSyncAt: Date.now() });
           // FASE 2: carrega os itens em segundo plano (não bloqueia a tela).
           void get().loadAllItems();
@@ -364,10 +366,10 @@ export const useOrder = create<OrderState>()(
           if (errO) throw errO;
           if (!orderRow) return null;
 
-          const order = rowToOrder(
+          const order = { ...rowToOrder(
             orderRow as Record<string, unknown>,
             await fetchOrderItemsByOrderId(orderId),
-          );
+          ), ...get().sncfOverrides[orderId] };
           set((s) => ({
             history: [order, ...s.history.filter((o) => o.id !== order.id)],
             hidratado: true,

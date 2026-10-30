@@ -22,7 +22,7 @@ test("motivo exige três caracteres e impede envio", async () => {
 test("envia frete total sem somar o valor atual e mantém reanálise", async () => {
   let sent: Record<string, unknown> = {};
   const result = await submitAdjustment("b2b_frete", { pedido_id: "sncf", valor_frete: 80, motivo: "Ajuste" }, async (tipo, body) => {
-    expect(tipo).toBe("b2b_frete"); sent = body;
+    expect(tipo).toBe("b2b_frete"); sent = body ?? {};
     return { ok: true, resultado: "enviado_reanalise", mensagem: "Mensagem SNCF" };
   });
   expect(sent.valor_frete).toBe(80);
