@@ -24,7 +24,7 @@ import { useNegotiation } from "@/store/negotiationStore";
 import { b2b, canAdjust, type B2BPermissions } from "@/lib/b2bAdjustment";
 import { useB2BAdjustment } from "@/store/b2bAdjustmentStore";
 import { B2BAdjustmentPanel } from "@/components/cart/B2BAdjustmentPanel";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 
@@ -828,7 +828,7 @@ function OrdersPage() {
       )}
 
       <Dialog open={!!adjustment.target} onOpenChange={open => { if (!open) adjustment.close(); }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto"><B2BAdjustmentPanel /></DialogContent>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto"><DialogTitle className="sr-only">Ajustar pedido</DialogTitle><DialogDescription className="sr-only">Ajustes autorizados pelo SNCF</DialogDescription><B2BAdjustmentPanel /></DialogContent>
       </Dialog>
 
       {reassignTarget && (isAdmin || isMaster) && (
