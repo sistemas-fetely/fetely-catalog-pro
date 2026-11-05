@@ -12,7 +12,7 @@ export async function catalogWorkbook(products: CatalogRow[], lists: CatalogList
   sheet.addRow(fields.map(block));
   sheet.addRow(fields.map(f => f === "_sistema" ? "FOP" : `${FIELD_LABELS[f] ?? f} · ${READ_FIELDS.includes(f) ? "Operações (só consulta)" : "Produto"}`));
   sheet.addRow(fields.map(f => `→ ${f === "preco_site" || ["nome_comercial", "nome_completo", "descricao_produto", "meta_descricao"].includes(f) ? "Shopify" : READ_FIELDS.includes(f) ? "SNCF → FOP (consulta)" : "FOP → SNCF"}`));
-  for (const p of products) sheet.addRow(fields.map(f => f === "_sistema" ? "FOP" : f === "is_vela_numerica" ? p[f] ? "Sim" : "Não" : p[f] ?? ""));
+  for (const p of products) sheet.addRow(fields.map(f => f === "_sistema" ? "FOP" : f === "is_vela_numerica" ? p[f] == null ? "" : p[f] ? "Sim" : "Não" : p[f] ?? ""));
   let begin = 1;
   for (let i = 2; i <= fields.length + 1; i++) {
     if (i === fields.length + 1 || block(fields[i - 1] ?? "") !== block(fields[begin - 1] ?? "")) {
