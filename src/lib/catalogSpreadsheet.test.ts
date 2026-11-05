@@ -71,14 +71,14 @@ for (const field of ["material", "tipo_embalagem"]) {
 }
 test("slugs nas primeiras cinco linhas e layout antigo continuam aceitos", () => {
   for (let n = 1; n <= 5; n++) {
-    const s = sheet([], []);
+    const s = new ExcelJS.Workbook().addWorksheet("teste");
     for (let i = 1; i < n; i++) s.addRow(["cabeçalho"]);
     s.addRow(["cod_cadastro", "material"]); s.addRow(["001", "Cerâmica"]);
     expect(validateSheet(s, products, lists).products[0]?.changes[0]?.after).toBe("Cerâmica");
   }
   const old = sheet(["_sistema", "cod_cadastro", "material"], [["Identidade"], ["FOP", "Código de cadastro"], ["→ FOP"], ["FOP", "001", "Vidro"]]);
   expect(validateSheet(old, products, lists).products[0]?.row).toBe(5);
-  const late = sheet([], []); for (let i = 1; i <= 5; i++) late.addRow(["cabeçalho"]);
+  const late = new ExcelJS.Workbook().addWorksheet("teste"); for (let i = 1; i <= 5; i++) late.addRow(["cabeçalho"]);
   late.addRow(["cod_cadastro"]);
   expect(() => validateSheet(late, products, lists)).toThrow("use a planilha baixada nesta aba");
 });
