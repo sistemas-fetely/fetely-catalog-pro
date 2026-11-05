@@ -56,6 +56,7 @@ import {
 import { formatBRL } from "@/lib/format";
 import { vendaBloqueada, emEstoque } from "@/lib/classifyItem";
 import { NOTA_DONO } from "@/lib/fichaDonos";
+import { CatalogSpreadsheetTab } from "@/components/products/CatalogSpreadsheetTab";
 
 export const Route = createFileRoute("/admin/products")({
   head: () => ({ meta: [
@@ -611,6 +612,10 @@ function AdminProductsPage() {
           </div>
         </div>
 
+        <Tabs defaultValue="catalogo">
+          <TabsList><TabsTrigger value="catalogo">Catálogo</TabsTrigger><TabsTrigger value="planilha">Planilha</TabsTrigger></TabsList>
+          <TabsContent value="planilha"><CatalogSpreadsheetTab /></TabsContent>
+          <TabsContent value="catalogo">
         {/* Search + filters */}
         <div className="mb-4 space-y-3 rounded-lg border border-border bg-surface p-4">
           <div className="relative">
@@ -797,6 +802,8 @@ function AdminProductsPage() {
             </div>
           </div>
         )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Editor */}

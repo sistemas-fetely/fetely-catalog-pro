@@ -4,6 +4,7 @@ import type { Product } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeStorage } from "@/lib/safeStorage";
 import { normalizePlateNames } from "@/lib/plateNames";
+import { PRODUCT_FIELDS, type CatalogRow } from "@/lib/catalogSpreadsheet";
 
 // O JSON default do catálogo (1,2 MB) NÃO é importado estaticamente — fica num
 // chunk separado carregado sob demanda (banco vazio, reset ou seed inicial).
@@ -53,6 +54,7 @@ interface CatalogState {
   setProducts: (products: Product[], meta?: AuditMeta) => Promise<void>;
   resetToDefault: () => void;
   upsertProduct: (p: Product, meta: AuditMeta) => { ok: true } | { ok: false; error: string };
+  saveProductFields: (code: string, patch: CatalogRow, meta: AuditMeta, file: string) => Promise<CatalogRow>;
   setFase: (sku: string, fase: string, meta: AuditMeta) => Promise<void>;
   duplicateProduct: (sku: string, meta: AuditMeta) => Product | null;
 }
@@ -395,6 +397,24 @@ export const useCatalog = create<CatalogState>()(
             else logAudit(entry);
           });
         return { ok: true };
+      },
+
+      // Both editors use this store and the normal client: database gates,
+      // price history and outbound triggers remain authoritative.
+      saveProductFields: async (code, patch, meta, file) => {
+        const clean = Object.fromEntries(Object.entries(patch).filter(([k, v]) => PRODUCT_FIELDS.includes(k as typeof PRODUCT_FIELDS[number]) && v != null && v !== ""));
+        if (!Object.keys(clean).length) throw new Error("Nenhum campo de Produto para atualizar");
+        const { data: before, error: readError } = await supabase.from("products").select("*").eq("cod_cadastro", code).single();
+        if (readError) throw new Error(readError.message);
+        const { data: after, error } = await supabase.from("products").update(clean as never).eq("cod_cadastro", code).select("*").single();
+        if (error) throw new Error(error.message);
+        const oldRow = before as CatalogRow; const newRow = after as CatalogRow;
+        const changes = Object.fromEntries(PRODUCT_FIELDS.filter(k => JSON.stringify(oldRow[k]) !== JSON.stringify(newRow[k])).map(k => [k, { antes: oldRow[k] ?? null, depois: newRow[k] ?? null }]));
+        const { error: auditError } = await supabase.from("catalog_audit").insert({ usuario_id: meta.usuarioId, usuario_nome: meta.usuarioNome, produto_sku: String(newRow.sku), produto_nome: String(newRow.nome_comercial ?? ""), acao: "editado", campos_alterados: { ...changes, origem: "planilha", arquivo: file } } as never);
+        const next = rowToProduct(newRow);
+        set({ products: get().products.map(p => p.codCadastro === code ? next : p), lastSyncAt: 0 });
+        if (auditError) throw new Error(`Produto atualizado; auditoria falhou: ${auditError.message}`);
+        return newRow;
       },
 
       // `ativo` é derivado da fase por trigger no banco: aqui só se escreve `fase`.
