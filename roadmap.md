@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Corrigir desconto master de Thomer/Joseph na gravação do pedido, que ainda fica limitado a 30%
+
 - [ ] Importador de planilha em Admin › Produtos: download, validação, prévia, confirmação, salvamento auditado e resultado
 - [ ] Testar planilha com dois produtos não ativos em sessão administrativa real na prévia, sem publicar
 
