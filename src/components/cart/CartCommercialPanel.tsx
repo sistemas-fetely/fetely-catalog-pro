@@ -674,6 +674,11 @@ export function CartCommercialPanel({
                       Acima do limite — aplicando {formatBRL(tetoDescontoValor)} ({tetoDesconto}%).
                     </p>
                   )}
+                  {descontoLivre && (
+                    <p className="mt-1 text-[11px] text-gold">
+                      Desconto livre liberado pela senha master — até 100%.
+                    </p>
+                  )}
                 </div>
 
                 <select
