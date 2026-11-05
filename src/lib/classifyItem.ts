@@ -1,36 +1,18 @@
 import type { Product } from "@/types";
 
-export function classificarItem(statusEstoque: string): "firme" | "provisao" {
-  const s = (statusEstoque || "").toLowerCase().trim();
-  if (s === "em estoque") return "firme";
-  return "provisao";
+export function classificarItem(_statusEstoque: string): "firme" | "provisao" {
+  return "firme";
 }
 
 type ProdutoEstoque = Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega"> & { colecao?: string };
 
-/**
- * Coleções de velas liberadas para venda firme mesmo com estoque zero
- * (decisão Thomer 28/10/2026). Jingle Pop fica de fora e segue a regra normal.
- */
-export const COLECOES_LIBERADAS_SEM_ESTOQUE = [
-  "classique", "fine pure", "le moment", "dots doux", "spirale",
-  "twist", "lumi star", "pattern", "amour",
-];
-const SALDO_LIBERADO = 999999;
-
-export function colecaoLiberada(colecao?: string): boolean {
-  return COLECOES_LIBERADAS_SEM_ESTOQUE.includes((colecao || "").trim().toLowerCase());
+/** Liberação comercial de todos os itens; não representa saldo físico no SNCF. */
+export function disponivelParaVenda(_product: ProdutoEstoque): number {
+  return Number.POSITIVE_INFINITY;
 }
 
-/** Estoque numérico do SNCF é a autoridade da venda firme, salvo coleções liberadas. */
-export function disponivelParaVenda(product: ProdutoEstoque): number {
-  if (colecaoLiberada(product.colecao)) return SALDO_LIBERADO;
-  const q = Number(product.estoqueDisponivel ?? 0);
-  return Number.isFinite(q) && q > 0 ? q : 0;
-}
-
-export function vendaBloqueada(product: ProdutoEstoque): boolean {
-  return disponivelParaVenda(product) === 0 && !(product.statusEstoque || "").trim().toLowerCase().startsWith("prev");
+export function vendaBloqueada(_product: ProdutoEstoque): boolean {
+  return false;
 }
 
 export function emEstoque(product: ProdutoEstoque): boolean {
@@ -38,8 +20,8 @@ export function emEstoque(product: ProdutoEstoque): boolean {
 }
 
 /**
- * Divide uma quantidade solicitada entre venda firme e provisão respeitando o
- * estoque disponível. Não altera o produto — apenas calcula.
+ * Todos os itens do site seguem integralmente como pedido firme, inclusive
+ * conversões de provisão. Não altera o estoque físico do produto.
  */
 export function roteamentoQtd(
   product: ProdutoEstoque,
