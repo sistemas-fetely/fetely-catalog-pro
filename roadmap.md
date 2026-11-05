@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Liberar todos os itens do site, incluindo Jingle Pop, para pedido firme sem restrição de saldo; testar roteamento e conversão sem alterar estoque físico
+- [x] Liberar todos os itens do site, incluindo Jingle Pop, para pedido firme sem restrição de saldo; 22 testes passaram; prévia conferida com 21 itens Jingle Pop liberados e 24 unidades no carrinho como pedido firme, sem criar pedido real nem alterar estoque físico
 
 - [x] Ajustar pedidos B2B enviados pela ponte SNCF: permissões, carrinho separado de criação, frete total, pagamento, motivo; edge publicada e 401 sem login; 24 testes passaram
 - [ ] Validar ajuste B2B real e prévia comercial — sessão disponível tem papel cliente; simulação visual não concluída
