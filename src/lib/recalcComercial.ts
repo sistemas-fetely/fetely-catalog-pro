@@ -3,7 +3,7 @@
 // bonificação). Usado na conversão de cotação → pedido, onde a lista de itens firmes
 // pode ter encolhido desde a criação da cotação.
 import type { CartItem, OrderCommercial } from "@/types";
-import { CONDICOES_PAGAMENTO, calcularPedido } from "@/lib/commercial";
+import { CONDICOES_PAGAMENTO, DESCONTO_MASTER_MAX, calcularPedido } from "@/lib/commercial";
 import { effectiveItemSubtotal } from "@/store/orderStore";
 
 export function brutoDosItens(items: CartItem[]): number {
@@ -23,7 +23,7 @@ export function recalcularComercialParaItens(
     usarReservada: base.usouReservada,
     descontoMasterPct: base.descontoMasterPct ?? 0,
     // Conversão preserva a decisão já salva na cotação, não renegocia o teto.
-    descontoMasterMax: Math.max(30, base.descontoMasterPct ?? 0),
+    descontoMasterMax: Math.max(DESCONTO_MASTER_MAX, base.descontoMasterPct ?? 0),
     condicao,
     freteGratisOverride: !!base.freteIsento,
     ignorarPedidoMinimo: true,
