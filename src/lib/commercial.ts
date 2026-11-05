@@ -199,6 +199,20 @@ export let DESCONTO_MASTER_MAX = REGRAS_ATUAIS.descontoMasterMax;
 export const DESCONTO_REP_MAX = 15;
 
 /**
+ * Desconto livre de até 100% com senha master — somente Thomer e Joseph
+ * (decisão Thomer 05/11/2026). Demais usuários seguem o teto normal.
+ */
+export const DESCONTO_LIVRE_MAX = 100;
+export const EMAILS_DESCONTO_LIVRE = [
+  "thomer@fetely.com.br",
+  "thomer.elkrief@me.com",
+  "joseph@fetely.com.br",
+];
+export function descontoLivreLiberado(email?: string | null): boolean {
+  return EMAILS_DESCONTO_LIVRE.includes((email ?? "").trim().toLowerCase());
+}
+
+/**
  * Replace in-place os arrays/regras vigentes. Chamado pelo cartilhasStore.
  * Mantém referência dos arrays — todos os consumidores existentes continuam funcionando.
  */
