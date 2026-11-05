@@ -124,8 +124,10 @@ export const useNegotiation = create<NegotiationStore>()(
         return { ok: true };
       },
 
+      // Teto de 100% aqui é só saneamento; o limite real por usuário é
+      // aplicado no CartCommercialPanel (tetoDesconto).
       setDescontoPct: (v) =>
-        set({ descontoPct: Math.max(0, Math.min(30, Number.isFinite(v) ? v : 0)) }),
+        set({ descontoPct: Math.max(0, Math.min(100, Number.isFinite(v) ? v : 0)) }),
       setDescontoModo: (v) => set({ descontoModo: v }),
       setDescontoValor: (v) => set({ descontoValor: Math.max(0, Number.isFinite(v) ? v : 0) }),
       setJustificativa: (v) => set({ justificativa: v }),
