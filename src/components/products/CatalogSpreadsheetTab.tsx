@@ -87,12 +87,15 @@ export function CatalogSpreadsheetTab() {
             const patch = Object.fromEntries(p.changes.map(c => [c.field, c.newKey ? canonical.get(c.newKey) ?? c.after : c.after]));
             await useCatalog.getState().saveProductFields(code, patch, { usuarioId: session.user.id, usuarioNome: profile?.nome_completo ?? profile?.login_amigavel ?? session.user.email ?? "—" }, filename);
             result.push({ row: p.row, code, name, status: "Atualizado", message: "", changes: p.changes.map(c => c.field).join(", ") });
-          } catch (e) { result.push({ row: p.row, code, name, status: "Erro", message: e instanceof Error ? e.message : String(e) }); }
+          } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            result.push({ row: p.row, code, name, status: message.startsWith("Produto atualizado; auditoria falhou:") ? "Atualizado com erro de auditoria" : "Erro", message });
+          }
           setBusy(`Atualizando produtos · ${Math.min(offset + batch.indexOf(p) + 1, effective.length)}/${effective.length}`);
         }
       }
       setOutcomes(result); setPreview(null); await useCatalog.getState().hydrate({ force: true }); await refreshLists();
-    } finally { setBusy(""); }
+    } catch (e) { setOutcomes(result); toast.error(e instanceof Error ? e.message : String(e)); } finally { setBusy(""); }
   }
   return <div className="space-y-6 py-5">
     <div className="flex flex-wrap items-end gap-3">
@@ -113,7 +116,7 @@ export function CatalogSpreadsheetTab() {
       {preview.errors.length > 0 && <section><h3 className="mb-2 font-semibold text-destructive">Erros de validação</h3><ul className="space-y-2 text-sm">{preview.errors.map((e, i) => <li key={i}>Linha {e.row} · {e.code}: {e.message}</li>)}</ul></section>}
       {!preview.products.length && <p>Não há mudanças válidas nesta planilha.</p>}
     </>}
-    {outcomes && <section className="space-y-3"><h3 className="font-semibold">Resultado</h3><p>{outcomes.filter(o => o.status === "Atualizado").length} atualizados / {outcomes.filter(o => o.status !== "Atualizado").length} com erro</p><Button variant="outline" onClick={() => void report(true)}><Download className="mr-2 h-4 w-4" />Baixar resultado</Button><ul className="divide-y divide-border">{outcomes.map((o, i) => <li key={i} className="py-2 text-sm">Linha {o.row} · {o.code} · {o.name} — <span className={o.status === "Atualizado" ? "text-stock-in" : "text-destructive"}>{o.status}</span>{o.message && <p className="break-words text-destructive">{o.message}</p>}</li>)}</ul></section>}
+    {outcomes && <section className="space-y-3"><h3 className="font-semibold">Resultado</h3><p>{outcomes.filter(o => o.status.startsWith("Atualizado")).length} atualizados / {outcomes.filter(o => o.status !== "Atualizado").length} com erro</p><Button variant="outline" onClick={() => void report(true)}><Download className="mr-2 h-4 w-4" />Baixar resultado</Button><ul className="divide-y divide-border">{outcomes.map((o, i) => <li key={i} className="py-2 text-sm">Linha {o.row} · {o.code} · {o.name} — <span className={o.status === "Atualizado" ? "text-stock-in" : "text-destructive"}>{o.status}</span>{o.message && <p className="break-words text-destructive">{o.message}</p>}</li>)}</ul></section>}
     <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}><DialogContent><DialogHeader><DialogTitle>Atualizar {effective.length} produtos / {fieldsCount} campos?</DialogTitle><DialogDescription>{filename} · {selected.size} valores novos selecionados. Fase e campos de Operações permanecem sem alteração.</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setConfirmOpen(false)}>Cancelar</Button><Button onClick={() => void confirm()} disabled={!!busy}>Atualizar produtos</Button></DialogFooter></DialogContent></Dialog>
   </div>;
 }
