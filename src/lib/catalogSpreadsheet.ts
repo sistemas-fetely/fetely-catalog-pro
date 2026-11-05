@@ -27,6 +27,10 @@ export function cellValue(value: unknown): unknown {
 }
 const positiveFields = new Set(["peso_g", "altura_cm", "largura_cm", "profundidade_cm"]);
 const numericFields = new Set(["preco_atacado", "preco_varejo", "preco_site", "multiplos", "qtd_kit", "numero_vela", ...positiveFields]);
+function numericValue(value: unknown): number {
+  const text = String(value).trim();
+  return typeof value === "number" ? value : Number(text.includes(",") ? text.replace(/\./g, "").replace(",", ".") : text);
+}
 export function parseProductValue(field: ProductField, value: unknown): unknown {
   if (field === "is_vela_numerica") {
     if (typeof value === "boolean") return value;
@@ -36,8 +40,7 @@ export function parseProductValue(field: ProductField, value: unknown): unknown 
     throw new Error("is_vela_numerica: use Sim ou Não");
   }
   if (numericFields.has(field)) {
-    const text = String(value).trim();
-    const parsed = typeof value === "number" ? value : Number(text.includes(",") ? text.replace(/\./g, "").replace(",", ".") : text);
+    const parsed = numericValue(value);
     if (!Number.isFinite(parsed) || parsed < 0) throw new Error(`${field}: informe número ≥ 0`);
     if (positiveFields.has(field) && parsed <= 0) throw new Error(`${field}: informe número > 0`);
     if ((field === "multiplos" || field === "qtd_kit") && (!Number.isInteger(parsed) || parsed < 1)) throw new Error(`${field}: informe inteiro ≥ 1`);
@@ -87,6 +90,13 @@ export function validateSheet(sheet: Worksheet, products: CatalogRow[], lists: C
         const raw = cellValue(row.getCell(column.index).value);
         if (raw == null || String(raw).trim() === "") continue;
         const field = column.slug as ProductField;
+        // Existing values are not new input, even when legacy data is invalid.
+        const current = product[field];
+        if (String(current ?? "").trim() === String(raw).trim()) continue;
+        if (numericFields.has(field) && current != null && String(current).trim() !== "") {
+          const incomingNumber = numericValue(raw);
+          if (Number.isFinite(incomingNumber) && incomingNumber === numericValue(current)) continue;
+        }
         let after = parseProductValue(field, raw);
         // An untouched exported cell is not a request to remap its dimension.
         if (String(product[field] ?? "") === String(after ?? "")) continue;
