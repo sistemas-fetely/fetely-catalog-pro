@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Download, Upload, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useCatalog } from "@/store/catalogStore";
+import { useCatalog, loadCatalogRows } from "@/store/catalogStore";
 import { useAuth } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,15 +15,6 @@ import { catalogWorkbook, downloadWorkbook, readWorkbook, reportWorkbook } from 
 
 const display = (value: unknown) => value == null || value === "" ? "—" : typeof value === "boolean" ? value ? "Sim" : "Não" : String(value);
 type Outcome = { code: string; name: string; row: number; status: string; message: string; changes?: string };
-async function loadAllProducts() {
-  const rows: CatalogRow[] = [];
-  for (let from = 0; ; from += 1000) {
-    const { data, error } = await supabase.from("products").select("*").order("cod_cadastro").range(from, from + 999);
-    if (error) throw new Error(error.message);
-    rows.push(...(data ?? []) as CatalogRow[]); if ((data?.length ?? 0) < 1000) break;
-  }
-  return rows;
-}
 async function loadLists(): Promise<CatalogLists> {
   const results = await Promise.all([supabase.from("produto_grupos").select("id,nome,categoria_id"), supabase.from("produto_colecoes").select("id,nome"), supabase.from("produto_cores").select("id,nome"), supabase.from("produto_canal_dim").select("slug"), supabase.from("produto_categorias").select("id,nome")]);
   for (const r of results) if (r.error) throw new Error(r.error.message);
@@ -56,7 +47,7 @@ export function CatalogSpreadsheetTab() {
     if (!lists) return;
     setBusy("Baixando planilha");
     try {
-      const rows = (await loadAllProducts()).filter(p => (collection === "all" || p.colecao === collection) && (phase === "all" || (phase === "except_inactive" ? p.fase !== "inativo" : p.fase === phase)));
+      const rows = (await loadCatalogRows()).filter(p => (collection === "all" || p.colecao === collection) && (phase === "all" || (phase === "except_inactive" ? p.fase !== "inativo" : p.fase === phase))).sort((a, b) => String(a.cod_cadastro).localeCompare(String(b.cod_cadastro)));
       const filter = `${collection === "all" ? "todas" : normalizeName(collection).replace(/[^a-z0-9]+/g, "_")}_${phase}`;
       await downloadWorkbook(await catalogWorkbook(rows, lists), `catalogo_fop_${filter}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); } finally { setBusy(""); }
@@ -64,7 +55,7 @@ export function CatalogSpreadsheetTab() {
   async function upload(file: File) {
     setBusy("Validando planilha"); setPreview(null); setOutcomes(null); setSelected(new Set()); setFilename(file.name);
     try {
-      const [book, rows, currentLists] = await Promise.all([readWorkbook(file), loadAllProducts(), loadLists()]); setLists(currentLists);
+      const [book, rows, currentLists] = await Promise.all([readWorkbook(file), loadCatalogRows(), loadLists()]); setLists(currentLists);
       const sheet = book.worksheets.find(s => { let found = false; for (let i = 1; i <= Math.min(50, s.rowCount); i++) s.getRow(i).eachCell(c => { if (c.value === "cod_cadastro") found = true; }); return found; });
       if (!sheet) throw new Error("use a planilha baixada nesta aba");
       setPreview(validateSheet(sheet, rows, currentLists));

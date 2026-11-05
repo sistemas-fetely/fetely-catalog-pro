@@ -421,7 +421,7 @@ function AdminProductsPage() {
     setEditingOriginalSku(null);
   }
 
-  function save() {
+  async function save() {
     if (!editing) return;
     // Validations
     const errs: string[] = [];
@@ -448,7 +448,7 @@ function AdminProductsPage() {
       toast.error("Corrija os campos: " + errs.join(", "));
       return;
     }
-    const res = upsertProduct(normalizePlateNames(editing), auditMeta);
+    const res = await upsertProduct(normalizePlateNames(editing), auditMeta);
     if (!res.ok) {
       toast.error(res.error);
       return;
