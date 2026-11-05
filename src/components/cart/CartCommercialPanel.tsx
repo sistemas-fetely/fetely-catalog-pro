@@ -100,7 +100,15 @@ export function CartCommercialPanel({
   // Representante (ou qualquer vendedor não admin/master): entra no modo
   // negociação sem senha, respeitando o teto de desconto próprio.
   const isRepresentante = !roles.includes("admin") && !roles.includes("master");
-  const tetoDesconto = isRepresentante ? DESCONTO_REP_MAX : DESCONTO_MASTER_MAX;
+  // Desconto livre até 100%: só com a senha master aplicada e somente para
+  // Thomer e Joseph (demais usuários seguem o teto normal).
+  const descontoLivre =
+    !isRepresentante && ativo && descontoLivreLiberado(profile?.email);
+  const tetoDesconto = descontoLivre
+    ? DESCONTO_LIVRE_MAX
+    : isRepresentante
+      ? DESCONTO_REP_MAX
+      : DESCONTO_MASTER_MAX;
   const descontoPctEfetivo = Math.min(descontoPct, tetoDesconto);
   // Desconto em R$: o vendedor digita o valor e convertemos para % sobre o bruto,
   // que continua sendo a única forma como o desconto é calculado e registrado.
