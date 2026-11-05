@@ -7,8 +7,8 @@ const lists: CatalogLists = { grupo: [{ id: "g", nome: "Velas", categoria_id: "c
 const products = [{ cod_cadastro: "001", nome_comercial: "Vela", fase: "registrado", ativo: false, preco_atacado: 10, multiplos: 6, qtd_kit: 1, grupo: "Velas", colecao: "Coleção", cor: "Vermelho", cor_nome: "Vermelho", categoria: "Festa" }, { cod_cadastro: "002", nome_comercial: "Outra", fase: "ativo", preco_atacado: 20 }];
 function sheet(slugs: string[], rows: unknown[][]) { const book = new ExcelJS.Workbook(); const s = book.addWorksheet("teste"); s.addRow(slugs); rows.forEach(r => s.addRow(r)); return s; }
 test("Operações, fase e ativo não entram no conjunto gravável", () => {
-  for (const f of ["sku", "ean", "dun", "fase", "ativo", "ncm", "cest", "peso_g", "material", "tipo_embalagem", "inner"]) expect(PRODUCT_FIELDS.includes(f as never)).toBe(false);
-  const p = validateSheet(sheet(["cod_cadastro", "fase", "peso_g", "ativo", "nome_comercial", "desconhecido"], [["001", "ativo", 999, true, "Novo", "x"]]), products, lists);
+  for (const f of ["sku", "ean", "dun", "fase", "ativo", "ncm", "cest", "inner_qtd", "nome_operacional", "grupo_tributario_bling"]) expect(PRODUCT_FIELDS.includes(f as never)).toBe(false);
+  const p = validateSheet(sheet(["cod_cadastro", "fase", "inner_qtd", "_ativo", "nome_comercial", "desconhecido"], [["001", "ativo", 999, true, "Novo", "x"]]), products, lists);
   expect(p.ignoredColumns).toBe(4); expect(p.products[0]?.changes.map(c => c.field)).toEqual(["nome_comercial"]);
 });
 test("célula vazia e valores iguais preservam dados atuais", () => {
@@ -49,8 +49,40 @@ test("cor e cor_nome seguem o mesmo valor para resolução de cor_id", () => {
 });
 test("planilha baixada é relida com os dados a partir da linha 5", async () => {
   const book = await catalogWorkbook(products, lists); const s = book.getWorksheet("Catálogo"); if (!s) throw new Error("sem folha");
-  const slugs = s.getRow(1).values as string[]; const col = slugs.indexOf("nome_comercial"); s.getCell(5, col).value = "Revisada";
+  const slugs = s.getRow(3).values as string[]; const col = slugs.indexOf("nome_comercial"); s.getCell(5, col).value = "Revisada";
   const loaded = new ExcelJS.Workbook(); await loaded.xlsx.load(await book.xlsx.writeBuffer());
   const read = loaded.getWorksheet("Catálogo"); if (!read) throw new Error("sem folha");
   const p = validateSheet(read, products, lists); expect(p.products).toHaveLength(1); expect(p.products[0]?.row).toBe(5); expect(p.products[0]?.changes[0]?.after).toBe("Revisada");
+});
+for (const field of ["peso_g", "altura_cm", "largura_cm", "profundidade_cm"]) {
+  test(`${field} pertence a Produto e exige número positivo com vírgula decimal`, () => {
+    expect(PRODUCT_FIELDS.includes(field as never)).toBe(true);
+    expect(validateSheet(sheet(["cod_cadastro", field], [["001", "12,5"]]), products, lists).products[0]?.changes[0]?.after).toBe(12.5);
+    for (const value of [0, -1, "abc"]) expect(validateSheet(sheet(["cod_cadastro", field], [["001", value]]), products, lists).errors).toHaveLength(1);
+  });
+}
+for (const field of ["material", "tipo_embalagem"]) {
+  test(`${field} aceita texto livre aparado sem criar dimensão`, () => {
+    const p = validateSheet(sheet(["cod_cadastro", field], [["001", "  Texto livre  "]]), products, lists);
+    expect(p.products[0]?.changes[0]?.after).toBe("Texto livre");
+    expect(p.newValues).toHaveLength(0);
+    expect(p.errors).toHaveLength(0);
+  });
+}
+test("slugs nas primeiras cinco linhas e layout antigo continuam aceitos", () => {
+  for (let n = 1; n <= 5; n++) {
+    const s = new ExcelJS.Workbook().addWorksheet("teste");
+    for (let i = 1; i < n; i++) s.addRow(["cabeçalho"]);
+    s.addRow(["cod_cadastro", "material"]); s.addRow(["001", "Cerâmica"]);
+    expect(validateSheet(s, products, lists).products[0]?.changes[0]?.after).toBe("Cerâmica");
+  }
+  const old = sheet(["_sistema", "cod_cadastro", "material"], [["Identidade"], ["FOP", "Código de cadastro"], ["→ FOP"], ["FOP", "001", "Vidro"]]);
+  expect(validateSheet(old, products, lists).products[0]?.row).toBe(5);
+  const late = new ExcelJS.Workbook().addWorksheet("teste"); for (let i = 1; i <= 5; i++) late.addRow(["cabeçalho"]);
+  late.addRow(["cod_cadastro"]);
+  expect(() => validateSheet(late, products, lists)).toThrow("use a planilha baixada nesta aba");
+});
+test("colunas auxiliares são ignoradas mesmo quando preenchidas", () => {
+  const p = validateSheet(sheet(["cod_cadastro", "inner_qtd", "_fase_sncf", "_ativo", "nome_operacional", "grupo_tributario_bling", "_tem_descricao", "material"], [["001", 3, "ativo", true, "X", "Y", true, "Vidro"]]), products, lists);
+  expect(p.ignoredColumns).toBe(6); expect(p.products[0]?.changes.map(c => c.field)).toEqual(["material"]);
 });

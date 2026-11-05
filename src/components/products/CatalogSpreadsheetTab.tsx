@@ -56,7 +56,7 @@ export function CatalogSpreadsheetTab() {
     setBusy("Validando planilha"); setPreview(null); setOutcomes(null); setSelected(new Set()); setFilename(file.name);
     try {
       const [book, rows, currentLists] = await Promise.all([readWorkbook(file), loadCatalogRows(), loadLists()]); setLists(currentLists);
-      const sheet = book.worksheets.find(s => { let found = false; for (let i = 1; i <= Math.min(50, s.rowCount); i++) s.getRow(i).eachCell(c => { if (c.value === "cod_cadastro") found = true; }); return found; });
+      const sheet = book.worksheets.find(s => { let found = false; for (let i = 1; i <= Math.min(5, s.rowCount); i++) s.getRow(i).eachCell(c => { if (String(c.value ?? "").trim() === "cod_cadastro") found = true; }); return found; });
       if (!sheet) throw new Error("use a planilha baixada nesta aba");
       setPreview(validateSheet(sheet, rows, currentLists));
     } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); } finally { setBusy(""); if (fileRef.current) fileRef.current.value = ""; }
