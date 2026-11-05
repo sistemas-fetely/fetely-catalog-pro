@@ -11,6 +11,7 @@ export const TEMPLATE_COLUMNS = [
   ["NCM", "ncm"], ["CEST", "cest"], ["Origem fiscal", "origem_fisc"], ["Origem produto", "origem_prod"], ["Grupo tributário Bling", "grupo_tributario_bling"],
 ] as const;
 const unavailable = new Set(["inner_qtd", "_fase_sncf", "nome_operacional", "grupo_tributario_bling"]);
+const blankZeroFields = new Set(["peso_g", "altura_cm", "largura_cm", "profundidade_cm"]);
 const commercial = new Set(["nome_comercial", "nome_completo", "nome_operacional", "_tem_descricao", "_tem_meta_descricao", "multiplos", "qtd_kit"]);
 const block = (f: string) => ["cod_cadastro", "sku", "ean", "dun", "inner_qtd"].includes(f) ? "Identidade" : ["fase", "_fase_sncf", "_ativo", "canal_venda"].includes(f) ? "Situação" : ["ncm", "cest", "origem_fisc", "origem_prod", "grupo_tributario_bling"].includes(f) ? "Fiscal e físico" : commercial.has(f) ? "Comercial" : "Classificação";
 const readonly = (f: string) => READ_FIELDS.includes(f) || unavailable.has(f) || f.startsWith("_");
@@ -25,7 +26,7 @@ export async function catalogWorkbook(products: CatalogRow[], lists: CatalogList
   sheet.addRow(fields.map(block));
   sheet.addRow(fields); sheet.getRow(3).hidden = true;
   sheet.addRow(TEMPLATE_COLUMNS.map(([label]) => label));
-  for (const p of products) sheet.addRow(fields.map(f => unavailable.has(f) ? "" : f === "_ativo" ? p.ativo == null ? "" : p.ativo ? "Sim" : "Não" : f === "_tem_descricao" || f === "_tem_meta_descricao" ? String(p[f === "_tem_descricao" ? "descricao_produto" : "meta_descricao"] ?? "").trim() ? "Sim" : "Não" : f === "is_vela_numerica" ? p[f] == null ? "" : p[f] ? "Sim" : "Não" : p[f] ?? ""));
+  for (const p of products) sheet.addRow(fields.map(f => unavailable.has(f) || (blankZeroFields.has(f) && Number(p[f]) === 0) ? "" : f === "_ativo" ? p.ativo == null ? "" : p.ativo ? "Sim" : "Não" : f === "_tem_descricao" || f === "_tem_meta_descricao" ? String(p[f === "_tem_descricao" ? "descricao_produto" : "meta_descricao"] ?? "").trim() ? "Sim" : "Não" : f === "is_vela_numerica" ? p[f] == null ? "" : p[f] ? "Sim" : "Não" : p[f] ?? ""));
   let begin = 1;
   for (let i = 2; i <= fields.length + 1; i++) {
     if (i === fields.length + 1 || block(fields[i - 1] ?? "") !== block(fields[begin - 1] ?? "")) {

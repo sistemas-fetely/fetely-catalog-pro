@@ -86,3 +86,30 @@ test("colunas auxiliares são ignoradas mesmo quando preenchidas", () => {
   const p = validateSheet(sheet(["cod_cadastro", "inner_qtd", "_fase_sncf", "_ativo", "nome_operacional", "grupo_tributario_bling", "_tem_descricao", "material"], [["001", 3, "ativo", true, "X", "Y", true, "Vidro"]]), products, lists);
   expect(p.ignoredColumns).toBe(6); expect(p.products[0]?.changes.map(c => c.field)).toEqual(["material"]);
 });
+test("modelo exporta zeros de peso e medidas como células vazias, preservando positivos", async () => {
+  const physical = ["peso_g", "altura_cm", "largura_cm", "profundidade_cm"];
+  const rows = [
+    { cod_cadastro: "02160", ...Object.fromEntries(physical.map(f => [f, 0])) },
+    { cod_cadastro: "02161", ...Object.fromEntries(physical.map(f => [f, 12.5])) },
+  ];
+  const book = await catalogWorkbook(rows, lists);
+  const loaded = new ExcelJS.Workbook(); await loaded.xlsx.load(await book.xlsx.writeBuffer());
+  const s = loaded.getWorksheet("Catálogo"); if (!s) throw new Error("sem folha");
+  const slugs = s.getRow(3).values as string[];
+  for (const field of physical) {
+    expect(s.getCell(5, slugs.indexOf(field)).value ?? "").toBe("");
+    expect(s.getCell(6, slugs.indexOf(field)).value).toBe(12.5);
+  }
+  const preview = validateSheet(s, rows, lists);
+  expect(preview.errors).toHaveLength(0); expect(preview.products).toHaveLength(0);
+});
+test("valores legados iguais são comparados antes de validar e não entram na prévia", () => {
+  const physical = ["peso_g", "altura_cm", "largura_cm", "profundidade_cm"];
+  const rows = [{ cod_cadastro: "02160", ...Object.fromEntries(physical.map(f => [f, 0])), multiplos: 0 }];
+  for (const zero of [0, "0", "0,00"]) {
+    const preview = validateSheet(sheet(["cod_cadastro", ...physical, "multiplos"], [["02160", ...physical.map(() => zero), 0]]), rows, lists);
+    expect(preview.errors).toHaveLength(0); expect(preview.products).toHaveLength(0);
+  }
+  const changed = validateSheet(sheet(["cod_cadastro", "peso_g"], [["02160", 0]]), [{ cod_cadastro: "02160", peso_g: 42 }], lists);
+  expect(changed.errors).toHaveLength(1);
+});
