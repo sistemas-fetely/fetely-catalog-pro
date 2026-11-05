@@ -22,6 +22,8 @@ export function recalcularComercialParaItens(
     bruto,
     usarReservada: base.usouReservada,
     descontoMasterPct: base.descontoMasterPct ?? 0,
+    // Conversão preserva a decisão já salva na cotação, não renegocia o teto.
+    descontoMasterMax: Math.max(30, base.descontoMasterPct ?? 0),
     condicao,
     freteGratisOverride: !!base.freteIsento,
     ignorarPedidoMinimo: true,
@@ -47,7 +49,7 @@ export function recalcularComercialParaItens(
     condicaoId: base.condicaoId,
     condicaoDescricao: base.condicaoDescricao,
     descontoCelebraPct: base.descontoCelebraPct,
-    descontoMasterPct: base.descontoMasterPct,
+    descontoMasterPct: c.descontoMasterPercentEfetivo ?? 0,
     descontoMasterModo: base.descontoMasterModo,
     negociacao: base.negociacao,
     justificativa: base.justificativa,

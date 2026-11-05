@@ -330,6 +330,7 @@ export function CartCommercialPanel({
         bruto,
         usarReservada: ativo && usarReservada,
         descontoMasterPct: ativo ? descontoPctEfetivo : 0,
+        descontoMasterMax: tetoDesconto,
         condicao,
         premissas,
         freteGratisOverride: ativo && freteGratis,
@@ -342,7 +343,7 @@ export function CartCommercialPanel({
         freteAjusteModo,
         freteAjusteQtd: ativo ? freteAjusteQtd : 0,
       }),
-    [bruto, ativo, usarReservada, descontoPct, condicao, premissas, freteGratis, freteAjusteModo, freteAjusteQtd, ufDestino, bonificado, aplicarCelebra, aplicarNegociacao, aplicarPix, aplicarIsentoIE],
+    [bruto, ativo, usarReservada, descontoPctEfetivo, tetoDesconto, condicao, premissas, freteGratis, freteAjusteModo, freteAjusteQtd, ufDestino, bonificado, aplicarCelebra, aplicarNegociacao, aplicarPix, aplicarIsentoIE],
   );
 
 
@@ -354,6 +355,7 @@ export function CartCommercialPanel({
         bruto,
         usarReservada: ativo && usarReservada,
         descontoMasterPct: ativo ? descontoPctEfetivo : 0,
+        descontoMasterMax: tetoDesconto,
         condicao,
         premissas,
         freteGratisOverride: ativo && freteGratis,
@@ -366,7 +368,7 @@ export function CartCommercialPanel({
         freteAjusteModo,
         freteAjusteQtd: ativo ? freteAjusteQtd : 0,
       }),
-    [bruto, ativo, usarReservada, descontoPctEfetivo, condicao, premissas, freteGratis, freteAjusteModo, freteAjusteQtd, ufDestino, aplicarCelebra, aplicarNegociacao, aplicarPix, aplicarIsentoIE],
+    [bruto, ativo, usarReservada, descontoPctEfetivo, tetoDesconto, condicao, premissas, freteGratis, freteAjusteModo, freteAjusteQtd, ufDestino, aplicarCelebra, aplicarNegociacao, aplicarPix, aplicarIsentoIE],
   );
 
   const condicaoCotacao = useMemo<CondicaoPagamento | null>(() => {
