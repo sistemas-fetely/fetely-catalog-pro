@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Importador de planilha em Admin › Produtos: download, validação, prévia, confirmação, salvamento auditado e resultado
+- [ ] Testar planilha com dois produtos não ativos em sessão administrativa real na prévia, sem publicar
+
 - [x] Tratar falhas de consulta SNCF em Pedidos, Farol e Canal sem derrubar a página nem apresentar ausência falsa de pedidos/mensagens
 - [ ] Corrigir consulta farol_b2c no SNCF — retorno real aponta coluna vw_gestao_b2c.estagio_derivado inexistente; alteração pertence ao SNCF
 
