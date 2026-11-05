@@ -509,7 +509,7 @@ function AdminProductsPage() {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background">
       <div className="mx-auto max-w-[1600px] px-4 py-6 md:px-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="font-display text-2xl text-text-primary">Gestão de Produtos</h1>
             <p className="text-sm text-text-secondary">
@@ -549,7 +549,7 @@ function AdminProductsPage() {
               })()
             ) : null}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Can tela="cfg_produtos" acao="exportar">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

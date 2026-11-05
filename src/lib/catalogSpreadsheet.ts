@@ -85,6 +85,8 @@ export function validateSheet(sheet: Worksheet, products: CatalogRow[], lists: C
         if (raw == null || String(raw).trim() === "") continue;
         const field = column.slug as ProductField;
         let after = parseProductValue(field, raw);
+        // An untouched exported cell is not a request to remap its dimension.
+        if (String(product[field] ?? "") === String(after ?? "")) continue;
         if (field === "canal_venda" && !lists.canais.includes(String(after))) throw new Error(`canal_venda não existe: ${after}`);
         const kind = dimensionFor(field);
         let newKey: string | undefined;
@@ -99,6 +101,10 @@ export function validateSheet(sheet: Worksheet, products: CatalogRow[], lists: C
         }
         const before = product[field];
         if (String(before ?? "") !== String(after ?? "")) changes.push({ field, before, after, newKey });
+      }
+      const color = changes.find(c => c.field === "cor");
+      if (color && !changes.some(c => c.field === "cor_nome") && product.cor_nome !== color.after) {
+        changes.push({ ...color, field: "cor_nome", before: product.cor_nome });
       }
       if (changes.length) {
         result.products.push({ row: i, product, changes });

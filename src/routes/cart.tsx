@@ -180,7 +180,6 @@ function NormalCartPage() {
   const isClientePortal = roles.includes("cliente");
 
   const negotiationAtivo = useNegotiation((s) => s.ativo);
-  const negDescontoPct = useNegotiation((s) => s.descontoPct);
   const negDescontoModo = useNegotiation((s) => s.descontoModo);
   const negJustificativa = useNegotiation((s) => s.justificativa);
   const negObservacaoInterna = useNegotiation((s) => s.observacaoInterna);

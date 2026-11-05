@@ -33,7 +33,7 @@ test("canal exige slug existente e código deve existir", () => {
 test("dimensões casam sem maiúscula e acento e novos valores ficam fora por padrão", () => {
   const p = validateSheet(sheet(["cod_cadastro", "colecao", "cor", "nome_comercial"], [["001", "COLECAO", "Rosa", "Nova vela"]]), products, lists);
   expect(p.newValues).toHaveLength(1); expect(selectedChanges(p, new Set())[0]?.changes.map(c => c.field)).toEqual(["nome_comercial"]);
-  expect(selectedChanges(p, new Set(p.newValues.map(v => v.key)))[0]?.changes).toHaveLength(2);
+  expect(selectedChanges(p, new Set(p.newValues.map(v => v.key)))[0]?.changes).toHaveLength(3);
 });
 test("sem slug tem erro claro; código duplicado não sobrescreve outro", () => {
   expect(() => validateSheet(sheet(["Código"], [["001"]]), products, lists)).toThrow("use a planilha baixada nesta aba");
@@ -41,6 +41,11 @@ test("sem slug tem erro claro; código duplicado não sobrescreve outro", () => 
 });
 test("fórmula não vira gravação silenciosa", () => {
   expect(validateSheet(sheet(["cod_cadastro", "preco_atacado"], [["001", { formula: "1+1", result: 2 }]]), products, lists).errors).toHaveLength(1);
+});
+test("cor e cor_nome seguem o mesmo valor para resolução de cor_id", () => {
+  const p = validateSheet(sheet(["cod_cadastro", "cor"], [["001", "Rosa"]]), products, lists);
+  expect(p.products[0]?.changes.map(c => c.field)).toEqual(["cor", "cor_nome"]);
+  expect(selectedChanges(p, new Set()).length).toBe(0);
 });
 test("planilha baixada é relida com os dados a partir da linha 5", async () => {
   const book = await catalogWorkbook(products, lists); const s = book.getWorksheet("Catálogo"); if (!s) throw new Error("sem folha");
