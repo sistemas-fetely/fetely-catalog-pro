@@ -26,6 +26,7 @@ import { useB2BAdjustment } from "@/store/b2bAdjustmentStore";
 import { B2BAdjustmentPanel } from "@/components/cart/B2BAdjustmentPanel";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { balcao } from "@/hooks/useBalcao";
 
 
 export const Route = createFileRoute("/orders")({
@@ -81,13 +82,12 @@ function OrdersPage() {
   const { data: badgesData } = useQuery({
     queryKey: ["canal_badges"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("enviar-para-sncf", {
-        body: { tipo: "canal_badges" },
-      });
-      if (error) return {} as Record<string, number>;
+      const data = await balcao<{ badges?: Record<string, number> }>("canal_badges");
       return (data?.badges ?? {}) as Record<string, number>;
     },
-    refetchInterval: 60_000,
+    retry: false,
+    throwOnError: false,
+    refetchInterval: (query) => query.state.status === "error" ? false : 60_000,
   });
   const badges: Record<string, number> = badgesData ?? {};
   const [printDialogOpen, setPrintDialogOpen] = useState(false);

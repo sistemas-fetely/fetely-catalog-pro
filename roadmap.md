@@ -1,5 +1,10 @@
 # Roadmap
 
+- [x] Tratar falhas de consulta SNCF em Pedidos, Farol e Canal sem derrubar a página nem apresentar ausência falsa de pedidos/mensagens
+- [ ] Corrigir consulta farol_b2c no SNCF — retorno real aponta coluna vw_gestao_b2c.estagio_derivado inexistente; alteração pertence ao SNCF
+
+- [x] Liberar todos os itens do site, incluindo Jingle Pop, para pedido firme sem restrição de saldo; 22 testes passaram; prévia conferida com 21 itens Jingle Pop liberados e 24 unidades no carrinho como pedido firme, sem criar pedido real nem alterar estoque físico
+
 - [x] Ajustar pedidos B2B enviados pela ponte SNCF: permissões, carrinho separado de criação, frete total, pagamento, motivo; edge publicada e 401 sem login; 24 testes passaram
 - [ ] Validar ajuste B2B real e prévia comercial — sessão disponível tem papel cliente; simulação visual não concluída
 - [ ] Atualizar itens completos do pedido a partir do SNCF após ajuste — contrato fornecido não inclui leitura de itens B2B; Farol fornece total e permissões fornecem frete/condição, mas itens ainda dependem da cópia local
