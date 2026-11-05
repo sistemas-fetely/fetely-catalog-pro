@@ -267,6 +267,7 @@ export interface CalculoPedido {
   faixa: Faixa | null;
   descontoCelebraValor: number;
   descontoMasterValor: number;
+  descontoMasterPercentEfetivo?: number;
   subtotalAposDescontos: number;
   bonusPixValor: number;
   total: number;
@@ -325,6 +326,8 @@ export function calcularPedido(args: {
   bruto: number;
   usarReservada?: boolean;
   descontoMasterPct?: number;
+  /** Teto decidido pelo painel conforme usuário e ativação da negociação. */
+  descontoMasterMax?: number;
   condicao?: CondicaoPagamento | null;
   premissas?: PremissasComerciais | null;
   /** Negociação master — força frete CIF independente da faixa */
@@ -406,6 +409,7 @@ export function calcularPedido(args: {
       faixa: null,
       descontoCelebraValor: 0,
       descontoMasterValor: 0,
+      descontoMasterPercentEfetivo: 0,
       subtotalAposDescontos: bruto,
       bonusPixValor: 0,
       total: bruto,
@@ -420,10 +424,11 @@ export function calcularPedido(args: {
   }
 
   // 2. DESCONTO — homologado substitui ou acumula sobre faixa
-  let descontoCelebraPct = faixa!.descontoCelebra;
+  if (!faixa) throw new Error("Faixa comercial não encontrada");
+  let descontoCelebraPct = faixa.descontoCelebra;
   if (premissas?.temDescontoHomologado) {
     descontoCelebraPct = premissas.descontoHomologadoSobrePos
-      ? faixa!.descontoCelebra + premissas.descontoHomologadoPercent
+      ? faixa.descontoCelebra + premissas.descontoHomologadoPercent
       : premissas.descontoHomologadoPercent;
   }
   if (!usarCelebra) descontoCelebraPct = 0;
@@ -431,7 +436,7 @@ export function calcularPedido(args: {
   const aposCelebra = bruto - descontoCelebraValor;
 
   const masterPct = usarNegociacao
-    ? Math.max(0, Math.min(REGRAS_ATUAIS.descontoMasterMax, descontoMasterPct))
+    ? Math.max(0, Math.min(Math.min(100, args.descontoMasterMax ?? REGRAS_ATUAIS.descontoMasterMax), descontoMasterPct))
     : 0;
   const descontoMasterValor = aposCelebra * (masterPct / 100);
   const subtotalAposDescontos = aposCelebra - descontoMasterValor;
@@ -439,13 +444,13 @@ export function calcularPedido(args: {
   // 3. BÔNUS PIX — personalizado sobrepõe faixa
   const bonusPixPct = premissas?.bonusPixPersonalizado
     ? premissas.bonusPixPercent
-    : faixa!.bonusPix;
+    : faixa.bonusPix;
   const aplicouPix =
     usarPix &&
     !!condicao &&
     condicao.tipo === "pix" &&
     bonusPixPct > 0 &&
-    faixa!.bonusPixAplicavel !== false;
+    faixa.bonusPixAplicavel !== false;
   const bonusPixValor = aplicouPix
     ? subtotalAposDescontos * (bonusPixPct / 100)
     : 0;
@@ -462,7 +467,7 @@ export function calcularPedido(args: {
     freteEfetivo = premissas.freteTipo;
   } else {
     freteOrigem = "faixa";
-    freteEfetivo = faixa!.frete;
+    freteEfetivo = faixa.frete;
   }
 
   // 5. FRETE — V20: percentual vem da tabela por UF quando FOB
@@ -498,6 +503,7 @@ export function calcularPedido(args: {
     faixa,
     descontoCelebraValor,
     descontoMasterValor,
+    descontoMasterPercentEfetivo: masterPct,
     subtotalAposDescontos,
     bonusPixValor,
     total,

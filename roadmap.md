@@ -1,7 +1,10 @@
 # Roadmap
 
-- [ ] Importador de planilha em Admin › Produtos: download, validação, prévia, confirmação, salvamento auditado e resultado
-- [ ] Testar planilha com dois produtos não ativos em sessão administrativa real na prévia, sem publicar
+- [x] Corrigir desconto master de Thomer/Joseph no cálculo e serialização de pedido/cotação e conversão; testes de 50%/100% e tetos normais passam
+- [ ] Conferir desconto em pedido real enviado ao SNCF — não foi criado pedido comercial para teste; cálculo e serialização estão testados
+
+- [x] Importador de planilha em Admin › Produtos: download, validação, prévia, confirmação, salvamento auditado e resultado
+- [x] Testar planilha com dois produtos não ativos em sessão administrativa real: 01497/01513, dois campos atualizados, auditoria conferida e valores originais restaurados pelo importador; sem publicar
 
 - [x] Tratar falhas de consulta SNCF em Pedidos, Farol e Canal sem derrubar a página nem apresentar ausência falsa de pedidos/mensagens
 - [ ] Corrigir consulta farol_b2c no SNCF — retorno real aponta coluna vw_gestao_b2c.estagio_derivado inexistente; alteração pertence ao SNCF

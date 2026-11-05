@@ -56,6 +56,7 @@ import {
 import { formatBRL } from "@/lib/format";
 import { vendaBloqueada, emEstoque } from "@/lib/classifyItem";
 import { NOTA_DONO } from "@/lib/fichaDonos";
+import { CatalogSpreadsheetTab } from "@/components/products/CatalogSpreadsheetTab";
 
 export const Route = createFileRoute("/admin/products")({
   head: () => ({ meta: [
@@ -420,7 +421,7 @@ function AdminProductsPage() {
     setEditingOriginalSku(null);
   }
 
-  function save() {
+  async function save() {
     if (!editing) return;
     // Validations
     const errs: string[] = [];
@@ -447,7 +448,7 @@ function AdminProductsPage() {
       toast.error("Corrija os campos: " + errs.join(", "));
       return;
     }
-    const res = upsertProduct(normalizePlateNames(editing), auditMeta);
+    const res = await upsertProduct(normalizePlateNames(editing), auditMeta);
     if (!res.ok) {
       toast.error(res.error);
       return;
@@ -508,7 +509,7 @@ function AdminProductsPage() {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background">
       <div className="mx-auto max-w-[1600px] px-4 py-6 md:px-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="font-display text-2xl text-text-primary">Gestão de Produtos</h1>
             <p className="text-sm text-text-secondary">
@@ -548,7 +549,7 @@ function AdminProductsPage() {
               })()
             ) : null}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Can tela="cfg_produtos" acao="exportar">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -611,6 +612,10 @@ function AdminProductsPage() {
           </div>
         </div>
 
+        <Tabs defaultValue="catalogo">
+          <TabsList><TabsTrigger value="catalogo">Catálogo</TabsTrigger><TabsTrigger value="planilha">Planilha</TabsTrigger></TabsList>
+          <TabsContent value="planilha"><CatalogSpreadsheetTab /></TabsContent>
+          <TabsContent value="catalogo">
         {/* Search + filters */}
         <div className="mb-4 space-y-3 rounded-lg border border-border bg-surface p-4">
           <div className="relative">
@@ -797,6 +802,8 @@ function AdminProductsPage() {
             </div>
           </div>
         )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Editor */}
