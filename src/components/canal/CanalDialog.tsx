@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageCircle } from "lucide-react";
+import { balcao } from "@/hooks/useBalcao";
 
 type CanalEvento = {
   id: string;
@@ -58,17 +59,15 @@ export function CanalDialog({
   const qc = useQueryClient();
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const { data: eventos = [], isLoading } = useQuery({
+  const { data: eventos = [], isLoading, error, refetch } = useQuery({
     queryKey: ["canal", sncfPedidoId],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("enviar-para-sncf", {
-        body: { tipo: "canal_listar", sncf_pedido_id: sncfPedidoId },
-      });
-      if (error) throw error;
-      if (!data?.ok) throw new Error(data?.error ?? "Erro ao carregar canal");
+      const data = await balcao<{ eventos?: CanalEvento[] }>("canal_listar", { sncf_pedido_id: sncfPedidoId });
       return (data.eventos ?? []) as CanalEvento[];
     },
     enabled: open && !!sncfPedidoId,
+    retry: false,
+    throwOnError: false,
   });
 
   useEffect(() => {
@@ -86,12 +85,7 @@ export function CanalDialog({
 
   const enviar = useMutation({
     mutationFn: async (txt: string) => {
-      const { data, error } = await supabase.functions.invoke("enviar-para-sncf", {
-        body: { tipo: "canal_criar", sncf_pedido_id: sncfPedidoId, texto: txt },
-      });
-      if (error) throw error;
-      if (!data?.ok) throw new Error(data?.error ?? "Erro ao enviar mensagem");
-      return data;
+      return balcao("canal_criar", { sncf_pedido_id: sncfPedidoId, texto: txt });
     },
     onSuccess: () => {
       setTexto("");
@@ -133,6 +127,11 @@ export function CanalDialog({
             Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="h-12 w-full" />
             ))
+          ) : error ? (
+            <div role="alert" className="py-8 text-center text-muted-foreground">
+              <p className="text-sm">{error.message}</p>
+              <Button variant="outline" className="mt-3" onClick={() => void refetch()}>Tentar novamente</Button>
+            </div>
           ) : eventos.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
               <MessageCircle className="h-6 w-6 opacity-40" />

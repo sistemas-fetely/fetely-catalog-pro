@@ -19,12 +19,18 @@ import {
 
 import { supabase } from "@/integrations/supabase/client";
 import { CanalDialog } from "@/components/canal/CanalDialog";
+import { balcao } from "@/hooks/useBalcao";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/farol")({
   head: () => ({
     meta: [
       { title: "Farol de Pedidos — Fetély B2B" },
       { name: "description", content: "Acompanhamento de prazo de entrega." },
+      { property: "og:title", content: "Farol de Pedidos — Fetély B2B" },
+      { property: "og:description", content: "Acompanhe os pedidos Fetély e os prazos de entrega informados pelo SNCF." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: FarolPage,
@@ -219,28 +225,25 @@ function AbaB2B() {
   const { data: badgesData } = useQuery({
     queryKey: ["canal_badges"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("enviar-para-sncf", {
-        body: { tipo: "canal_badges" },
-      });
-      if (error) return {} as Record<string, number>;
+      const data = await balcao<{ badges?: Record<string, number> }>("canal_badges");
       return (data?.badges ?? {}) as Record<string, number>;
     },
-    refetchInterval: 60_000,
+    retry: false,
+    throwOnError: false,
+    refetchInterval: (query) => query.state.status === "error" ? false : 60_000,
   });
   const badges: Record<string, number> = badgesData ?? {};
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["farol_pedidos"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("enviar-para-sncf", {
-        body: { tipo: "farol" },
-      });
-      if (error) throw error;
-      if (!data?.ok) throw new Error(data?.error ?? "Erro na ponte SNCF");
+      const data = await balcao<{ pedidos?: FarolRow[] }>("farol");
       return {
         pedidos: (data.pedidos ?? []) as FarolRow[],
       };
     },
+    retry: false,
+    throwOnError: false,
   });
 
   const rows = data?.pedidos ?? [];
@@ -404,7 +407,9 @@ function AbaB2B() {
               ) : error ? (
                 <TableRow>
                   <TableCell colSpan={COLS} className="text-center text-red-500 py-8">
-                    Erro ao carregar pedidos. Tente recarregar a página.
+                    <p>Não foi possível consultar os pedidos no SNCF.</p>
+                    <p className="mt-2 text-text-secondary">{error.message}</p>
+                    <Button variant="outline" className="mt-3" onClick={() => void refetch()}>Tentar novamente</Button>
                   </TableCell>
                 </TableRow>
               ) : filtradas.length === 0 ? (
@@ -524,17 +529,15 @@ function AbaB2C() {
   const [filtroEstagio, setFiltroEstagio] = useState<string | null>(null);
   const [filtroPrazo, setFiltroPrazo] = useState<B2CSituacao | null>(null);
 
-  const { data: pedidos = [], isLoading } = useQuery({
+  const { data: pedidos = [], isLoading, error, refetch } = useQuery({
     queryKey: ["farol_b2c"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("enviar-para-sncf", {
-        body: { tipo: "farol_b2c" },
-      });
-      if (error) throw error;
-      if (!data?.ok) throw new Error(data?.error ?? "Erro na ponte SNCF");
+      const data = await balcao<{ pedidos?: B2CRow[] }>("farol_b2c");
       return (data.pedidos ?? []) as B2CRow[];
     },
     staleTime: 60_000,
+    retry: false,
+    throwOnError: false,
   });
 
   const enriquecidos = useMemo(
@@ -695,6 +698,12 @@ function AbaB2C() {
         <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span>Carregando pedidos B2C...</span>
+        </div>
+      ) : error ? (
+        <div role="alert" className="py-12 text-center text-text-secondary">
+          <p>Não foi possível consultar os pedidos B2C no SNCF.</p>
+          <p className="mt-2">{error.message}</p>
+          <Button variant="outline" className="mt-3" onClick={() => void refetch()}>Tentar novamente</Button>
         </div>
       ) : filtrados.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">Nenhum pedido B2C ativo.</div>
