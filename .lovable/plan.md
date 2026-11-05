@@ -1,16 +1,9 @@
-# Importador de planilha do catálogo
+# Planilha do catálogo — ajuste 2
 
-Adicionar **Planilha** dentro de Admin › Produtos, com a mesma permissão administrativa e sem novo menu.
+1. Liberar material, embalagem, peso e medidas como campos de Produto; validar peso/medidas maiores que zero e aceitar vírgula decimal.
+2. Reorganizar o modelo exatamente na ordem solicitada: dono na linha 1, blocos coloridos na linha 2, slugs ocultos na linha 3, rótulos na linha 4; congelar C5 e filtrar na linha 4.
+3. Omitir preços e dados de estoque do modelo, mantendo a importação de preços. Deixar as quatro colunas ausentes vazias e cinza. Aceitar o modelo antigo e localizar slugs nas cinco primeiras linhas.
+4. Atualizar a memória e os testes; baixar na prévia, editar peso/material de dois produtos inativos, confirmar, conferir e restaurar pela própria planilha.
 
-1. Baixar Excel com filtros de coleção/fase, quatro linhas de cabeçalho, colunas de consulta cinzas e listas de referência.
-2. Validar o arquivo inteiro sem gravar: chave por código, campos permitidos, números, canal e nomes normalizados. Ignorar células vazias e colunas não autorizadas.
-3. Mostrar apenas diferenças, separadas entre ativos e não ativos, erros por linha e valores novos com criação opcional desmarcada. Exportar a prévia.
-4. Confirmar os totais, criar os valores selecionados e salvar em blocos de 50 pelo catalogStore, com relações coerentes, auditoria por produto e erros explícitos. Exportar resultado e atualizar catálogo.
-5. Cobrir as regras com testes e executar baixar → editar dois produtos não ativos → subir → conferir → confirmar na prévia com uma sessão administrativa autorizada.
-
-## Detalhes técnicos
-
-- ExcelJS carregado sob demanda no navegador; nenhum serviço ou tabela novos.
-- Acrescentar ao catalogStore um salvamento aguardável de campos de Produto, compartilhado com a edição, sem escrever Operações, fase ou ativo no importador.
-- Preservar triggers e sincronizar-catalogo; sem publicação.
-- Caso a sessão disponível não seja administrativa, a confirmação real dependerá de autorização para uma conta administrativa.
+## Escopo técnico
+Somente arquivos da aba Planilha e sua memória; sem alterações de banco, regras automáticas, outras telas ou publicação.
