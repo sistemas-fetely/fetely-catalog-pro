@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] CATALOGO-SHAREPOINT-DIARIO F2: seção Atualização do dia, ponte autenticada `/api/catalogo-planilha-fop`, conflitos, aplicação/descarte; 37 testes e simulações de sucesso/falha sem escrita real; rota `/admin/products` aba Planilha; não publicar
+
 - [x] Corrigir desconto master de Thomer/Joseph no cálculo e serialização de pedido/cotação e conversão; testes de 50%/100% e tetos normais passam
 - [ ] Conferir desconto em pedido real enviado ao SNCF — não foi criado pedido comercial para teste; cálculo e serialização estão testados
 

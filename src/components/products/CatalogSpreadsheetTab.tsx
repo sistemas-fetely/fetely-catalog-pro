@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, Upload, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useCatalog, loadCatalogRows } from "@/store/catalogStore";
+import { createValue, loadLists } from "@/lib/catalogSpreadsheetData";
+import { CatalogDailyUpdateSection } from "./CatalogDailyUpdateSection";
 import { useAuth } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,27 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FIELD_LABELS, PRODUCT_FIELDS, selectedChanges, validateSheet, normalizeName, type CatalogLists, type CatalogRow, type SheetPreview, type Dimension, type NewValue } from "@/lib/catalogSpreadsheet";
+import { FIELD_LABELS, PRODUCT_FIELDS, selectedChanges, validateSheet, normalizeName, type CatalogLists, type SheetPreview } from "@/lib/catalogSpreadsheet";
 import { catalogWorkbook, downloadWorkbook, readWorkbook, reportWorkbook } from "@/lib/catalogSpreadsheetExcel";
 
 const display = (value: unknown) => value == null || value === "" ? "—" : typeof value === "boolean" ? value ? "Sim" : "Não" : String(value);
 type Outcome = { code: string; name: string; row: number; status: string; message: string; changes?: string };
-async function loadLists(): Promise<CatalogLists> {
-  const results = await Promise.all([supabase.from("produto_grupos").select("id,nome,categoria_id"), supabase.from("produto_colecoes").select("id,nome"), supabase.from("produto_cores").select("id,nome"), supabase.from("produto_canal_dim").select("slug"), supabase.from("produto_categorias").select("id,nome")]);
-  for (const r of results) if (r.error) throw new Error(r.error.message);
-  return { grupo: (results[0]?.data ?? []) as Dimension[], colecao: (results[1]?.data ?? []) as Dimension[], cor: (results[2]?.data ?? []) as Dimension[], canais: (results[3]?.data ?? []).map(d => String((d as { slug: string }).slug)), categorias: (results[4]?.data ?? []) as Dimension[] };
-}
-async function createValue(value: NewValue, lists: CatalogLists) {
-  const table = value.kind === "grupo" ? "produto_grupos" : value.kind === "colecao" ? "produto_colecoes" : "produto_cores";
-  const fresh = await loadLists();
-  const existing = fresh[value.kind].find(d => normalizeName(d.nome) === normalizeName(value.nome) && (value.kind !== "grupo" || d.categoria_id === value.categoriaId));
-  if (existing) return existing.nome;
-  if (value.kind === "grupo" && !value.categoriaId) throw new Error(`Grupo ${value.nome}: categoria não encontrada para criar este valor`);
-  const { error } = await supabase.from(table).insert({ nome: value.nome, ...(value.kind === "grupo" ? { categoria_id: value.categoriaId } : {}) } as never);
-  if (error) throw new Error(error.message);
-  lists[value.kind].push({ id: "", nome: value.nome, categoria_id: value.categoriaId });
-  return value.nome;
-}
 export function CatalogSpreadsheetTab() {
   const session = useAuth(s => s.session); const profile = useAuth(s => s.profile); const allowed = useAuth(s => s.isAdminOrMaster)();
   const [lists, setLists] = useState<CatalogLists | null>(null); const [loadError, setLoadError] = useState("");
@@ -98,6 +83,7 @@ export function CatalogSpreadsheetTab() {
     } catch (e) { setOutcomes(result); toast.error(e instanceof Error ? e.message : String(e)); } finally { setBusy(""); }
   }
   return <div className="space-y-6 py-5">
+    <CatalogDailyUpdateSection />
     <div className="flex flex-wrap items-end gap-3">
       <div className="space-y-1"><Label>Coleção</Label><Select value={collection} onValueChange={setCollection}><SelectTrigger className="w-56"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todas as coleções</SelectItem>{lists?.colecao.map(c => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}</SelectContent></Select></div>
       <div className="space-y-1"><Label>Fase</Label><Select value={phase} onValueChange={setPhase}><SelectTrigger className="w-56"><SelectValue /></SelectTrigger><SelectContent>{[["except_inactive", "Todos menos inativo"], ["all", "Todas as fases"], ["registrado", "Registrado"], ["pre_venda", "Pré-venda"], ["ativo", "Ativo"], ["inativo", "Inativo"]].map(([v, l]) => <SelectItem key={v} value={v ?? ""}>{l}</SelectItem>)}</SelectContent></Select></div>
