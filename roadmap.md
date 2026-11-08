@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] CATALOGO-SHAREPOINT-DIARIO F2: seção Atualização do dia, ponte autenticada, conflitos, aplicação/descarte e testes; rota `/admin/products` aba Planilha; não publicar
+
 - [x] Corrigir desconto master de Thomer/Joseph no cálculo e serialização de pedido/cotação e conversão; testes de 50%/100% e tetos normais passam
 - [ ] Conferir desconto em pedido real enviado ao SNCF — não foi criado pedido comercial para teste; cálculo e serialização estão testados
 
