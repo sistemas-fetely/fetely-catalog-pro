@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 
 const SNCF_URL = "https://vaxzorhqzvsnkutrlvfr.supabase.co/functions/v1/catalogo-planilha-fop";
-const json = (body: unknown, init?: ResponseInit) => json(body, {
+const json = (body: unknown, init?: ResponseInit) => Response.json(body, {
   ...init,
   headers: { "Cache-Control": "no-store", ...init?.headers },
 });
