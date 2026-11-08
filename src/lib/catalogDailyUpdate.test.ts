@@ -1,4 +1,5 @@
-import { describe, expect, test } from "vitest";
+// @ts-ignore Bun supplies the test runner
+import { describe, expect, test } from "bun:test";
 import { mapDailyResponse, prepareDailyItems } from "./catalogDailyUpdate";
 import type { CatalogLists } from "./catalogSpreadsheet";
 
@@ -32,6 +33,6 @@ describe("Atualização diária do catálogo", () => {
     const base = { id: "1", cod_cadastro: "1", campo: "fase", valor_base: "ativo", valor_planilha: "inativo", valor_sistema: "ativo", tipo: "mudanca" as const };
     expect(prepareDailyItems([base], [{ cod_cadastro: "1", fase: "ativo" }], lists, {})[0]?.error).toContain("não gravável");
     expect(prepareDailyItems([{ ...base, cod_cadastro: "404" }], [], lists, {})[0]?.error).toContain("Importação de PI");
-    expect(prepareDailyItems([{ ...base, campo: "material", valor_planilha: "" }], [{ cod_cadastro: "1", material: "A" }], lists, {})[0]?.error).toContain("vazio");
+    expect(prepareDailyItems([{ ...base, campo: "material", valor_planilha: "" }], [{ cod_cadastro: "1", material: "A" }], lists, { "1": "planilha" })[0]?.error).toContain("vazio");
   });
 });

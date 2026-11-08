@@ -52,7 +52,6 @@ export function CatalogDailyUpdateSection() {
   useEffect(() => { void refresh(); }, []);
   const prepared = useMemo(() => data && lists ? prepareDailyItems(data.itens, rows, lists, choices) : [], [data, rows, lists, choices]);
   const pendingNewValues = useMemo(() => dailyNewValues(prepared), [prepared]);
-  const selectedItems = prepared.filter(entry => selected.has(entry.item.id));
 
   function toggle(id: string, checked: boolean) {
     setSelected(prev => { const next = new Set(prev); if (checked) next.add(id); else next.delete(id); return next; });
