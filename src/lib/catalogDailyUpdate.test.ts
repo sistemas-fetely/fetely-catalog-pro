@@ -1,6 +1,6 @@
 // @ts-ignore Bun supplies the test runner
 import { describe, expect, test } from "bun:test";
-import { mapDailyResponse, prepareDailyItems } from "./catalogDailyUpdate";
+import { dailyPatch, mapDailyResponse, prepareDailyItems } from "./catalogDailyUpdate";
 import type { CatalogLists } from "./catalogSpreadsheet";
 
 const lists: CatalogLists = { grupo: [], colecao: [], cor: [], canais: ["b2b", "b2c", "ambos"], categorias: [] };
@@ -27,6 +27,13 @@ describe("Atualização diária do catálogo", () => {
     expect(prepareDailyItems([item], products, lists, { "1": "sistema" })[0]?.change).toBeUndefined();
     expect(prepareDailyItems([item], products, lists, { "1": "planilha" })[0]?.change?.after).toBe(120.5);
     expect(prepareDailyItems([item], products, lists, { "1": "planilha" })[0]?.change?.field).toBe("peso_g");
+  });
+
+  test("cor usa o mesmo pareamento cor/cor_nome do importador", () => {
+    const item = { id: "1", cod_cadastro: "1", campo: "cor", valor_base: "Azul", valor_planilha: "Verde", valor_sistema: "Azul", tipo: "mudanca" as const };
+    const colorLists = { ...lists, cor: [{ id: "v", nome: "Verde" }] };
+    const prepared = prepareDailyItems([item], [{ cod_cadastro: "1", cor: "Azul", cor_nome: "Azul" }], colorLists, {});
+    expect(dailyPatch(prepared, new Map())).toEqual({ cor: "Verde", cor_nome: "Verde" });
   });
 
   test("não cria produto e recusa fase, ativo, SKU e valor vazio", () => {

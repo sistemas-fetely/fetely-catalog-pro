@@ -9,7 +9,6 @@ import {
   type Change,
   type NewValue,
   type ProductField,
-  type SheetError,
 } from "./catalogSpreadsheet";
 
 const DAILY_FIELDS = PRODUCT_FIELDS.filter(field => !["preco_atacado", "preco_varejo", "preco_site"].includes(field));
@@ -129,8 +128,17 @@ export function dailyNewValues(prepared: DailyPrepared[]): NewValue[] {
   return values;
 }
 
-export function dailyErrors(prepared: DailyPrepared[]): SheetError[] {
-  return prepared.filter(p => p.error).map(p => ({ row: 0, code: p.item.cod_cadastro, message: `${p.item.campo}: ${p.error}` }));
+export function dailyPatch(entries: DailyPrepared[], canonical: ReadonlyMap<string, string>): CatalogRow {
+  const patch: CatalogRow = {};
+  for (const entry of entries) {
+    const change = entry.change;
+    if (!change) continue;
+    const value = change.newKey ? canonical.get(change.newKey) ?? change.after : change.after;
+    patch[change.field] = value;
+    // Mesma invariante do importador: o gate do banco resolve cor_id por cor_nome.
+    if (change.field === "cor") patch.cor_nome = value;
+  }
+  return patch;
 }
 
 export async function callCatalogDaily(body: { acao: "pendentes" } | { acao: "confirmar"; ids: string[]; status: "aplicada" | "descartada" | "resolvida"; escolha: DailyChoice }) {

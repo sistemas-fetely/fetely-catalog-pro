@@ -11,6 +11,7 @@ import { useAuth } from "@/store/authStore";
 import {
   callCatalogDaily,
   dailyNewValues,
+  dailyPatch,
   mapDailyResponse,
   prepareDailyItems,
   type DailyChoice,
@@ -105,7 +106,7 @@ export function CatalogDailyUpdateSection() {
       let done = 0;
       for (const [code, entries] of groups) {
         setBusy(`Gravando ${code} · ${++done}/${groups.size}`);
-        const patch = Object.fromEntries(entries.map(entry => [entry.change!.field, entry.change!.newKey ? canonical.get(entry.change!.newKey) ?? entry.change!.after : entry.change!.after]));
+        const patch = dailyPatch(entries, canonical);
         try {
           await useCatalog.getState().saveProductFields(code, patch, {
             usuarioId: session.user.id,
@@ -172,7 +173,7 @@ export function CatalogDailyUpdateSection() {
       <div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-sm"><thead className="bg-surface-2 text-text-secondary"><tr>{["", "Código", "Campo", "Tipo", "Base", "Planilha", "FOP agora", "Escolha"].map(head => <th key={head} className="p-2 text-left">{head}</th>)}</tr></thead><tbody>{prepared.map(entry => {
         const conflict = entry.item.tipo === "conflito" || entry.drifted;
         return <tr key={entry.item.id} className="border-t border-border align-top">
-          <td className="p-2"><Checkbox aria-label={`Selecionar ${entry.item.cod_cadastro} ${entry.item.campo}`} checked={selected.has(entry.item.id)} disabled={!!busy || !!entry.error} onCheckedChange={checked => toggle(entry.item.id, checked === true)} /></td>
+          <td className="p-2"><Checkbox aria-label={`Selecionar ${entry.item.cod_cadastro} ${entry.item.campo}`} checked={selected.has(entry.item.id)} disabled={!!busy} onCheckedChange={checked => toggle(entry.item.id, checked === true)} /></td>
           <td className="p-2">{entry.item.cod_cadastro}<span className="block max-w-44 break-words text-xs text-text-secondary">{display(entry.product?.nome_comercial)}</span></td>
           <td className="p-2">{FIELD_LABELS[entry.item.campo] ?? entry.item.campo}{entry.error && <span className="block max-w-56 text-xs text-destructive">{entry.error}</span>}</td>
           <td className="p-2">{conflict ? "Conflito" : "Mudança"}{entry.drifted && entry.item.tipo !== "conflito" && <span className="block text-xs text-text-secondary">FOP mudou após a leitura</span>}</td>
