@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Atualização do dia: grade por produto, rótulos do modelo, filtros, seleção por produto com ações por célula, detalhes recolhidos e paginação; testar leitura simulada sem aplicar nem publicar
+- [x] Atualização do dia: grade por produto, rótulos do modelo, filtros, seleção por produto com ações por célula, detalhes recolhidos e paginação; 30 testes e leitura simulada de 3400 células/1200 produtos, sem aplicar nem publicar
 
 - [x] CATALOGO-SHAREPOINT-DIARIO F2: seção Atualização do dia, ponte autenticada `/api/catalogo-planilha-fop`, conflitos, aplicação/descarte; 37 testes e simulações de sucesso/falha sem escrita real; rota `/admin/products` aba Planilha; não publicar
 

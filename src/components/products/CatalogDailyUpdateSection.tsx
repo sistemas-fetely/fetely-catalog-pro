@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { DAILY_PAGE_SIZE, dailyColumns, dailyEntryType, dailyFieldBlock, dailyFieldLabel, dailyReadableError, filterDailyEntries, groupDailyProducts, scopedDailySelection, type DailyFilterType } from "@/lib/catalogDailyView";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FIELD_LABELS, type CatalogLists, type CatalogRow } from "@/lib/catalogSpreadsheet";
+import { type CatalogLists, type CatalogRow } from "@/lib/catalogSpreadsheet";
 import { createValue, loadLists } from "@/lib/catalogSpreadsheetData";
 import { loadCatalogRows, useCatalog } from "@/store/catalogStore";
 import { useAuth } from "@/store/authStore";
@@ -184,7 +184,7 @@ export function CatalogDailyUpdateSection() {
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <h2 id="daily-title" className="text-lg font-semibold">Atualização do dia</h2>
-        {data && <p className="mt-1 text-sm font-medium">{prepared.filter(entry => dailyEntryType(entry) === "mudanca").length} mudanças · {prepared.filter(entry => entry.item.tipo === "conflito" || entry.drifted).length} conflitos · {readingErrors.length} erros · {data.semCadastro.length} sem cadastro</p>}
+        {data && <p className="mt-1 text-sm font-medium">{prepared.filter(entry => entry.item.tipo !== "conflito" && !entry.drifted).length} mudanças · {prepared.filter(entry => entry.item.tipo === "conflito" || entry.drifted).length} conflitos · {readingErrors.length} erros · {data.semCadastro.length} sem cadastro</p>}
         {data?.leitura && <p className="mt-1 text-xs text-text-secondary"><strong>{data.leitura.status}</strong> · Última leitura: {data.leitura.hora}</p>}
       </div>
       <Button variant="outline" size="sm" onClick={() => void refresh()} disabled={!!busy}><RefreshCw className="mr-2 h-4 w-4" />Atualizar fila</Button>
