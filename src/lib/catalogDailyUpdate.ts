@@ -12,6 +12,7 @@ import {
   type SheetError,
 } from "./catalogSpreadsheet";
 
+const DAILY_FIELDS = PRODUCT_FIELDS.filter(field => !["preco_atacado", "preco_varejo", "preco_site"].includes(field));
 export type DailyChoice = "planilha" | "sistema";
 export interface DailyItem {
   id: string;
@@ -87,7 +88,7 @@ export function prepareDailyItems(items: DailyItem[], products: CatalogRow[], li
     const product = byCode.get(item.cod_cadastro);
     const base: DailyPrepared = { item, product, current: product?.[item.campo], drifted: false, choice: choices[item.id] };
     if (!product) return { ...base, error: "Produto inexistente no FOP; o cadastro nasce pela Importação de PI no SNCF" };
-    if (!PRODUCT_FIELDS.includes(item.campo as ProductField)) return { ...base, error: `Campo não gravável pela Planilha: ${item.campo}` };
+    if (!DAILY_FIELDS.includes(item.campo as ProductField)) return { ...base, error: `Campo não gravável pela Atualização do dia: ${item.campo}` };
     const field = item.campo as ProductField;
     const current = product[field];
     const drifted = !equalValues(current, item.valor_sistema);
