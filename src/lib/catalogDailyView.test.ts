@@ -1,3 +1,4 @@
+// @ts-ignore Bun supplies the test runner
 import { expect, test } from "bun:test";
 import type { DailyPrepared } from "./catalogDailyUpdate";
 import { filterDailyEntries, groupDailyProducts, scopedDailySelection, DAILY_PAGE_SIZE } from "./catalogDailyView";
