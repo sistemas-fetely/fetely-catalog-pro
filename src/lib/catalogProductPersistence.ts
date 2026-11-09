@@ -14,8 +14,8 @@ export async function persistProductRow(client: CatalogClient, row: CatalogRow, 
   if (!data) throw new ProductConcurrentChange('Produto mudou durante a gravação');
   return data as CatalogRow;
 }
-export async function saveProductFields(client: CatalogClient, code: string, patch: CatalogRow, meta: ProductAuditMeta, context: ProductSaveContext, before?: CatalogRow, optimistic = false): Promise<CatalogRow> {
-  const clean = Object.fromEntries(Object.entries(patch).filter(([key, value]) => PRODUCT_FIELDS.includes(key as typeof PRODUCT_FIELDS[number]) && value != null && value !== ''));
+export async function saveProductFields(client: CatalogClient, code: string, patch: CatalogRow, meta: ProductAuditMeta, context: ProductSaveContext, before?: CatalogRow, optimistic = false, allowed: readonly string[] = PRODUCT_FIELDS): Promise<CatalogRow> {
+  const clean = Object.fromEntries(Object.entries(patch).filter(([key, value]) => allowed.includes(key) && value != null && value !== ''));
   if (!Object.keys(clean).length) throw new Error('Nenhum campo de Produto para atualizar');
   let oldRow = before;
   if (!oldRow) {
@@ -25,7 +25,7 @@ export async function saveProductFields(client: CatalogClient, code: string, pat
   }
   const expected = optimistic ? Object.fromEntries(Object.keys(clean).map(key => [key, oldRow?.[key] ?? null])) : undefined;
   const newRow = await persistProductRow(client, clean, code, expected);
-  const changes = Object.fromEntries(PRODUCT_FIELDS.filter(key => JSON.stringify(oldRow?.[key]) !== JSON.stringify(newRow[key])).map(key => [key, { antes: oldRow?.[key] ?? null, depois: newRow[key] ?? null }]));
+  const changes = Object.fromEntries(allowed.filter(key => JSON.stringify(oldRow?.[key]) !== JSON.stringify(newRow[key])).map(key => [key, { antes: oldRow?.[key] ?? null, depois: newRow[key] ?? null }]));
   // External operator UUIDs do not necessarily exist in FOP profiles. Preserve
   // their exact identity in quem without violating the audit foreign key.
   let auditUser: string | null = meta.usuarioId;

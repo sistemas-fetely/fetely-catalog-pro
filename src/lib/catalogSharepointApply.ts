@@ -13,13 +13,41 @@ export const sharepointBodySchema = z.object({
 export type SharepointBody = z.infer<typeof sharepointBodySchema>;
 export type SharepointCell = SharepointBody['celulas'][number];
 export type CellResult = { id: string; status: 'aplicada' | 'conflito' | 'erro'; valor_atual: unknown; erro?: string };
-export const SHAREPOINT_FIELDS: readonly string[] = PRODUCT_FIELDS.filter(field => !['preco_atacado', 'preco_varejo', 'preco_site'].includes(field));
-export function prepareSharepointCell(cell: SharepointCell, product: CatalogRow | undefined, lists: CatalogLists, category?: unknown): { result: CellResult; patch: CatalogRow } {
+// Fiscal fields enter FOP only through this SNCF door; manual importer keeps them read-only.
+export const FISCAL_FIELDS = ['ncm', 'cest', 'origem_fisc', 'origem_prod'] as const;
+type FiscalField = typeof FISCAL_FIELDS[number];
+export const SHAREPOINT_FIELDS: readonly string[] = [...PRODUCT_FIELDS.filter(field => !['preco_atacado', 'preco_varejo', 'preco_site'].includes(field)), ...FISCAL_FIELDS];
+const isFiscal = (field: string): field is FiscalField => (FISCAL_FIELDS as readonly string[]).includes(field);
+const digits = (value: unknown) => String(value ?? '').replace(/[\s.\-]/g, '');
+export function comparableFiscal(field: FiscalField, value: unknown): string | null {
+  if (value == null || String(value).trim() === '') return null;
+  if (field === 'ncm' || field === 'cest') return digits(value);
+  if (field === 'origem_prod') return normalizeName(value);
+  return String(value).trim();
+}
+export function parseFiscal(field: FiscalField, raw: unknown, origens: readonly string[]): string {
+  const text = String(raw).trim();
+  if (field === 'ncm') { const d = digits(text); if (!/^\d{8}$/.test(d)) throw new Error(`ncm inválido: ${text} (use 0000.00.00)`); return `${d.slice(0, 4)}.${d.slice(4, 6)}.${d.slice(6)}`; }
+  if (field === 'cest') { const d = digits(text); if (!/^\d{7}$/.test(d)) throw new Error(`cest inválido: ${text} (use 00.000.00)`); return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`; }
+  if (field === 'origem_prod') { const n = normalizeName(text); if (n === 'importado') return 'Importado'; if (n === 'nacional') return 'Nacional'; throw new Error(`origem_prod inválida: ${text} (use Importado ou Nacional)`); }
+  if (!origens.includes(text)) throw new Error(`origem_fisc não é código ativo: ${text}`);
+  return text;
+}
+export function prepareSharepointCell(cell: SharepointCell, product: CatalogRow | undefined, lists: CatalogLists, category?: unknown, origens: readonly string[] = []): { result: CellResult; patch: CatalogRow } {
   const current = product?.[cell.campo] ?? null;
   const result: CellResult = { id: cell.id, status: 'aplicada', valor_atual: current };
   const error = (message: string) => ({ result: { ...result, status: 'erro' as const, erro: message }, patch: {} });
   if (!product) return error('produto não existe no FOP');
   if (!SHAREPOINT_FIELDS.includes(cell.campo)) return error(`Campo fora da allowlist: ${cell.campo}`);
+  if (isFiscal(cell.campo)) {
+    const fiscal = cell.campo;
+    if (comparableFiscal(fiscal, cell.valor_esperado) !== comparableFiscal(fiscal, current)) return { result: { ...result, status: 'conflito' }, patch: {} };
+    if (cell.valor_novo.trim() === '') return { result, patch: {} };
+    try {
+      const after = parseFiscal(fiscal, cell.valor_novo, origens);
+      return { result, patch: after === current ? {} : { [fiscal]: after } };
+    } catch (cause) { return error(cause instanceof Error ? cause.message : String(cause)); }
+  }
   const field = cell.campo as ProductField;
   if (!equalProductValue(field, cell.valor_esperado, current)) return { result: { ...result, status: 'conflito' }, patch: {} };
   try {
@@ -37,6 +65,9 @@ export async function applySharepointCells(client: CatalogClient, body: Sharepoi
   const groups = new Map<string, SharepointCell[]>();
   for (const cell of body.celulas) { const group = groups.get(cell.cod_cadastro) ?? []; group.push(cell); groups.set(cell.cod_cadastro, group); }
   const lists = await loadCatalogLists(client);
+  const { data: origemRows, error: origemError } = await client.from('produto_origens_fiscais').select('codigo').eq('ativo', true);
+  if (origemError) throw new Error(origemError.message);
+  const origens = (origemRows ?? []).map(row => String(row.codigo));
   for (const [code, cells] of groups) {
     try {
       const { data, error } = await client.from('products').select('*').eq('cod_cadastro', code).maybeSingle();
@@ -46,7 +77,7 @@ export async function applySharepointCells(client: CatalogClient, body: Sharepoi
       // A category submitted in this batch influences group resolution only if itself valid.
       const categoryCell = cells.find(cell => cell.campo === 'categoria');
       const category = categoryCell ? prepareSharepointCell(categoryCell, product, lists).patch.categoria : undefined;
-      const prepared = cells.map(cell => ({ cell, ...prepareSharepointCell(cell, product, lists, category) }));
+      const prepared = cells.map(cell => ({ cell, ...prepareSharepointCell(cell, product, lists, category, origens) }));
       const patch: CatalogRow = {};
       for (const entry of prepared) {
         if (duplicateFields.has(entry.cell.campo)) { entry.result.status = 'erro'; entry.result.erro = 'Campo duplicado no produto'; entry.patch = {}; }
@@ -63,7 +94,7 @@ export async function applySharepointCells(client: CatalogClient, body: Sharepoi
       }
       if (product && Object.keys(patch).length) {
         try {
-          const updated = await saveProductFields(client, code, patch, { usuarioId: body.quem.id, usuarioNome: body.quem.nome }, { origem: 'planilha_sharepoint', leitura_id: body.leitura_id, quem: body.quem }, product, true);
+          const updated = await saveProductFields(client, code, patch, { usuarioId: body.quem.id, usuarioNome: body.quem.nome }, { origem: 'planilha_sharepoint', leitura_id: body.leitura_id, quem: body.quem }, product, true, SHAREPOINT_FIELDS);
           for (const entry of prepared) if (entry.result.status === 'aplicada') entry.result.valor_atual = updated[entry.cell.campo] ?? null;
         } catch (cause) {
           if (cause instanceof ProductConcurrentChange) {

@@ -7,7 +7,7 @@ const lists: CatalogLists = { grupo: [], colecao: [{ id: 'c', nome: 'Clássica' 
 const product = { cod_cadastro: '01497', sku: 'SKU', peso_g: 42, material: 'Papel', cor: 'Azul', cor_nome: 'Azul', is_vela_numerica: false };
 const cell = { id: '8f9fb178-260b-40ce-a9ae-63b263b1665f', cod_cadastro: '01497', campo: 'material', valor_novo: ' Vidro ', valor_esperado: 'Papel' };
 const prepare = (patch = {}) => prepareSharepointCell({ ...cell, ...patch }, product, lists);
-for (const field of ['fase', 'ativo', 'sku', 'cod_cadastro', 'preco_atacado', 'preco_varejo', 'preco_site', '_ativo', 'ncm']) test(`${field} barrado na porta diária`, () => { expect(prepare({ campo: field }).result.status).toBe('erro'); expect(prepare({ campo: field }).patch).toEqual({}); });
+for (const field of ['fase', 'ativo', 'sku', 'cod_cadastro', 'preco_atacado', 'preco_varejo', 'preco_site', '_ativo', 'ean', 'dun']) test(`${field} barrado na porta diária`, () => { expect(prepare({ campo: field }).result.status).toBe('erro'); expect(prepare({ campo: field }).patch).toEqual({}); });
 test('texto aparado e permitido', () => expect(prepare().patch).toEqual({ material: 'Vidro' }));
 test('valor esperado diferente resulta em conflito sem patch', () => { expect(prepare({ valor_esperado: 'Outro' }).result).toMatchObject({ status: 'conflito', valor_atual: 'Papel' }); expect(prepare({ valor_esperado: 'Outro' }).patch).toEqual({}); });
 test('número com vírgula usa comparação e parse do importador', () => expect(prepare({ campo: 'peso_g', valor_esperado: '42,0', valor_novo: '43,5' }).patch).toEqual({ peso_g: 43.5 }));
@@ -57,3 +57,14 @@ test('conflito de uma célula não impede outra válida do mesmo produto', async
   const result = await applySharepointCells(client,{...body,celulas:[{...cell,valor_esperado:'Divergente'},{...cell,id:'13a92c96-24f7-4f51-a5c1-23ca9a33eb60',campo:'peso_g',valor_esperado:42,valor_novo:'43'}]});
   expect(result.resultados.map(item => item.status)).toEqual(['conflito','aplicada']); expect(rows[0]?.material).toBe('Papel'); expect(rows[0]?.peso_g).toBe(43);
 });
+
+const fp = { ...product, ncm: '4823.69.00', cest: '19.005.01', origem_fisc: '0', origem_prod: 'Importado' };
+const fiscal = (campo: string, valor_esperado: string | null, valor_novo: string) => prepareSharepointCell({ ...cell, campo, valor_esperado, valor_novo }, fp, lists, undefined, ['0', '1', '2']);
+test('ncm sem pontos normaliza com pontos', () => expect(fiscal('ncm', '4823.69.00', '96020000').patch).toEqual({ ncm: '9602.00.00' }));
+test('ncm inválido é erro', () => expect(fiscal('ncm', '4823.69.00', '123').result.status).toBe('erro'));
+test('cest sem pontos normaliza', () => expect(fiscal('cest', '19.005.01', '1900502').patch).toEqual({ cest: '19.005.02' }));
+test('cest inválido é erro', () => expect(fiscal('cest', '19.005.01', '19.005').result.status).toBe('erro'));
+test('conflito fiscal compara sem pontuação', () => { expect(fiscal('ncm', '48236900', '9602.00.00').result.status).toBe('aplicada'); expect(fiscal('ncm', '4823.69.01', '9602.00.00').result.status).toBe('conflito'); });
+test('mesmo NCM em outro formato não grava', () => expect(fiscal('ncm', '4823.69.00', '48236900').patch).toEqual({}));
+test('origem_prod canônica', () => { expect(fiscal('origem_prod', 'importado', 'NACIONAL').patch).toEqual({ origem_prod: 'Nacional' }); expect(fiscal('origem_prod', 'Importado', 'Estrangeiro').result.status).toBe('erro'); });
+test('origem_fisc só código ativo', () => { expect(fiscal('origem_fisc', '0', '2').patch).toEqual({ origem_fisc: '2' }); expect(fiscal('origem_fisc', '0', '9').result.status).toBe('erro'); });
