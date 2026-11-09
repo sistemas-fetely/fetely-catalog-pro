@@ -30,7 +30,7 @@ export async function createCatalogDimension(client: CatalogClient, body: Catalo
 
   const { data: created, error: insertError } = await client
     .from('produto_colecoes')
-    .insert({ nome: body.nome, ativo: true })
+    .insert({ nome, ativo: true })
     .select('id,nome')
     .single();
   if (insertError) throw new Error(insertError.message);
