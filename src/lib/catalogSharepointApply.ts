@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PRODUCT_FIELDS, dimensionFor, equalProductValue, normalizeName, resolveProductChange, type CatalogLists, type CatalogRow, type ProductField } from './catalogSpreadsheet';
+import { PRODUCT_FIELDS, equalProductValue, normalizeName, resolveProductChange, type CatalogLists, type CatalogRow, type ProductField } from './catalogSpreadsheet';
 import { loadCatalogLists, ProductConcurrentChange, saveProductFields, type CatalogClient } from './catalogProductPersistence';
 
 export const sharepointBodySchema = z.object({

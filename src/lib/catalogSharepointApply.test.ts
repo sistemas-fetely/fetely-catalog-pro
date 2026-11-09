@@ -14,6 +14,9 @@ test('número com vírgula usa comparação e parse do importador', () => expect
 test('booleano usa Sim/Não na comparação', () => expect(prepare({ campo: 'is_vela_numerica', valor_esperado: 'Não', valor_novo: 'Sim' }).patch).toEqual({ is_vela_numerica: true }));
 test('inexistente não nasce', () => expect(prepareSharepointCell(cell, undefined, lists).result.erro).toBe('produto não existe no FOP'));
 test('peso inválido gera erro por célula', () => expect(prepare({ campo: 'peso_g', valor_esperado: 42, valor_novo: '0' }).result.erro).toContain('> 0'));
+for (const field of ['altura_cm', 'largura_cm', 'profundidade_cm']) test(`${field} inválido é erro da célula`, () => {
+  expect(prepareSharepointCell({ ...cell, campo: field, valor_esperado: null, valor_novo: '-1' }, product, lists).result.status).toBe('erro');
+});
 test('vazio preserva valor', () => expect(prepare({ valor_novo: '' }).patch).toEqual({}));
 test('zero legado igual não é validado como alteração', () => expect(prepareSharepointCell({ ...cell, campo: 'peso_g', valor_esperado: '0', valor_novo: '0' }, { ...product, peso_g: 0 }, lists).result.status).toBe('aplicada'));
 test('cor resolve dimensão e pareia cor_nome', () => expect(prepare({ campo: 'cor', valor_esperado: 'Azul', valor_novo: ' verde ' }).patch).toEqual({ cor: 'Verde', cor_nome: 'Verde' }));
