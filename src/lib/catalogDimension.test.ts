@@ -16,7 +16,7 @@ function fakeClient(initial: CatalogRow[] = []) {
         return {
           select: async () => ({ data: rows.map(({ id, nome }) => ({ id, nome })), error: null }),
           insert(value: CatalogRow) {
-            const created = { id: 'colecao-1', ...value };
+            const created: CatalogRow = { id: 'colecao-1', ...value };
             rows.push(created);
             return {
               select: () => ({
