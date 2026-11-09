@@ -4,7 +4,9 @@ import type { Product } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeStorage } from "@/lib/safeStorage";
 import { normalizePlateNames } from "@/lib/plateNames";
-import { PRODUCT_FIELDS, type CatalogRow } from "@/lib/catalogSpreadsheet";
+import { type CatalogRow } from "@/lib/catalogSpreadsheet";
+
+import { persistProductRow as persistSharedRow, saveProductFields as saveSharedFields } from "@/lib/catalogProductPersistence";
 
 // O JSON default do catálogo (1,2 MB) NÃO é importado estaticamente — fica num
 // chunk separado carregado sob demanda (banco vazio, reset ou seed inicial).
@@ -276,12 +278,7 @@ function logAudit(entry: AuditEntry): void {
 // Single persistence path for the editing dialog and the spreadsheet. A patch
 // uses the immutable registry code; only the dialog may upsert a full product.
 async function persistProductRow(row: Record<string, unknown>, code?: string): Promise<CatalogRow> {
-  const query = code
-    ? supabase.from("products").update(row as never).eq("cod_cadastro", code)
-    : supabase.from("products").upsert(row as never, { onConflict: "sku" });
-  const { data, error } = await query.select("*").single();
-  if (error) throw new Error(error.message);
-  return data as CatalogRow;
+  return persistSharedRow(supabase, row, code);
 }
 
 export async function loadCatalogRows(): Promise<CatalogRow[]> {
@@ -418,16 +415,9 @@ export const useCatalog = create<CatalogState>()(
       // Both editors use this store and the normal client: database gates,
       // price history and outbound triggers remain authoritative.
       saveProductFields: async (code, patch, meta, file) => {
-        const clean = Object.fromEntries(Object.entries(patch).filter(([k, v]) => PRODUCT_FIELDS.includes(k as typeof PRODUCT_FIELDS[number]) && v != null && v !== ""));
-        if (!Object.keys(clean).length) throw new Error("Nenhum campo de Produto para atualizar");
-        const { data: before, error: readError } = await supabase.from("products").select("*").eq("cod_cadastro", code).single();
-        if (readError) throw new Error(readError.message);
-        const oldRow = before as CatalogRow; const newRow = await persistProductRow(clean, code);
-        const changes = Object.fromEntries(PRODUCT_FIELDS.filter(k => JSON.stringify(oldRow[k]) !== JSON.stringify(newRow[k])).map(k => [k, { antes: oldRow[k] ?? null, depois: newRow[k] ?? null }]));
-        const { error: auditError } = await supabase.from("catalog_audit").insert({ usuario_id: meta.usuarioId, usuario_nome: meta.usuarioNome, produto_sku: String(newRow.sku), produto_nome: String(newRow.nome_comercial ?? ""), acao: "editado", campos_alterados: { ...changes, origem: "planilha", arquivo: file } } as never);
+        const newRow = await saveSharedFields(supabase, code, patch, meta, { origem: "planilha", arquivo: file });
         const next = rowToProduct(newRow);
         set({ products: get().products.map(p => p.codCadastro === code ? next : p), lastSyncAt: 0 });
-        if (auditError) throw new Error(`Produto atualizado; auditoria falhou: ${auditError.message}`);
         return newRow;
       },
 
