@@ -1,18 +1,30 @@
 import type { Product } from "@/types";
 
-export function classificarItem(_statusEstoque: string): "firme" | "provisao" {
-  return "firme";
+export function classificarItem(statusEstoque: string): "firme" | "provisao" {
+  return /^prev/i.test(statusEstoque.trim()) ? "provisao" : "firme";
 }
 
 type ProdutoEstoque = Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega"> & { colecao?: string };
 
-/** Liberação comercial de todos os itens; não representa saldo físico no SNCF. */
-export function disponivelParaVenda(_product: ProdutoEstoque): number {
-  return Number.POSITIVE_INFINITY;
+function ehJinglePop(product: ProdutoEstoque): boolean {
+  return product.colecao?.trim().toLocaleLowerCase("pt-BR") === "jingle pop";
 }
 
-export function vendaBloqueada(_product: ProdutoEstoque): boolean {
-  return false;
+function temPrevisao(product: ProdutoEstoque): boolean {
+  return /^prev/i.test(product.statusEstoque.trim());
+}
+
+/**
+ * Demais itens têm liberação comercial sem saldo. Jingle Pop volta a obedecer
+ * ao saldo do SNCF: saldo positivo vende firme; zero com Prev vira provisão.
+ */
+export function disponivelParaVenda(product: ProdutoEstoque): number {
+  if (!ehJinglePop(product)) return Number.POSITIVE_INFINITY;
+  return Math.max(0, Number(product.estoqueDisponivel) || 0);
+}
+
+export function vendaBloqueada(product: ProdutoEstoque): boolean {
+  return ehJinglePop(product) && disponivelParaVenda(product) <= 0 && !temPrevisao(product);
 }
 
 export function emEstoque(product: ProdutoEstoque): boolean {
@@ -20,8 +32,8 @@ export function emEstoque(product: ProdutoEstoque): boolean {
 }
 
 /**
- * Todos os itens do site seguem integralmente como pedido firme, inclusive
- * conversões de provisão. Não altera o estoque físico do produto.
+ * Jingle Pop separa a quantidade sem saldo para provisão, inclusive em
+ * conversões. As demais coleções seguem integralmente como pedido firme.
  */
 export function roteamentoQtd(
   product: ProdutoEstoque,
@@ -33,7 +45,6 @@ export function roteamentoQtd(
   const firme = Math.min(qtd, disp);
   return { firme, provisao: qtd - firme };
 }
-
 
 const MES_ORDEM: Record<string, number> = {
   jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6,

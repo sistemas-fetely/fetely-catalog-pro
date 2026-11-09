@@ -6,14 +6,21 @@ interface StockBadgeProps {
   estoqueDisponivel?: number;
   /** Selo visual, exibido somente com estoque positivo. */
   prontaEntrega?: boolean;
-  /** Coleções liberadas sem estoque aparecem como Pronta Entrega. */
+  /** Jingle Pop volta a exibir seu estado real de estoque/previsão. */
   colecao?: string;
   className?: string;
 }
 
-export function StockBadge({ className }: StockBadgeProps) {
-  const color = "bg-stock-in/15 text-stock-in border border-stock-in/30";
-  const label = "Pronta Entrega";
+export function StockBadge({ status, estoqueDisponivel = 0, colecao, className }: StockBadgeProps) {
+  const jinglePop = colecao?.trim().toLocaleLowerCase("pt-BR") === "jingle pop";
+  const emEstoque = !jinglePop || estoqueDisponivel > 0;
+  const emPrevisao = jinglePop && !emEstoque && /^prev/i.test(status.trim());
+  const color = emEstoque
+    ? "bg-stock-in/15 text-stock-in border border-stock-in/30"
+    : emPrevisao
+      ? "bg-stock-pre/15 text-stock-pre border border-stock-pre/30"
+      : "bg-stock-out/15 text-stock-out border border-stock-out/30";
+  const label = emEstoque ? "Pronta Entrega" : emPrevisao ? status : "Esgotado";
 
   return (
     <span

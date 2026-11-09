@@ -18,6 +18,7 @@
 - [ ] Corrigir consulta farol_b2c no SNCF — retorno real aponta coluna vw_gestao_b2c.estagio_derivado inexistente; alteração pertence ao SNCF
 
 - [x] Liberar todos os itens do site, incluindo Jingle Pop, para pedido firme sem restrição de saldo; 22 testes passaram; prévia conferida com 21 itens Jingle Pop liberados e 24 unidades no carrinho como pedido firme, sem criar pedido real nem alterar estoque físico
+- [x] Retornar Jingle Pop à autoridade de estoque: zero com Prev vai para provisão, zero sem Prev bloqueia e saldo parcial separa o excedente; 110 testes e carrinho real da prévia conferidos sem salvar provisão
 
 - [x] Ajustar pedidos B2B enviados pela ponte SNCF: permissões, carrinho separado de criação, frete total, pagamento, motivo; edge publicada e 401 sem login; 24 testes passaram
 - [ ] Validar ajuste B2B real e prévia comercial — sessão disponível tem papel cliente; simulação visual não concluída
