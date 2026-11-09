@@ -26,7 +26,15 @@ export async function saveProductFields(client: CatalogClient, code: string, pat
   const expected = optimistic ? Object.fromEntries(Object.keys(clean).map(key => [key, oldRow?.[key] ?? null])) : undefined;
   const newRow = await persistProductRow(client, clean, code, expected);
   const changes = Object.fromEntries(PRODUCT_FIELDS.filter(key => JSON.stringify(oldRow?.[key]) !== JSON.stringify(newRow[key])).map(key => [key, { antes: oldRow?.[key] ?? null, depois: newRow[key] ?? null }]));
-  const { error } = await client.from('catalog_audit').insert({ usuario_id: meta.usuarioId, usuario_nome: meta.usuarioNome, produto_sku: String(newRow.sku), produto_nome: String(newRow.nome_comercial ?? ''), acao: 'editado', campos_alterados: { ...changes, ...context } } as never);
+  // External operator UUIDs do not necessarily exist in FOP profiles. Preserve
+  // their exact identity in quem without violating the audit foreign key.
+  let auditUser: string | null = meta.usuarioId;
+  if (context.origem === 'planilha_sharepoint') {
+    const { data: profile, error: profileError } = await client.from('profiles').select('id').eq('id', meta.usuarioId).maybeSingle();
+    if (profileError) throw new Error(`Produto atualizado; auditoria falhou: ${profileError.message}`);
+    auditUser = profile?.id ?? null;
+  }
+  const { error } = await client.from('catalog_audit').insert({ usuario_id: auditUser, usuario_nome: meta.usuarioNome, produto_sku: String(newRow.sku), produto_nome: String(newRow.nome_comercial ?? ''), acao: 'editado', campos_alterados: { ...changes, ...context } } as never);
   if (error) throw new Error(`Produto atualizado; auditoria falhou: ${error.message}`);
   return newRow;
 }
