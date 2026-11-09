@@ -53,7 +53,6 @@ import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminSincronizacaoSncfRouteImport } from './routes/admin.sincronizacao-sncf'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as ApiCatalogoPlanilhaFopRouteImport } from './routes/api/catalogo-planilha-fop'
 import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
 import { Route as CatalogTodosRouteImport } from './routes/catalog.todos'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
@@ -288,11 +287,6 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiCatalogoPlanilhaFopRoute = ApiCatalogoPlanilhaFopRouteImport.update({
-  id: '/api/catalogo-planilha-fop',
-  path: '/api/catalogo-planilha-fop',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CatalogIndexRoute = CatalogIndexRouteImport.update({
   id: '/catalog/',
   path: '/catalog/',
@@ -404,7 +398,6 @@ export interface FileRoutesByFullPath {
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
-  '/api/catalogo-planilha-fop': typeof ApiCatalogoPlanilhaFopRoute
   '/catalog/todos': typeof CatalogTodosRoute
   '/portal/conta': typeof PortalContaRoute
   '/portal/cotacoes': typeof PortalCotacoesRoute
@@ -463,7 +456,6 @@ export interface FileRoutesByTo {
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
-  '/api/catalogo-planilha-fop': typeof ApiCatalogoPlanilhaFopRoute
   '/catalog/todos': typeof CatalogTodosRoute
   '/portal/conta': typeof PortalContaRoute
   '/portal/cotacoes': typeof PortalCotacoesRoute
@@ -524,7 +516,6 @@ export interface FileRoutesById {
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
-  '/api/catalogo-planilha-fop': typeof ApiCatalogoPlanilhaFopRoute
   '/catalog/todos': typeof CatalogTodosRoute
   '/portal/conta': typeof PortalContaRoute
   '/portal/cotacoes': typeof PortalCotacoesRoute
@@ -586,7 +577,6 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
-    | '/api/catalogo-planilha-fop'
     | '/catalog/todos'
     | '/portal/conta'
     | '/portal/cotacoes'
@@ -645,7 +635,6 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
-    | '/api/catalogo-planilha-fop'
     | '/catalog/todos'
     | '/portal/conta'
     | '/portal/cotacoes'
@@ -705,7 +694,6 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
-    | '/api/catalogo-planilha-fop'
     | '/catalog/todos'
     | '/portal/conta'
     | '/portal/cotacoes'
@@ -766,7 +754,6 @@ export interface RootRouteChildren {
   AdminProductsRoute: typeof AdminProductsRoute
   AdminSincronizacaoSncfRoute: typeof AdminSincronizacaoSncfRoute
   AdminUsersRoute: typeof AdminUsersRoute
-  ApiCatalogoPlanilhaFopRoute: typeof ApiCatalogoPlanilhaFopRoute
   CatalogTodosRoute: typeof CatalogTodosRoute
   AcademiaIndexRoute: typeof AcademiaIndexRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
@@ -1086,13 +1073,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/catalogo-planilha-fop': {
-      id: '/api/catalogo-planilha-fop'
-      path: '/api/catalogo-planilha-fop'
-      fullPath: '/api/catalogo-planilha-fop'
-      preLoaderRoute: typeof ApiCatalogoPlanilhaFopRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/catalog/': {
       id: '/catalog/'
       path: '/catalog'
@@ -1272,7 +1252,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminProductsRoute: AdminProductsRoute,
   AdminSincronizacaoSncfRoute: AdminSincronizacaoSncfRoute,
   AdminUsersRoute: AdminUsersRoute,
-  ApiCatalogoPlanilhaFopRoute: ApiCatalogoPlanilhaFopRoute,
   CatalogTodosRoute: CatalogTodosRoute,
   AcademiaIndexRoute: AcademiaIndexRoute,
   CatalogIndexRoute: CatalogIndexRoute,
