@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Porta SNCF de cadastro idempotente de coleções, com autenticação Vault, auditoria e cinco testes; rota real sem token retorna 401, sem criar coleções reais nem publicar
+
 - [x] Mapa v2: revisão diária retirada; porta SNCF de gravação e alias público, regras/persistência compartilhadas, testes unitários/401; peso 01497/01513 alterado/restaurado pela rota real, quatro auditorias conferidas; não publicado
 
 - [x] Atualização do dia: grade por produto, rótulos do modelo, filtros, seleção por produto com ações por célula, detalhes recolhidos e paginação; 30 testes e leitura simulada de 3400 células/1200 produtos, sem aplicar nem publicar
