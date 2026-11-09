@@ -3,7 +3,6 @@ import { Download, Upload, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCatalog, loadCatalogRows } from "@/store/catalogStore";
 import { createValue, loadLists } from "@/lib/catalogSpreadsheetData";
-import { CatalogDailyUpdateSection } from "./CatalogDailyUpdateSection";
 import { useAuth } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,7 +82,6 @@ export function CatalogSpreadsheetTab() {
     } catch (e) { setOutcomes(result); toast.error(e instanceof Error ? e.message : String(e)); } finally { setBusy(""); }
   }
   return <div className="space-y-6 py-5">
-    <CatalogDailyUpdateSection />
     <div className="flex flex-wrap items-end gap-3">
       <div className="space-y-1"><Label>Coleção</Label><Select value={collection} onValueChange={setCollection}><SelectTrigger className="w-56"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todas as coleções</SelectItem>{lists?.colecao.map(c => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}</SelectContent></Select></div>
       <div className="space-y-1"><Label>Fase</Label><Select value={phase} onValueChange={setPhase}><SelectTrigger className="w-56"><SelectValue /></SelectTrigger><SelectContent>{[["except_inactive", "Todos menos inativo"], ["all", "Todas as fases"], ["registrado", "Registrado"], ["pre_venda", "Pré-venda"], ["ativo", "Ativo"], ["inativo", "Inativo"]].map(([v, l]) => <SelectItem key={v} value={v ?? ""}>{l}</SelectItem>)}</SelectContent></Select></div>

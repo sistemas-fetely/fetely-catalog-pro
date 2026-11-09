@@ -49,6 +49,30 @@ export function parseProductValue(field: ProductField, value: unknown): unknown 
   }
   return String(value).trim();
 }
+// Shared normalization includes legacy zero values without accepting new invalid values.
+export function comparableProductValue(field: ProductField, value: unknown): unknown {
+  if (value == null || String(value).trim() === "") return null;
+  if (numericFields.has(field)) { const parsed = numericValue(value); return Number.isFinite(parsed) ? parsed : String(value).trim(); }
+  if (field === "is_vela_numerica") { try { return parseProductValue(field, value); } catch { return String(value).trim(); } }
+  return dimensionFor(field) ? normalizeName(value) : String(value).trim();
+}
+export function equalProductValue(field: ProductField, a: unknown, b: unknown) {
+  return comparableProductValue(field, a) === comparableProductValue(field, b);
+}
+export function resolveProductChange(field: ProductField, raw: unknown, product: CatalogRow, lists: CatalogLists, categoriaId?: string): Change | undefined {
+  if (raw == null || String(raw).trim() === "" || equalProductValue(field, product[field], raw)) return;
+  let after = parseProductValue(field, raw);
+  if (field === "canal_venda" && !lists.canais.includes(String(after))) throw new Error(`canal_venda não existe: ${after}`);
+  const kind = dimensionFor(field);
+  let newKey: string | undefined;
+  if (kind) {
+    const matches = lists[kind].filter(d => normalizeName(d.nome) === normalizeName(after));
+    const match = kind === "grupo" ? matches.find(d => d.categoria_id === categoriaId) ?? matches[0] : matches[0];
+    if (match) after = match.nome;
+    else newKey = `${kind}:${normalizeName(after)}${kind === "grupo" ? `:${categoriaId ?? ""}` : ""}`;
+  }
+  if (!equalProductValue(field, product[field], after)) return { field, before: product[field], after, newKey };
+}
 export function validateSheet(sheet: Worksheet, products: CatalogRow[], lists: CatalogLists): SheetPreview {
   let slugRow = 0;
   for (let i = 1; i <= Math.min(sheet.rowCount, 5); i++) {
@@ -90,30 +114,13 @@ export function validateSheet(sheet: Worksheet, products: CatalogRow[], lists: C
         const raw = cellValue(row.getCell(column.index).value);
         if (raw == null || String(raw).trim() === "") continue;
         const field = column.slug as ProductField;
-        // Existing values are not new input, even when legacy data is invalid.
-        const current = product[field];
-        if (String(current ?? "").trim() === String(raw).trim()) continue;
-        if (numericFields.has(field) && current != null && String(current).trim() !== "") {
-          const incomingNumber = numericValue(raw);
-          if (Number.isFinite(incomingNumber) && incomingNumber === numericValue(current)) continue;
+        const change = resolveProductChange(field, raw, product, lists, categoriaId);
+        if (!change) continue;
+        if (change.newKey) {
+          const kind = dimensionFor(field);
+          if (kind) pending.push({ key: change.newKey, kind, nome: String(change.after), categoriaId });
         }
-        let after = parseProductValue(field, raw);
-        // An untouched exported cell is not a request to remap its dimension.
-        if (String(product[field] ?? "") === String(after ?? "")) continue;
-        if (field === "canal_venda" && !lists.canais.includes(String(after))) throw new Error(`canal_venda não existe: ${after}`);
-        const kind = dimensionFor(field);
-        let newKey: string | undefined;
-        if (kind) {
-          const matches = lists[kind].filter(d => normalizeName(d.nome) === normalizeName(after));
-          const match = kind === "grupo" ? matches.find(d => d.categoria_id === categoriaId) ?? matches[0] : matches[0];
-          if (match) after = match.nome;
-          else {
-            newKey = `${kind}:${normalizeName(after)}${kind === "grupo" ? `:${categoriaId ?? ""}` : ""}`;
-            pending.push({ key: newKey, kind, nome: String(after), categoriaId });
-          }
-        }
-        const before = product[field];
-        if (String(before ?? "") !== String(after ?? "")) changes.push({ field, before, after, newKey });
+        changes.push(change);
       }
       const color = changes.find(c => c.field === "cor");
       if (color && !changes.some(c => c.field === "cor_nome") && product.cor_nome !== color.after) {

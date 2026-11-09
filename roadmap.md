@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Mapa v2: retirar revisão diária do FOP, criar porta SNCF de gravação com persistência compartilhada, testar regras/401 e alterar/restaurar somente 01497/01513 com auditoria; não publicar
+- [x] Mapa v2: revisão diária retirada; porta SNCF de gravação e alias público, regras/persistência compartilhadas, testes unitários/401; peso 01497/01513 alterado/restaurado pela rota real, quatro auditorias conferidas; não publicado
 
 - [x] Atualização do dia: grade por produto, rótulos do modelo, filtros, seleção por produto com ações por célula, detalhes recolhidos e paginação; 30 testes e leitura simulada de 3400 células/1200 produtos, sem aplicar nem publicar
 

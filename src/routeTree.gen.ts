@@ -53,7 +53,7 @@ import { Route as AdminPrecosRouteImport } from './routes/admin.precos'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminSincronizacaoSncfRouteImport } from './routes/admin.sincronizacao-sncf'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as ApiCatalogoPlanilhaFopRouteImport } from './routes/api/catalogo-planilha-fop'
+import { Route as ApiCatalogoPlanilhaAplicarRouteImport } from './routes/api/catalogo-planilha-aplicar'
 import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
 import { Route as CatalogTodosRouteImport } from './routes/catalog.todos'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
@@ -65,6 +65,7 @@ import { Route as ReunioesImportarRouteImport } from './routes/reunioes.importar
 import { Route as StandLeadsRouteImport } from './routes/stand.leads'
 import { Route as ApiPublicAcademiaFileRouteImport } from './routes/api/public/academia-file'
 import { Route as ApiPublicCatalogoFileRouteImport } from './routes/api/public/catalogo-file'
+import { Route as ApiPublicCatalogoPlanilhaAplicarRouteImport } from './routes/api/public/catalogo-planilha-aplicar'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
 import { Route as CatalogCategoriaCategoriaRouteImport } from './routes/catalog.categoria.$categoria'
 
@@ -288,11 +289,12 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiCatalogoPlanilhaFopRoute = ApiCatalogoPlanilhaFopRouteImport.update({
-  id: '/api/catalogo-planilha-fop',
-  path: '/api/catalogo-planilha-fop',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const ApiCatalogoPlanilhaAplicarRoute =
+  ApiCatalogoPlanilhaAplicarRouteImport.update({
+    id: '/api/catalogo-planilha-aplicar',
+    path: '/api/catalogo-planilha-aplicar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const CatalogIndexRoute = CatalogIndexRouteImport.update({
   id: '/catalog/',
   path: '/catalog/',
@@ -348,6 +350,12 @@ const ApiPublicCatalogoFileRoute = ApiPublicCatalogoFileRouteImport.update({
   path: '/api/public/catalogo-file',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCatalogoPlanilhaAplicarRoute =
+  ApiPublicCatalogoPlanilhaAplicarRouteImport.update({
+    id: '/api/public/catalogo-planilha-aplicar',
+    path: '/api/public/catalogo-planilha-aplicar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
   id: '/api/public/img',
   path: '/api/public/img',
@@ -404,7 +412,7 @@ export interface FileRoutesByFullPath {
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
-  '/api/catalogo-planilha-fop': typeof ApiCatalogoPlanilhaFopRoute
+  '/api/catalogo-planilha-aplicar': typeof ApiCatalogoPlanilhaAplicarRoute
   '/catalog/todos': typeof CatalogTodosRoute
   '/portal/conta': typeof PortalContaRoute
   '/portal/cotacoes': typeof PortalCotacoesRoute
@@ -417,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/portal/': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
   '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
+  '/api/public/catalogo-planilha-aplicar': typeof ApiPublicCatalogoPlanilhaAplicarRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -463,7 +472,7 @@ export interface FileRoutesByTo {
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
-  '/api/catalogo-planilha-fop': typeof ApiCatalogoPlanilhaFopRoute
+  '/api/catalogo-planilha-aplicar': typeof ApiCatalogoPlanilhaAplicarRoute
   '/catalog/todos': typeof CatalogTodosRoute
   '/portal/conta': typeof PortalContaRoute
   '/portal/cotacoes': typeof PortalCotacoesRoute
@@ -476,6 +485,7 @@ export interface FileRoutesByTo {
   '/portal': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
   '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
+  '/api/public/catalogo-planilha-aplicar': typeof ApiPublicCatalogoPlanilhaAplicarRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -524,7 +534,7 @@ export interface FileRoutesById {
   '/admin/products': typeof AdminProductsRoute
   '/admin/sincronizacao-sncf': typeof AdminSincronizacaoSncfRoute
   '/admin/users': typeof AdminUsersRoute
-  '/api/catalogo-planilha-fop': typeof ApiCatalogoPlanilhaFopRoute
+  '/api/catalogo-planilha-aplicar': typeof ApiCatalogoPlanilhaAplicarRoute
   '/catalog/todos': typeof CatalogTodosRoute
   '/portal/conta': typeof PortalContaRoute
   '/portal/cotacoes': typeof PortalCotacoesRoute
@@ -537,6 +547,7 @@ export interface FileRoutesById {
   '/portal/': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
   '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
+  '/api/public/catalogo-planilha-aplicar': typeof ApiPublicCatalogoPlanilhaAplicarRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/catalog/categoria/$categoria': typeof CatalogCategoriaCategoriaRoute
 }
@@ -586,7 +597,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
-    | '/api/catalogo-planilha-fop'
+    | '/api/catalogo-planilha-aplicar'
     | '/catalog/todos'
     | '/portal/conta'
     | '/portal/cotacoes'
@@ -599,6 +610,7 @@ export interface FileRouteTypes {
     | '/portal/'
     | '/api/public/academia-file'
     | '/api/public/catalogo-file'
+    | '/api/public/catalogo-planilha-aplicar'
     | '/api/public/img'
     | '/catalog/categoria/$categoria'
   fileRoutesByTo: FileRoutesByTo
@@ -645,7 +657,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
-    | '/api/catalogo-planilha-fop'
+    | '/api/catalogo-planilha-aplicar'
     | '/catalog/todos'
     | '/portal/conta'
     | '/portal/cotacoes'
@@ -658,6 +670,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/api/public/academia-file'
     | '/api/public/catalogo-file'
+    | '/api/public/catalogo-planilha-aplicar'
     | '/api/public/img'
     | '/catalog/categoria/$categoria'
   id:
@@ -705,7 +718,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/sincronizacao-sncf'
     | '/admin/users'
-    | '/api/catalogo-planilha-fop'
+    | '/api/catalogo-planilha-aplicar'
     | '/catalog/todos'
     | '/portal/conta'
     | '/portal/cotacoes'
@@ -718,6 +731,7 @@ export interface FileRouteTypes {
     | '/portal/'
     | '/api/public/academia-file'
     | '/api/public/catalogo-file'
+    | '/api/public/catalogo-planilha-aplicar'
     | '/api/public/img'
     | '/catalog/categoria/$categoria'
   fileRoutesById: FileRoutesById
@@ -766,12 +780,13 @@ export interface RootRouteChildren {
   AdminProductsRoute: typeof AdminProductsRoute
   AdminSincronizacaoSncfRoute: typeof AdminSincronizacaoSncfRoute
   AdminUsersRoute: typeof AdminUsersRoute
-  ApiCatalogoPlanilhaFopRoute: typeof ApiCatalogoPlanilhaFopRoute
+  ApiCatalogoPlanilhaAplicarRoute: typeof ApiCatalogoPlanilhaAplicarRoute
   CatalogTodosRoute: typeof CatalogTodosRoute
   AcademiaIndexRoute: typeof AcademiaIndexRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
   ApiPublicAcademiaFileRoute: typeof ApiPublicAcademiaFileRoute
   ApiPublicCatalogoFileRoute: typeof ApiPublicCatalogoFileRoute
+  ApiPublicCatalogoPlanilhaAplicarRoute: typeof ApiPublicCatalogoPlanilhaAplicarRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
   CatalogCategoriaCategoriaRoute: typeof CatalogCategoriaCategoriaRoute
 }
@@ -1086,11 +1101,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/catalogo-planilha-fop': {
-      id: '/api/catalogo-planilha-fop'
-      path: '/api/catalogo-planilha-fop'
-      fullPath: '/api/catalogo-planilha-fop'
-      preLoaderRoute: typeof ApiCatalogoPlanilhaFopRouteImport
+    '/api/catalogo-planilha-aplicar': {
+      id: '/api/catalogo-planilha-aplicar'
+      path: '/api/catalogo-planilha-aplicar'
+      fullPath: '/api/catalogo-planilha-aplicar'
+      preLoaderRoute: typeof ApiCatalogoPlanilhaAplicarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalog/': {
@@ -1168,6 +1183,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/catalogo-file'
       fullPath: '/api/public/catalogo-file'
       preLoaderRoute: typeof ApiPublicCatalogoFileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/catalogo-planilha-aplicar': {
+      id: '/api/public/catalogo-planilha-aplicar'
+      path: '/api/public/catalogo-planilha-aplicar'
+      fullPath: '/api/public/catalogo-planilha-aplicar'
+      preLoaderRoute: typeof ApiPublicCatalogoPlanilhaAplicarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/img': {
@@ -1272,12 +1294,13 @@ const rootRouteChildren: RootRouteChildren = {
   AdminProductsRoute: AdminProductsRoute,
   AdminSincronizacaoSncfRoute: AdminSincronizacaoSncfRoute,
   AdminUsersRoute: AdminUsersRoute,
-  ApiCatalogoPlanilhaFopRoute: ApiCatalogoPlanilhaFopRoute,
+  ApiCatalogoPlanilhaAplicarRoute: ApiCatalogoPlanilhaAplicarRoute,
   CatalogTodosRoute: CatalogTodosRoute,
   AcademiaIndexRoute: AcademiaIndexRoute,
   CatalogIndexRoute: CatalogIndexRoute,
   ApiPublicAcademiaFileRoute: ApiPublicAcademiaFileRoute,
   ApiPublicCatalogoFileRoute: ApiPublicCatalogoFileRoute,
+  ApiPublicCatalogoPlanilhaAplicarRoute: ApiPublicCatalogoPlanilhaAplicarRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
   CatalogCategoriaCategoriaRoute: CatalogCategoriaCategoriaRoute,
 }
