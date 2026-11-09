@@ -112,4 +112,7 @@ test("valores legados iguais são comparados antes de validar e não entram na p
   }
   const changed = validateSheet(sheet(["cod_cadastro", "peso_g"], [["02160", 0]]), [{ cod_cadastro: "02160", peso_g: 42 }], lists);
   expect(changed.errors).toHaveLength(1);
+});test("importador manual ignora NCM e demais fiscais preenchidos", () => {
+  const p = validateSheet(sheet(["cod_cadastro", "ncm", "cest", "origem_fisc", "origem_prod", "nome_comercial"], [["001", "9602.00.00", "19.005.02", "2", "Nacional", "Novo"]]), products, lists);
+  expect(p.ignoredColumns).toBe(4); expect(p.products[0]?.changes.map(c => c.field)).toEqual(["nome_comercial"]);
 });
