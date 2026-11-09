@@ -20,10 +20,11 @@ export function normalizeDimensionName(value: unknown): string {
 }
 
 export async function createCatalogDimension(client: CatalogClient, body: CatalogDimensionBody): Promise<CatalogDimensionResult> {
+  const nome = body.nome.trim();
   const { data: collections, error: readError } = await client.from('produto_colecoes').select('id,nome');
   if (readError) throw new Error(readError.message);
 
-  const normalized = normalizeDimensionName(body.nome);
+  const normalized = normalizeDimensionName(nome);
   const existing = (collections ?? []).find(collection => normalizeDimensionName(collection.nome) === normalized);
   if (existing) return { ok: true, id: existing.id, nome: existing.nome, criada: false };
 
