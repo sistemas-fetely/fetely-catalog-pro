@@ -64,6 +64,7 @@ import { Route as PortalProvisoesRouteImport } from './routes/portal.provisoes'
 import { Route as ReunioesImportarRouteImport } from './routes/reunioes.importar'
 import { Route as StandLeadsRouteImport } from './routes/stand.leads'
 import { Route as ApiPublicAcademiaFileRouteImport } from './routes/api/public/academia-file'
+import { Route as ApiPublicCatalogoDimensaoCriarRouteImport } from './routes/api/public/catalogo-dimensao-criar'
 import { Route as ApiPublicCatalogoFileRouteImport } from './routes/api/public/catalogo-file'
 import { Route as ApiPublicCatalogoPlanilhaAplicarRouteImport } from './routes/api/public/catalogo-planilha-aplicar'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
@@ -345,6 +346,12 @@ const ApiPublicAcademiaFileRoute = ApiPublicAcademiaFileRouteImport.update({
   path: '/api/public/academia-file',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCatalogoDimensaoCriarRoute =
+  ApiPublicCatalogoDimensaoCriarRouteImport.update({
+    id: '/api/public/catalogo-dimensao-criar',
+    path: '/api/public/catalogo-dimensao-criar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCatalogoFileRoute = ApiPublicCatalogoFileRouteImport.update({
   id: '/api/public/catalogo-file',
   path: '/api/public/catalogo-file',
@@ -424,6 +431,7 @@ export interface FileRoutesByFullPath {
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
+  '/api/public/catalogo-dimensao-criar': typeof ApiPublicCatalogoDimensaoCriarRoute
   '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/catalogo-planilha-aplicar': typeof ApiPublicCatalogoPlanilhaAplicarRoute
   '/api/public/img': typeof ApiPublicImgRoute
@@ -484,6 +492,7 @@ export interface FileRoutesByTo {
   '/catalog': typeof CatalogIndexRoute
   '/portal': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
+  '/api/public/catalogo-dimensao-criar': typeof ApiPublicCatalogoDimensaoCriarRoute
   '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/catalogo-planilha-aplicar': typeof ApiPublicCatalogoPlanilhaAplicarRoute
   '/api/public/img': typeof ApiPublicImgRoute
@@ -546,6 +555,7 @@ export interface FileRoutesById {
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
+  '/api/public/catalogo-dimensao-criar': typeof ApiPublicCatalogoDimensaoCriarRoute
   '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/catalogo-planilha-aplicar': typeof ApiPublicCatalogoPlanilhaAplicarRoute
   '/api/public/img': typeof ApiPublicImgRoute
@@ -609,6 +619,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/portal/'
     | '/api/public/academia-file'
+    | '/api/public/catalogo-dimensao-criar'
     | '/api/public/catalogo-file'
     | '/api/public/catalogo-planilha-aplicar'
     | '/api/public/img'
@@ -669,6 +680,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/portal'
     | '/api/public/academia-file'
+    | '/api/public/catalogo-dimensao-criar'
     | '/api/public/catalogo-file'
     | '/api/public/catalogo-planilha-aplicar'
     | '/api/public/img'
@@ -730,6 +742,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/portal/'
     | '/api/public/academia-file'
+    | '/api/public/catalogo-dimensao-criar'
     | '/api/public/catalogo-file'
     | '/api/public/catalogo-planilha-aplicar'
     | '/api/public/img'
@@ -785,6 +798,7 @@ export interface RootRouteChildren {
   AcademiaIndexRoute: typeof AcademiaIndexRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
   ApiPublicAcademiaFileRoute: typeof ApiPublicAcademiaFileRoute
+  ApiPublicCatalogoDimensaoCriarRoute: typeof ApiPublicCatalogoDimensaoCriarRoute
   ApiPublicCatalogoFileRoute: typeof ApiPublicCatalogoFileRoute
   ApiPublicCatalogoPlanilhaAplicarRoute: typeof ApiPublicCatalogoPlanilhaAplicarRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
@@ -1178,6 +1192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAcademiaFileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/catalogo-dimensao-criar': {
+      id: '/api/public/catalogo-dimensao-criar'
+      path: '/api/public/catalogo-dimensao-criar'
+      fullPath: '/api/public/catalogo-dimensao-criar'
+      preLoaderRoute: typeof ApiPublicCatalogoDimensaoCriarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/catalogo-file': {
       id: '/api/public/catalogo-file'
       path: '/api/public/catalogo-file'
@@ -1299,6 +1320,7 @@ const rootRouteChildren: RootRouteChildren = {
   AcademiaIndexRoute: AcademiaIndexRoute,
   CatalogIndexRoute: CatalogIndexRoute,
   ApiPublicAcademiaFileRoute: ApiPublicAcademiaFileRoute,
+  ApiPublicCatalogoDimensaoCriarRoute: ApiPublicCatalogoDimensaoCriarRoute,
   ApiPublicCatalogoFileRoute: ApiPublicCatalogoFileRoute,
   ApiPublicCatalogoPlanilhaAplicarRoute: ApiPublicCatalogoPlanilhaAplicarRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
