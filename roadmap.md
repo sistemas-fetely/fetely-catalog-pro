@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Porta SNCF `/api/public/catalogo-dimensao-cadastrar` para grupo/coleção/cor, reutilizando a criação do importador, com idempotência, auditoria e testes; não publicar
+- [x] Porta SNCF `/api/public/catalogo-dimensao-cadastrar` para grupo/coleção/cor, reutilizando a criação do importador, com idempotência, auditoria e testes; 114 testes, tipagem/build e 401 real conferidos; não publicado
 
 - [x] Porta SNCF de cadastro idempotente de coleções, com autenticação Vault, auditoria e cinco testes; rota real sem token retorna 401, sem criar coleções reais nem publicar
 
