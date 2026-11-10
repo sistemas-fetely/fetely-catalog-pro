@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
-import { PRODUCT_FIELDS, type CatalogRow } from './catalogSpreadsheet';
+import { PRODUCT_FIELDS, normalizeName, type CatalogLists, type CatalogRow, type Dimension, type NewValue } from './catalogSpreadsheet';
 
 export type CatalogClient = SupabaseClient<Database>;
 export interface ProductAuditMeta { usuarioId: string; usuarioNome: string }
@@ -38,8 +38,68 @@ export async function saveProductFields(client: CatalogClient, code: string, pat
   if (error) throw new Error(`Produto atualizado; auditoria falhou: ${error.message}`);
   return newRow;
 }
-export async function loadCatalogLists(client: CatalogClient) {
+export async function loadCatalogLists(client: CatalogClient): Promise<CatalogLists> {
   const results = await Promise.all([client.from('produto_grupos').select('id,nome,categoria_id'), client.from('produto_colecoes').select('id,nome'), client.from('produto_cores').select('id,nome'), client.from('produto_canal_dim').select('slug'), client.from('produto_categorias').select('id,nome')]);
   for (const result of results) if (result.error) throw new Error(result.error.message);
   return { grupo: results[0].data ?? [], colecao: results[1].data ?? [], cor: results[2].data ?? [], canais: (results[3].data ?? []).map(row => row.slug), categorias: results[4].data ?? [] };
+}
+
+export type CatalogDimensionInput = Omit<NewValue, 'key'>;
+export interface CatalogDimensionAudit {
+  quem: { id: string; nome: string };
+  origem: 'planilha_sharepoint';
+}
+export interface CatalogDimensionValue extends Dimension { criado: boolean }
+
+const dimensionLabels = { grupo: 'Grupo', colecao: 'Coleção', cor: 'Cor' } as const;
+
+/** Shared by the manual spreadsheet importer and the authenticated SNCF door. */
+export async function createCatalogDimensionValue(
+  client: CatalogClient,
+  value: CatalogDimensionInput,
+  lists?: CatalogLists,
+  audit?: CatalogDimensionAudit,
+): Promise<CatalogDimensionValue> {
+  const table = value.kind === 'grupo' ? 'produto_grupos' : value.kind === 'colecao' ? 'produto_colecoes' : 'produto_cores';
+  const fresh = await loadCatalogLists(client);
+  const existing = fresh[value.kind].find(dimension =>
+    normalizeName(dimension.nome) === normalizeName(value.nome)
+    && (value.kind !== 'grupo' || dimension.categoria_id === value.categoriaId));
+  if (existing) return { ...existing, criado: false };
+  if (value.kind === 'grupo' && !value.categoriaId) throw new Error(`Grupo ${value.nome}: categoria não encontrada para criar este valor`);
+
+  const { data: created, error } = await client.from(table).insert({
+    nome: value.nome,
+    ...(value.kind === 'grupo' ? { categoria_id: value.categoriaId } : {}),
+  } as never).select('id,nome').single();
+  if (error) throw new Error(error.message);
+
+  const dimension: Dimension = {
+    id: created.id,
+    nome: created.nome,
+    ...(value.kind === 'grupo' ? { categoria_id: value.categoriaId } : {}),
+  };
+  lists?.[value.kind].push(dimension);
+
+  if (audit) {
+    // External SNCF identities stay in quem; only an existing FOP profile fills the FK.
+    const { data: profile, error: profileError } = await client.from('profiles').select('id').eq('id', audit.quem.id).maybeSingle();
+    if (profileError) throw new Error(`Dimensão criada; auditoria falhou: ${profileError.message}`);
+    const { error: auditError } = await client.from('catalog_audit').insert({
+      usuario_id: profile?.id ?? null,
+      usuario_nome: audit.quem.nome,
+      produto_sku: `dimensao:${value.kind}:${created.id}`,
+      produto_nome: `${dimensionLabels[value.kind]}: ${created.nome}`,
+      acao: 'criado',
+      campos_alterados: {
+        [value.kind]: { antes: null, depois: created.nome },
+        ...(value.kind === 'grupo' ? { categoria_id: value.categoriaId } : {}),
+        origem: audit.origem,
+        quem: audit.quem,
+      },
+    } as never);
+    if (auditError) throw new Error(`Dimensão criada; auditoria falhou: ${auditError.message}`);
+  }
+
+  return { ...dimension, criado: true };
 }
