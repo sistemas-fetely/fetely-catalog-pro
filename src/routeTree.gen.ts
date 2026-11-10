@@ -64,6 +64,7 @@ import { Route as PortalProvisoesRouteImport } from './routes/portal.provisoes'
 import { Route as ReunioesImportarRouteImport } from './routes/reunioes.importar'
 import { Route as StandLeadsRouteImport } from './routes/stand.leads'
 import { Route as ApiPublicAcademiaFileRouteImport } from './routes/api/public/academia-file'
+import { Route as ApiPublicCatalogoDimensaoCadastrarRouteImport } from './routes/api/public/catalogo-dimensao-cadastrar'
 import { Route as ApiPublicCatalogoDimensaoCriarRouteImport } from './routes/api/public/catalogo-dimensao-criar'
 import { Route as ApiPublicCatalogoFileRouteImport } from './routes/api/public/catalogo-file'
 import { Route as ApiPublicCatalogoPlanilhaAplicarRouteImport } from './routes/api/public/catalogo-planilha-aplicar'
@@ -346,6 +347,12 @@ const ApiPublicAcademiaFileRoute = ApiPublicAcademiaFileRouteImport.update({
   path: '/api/public/academia-file',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCatalogoDimensaoCadastrarRoute =
+  ApiPublicCatalogoDimensaoCadastrarRouteImport.update({
+    id: '/api/public/catalogo-dimensao-cadastrar',
+    path: '/api/public/catalogo-dimensao-cadastrar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCatalogoDimensaoCriarRoute =
   ApiPublicCatalogoDimensaoCriarRouteImport.update({
     id: '/api/public/catalogo-dimensao-criar',
@@ -431,6 +438,7 @@ export interface FileRoutesByFullPath {
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
+  '/api/public/catalogo-dimensao-cadastrar': typeof ApiPublicCatalogoDimensaoCadastrarRoute
   '/api/public/catalogo-dimensao-criar': typeof ApiPublicCatalogoDimensaoCriarRoute
   '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/catalogo-planilha-aplicar': typeof ApiPublicCatalogoPlanilhaAplicarRoute
@@ -492,6 +500,7 @@ export interface FileRoutesByTo {
   '/catalog': typeof CatalogIndexRoute
   '/portal': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
+  '/api/public/catalogo-dimensao-cadastrar': typeof ApiPublicCatalogoDimensaoCadastrarRoute
   '/api/public/catalogo-dimensao-criar': typeof ApiPublicCatalogoDimensaoCriarRoute
   '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/catalogo-planilha-aplicar': typeof ApiPublicCatalogoPlanilhaAplicarRoute
@@ -555,6 +564,7 @@ export interface FileRoutesById {
   '/catalog/': typeof CatalogIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/api/public/academia-file': typeof ApiPublicAcademiaFileRoute
+  '/api/public/catalogo-dimensao-cadastrar': typeof ApiPublicCatalogoDimensaoCadastrarRoute
   '/api/public/catalogo-dimensao-criar': typeof ApiPublicCatalogoDimensaoCriarRoute
   '/api/public/catalogo-file': typeof ApiPublicCatalogoFileRoute
   '/api/public/catalogo-planilha-aplicar': typeof ApiPublicCatalogoPlanilhaAplicarRoute
@@ -619,6 +629,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/portal/'
     | '/api/public/academia-file'
+    | '/api/public/catalogo-dimensao-cadastrar'
     | '/api/public/catalogo-dimensao-criar'
     | '/api/public/catalogo-file'
     | '/api/public/catalogo-planilha-aplicar'
@@ -680,6 +691,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/portal'
     | '/api/public/academia-file'
+    | '/api/public/catalogo-dimensao-cadastrar'
     | '/api/public/catalogo-dimensao-criar'
     | '/api/public/catalogo-file'
     | '/api/public/catalogo-planilha-aplicar'
@@ -742,6 +754,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/portal/'
     | '/api/public/academia-file'
+    | '/api/public/catalogo-dimensao-cadastrar'
     | '/api/public/catalogo-dimensao-criar'
     | '/api/public/catalogo-file'
     | '/api/public/catalogo-planilha-aplicar'
@@ -798,6 +811,7 @@ export interface RootRouteChildren {
   AcademiaIndexRoute: typeof AcademiaIndexRoute
   CatalogIndexRoute: typeof CatalogIndexRoute
   ApiPublicAcademiaFileRoute: typeof ApiPublicAcademiaFileRoute
+  ApiPublicCatalogoDimensaoCadastrarRoute: typeof ApiPublicCatalogoDimensaoCadastrarRoute
   ApiPublicCatalogoDimensaoCriarRoute: typeof ApiPublicCatalogoDimensaoCriarRoute
   ApiPublicCatalogoFileRoute: typeof ApiPublicCatalogoFileRoute
   ApiPublicCatalogoPlanilhaAplicarRoute: typeof ApiPublicCatalogoPlanilhaAplicarRoute
@@ -1192,6 +1206,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAcademiaFileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/catalogo-dimensao-cadastrar': {
+      id: '/api/public/catalogo-dimensao-cadastrar'
+      path: '/api/public/catalogo-dimensao-cadastrar'
+      fullPath: '/api/public/catalogo-dimensao-cadastrar'
+      preLoaderRoute: typeof ApiPublicCatalogoDimensaoCadastrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/catalogo-dimensao-criar': {
       id: '/api/public/catalogo-dimensao-criar'
       path: '/api/public/catalogo-dimensao-criar'
@@ -1320,6 +1341,8 @@ const rootRouteChildren: RootRouteChildren = {
   AcademiaIndexRoute: AcademiaIndexRoute,
   CatalogIndexRoute: CatalogIndexRoute,
   ApiPublicAcademiaFileRoute: ApiPublicAcademiaFileRoute,
+  ApiPublicCatalogoDimensaoCadastrarRoute:
+    ApiPublicCatalogoDimensaoCadastrarRoute,
   ApiPublicCatalogoDimensaoCriarRoute: ApiPublicCatalogoDimensaoCriarRoute,
   ApiPublicCatalogoFileRoute: ApiPublicCatalogoFileRoute,
   ApiPublicCatalogoPlanilhaAplicarRoute: ApiPublicCatalogoPlanilhaAplicarRoute,
