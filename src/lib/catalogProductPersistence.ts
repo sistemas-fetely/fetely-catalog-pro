@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
-import { PRODUCT_FIELDS, type CatalogRow } from './catalogSpreadsheet';
+import { PRODUCT_FIELDS, normalizeName, type CatalogLists, type CatalogRow, type Dimension, type NewValue } from './catalogSpreadsheet';
 
 export type CatalogClient = SupabaseClient<Database>;
 export interface ProductAuditMeta { usuarioId: string; usuarioNome: string }

@@ -1,6 +1,6 @@
-import { loadCatalogLists } from "./catalogProductPersistence";
+import { createCatalogDimensionValue, loadCatalogLists } from "./catalogProductPersistence";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeName, type CatalogLists, type NewValue } from "./catalogSpreadsheet";
+import { type CatalogLists, type NewValue } from "./catalogSpreadsheet";
 
 export async function loadLists(): Promise<CatalogLists> {
   return loadCatalogLists(supabase);
