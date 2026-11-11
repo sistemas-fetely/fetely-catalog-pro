@@ -45,6 +45,12 @@ function PhotosPage() {
   const photos = usePhotos();
   const [catalogOpen, setCatalogOpen] = useState(false);
 
+  useEffect(() => {
+    if (!useCatalog.getState().hidratado) {
+      void useCatalog.getState().hydrate();
+    }
+  }, []);
+
   const bytes = photoStorageBytes(photos);
   const warn = bytes > 4 * 1024 * 1024;
 
@@ -209,6 +215,9 @@ function CorTab({
     [products],
   );
   const [categoria, setCategoria] = useState(initialCategoria || categorias[0] || "");
+  useEffect(() => {
+    if (!categorias.includes(categoria)) setCategoria(categorias[0] ?? "");
+  }, [categorias, categoria]);
   const colecoes = useMemo(
     () =>
       Array.from(
