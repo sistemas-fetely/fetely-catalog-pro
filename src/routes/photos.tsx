@@ -14,6 +14,7 @@ import { PhotoUploadModal } from "@/components/photos/PhotoUploadModal";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import { CatalogPdfModal } from "@/components/photos/CatalogPdfModal";
 import { productGroupLabel } from "@/lib/plateNames";
+import { photoProducts } from "@/lib/photoProducts";
 
 const searchSchema = z.object({
   tab: fallback(z.enum(["colecao", "cor"]), "colecao").default("colecao"),
@@ -27,6 +28,10 @@ export const Route = createFileRoute("/photos")({
     meta: [
       { title: "Gerenciar Fotos — Fetély B2B" },
       { name: "description", content: "Upload de fotos por coleção e por cor." },
+      { property: "og:title", content: "Gerenciar Fotos — Fetély B2B" },
+      { property: "og:description", content: "Fotos do catálogo Fetély por coleção e por cor." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PhotosPage,
@@ -36,6 +41,7 @@ function PhotosPage() {
   const { tab, colecao: paramCol, categoria: paramCat } = Route.useSearch();
   const navigate = Route.useNavigate();
   const products = useCatalog((s) => s.products);
+  const targets = useMemo(() => photoProducts(products), [products]);
   const photos = usePhotos();
   const [catalogOpen, setCatalogOpen] = useState(false);
 
@@ -93,9 +99,9 @@ function PhotosPage() {
       </div>
 
       {tab === "colecao" ? (
-        <ColecaoTab products={products} photos={photos} />
+        <ColecaoTab products={targets} photos={photos} />
       ) : (
-        <CorTab products={products} photos={photos} initialColecao={paramCol} initialCategoria={paramCat} />
+        <CorTab products={targets} photos={photos} initialColecao={paramCol} initialCategoria={paramCat} />
       )}
 
       {catalogOpen && <CatalogPdfModal onClose={() => setCatalogOpen(false)} />}
