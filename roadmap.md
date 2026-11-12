@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Reformular Novo pedido B2C conforme a referência SNCF: cards, resumo lateral, barra no celular, validações básicas e resultado; preservar ponte/edição/outras abas, sem banco/edge/publicação
+- [ ] Conferir o formulário B2C no preview com leituras reais, parar antes de `balcao_criar` e conferir o resultado com dados locais simulados, sem gravação real
+
 - [x] Aba Estoque na Venda B2C: consulta por CD, filtros combinados, indicadores, ordenação e cards no celular; 17 testes e estados simulados desktop/celular conferidos; somente frontend, sem banco/edge/publicação
 - [ ] Conferir saldo real na aba Estoque — a ponte retornou `tipo 'balcao_estoque' desconhecido.` na sessão comercial real; a aba mostra a mensagem e permite repetir, mas depende de o serviço reconhecer a consulta
 
