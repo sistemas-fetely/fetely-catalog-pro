@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Reformular Novo pedido B2C conforme a referência SNCF: cards, resumo lateral, barra no celular, validações básicas e resultado; preservar ponte/edição/outras abas, sem banco/edge/publicação
-- [ ] Conferir o formulário B2C no preview com leituras reais, parar antes de `balcao_criar` e conferir o resultado com dados locais simulados, sem gravação real
+- [x] Reformular Novo pedido B2C conforme a referência SNCF: cards, resumo lateral, barra no celular, validações básicas e resultado; ponte/edição/outras abas preservadas, 23 testes passaram, sem banco/edge/publicação
+- [x] Conferir o formulário B2C no preview: CDs/produtos/fotos/cotação reais, formulário/edição/resultado com dados locais simulados, zero chamadas de criação ou alteração; desktop 1280 e celulares 390/320 conferidos. Diferenças: resumo abaixo do cabeçalho fixo; barra acima da navegação FOP; expedição em observacao; sem imprimir (não existia). O cabeçalho compartilhado transborda em 320px, fora do escopo; o formulário cabe.
 
 - [x] Aba Estoque na Venda B2C: consulta por CD, filtros combinados, indicadores, ordenação e cards no celular; 17 testes e estados simulados desktop/celular conferidos; somente frontend, sem banco/edge/publicação
 - [ ] Conferir saldo real na aba Estoque — a ponte retornou `tipo 'balcao_estoque' desconhecido.` na sessão comercial real; a aba mostra a mensagem e permite repetir, mas depende de o serviço reconhecer a consulta
