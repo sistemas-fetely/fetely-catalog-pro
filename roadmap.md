@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Aba Estoque na Venda B2C: consulta por CD, filtros combinados, indicadores, ordenação e cards no celular; 17 testes e estados simulados desktop/celular conferidos; somente frontend, sem banco/edge/publicação
+- [ ] Conferir saldo real na aba Estoque — a ponte retornou `tipo 'balcao_estoque' desconhecido.` na sessão comercial real; a aba mostra a mensagem e permite repetir, mas depende de o serviço reconhecer a consulta
+
 - [x] Porta SNCF `/api/public/catalogo-dimensao-cadastrar` para grupo/coleção/cor, reutilizando a criação do importador, com idempotência, auditoria e testes; 114 testes, tipagem/build e 401 real conferidos; não publicado
 
 - [x] Porta SNCF de cadastro idempotente de coleções, com autenticação Vault, auditoria e cinco testes; rota real sem token retorna 401, sem criar coleções reais nem publicar

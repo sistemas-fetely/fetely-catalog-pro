@@ -26,6 +26,7 @@ import { useAuth } from "@/store/authStore";
 import { balcao, salvarAlteracaoBalcao, type AlteracaoBalcao } from "@/hooks/useBalcao";
 import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
+import { EstoqueTab } from "@/components/balcao/EstoqueTab";
 
 export const Route = createFileRoute("/venda-b2c")({
   head: () => ({
@@ -280,10 +281,11 @@ function VendaB2cPage() {
         <h1 className="font-display text-2xl text-text-primary">Venda B2C (Balcão)</h1>
       </div>
       <Tabs defaultValue="novo">
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-1 sm:inline-flex sm:h-9 sm:w-auto">
           <TabsTrigger value="novo">Novo pedido</TabsTrigger>
           <TabsTrigger value="meus">Meus pedidos</TabsTrigger>
           <TabsTrigger value="todos">Todos os pedidos</TabsTrigger>
+          <TabsTrigger value="estoque">Estoque</TabsTrigger>
         </TabsList>
         <TabsContent value="novo">
           <NovoPedidoTab />
@@ -293,6 +295,9 @@ function VendaB2cPage() {
         </TabsContent>
         <TabsContent value="todos">
           <MeusPedidosTab escopo="todos" />
+        </TabsContent>
+        <TabsContent value="estoque">
+          <EstoqueTab cdPadrao={CD_PADRAO} />
         </TabsContent>
       </Tabs>
     </div>
