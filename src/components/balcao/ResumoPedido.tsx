@@ -1,9 +1,20 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Loader2, X } from "lucide-react";
 import { brl, type Pendencia } from "@/lib/balcaoPedido";
 import { ProdutoThumb } from "./ProdutoThumb";
 import { PAGAMENTO_ICON } from "./PagamentoCard";
@@ -11,11 +22,19 @@ import { entregaLabel } from "./EntregaCard";
 import type { Item, MeioPagamento, ModoEntrega } from "./types";
 
 export function ResumoPedido({ cliente, itens, valorItens, desconto, motivoDesconto, frete, modo, cd, total, pagamento, parcelas,
-  pendencia, onPendencia, onSubmit, disabled, enviando, edicao, somenteLeitura, motivo, onMotivo, pagamentoRefeito }: {
+  pendencia, onPendencia, onSubmit, disabled, enviando, edicao, somenteLeitura, motivo, onMotivo, pagamentoRefeito, onCancelar, temConteudo }: {
   cliente: string; itens: Item[]; valorItens: number; desconto: number; motivoDesconto: string; frete: number | null; modo: ModoEntrega; cd: string;
   total: number; pagamento: MeioPagamento | null; parcelas: number; pendencia: Pendencia | null; onPendencia: () => void;
   onSubmit: () => void; disabled: boolean; enviando: boolean; edicao: boolean; somenteLeitura: boolean; motivo: string; onMotivo: (v: string) => void; pagamentoRefeito?: string;
+  onCancelar?: () => void; temConteudo?: boolean;
 }) {
+  const [confirmarCancelamento, setConfirmarCancelamento] = useState(false);
+  const mostrarCancelar = !!onCancelar && !edicao;
+  const pedirCancelamento = () => {
+    if (!onCancelar) return;
+    if (temConteudo) setConfirmarCancelamento(true);
+    else onCancelar();
+  };
   const Icon = pagamento ? PAGAMENTO_ICON[pagamento] : null;
   const textoMeio = pagamento ? { pix: "PIX · link Safrapay", cartao: `Cartão · até ${parcelas}x`, cartao_maquininha: modo === "balcao" ? "Cartão maquininha · NSU" : "Cartão maquininha · comprovante", bonificacao: "Bonificação · sem cobrança" }[pagamento] : "Pagamento não selecionado";
   const botao = somenteLeitura ? "Somente leitura" : edicao ? "Salvar alterações" : "Criar pedido";
@@ -39,15 +58,49 @@ export function ResumoPedido({ cliente, itens, valorItens, desconto, motivoDesco
           {pagamentoRefeito && <p role="status" className="rounded-md border border-warning/50 bg-warning/10 p-3 text-sm text-warning">{pagamentoRefeito}</p>}
           {edicao && !somenteLeitura && <div className="space-y-1.5"><Label htmlFor="balcao-motivo-alteracao">Motivo da alteração *</Label><Textarea id="balcao-motivo-alteracao" rows={2} value={motivo} onChange={e => onMotivo(e.target.value)} disabled={enviando} /></div>}
           {pendencia && <Button variant="link" className="h-auto w-full justify-start whitespace-normal p-0 text-left text-sm text-destructive" onClick={onPendencia}>{pendencia.mensagem}</Button>}
-          <div className="hidden lg:block">{acao}</div>
+          <div className="hidden lg:block">{acao}{mostrarCancelar && (
+            <Button variant="outline" className="mt-2 h-11 w-full px-4" disabled={enviando} onClick={pedirCancelamento}>
+              Cancelar pedido
+            </Button>
+          )}</div>
         </CardContent>
       </Card>
     </aside>
     <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 md:bottom-0 lg:hidden">
       <div className="sticky bottom-0 flex items-center justify-between gap-3 border-t bg-background/95 px-4 py-3 backdrop-blur">
         <div className="min-w-0"><p className="text-xs text-muted-foreground">Total</p><p className="text-2xl font-semibold">{brl(total)}</p></div>
+        {mostrarCancelar && (
+          <Button variant="ghost" size="sm" aria-label="Cancelar pedido" className="h-9 shrink-0 gap-1 px-2 text-xs text-muted-foreground" disabled={enviando} onClick={pedirCancelamento}>
+            <X className="h-4 w-4 shrink-0" />
+            Cancelar
+          </Button>
+        )}
         <div className="min-w-0 max-w-[60%]">{acao}</div>
       </div>
     </div>
+    {mostrarCancelar && (
+      <AlertDialog open={confirmarCancelamento} onOpenChange={setConfirmarCancelamento}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar este pedido?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Os itens e o cliente serão descartados. O CD selecionado é mantido.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setConfirmarCancelamento(false);
+                onCancelar?.();
+              }}
+            >
+              Cancelar pedido
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    )}
   </>;
 }

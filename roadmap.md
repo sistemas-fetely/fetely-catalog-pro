@@ -58,3 +58,5 @@
 - [x] Adicionar campo "Preço site (B2C)" na aba Preços (products.preco_site)
 - [x] preco_site em productToRow/rowToProduct e tipo Product
 - [x] Typecheck + build OK
+
+- [x] Botão "Cancelar pedido" no resumo da Venda B2C (só criação), com confirmação e foco na busca do cliente

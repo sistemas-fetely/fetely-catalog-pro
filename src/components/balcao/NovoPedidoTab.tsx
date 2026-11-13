@@ -621,6 +621,14 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
     setCriado(null);
   };
 
+  // Cancelar só existe na criação: reaproveita o mesmo reset do "Novo pedido" do resultado.
+  const cancelarPedido = () => {
+    limparTudo();
+    toast.info("Pedido cancelado");
+    setTimeout(() => document.getElementById("balcao-busca-cliente")?.focus(), 0);
+  };
+  const temConteudo = itens.length > 0 || !!clienteSel || Object.values(form).some(v => v.trim() !== "");
+
   const total = opcaoSel?.valor_total ?? (detalhe && !pedidoMudou ? detalhe.pedido.valor_liquido : subtotalLocal);
   const pagamentoRefeito = detalhe && (meioMudou || Math.abs(total - detalhe.pedido.valor_liquido) > 0.005) ?
     `Pagamento será refeito: ${brl(detalhe.pedido.valor_liquido)} → ${brl(total)} · ${{ pix: "PIX", cartao: "Cartão link", cartao_maquininha: "Cartão maquininha", bonificacao: "Bonificação" }[pagamento ?? "pix"]}` : undefined;
@@ -767,7 +775,8 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
         desconto={opcaoSel?.desconto_pedido ?? 0} motivoDesconto={benPedidoMotivo} frete={opcaoSel?.frete_cobrado ?? (detalhe && !entregaMudou ? detalhe.pedido.valor_frete : null)}
         modo={modoSel} cd={cdRotulo} total={total} pagamento={pagamento} parcelas={maxParcelas} pendencia={pendencia} onPendencia={focarPendencia}
         onSubmit={submit} disabled={detalhe ? !podeSalvar : !podeCriar} enviando={criando} edicao={!!detalhe} somenteLeitura={!!detalhe && !podeEditar}
-        motivo={motivoAlteracao} onMotivo={setMotivoAlteracao} pagamentoRefeito={pagamentoRefeito} />
+        motivo={motivoAlteracao} onMotivo={setMotivoAlteracao} pagamentoRefeito={pagamentoRefeito}
+        onCancelar={detalhe ? undefined : cancelarPedido} temConteudo={temConteudo} />
     </div>
   </div>;
 }
