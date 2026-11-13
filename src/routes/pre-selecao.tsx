@@ -36,7 +36,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { fetchCNPJ, formatCNPJ, isValidCNPJLength } from "@/lib/cnpj";
 import { toast } from "sonner";
 import { SEGMENTO_LABEL, type SegmentoCliente } from "@/types/preSelecao";
-import { buildPreSelecao, encodePreSelecao, itemFromProductQty, submitPreSelecaoRemote, PUBLIC_SITE_URL } from "@/lib/preSelecao";
+import { buildPreSelecao, encodePreSelecao, itemFromProductQty, PUBLIC_SITE_URL } from "@/lib/preSelecao";
 import { enviarPreSelecaoPublica } from "@/lib/preSelecao.functions";
 import { usePreSelecao } from "@/store/preSelecaoStore";
 import { formatBRL, halfBox, nearestMultiple } from "@/lib/format";
@@ -749,14 +749,9 @@ function DadosEmpresaModal({
       try {
         await enviarPreSelecao({ data: pre });
       } catch (e) {
-        console.warn("[pre-selecao] função do servidor falhou; tentando envio direto", e);
-        try {
-          await submitPreSelecaoRemote(pre);
-        } catch (fallbackError) {
-          console.error("[pre-selecao] falha ao enviar remoto", fallbackError);
-          toast.error("Não foi possível enviar. Tente novamente.");
-          return;
-        }
+        console.error("[pre-selecao] falha ao enviar remoto", e);
+        toast.error("Não foi possível enviar. Tente novamente.");
+        return;
       }
       // 2) Marca a jornada como enviada + evento final.
       if (sid) {

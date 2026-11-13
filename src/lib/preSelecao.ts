@@ -234,12 +234,6 @@ export function fromDbRow(r: DbRow): PreSelecao {
   };
 }
 
-/** Insere a pré-seleção no backend. Usado pelo catálogo público (anon). */
-export async function submitPreSelecaoRemote(pre: PreSelecao): Promise<void> {
-  const { error } = await supabase.from("pre_selecoes").insert(toDbRow(pre));
-  if (error) throw error;
-}
-
 /** Busca pré-seleções do backend (RLS filtra por vendedor/admin). */
 export async function fetchPreSelecoesRemote(): Promise<PreSelecao[]> {
   const { data, error } = await supabase

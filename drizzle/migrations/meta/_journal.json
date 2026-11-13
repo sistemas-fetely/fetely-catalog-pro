@@ -99,6 +99,13 @@
       "when": 1794493940513,
       "tag": "0013_secure_selected_catalog_access_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794534390093,
+      "tag": "0014_tighten_selected_open_rules",
+      "breakpoints": true
     }
   ]
 }
