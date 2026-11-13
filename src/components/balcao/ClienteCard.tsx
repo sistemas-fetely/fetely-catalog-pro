@@ -33,7 +33,7 @@ export function ClienteCard({ cliente, novo, edicao, podeCliente, form, onCampo,
             <span className="font-semibold">{c.nome}</span><span className="text-xs text-muted-foreground">{cpfPrivado(c.cpf)}{c.telefone ? ` · ${c.telefone}` : ""}</span>
           </Button>
         </li>)}</ul>}
-        {!buscando && !erro && busca.trim().length >= 2 && !resultados.length && <p className="text-sm text-muted-foreground">Nenhum cliente encontrado</p>}
+        {!buscando && !erro && busca.trim().length >= 2 && !resultados.length && <><p className="text-sm text-muted-foreground">Nenhum cliente pessoa física encontrado.</p><p className="text-xs text-muted-foreground">A busca é por nome, CPF ou telefone. Empresas (CNPJ) entram pelo pedido B2B.</p></>}
       </>}
       {cliente && <div className="flex items-start justify-between gap-3 rounded-md border p-3">
         <div className="min-w-0 space-y-1"><p className="font-semibold">{cliente.nome}</p><p className="break-words text-sm text-muted-foreground">{cpfPrivado(cliente.cpf)}{cliente.telefone ? ` · ${cliente.telefone}` : ""}{cliente.email ? ` · ${cliente.email}` : ""}</p>
