@@ -180,6 +180,20 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+/* Event sales keep the existing mobile search row, without duplicate search
+ * controls or a fixed-height header covering the sales form. Other CDs are unchanged. */
+@media (width < 48rem) {
+  body:has([data-balcao-evento="true"]) header {
+    height: auto;
+  }
+  body:has([data-balcao-evento="true"]) header > div:first-child {
+    gap: 0.25rem;
+  }
+  body:has([data-balcao-evento="true"]) header [aria-label="Buscar"] {
+    display: none;
+  }
+}
+
 /* ================================================================
  * IMPRESSÃO — apenas área do pedido visível, papel branco
  * ================================================================ */

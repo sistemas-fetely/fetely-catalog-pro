@@ -14,7 +14,7 @@ import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
 import { balcao, salvarAlteracaoBalcao, type AlteracaoBalcao } from "@/hooks/useBalcao";
 import { fetchCEP, formatCPF as maskCpf, formatCEP as maskCep, digits as soDigitos } from "@/lib/documento";
-import { brl, juntarObservacao, modalidadesVisiveis, pendenciaBasica, separarObservacao, type Pendencia } from "@/lib/balcaoPedido";
+import { brl, entregaImediata, exigeEnderecoEntrega, juntarObservacao, normalizarNsu, pendenciaBasica, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, type Pendencia } from "@/lib/balcaoPedido";
 import { CD_PADRAO, FORM_VAZIO, type BalcaoCliente, type BalcaoProduto, type Beneficio, type CdInfo, type ClienteForm, type Cotacao, type Item, type MeioPagamento, type ModoEntrega, type PedidoCriado, type PedidoDetalhe } from "./types";
 import { ClienteCard } from "./ClienteCard";
 import { ItensCard } from "./ItensCard";
@@ -57,7 +57,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   formInicial.cep = maskCep(formInicial.cep);
   const cdInicial = String(enderecoOriginal.centro_codigo ?? freteOriginal.centro_codigo ?? CD_PADRAO.codigo);
   const modoInicialRaw = String(enderecoOriginal.modo ?? enderecoOriginal.modal ?? detalhe?.pedido.modal ?? "retirada").toLowerCase();
-  const modoInicial: ModoEntrega = modoInicialRaw === "sedex" || modoInicialRaw === "pac" || modoInicialRaw === "frete_fetely" ? modoInicialRaw : "retirada";
+  const modoInicial: ModoEntrega = modoInicialRaw === "sedex" || modoInicialRaw === "pac" || modoInicialRaw === "frete_fetely" || modoInicialRaw === "balcao" ? modoInicialRaw : "retirada";
   const [motivoAlteracao, setMotivoAlteracao] = useState("");
   const [resultadoEdicao, setResultadoEdicao] = useState<Record<string, unknown> | null>(null);
   const [clienteBase, setClienteBase] = useState(formInicial);
@@ -78,6 +78,9 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   // (b0) CD de origem (Site SP / Show Room) — vem do SNCF; fallback Site SP
   const [cds, setCds] = useState<CdInfo[]>([CD_PADRAO]);
   const [cdSel, setCdSel] = useState<string>(cdInicial);
+  const [balcaoPorCd, setBalcaoPorCd] = useState<Record<string, boolean>>({});
+  // Retain the last quoted capability while recalculating or clearing the next sale.
+  const modoBalcao = balcaoPorCd[cdSel] ?? (!!detalhe && modoInicial === "balcao");
   const cdRotulo = cds.find((c) => c.codigo === cdSel)?.rotulo ?? CD_PADRAO.rotulo;
 
   // Fotos do catálogo (mesma fonte do catálogo): garante o store carregado nesta rota.
@@ -126,6 +129,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
 
   // (e) Pagamento
   const [pagamento, setPagamento] = useState<MeioPagamento | null>(detalhe?.pedido.pagamento === "sem_pagamento" ? "bonificacao" : detalhe?.pedido.pagamento ?? "pix");
+  const [nsu, setNsu] = useState(String(enderecoOriginal.nsu ?? ""));
   const [maxParcelas, setMaxParcelas] = useState(1);
   const observacaoInicial = separarObservacao(detalhe?.pedido.observacao ?? "");
   const [observacao, setObservacao] = useState(observacaoInicial.observacao);
@@ -267,6 +271,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   useEffect(() => { if (motivosBonif.error) registrarErro("pagamento", motivosBonif.error, "Erro ao carregar motivos"); }, [motivosBonif.error, registrarErro]);
   const bonifOk = bonifAutorizado.trim().length >= 2 && !!bonifMotivo;
   const escolherMeio = (p: MeioPagamento) => {
+    if (modoBalcao && p === "bonificacao") return;
     setPagamento(p);
     if (p === "bonificacao") {
       setBenPedidoTipo("nenhum");
@@ -309,14 +314,13 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
       };
       if (seq !== quoteSeq.current) return null;
       setCotacao(c);
-      setModoSel(atual => {
-        if (!c.opcoes.some(o => o.modo === atual && o.ok)) return "retirada";
-        const oculto = modalidadesVisiveis(c.opcoes).oculto;
-        return atual === oculto ? oculto === "pac" ? "sedex" : "pac" : atual;
-      });
+      const imediato = somenteBalcao(c.opcoes);
+      setBalcaoPorCd(prev => prev[cdSel] === imediato ? prev : { ...prev, [cdSel]: imediato });
+      setModoSel(atual => selecionarModoEntrega(c.opcoes, atual));
+      if (imediato) setPagamento(atual => atual === "bonificacao" ? null : atual);
       return c;
     } catch (e) {
-      if (seq === quoteSeq.current) { setCotacao(null); setModoSel("retirada"); erroCotacao.current = e instanceof Error ? e.message : "Erro ao calcular entrega"; registrarErro("entrega", e, "Erro ao calcular entrega"); }
+      if (seq === quoteSeq.current) { setCotacao(null); setModoSel(atual => atual === "balcao" ? atual : "retirada"); erroCotacao.current = e instanceof Error ? e.message : "Erro ao calcular entrega"; registrarErro("entrega", e, "Erro ao calcular entrega"); }
       return null;
     } finally {
       if (seq === quoteSeq.current) setCalculando(false);
@@ -398,12 +402,12 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
 
   // Basic input validation only; stock, discounts and final pricing remain SNCF-owned.
   const cepValido = (enderecoAtual?.cep ?? "").length === 8;
-  const emailObrigatorio = pagamento === "cartao";
-  const entregaOk = modoSel === "retirada" || (cotacao !== null && opcaoSel !== null && cepValido);
+  const emailObrigatorio = modoBalcao || pagamento === "cartao";
+  const entregaOk = modoSel === "retirada" || (cotacao !== null && opcaoSel !== null && (modoBalcao || cepValido));
   const pendenciaCriacao = pendenciaBasica({ clienteSelecionado: clienteSel !== null, novoCliente: modoNovoCliente,
     form, cpf: detalhe ? form.cpf : clienteSel?.cpf ?? form.cpf, itens, modo: modoSel, cotando: calculando,
     entregaDisponivel: entregaOk, motivoBeneficioOk: motivoOk, pagamento,
-    bonificacaoOk: !!detalhe || bonifOk, emailCartaoOk: !emailObrigatorio || !!clienteSel || form.email.trim().includes("@") });
+    bonificacaoOk: !!detalhe || bonifOk, emailCartaoOk: !emailObrigatorio || !!clienteSel || form.email.trim().includes("@"), nsu });
   const podeCriar = !pendenciaCriacao && !criando;
 
   const normalizarCampo = (k: string, v: string) => ["cpf", "cep", "telefone"].includes(k) ? soDigitos(v) : v.trim();
@@ -446,7 +450,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
         cot = await recotar();
         if (!cot || !cot.opcoes.some(o => o.modo === modoSel && o.ok)) throw new Error(erroCotacao.current || "Não foi possível recalcular a entrega. Tente de novo.");
       }
-      const entrega = modoSel === "retirada" ? { modo: modoSel, centro_codigo: cdSel, beneficio } : { modo: modoSel, centro_codigo: cdSel, cotacao_id: cot?.cotacao_id, endereco: enderecoAtual, beneficio };
+      const entrega = modoSel === "balcao" ? entregaImediata(cdSel, pagamento, nsu) : modoSel === "retirada" ? { modo: modoSel, centro_codigo: cdSel, beneficio } : { modo: modoSel, centro_codigo: cdSel, cotacao_id: cot?.cotacao_id, endereco: enderecoAtual, beneficio };
       const r = await salvarAlteracaoBalcao({ fop_profile_id: userId, pedido_id: detalhe.pedido.id, motivo: motivoAlteracao, cliente: clientePatch, pedidoAlterado: pedidoMudou, meioAlterado: meioMudou, itens: itensPayload, entrega, observacao: observacaoCompleta, meio: pagamento as AlteracaoBalcao["meio"] });
       setResultadoEdicao(r);
       setCriado({ pedido_id: detalhe.pedido.id, id_externo: detalhe.pedido.id_externo, valor_total: Number(r.valor_total ?? detalhe.pedido.valor_liquido), link_pagamento: typeof r.link_pagamento === "string" ? r.link_pagamento : null, pix_copia_cola: typeof r.pix_copia_cola === "string" ? r.pix_copia_cola : null, link_erro: typeof r.link_erro === "string" ? r.link_erro : null, avisos: Array.isArray(r.avisos) ? r.avisos as PedidoCriado["avisos"] : [] });
@@ -479,7 +483,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
       }
 
       const clientePayload = clienteSel
-        ? { parceiro_id: clienteSel.id }
+        ? { parceiro_id: clienteSel.id, ...(modoSel === "balcao" ? { email: form.email.trim() } : {}) }
         : {
             nome: form.nome.trim(),
             cpf: soDigitos(form.cpf),
@@ -494,11 +498,14 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
             uf: form.uf,
           };
 
-      if (modoSel !== "retirada" && (!cot || !enderecoAtual)) {
+      if (exigeEnderecoEntrega(modoSel) && (!cot || !enderecoAtual)) {
         throw new Error("Informe o endereço e recalcule a entrega. Tente de novo.");
       }
+      if (modoSel === "balcao" && (!cot || !somenteBalcao(cot.opcoes) || !cot.opcoes.some(o => o.modo === "balcao" && o.ok))) {
+        throw new Error("A entrega precisa de uma cotação válida. Tente de novo.");
+      }
       const entregaPayload =
-        modoSel === "retirada"
+        modoSel === "balcao" ? entregaImediata(cdSel, pagamento, nsu) : modoSel === "retirada"
           ? { modo: "retirada", centro_codigo: cdSel, beneficio }
           : {
               modo: modoSel,
@@ -559,6 +566,14 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   };
 
   const limparTudo = () => {
+    const proxima = prepararProximaVenda(cdSel, modoBalcao);
+    quoteSeq.current += 1;
+    cepSeq.current += 1;
+    setCalculando(false);
+    setBuscandoCep(false);
+    setBuscandoCliente(false);
+    setBuscandoProduto(false);
+    erroCotacao.current = "";
     setBuscaCliente("");
     setClientesAchados([]);
     setClienteSel(null);
@@ -568,7 +583,8 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
     setProdutosAchados([]);
     setItens([]);
     setCotacao(null);
-    setModoSel("retirada");
+    setCdSel(proxima.centro_codigo);
+    setModoSel(proxima.modo);
     setBenAberto(false);
     setBenPedidoTipo("nenhum");
     setBenPedidoValor("");
@@ -576,9 +592,11 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
     setBenFreteTipo("nenhum");
     setBenFreteValor("");
     setBenFreteMotivo("");
-    setPagamento("pix");
+    setPagamento(proxima.pagamento);
+    setNsu(proxima.nsu);
     setBonifAutorizado("");
     setBonifObs("");
+    if (modoBalcao) setBonifMotivo("");
     setMaxParcelas(1);
     setObservacao("");
     setExpedicao("");
@@ -595,7 +613,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
     resultadoEdicao={resultadoEdicao} totalAnterior={detalhe?.pedido.valor_liquido} gerandoLink={gerandoLink}
     onGerarLink={() => void gerarNovoLink()} onNovo={detalhe ? onVoltar : limparTudo}
     onAbrir={() => detalhe ? onVoltar?.() : onAbrirPedido?.(criado.pedido_id)} onFechar={onFechar ?? onVoltar ?? limparTudo} erro={erros.salvar} />;
-  return <div className="space-y-4 pb-32 lg:pb-0">
+  return <div data-balcao-evento={modoBalcao ? "true" : undefined} className="space-y-4 pb-32 lg:pb-0">
     {detalhe && <div className="space-y-2"><Button variant="outline" onClick={onVoltar}>Voltar para meus pedidos</Button>
       <h2 className="text-lg font-medium">{detalhe.pedido.id_externo}</h2>
       <p className="text-sm text-muted-foreground">{detalhe.pedido.situacao ?? detalhe.pedido.estagio} · {detalhe.pedido.pagamento} · Total {brl(detalhe.pedido.valor_liquido)}{detalhe.pedido.nf_numero ? ` · NF ${detalhe.pedido.nf_numero}` : ""}</p>
@@ -605,7 +623,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3 lg:gap-6">
       <div className="min-w-0 space-y-4 lg:col-span-2">
         {!detalhe && <Card className="rounded-lg"><CardHeader className="p-4 sm:p-6"><CardTitle className="text-base tracking-normal">CD</CardTitle></CardHeader><CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
-          <Select value={cdSel} onValueChange={setCdSel} disabled={criando}><SelectTrigger aria-label="CD" className="h-10 w-full"><SelectValue /></SelectTrigger><SelectContent>{cds.map(c => <SelectItem key={c.codigo} value={c.codigo}>{c.rotulo}{c.padrao ? " (padrão)" : ""}</SelectItem>)}</SelectContent></Select>
+          <Select value={cdSel} onValueChange={codigo => { setCdSel(codigo); if (balcaoPorCd[codigo]) { setModoSel("balcao"); setPagamento(atual => atual === "bonificacao" ? null : atual); } else if (modoBalcao) setModoSel("retirada"); }} disabled={criando}><SelectTrigger aria-label="CD" className="h-10 w-full"><SelectValue /></SelectTrigger><SelectContent>{cds.map(c => <SelectItem key={c.codigo} value={c.codigo}>{c.rotulo}{c.padrao ? " (padrão)" : ""}</SelectItem>)}</SelectContent></Select>
           {erros.cd && <p role="alert" className="mt-2 text-sm text-destructive">{erros.cd}</p>}
         </CardContent></Card>}
         <ClienteCard cliente={clienteSel} novo={modoNovoCliente} edicao={!!detalhe} podeCliente={podeCliente} form={form} onCampo={onCampo}
@@ -614,11 +632,11 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
           onNovo={() => { setClienteSel(null); setForm(FORM_VAZIO); setModoNovoCliente(true); }}
           onTrocar={() => { setClienteSel(null); setForm(FORM_VAZIO); setBuscaCliente(""); }}
           onCancelar={() => { setModoNovoCliente(false); setForm(FORM_VAZIO); }} buscandoCep={buscandoCep} onCepBlur={() => void buscarCep()}
-          emailObrigatorio={emailObrigatorio} disabled={criando} erro={erros.cliente} erroCep={erros.cep} />
+          emailObrigatorio={emailObrigatorio} modoBalcao={modoBalcao} disabled={criando} erro={erros.cliente} erroCep={erros.cep} />
         <ItensCard busca={buscaProduto} onBusca={setBuscaProduto} buscando={buscandoProduto} resultados={produtosAchados} itens={itens}
           cd={cdRotulo} disabled={!podeItens || criando} onAdicionar={adicionarItem} onQuantidade={setQtd} onRemover={removerItem} erro={erros.itens} />
         <EntregaCard form={form} onCampo={onCampo} onCepBlur={() => void buscarCep()} buscandoCep={buscandoCep}
-          cotacao={cotacao} cotando={calculando} modo={modoSel} onModo={setModoSel} cd={cdRotulo} disabled={!podeItens || criando}
+          cotacao={cotacao} cotando={calculando} modo={modoSel} onModo={setModoSel} cd={cdRotulo} modoBalcao={modoBalcao} disabled={!podeItens || criando}
           enderecoDisabled={!!detalhe && !podeItens && !podeCliente || criando} erro={erros.entrega} erroCep={erros.cep} />
         <fieldset disabled={!podeItens || criando}>
       {/* (d) Benefício */}
@@ -715,7 +733,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
 
 
         </fieldset>
-        <PagamentoCard pagamento={pagamento} onPagamento={escolherMeio} onSairBonificacao={sairBonificacao} edicao={!!detalhe}
+        <PagamentoCard pagamento={pagamento} onPagamento={escolherMeio} onSairBonificacao={sairBonificacao} edicao={!!detalhe} modoBalcao={modoBalcao} nsu={nsu} onNsu={valor => setNsu(normalizarNsu(valor))}
           disabled={!podeMeio || criando || (!!detalhe && bonif)} parcelas={maxParcelas} onParcelas={setMaxParcelas}
           autorizado={bonifAutorizado} onAutorizado={setBonifAutorizado} motivo={bonifMotivo} onMotivo={setBonifMotivo}
           observacao={bonifObs} onObservacao={setBonifObs} motivos={motivosBonif.data ?? []} carregandoMotivos={motivosBonif.isLoading}

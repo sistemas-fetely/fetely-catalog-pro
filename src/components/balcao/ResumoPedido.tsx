@@ -17,7 +17,7 @@ export function ResumoPedido({ cliente, itens, valorItens, desconto, motivoDesco
   onSubmit: () => void; disabled: boolean; enviando: boolean; edicao: boolean; somenteLeitura: boolean; motivo: string; onMotivo: (v: string) => void; pagamentoRefeito?: string;
 }) {
   const Icon = pagamento ? PAGAMENTO_ICON[pagamento] : null;
-  const textoMeio = pagamento ? { pix: "PIX · link Safrapay", cartao: `Cartão · até ${parcelas}x`, cartao_maquininha: "Cartão maquininha · comprovante", bonificacao: "Bonificação · sem cobrança" }[pagamento] : "Pagamento não selecionado";
+  const textoMeio = pagamento ? { pix: "PIX · link Safrapay", cartao: `Cartão · até ${parcelas}x`, cartao_maquininha: modo === "balcao" ? "Cartão maquininha · NSU" : "Cartão maquininha · comprovante", bonificacao: "Bonificação · sem cobrança" }[pagamento] : "Pagamento não selecionado";
   const botao = somenteLeitura ? "Somente leitura" : edicao ? "Salvar alterações" : "Criar pedido";
   const acao = <div onClick={() => { if (pendencia && !enviando) onPendencia(); }}><Button size="lg" className="h-11 w-full px-4" disabled={disabled} onClick={onSubmit}>{enviando && <Loader2 className="animate-spin" />}{botao}</Button></div>;
   return <>
@@ -30,7 +30,7 @@ export function ResumoPedido({ cliente, itens, valorItens, desconto, motivoDesco
           <Separator />
           <div className="space-y-3 text-sm"><div className="flex justify-between gap-3"><span className="text-muted-foreground">Itens ({itens.reduce((s, i) => s + i.quantidade, 0)} peças)</span><span>{brl(valorItens)}</span></div>
             {desconto > 0 && <div className="flex justify-between gap-3"><span className="min-w-0 text-muted-foreground">Desconto{motivoDesconto && <small className="block break-words">{motivoDesconto}</small>}</span><span className="shrink-0 text-success">− {brl(desconto)}</span></div>}
-            <div className="flex justify-between gap-3"><span className="text-muted-foreground">Frete <small className="block">{entregaLabel(modo, cd)}</small></span><span className="shrink-0">{frete == null ? "—" : frete === 0 ? "Grátis" : brl(frete)}</span></div>
+            <div className="flex justify-between gap-3"><span className="min-w-0 text-muted-foreground">Frete <small className="block">{entregaLabel(modo, cd)}</small></span><span className="shrink-0">{frete == null ? "—" : modo === "balcao" ? "Sem frete" : frete === 0 ? "Grátis" : brl(frete)}</span></div>
           </div>
           <Separator />
           <div className="flex flex-wrap items-baseline justify-between gap-2"><span className="font-medium">Total</span><span className="text-3xl font-semibold">{brl(total)}</span></div>

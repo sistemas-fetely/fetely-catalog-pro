@@ -12,7 +12,7 @@ export type CdInfo = { codigo: string; rotulo: string; padrao: boolean };
 export const CD_PADRAO: CdInfo = { codigo: "SITE-SP", rotulo: "Site SP", padrao: true };
 export const saldoDo = (p: BalcaoProduto) => p.disponivel ?? p.disponivel_site_sp ?? 0;
 export type Item = BalcaoProduto & { quantidade: number };
-export type ModoEntrega = "retirada" | "sedex" | "pac" | "frete_fetely";
+export type ModoEntrega = "retirada" | "sedex" | "pac" | "frete_fetely" | "balcao";
 export type OpcaoEntrega = {
   modo: ModoEntrega; ok: boolean; valor_itens: number; desconto_pedido: number; frete_cobrado: number;
   valor_total: number; prazo_dias: number | null; gratis: boolean; fonte: string | null;
@@ -27,6 +27,7 @@ export type PedidoCriado = {
   pix_copia_cola?: string | null; link_erro?: string | null; endereco_gravado_no_cadastro?: boolean;
   avisos?: { sku?: string; aviso: string }[];
 };
+export type PagamentoDeclarado = { ok: true; id_externo: string; meio: string; estagio: string };
 export type PedidoDetalhe = {
   pedido: {
     id: string; id_externo: string; estagio: string | null; situacao: string | null;

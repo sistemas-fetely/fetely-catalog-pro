@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Adicionar modo Balcão conforme as opções SNCF: entrega imediata, e-mail obrigatório, NSU e confirmação de PIX; preservar outros CDs, sem banco/edge/publicação
+- [x] Conferir venda de evento e resultado com ponte totalmente simulada: maquininha vendido, PIX QR/erro/repetição/vendido, cartão aguardando Safra, próxima venda mantém CD, outro código de evento, retorno ao Site SP; desktop 1280 e celulares 390/360/320 sem rolagem horizontal no evento. Nenhuma criação ou declaração real; topo móvel ajustado só no modo evento.
+
 - [x] Reformular Novo pedido B2C conforme a referência SNCF: cards, resumo lateral, barra no celular, validações básicas e resultado; ponte/edição/outras abas preservadas, 23 testes passaram, sem banco/edge/publicação
 - [x] Conferir o formulário B2C no preview: CDs/produtos/fotos/cotação reais, formulário/edição/resultado com dados locais simulados, zero chamadas de criação ou alteração; desktop 1280 e celulares 390/320 conferidos. Diferenças: resumo abaixo do cabeçalho fixo; barra acima da navegação FOP; expedição em observacao; sem imprimir (não existia). O cabeçalho compartilhado transborda em 320px, fora do escopo; o formulário cabe.
 

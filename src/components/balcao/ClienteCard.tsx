@@ -9,12 +9,12 @@ import { EnderecoFields } from "./EnderecoFields";
 import type { BalcaoCliente, ClienteForm } from "./types";
 
 export function ClienteCard({ cliente, novo, edicao, podeCliente, form, onCampo, busca, onBusca, resultados, buscando,
-  onSelecionar, onNovo, onTrocar, onCancelar, buscandoCep, onCepBlur, emailObrigatorio, disabled, erro, erroCep }: {
+  onSelecionar, onNovo, onTrocar, onCancelar, buscandoCep, onCepBlur, emailObrigatorio, modoBalcao = false, disabled, erro, erroCep }: {
   cliente: BalcaoCliente | null; novo: boolean; edicao: boolean; podeCliente: boolean; form: ClienteForm;
   onCampo: (k: keyof ClienteForm, v: string) => void; busca: string; onBusca: (v: string) => void;
   resultados: BalcaoCliente[]; buscando: boolean; onSelecionar: (c: BalcaoCliente) => void;
   onNovo: () => void; onTrocar: () => void; onCancelar: () => void; buscandoCep: boolean; onCepBlur: () => void;
-  emailObrigatorio: boolean; disabled: boolean; erro?: string; erroCep?: string;
+  emailObrigatorio: boolean; modoBalcao?: boolean; disabled: boolean; erro?: string; erroCep?: string;
 }) {
   return <Card id="balcao-card-cliente" className="rounded-lg scroll-mt-4">
     <CardHeader className="flex-row items-center justify-between gap-2 space-y-0 p-4 sm:p-6">
@@ -41,15 +41,20 @@ export function ClienteCard({ cliente, novo, edicao, podeCliente, form, onCampo,
         </div>
         {!edicao && <Button variant="ghost" size="icon" title="Trocar cliente" aria-label="Trocar cliente" onClick={onTrocar} disabled={disabled}><X /></Button>}
       </div>}
+      {modoBalcao && cliente && !cliente.email && !edicao && <div className="space-y-1.5">
+        <Label htmlFor="balcao-cliente-email">E-mail *</Label>
+        <Input id="balcao-cliente-email" type="email" autoComplete="email" value={form.email} onChange={e => onCampo("email", e.target.value)} disabled={disabled} required />
+        <p className="text-sm text-muted-foreground">A NF vai por e-mail ao cliente</p>
+      </div>}
       {(novo || edicao) && <>
         <fieldset disabled={disabled || !podeCliente} className="grid grid-cols-6 gap-3">
           <div className="col-span-6 space-y-1.5"><Label htmlFor="balcao-cliente-nome">Nome *</Label><Input id="balcao-cliente-nome" autoComplete="name" value={form.nome} onChange={e => onCampo("nome", e.target.value)} /></div>
           <div className="col-span-6 space-y-1.5 sm:col-span-2"><Label htmlFor="balcao-cliente-cpf">CPF *</Label><Input id="balcao-cliente-cpf" inputMode="numeric" placeholder="000.000.000-00" disabled={edicao && !!cliente?.cpf} value={form.cpf} onChange={e => onCampo("cpf", formatCPF(e.target.value))} aria-invalid={!!form.cpf && !isValidCPF(form.cpf)} />{form.cpf && !isValidCPF(form.cpf) && <p className="text-xs text-destructive">CPF inválido</p>}</div>
           <div className="col-span-6 space-y-1.5 sm:col-span-2"><Label htmlFor="balcao-cliente-telefone">Telefone/WhatsApp *</Label><Input id="balcao-cliente-telefone" inputMode="tel" autoComplete="tel" value={form.telefone} onChange={e => onCampo("telefone", e.target.value)} /></div>
-          <div className="col-span-6 space-y-1.5 sm:col-span-2"><Label htmlFor="balcao-cliente-email">E-mail{emailObrigatorio ? " *" : ""}</Label><Input id="balcao-cliente-email" type="email" autoComplete="email" value={form.email} onChange={e => onCampo("email", e.target.value)} /></div>
+          <div className="col-span-6 space-y-1.5 sm:col-span-2"><Label htmlFor="balcao-cliente-email">E-mail{emailObrigatorio ? " *" : ""}</Label><Input id="balcao-cliente-email" type="email" autoComplete="email" required={emailObrigatorio} value={form.email} onChange={e => onCampo("email", e.target.value)} />{modoBalcao && <p className="text-xs text-muted-foreground">A NF vai por e-mail ao cliente</p>}</div>
         </fieldset>
-        {novo && <EnderecoFields form={form} onChange={onCampo} prefixo="balcao-novo-cliente" disabled={disabled} buscandoCep={buscandoCep} onCepBlur={onCepBlur} />}
-        {novo && erroCep && <p role="alert" className="text-sm text-destructive">{erroCep}</p>}
+        {novo && !modoBalcao && <EnderecoFields form={form} onChange={onCampo} prefixo="balcao-novo-cliente" disabled={disabled} buscandoCep={buscandoCep} onCepBlur={onCepBlur} />}
+        {novo && !modoBalcao && erroCep && <p role="alert" className="text-sm text-destructive">{erroCep}</p>}
         {novo && <Button variant="link" className="h-auto p-0" onClick={onCancelar} disabled={disabled}>Cancelar novo cliente</Button>}
       </>}
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}

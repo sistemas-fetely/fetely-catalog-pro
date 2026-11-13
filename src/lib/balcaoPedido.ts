@@ -1,5 +1,5 @@
 import { digits, isValidCPF } from "./documento";
-import type { ClienteForm, ModoEntrega, OpcaoEntrega } from "../components/balcao/types";
+import type { ClienteForm, MeioPagamento, ModoEntrega, OpcaoEntrega } from "../components/balcao/types";
 
 export const brl = (v: number | null | undefined) =>
   (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -21,6 +21,25 @@ export function modalidadesVisiveis(opcoes: OpcaoEntrega[]) {
   return { opcoes: opcoes.filter(o => o.modo !== oculto), oculto };
 }
 
+// The quoted options, never a warehouse code, identify an immediate event sale.
+export const somenteBalcao = (opcoes: OpcaoEntrega[]) => opcoes.length > 0 && opcoes.every(o => o.modo === "balcao");
+export const exigeEnderecoEntrega = (modo: ModoEntrega) => modo !== "retirada" && modo !== "balcao";
+export const normalizarNsu = (valor: string) => valor.replace(/[^a-zA-Z0-9]/g, "");
+export function selecionarModoEntrega(opcoes: OpcaoEntrega[], atual: ModoEntrega): ModoEntrega {
+  if (somenteBalcao(opcoes)) return "balcao";
+  if (!opcoes.some(o => o.modo === atual && o.ok)) return "retirada";
+  const oculto = modalidadesVisiveis(opcoes).oculto;
+  return atual === oculto ? oculto === "pac" ? "sedex" : "pac" : atual;
+}
+export function entregaImediata(centro_codigo: string, pagamento: MeioPagamento | null, nsu: string) {
+  return { modo: "balcao" as const, centro_codigo, ...(pagamento === "cartao_maquininha" ? { nsu: normalizarNsu(nsu) } : {}) };
+}
+export const vendaImediataConcluida = (modo: ModoEntrega, pagamento: MeioPagamento | null, declarado: boolean) =>
+  modo === "balcao" && (pagamento === "cartao_maquininha" || pagamento === "pix" && declarado);
+export const prepararProximaVenda = (centro_codigo: string, imediato: boolean) => ({
+  centro_codigo, modo: imediato ? "balcao" as const : "retirada" as const, pagamento: "pix" as const, nsu: "",
+});
+
 // The bridge has only observacao. Keep the expedition instruction at its start.
 export function separarObservacao(valor: string) {
   if (!valor.startsWith("EXPEDIÇÃO: ")) return { expedicao: "", observacao: valor };
@@ -36,15 +55,16 @@ export function pendenciaBasica(a: {
   clienteSelecionado: boolean; novoCliente: boolean; form: ClienteForm; cpf: string;
   itens: { quantidade: number }[]; modo: ModoEntrega; cotando: boolean; entregaDisponivel: boolean;
   motivoBeneficioOk: boolean; pagamento: string | null; bonificacaoOk: boolean;
-  emailCartaoOk: boolean;
+  emailCartaoOk: boolean; nsu?: string;
 }): Pendencia | null {
   if (!a.clienteSelecionado && !a.novoCliente) return { card: "cliente", campo: "balcao-busca-cliente", mensagem: "Selecione ou cadastre um cliente" };
   if (a.novoCliente && a.form.nome.trim().length < 2) return { card: "cliente", campo: "balcao-cliente-nome", mensagem: "Informe o nome do cliente" };
   if (!isValidCPF(a.cpf)) return { card: "cliente", campo: "balcao-cliente-cpf", mensagem: digits(a.cpf).length ? "Informe um CPF válido" : "CPF obrigatório para a NF" };
   if (a.novoCliente && !digits(a.form.telefone)) return { card: "cliente", campo: "balcao-cliente-telefone", mensagem: "Informe o telefone/WhatsApp" };
+  if (a.modo === "balcao" && !a.form.email.trim().includes("@")) return { card: "cliente", campo: "balcao-cliente-email", mensagem: "Informe o e-mail do cliente — a NF vai por e-mail" };
   if (!a.itens.length) return { card: "itens", campo: "balcao-busca-produto", mensagem: "Adicione um item ao pedido" };
   if (a.itens.some(i => !Number.isInteger(i.quantidade) || i.quantidade <= 0)) return { card: "itens", mensagem: "Informe quantidades inteiras maiores que zero" };
-  if (a.modo !== "retirada") {
+  if (exigeEnderecoEntrega(a.modo)) {
     if (digits(a.form.cep).length !== 8) return { card: "entrega", campo: "balcao-entrega-cep", mensagem: "Informe o CEP de entrega" };
     for (const [campo, rotulo] of [["logradouro", "logradouro"], ["numero", "número"], ["bairro", "bairro"], ["cidade", "cidade"], ["uf", "UF"]] as const) {
       if (!a.form[campo].trim() || (campo === "uf" && a.form.uf.length !== 2)) return { card: "entrega", campo: `balcao-entrega-${campo}`, mensagem: `Informe ${rotulo} do endereço de entrega` };
@@ -54,6 +74,8 @@ export function pendenciaBasica(a: {
   if (!a.entregaDisponivel) return { card: "entrega", mensagem: "A entrega precisa de uma cotação válida" };
   if (!a.motivoBeneficioOk) return { card: "beneficio", mensagem: "Informe o motivo de cada benefício (mín. 3 caracteres)" };
   if (!a.pagamento) return { card: "pagamento", mensagem: "Selecione o meio de pagamento" };
+  if (a.modo === "balcao" && a.pagamento === "bonificacao") return { card: "pagamento", mensagem: "Selecione PIX, cartão maquininha ou cartão link" };
+  if (a.modo === "balcao" && a.pagamento === "cartao_maquininha" && !/^[a-zA-Z0-9]+$/.test(a.nsu ?? "")) return { card: "pagamento", campo: "balcao-nsu", mensagem: "Informe o NSU da maquininha" };
   if (!a.emailCartaoOk) return { card: "cliente", campo: "balcao-cliente-email", mensagem: "Informe o e-mail para o link do cartão" };
   if (a.pagamento === "bonificacao" && !a.bonificacaoOk) return { card: "pagamento", campo: "bonif-autorizado", mensagem: "Informe a autorização e o motivo da bonificação" };
   return null;
