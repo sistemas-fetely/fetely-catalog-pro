@@ -37,7 +37,11 @@ export function modalidadesVisiveis(opcoes: OpcaoEntrega[]) {
   return { opcoes: opcoes.filter(o => o.modo !== oculto), oculto };
 }
 
-// The quoted options, never a warehouse code, identify an immediate event sale.
+// SNCF metadata enables immediate presentation before the first quote; missing flags do not infer a mode.
+export function balcaoDosCds(cds: { codigo: string; balcao?: boolean }[]): Record<string, boolean> {
+  return Object.fromEntries(cds.filter(cd => cd.balcao === true).map(cd => [cd.codigo, true]));
+}
+// The quoted options, never a warehouse code, confirm or adjust an immediate event sale.
 export const somenteBalcao = (opcoes: OpcaoEntrega[]) => opcoes.length > 0 && opcoes.every(o => o.modo === "balcao");
 export const exigeEnderecoEntrega = (modo: ModoEntrega) => modo !== "retirada" && modo !== "balcao";
 export const normalizarNsu = (valor: string) => valor.replace(/[^a-zA-Z0-9]/g, "");

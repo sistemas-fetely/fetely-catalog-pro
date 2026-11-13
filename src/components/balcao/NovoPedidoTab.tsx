@@ -14,7 +14,7 @@ import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
 import { balcao, salvarAlteracaoBalcao, type AlteracaoBalcao } from "@/hooks/useBalcao";
 import { fetchCEP, formatCPF as maskCpf, formatCEP as maskCep, digits as soDigitos } from "@/lib/documento";
-import { brl, enderecoParaCotacao, entregaImediata, exigeEnderecoEntrega, juntarObservacao, normalizarNsu, pendenciaBasica, preencherClientePreservandoEndereco, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, type Pendencia } from "@/lib/balcaoPedido";
+import { balcaoDosCds, brl, enderecoParaCotacao, entregaImediata, exigeEnderecoEntrega, juntarObservacao, normalizarNsu, pendenciaBasica, preencherClientePreservandoEndereco, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, type Pendencia } from "@/lib/balcaoPedido";
 import { CD_PADRAO, FORM_VAZIO, type BalcaoCliente, type BalcaoProduto, type Beneficio, type CdInfo, type ClienteForm, type Cotacao, type Item, type MeioPagamento, type ModoEntrega, type PedidoCriado, type PedidoDetalhe } from "./types";
 import { ClienteCard } from "./ClienteCard";
 import { ItensCard } from "./ItensCard";
@@ -109,6 +109,14 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
           setCds(lista);
           const padrao = lista.find((c) => c.padrao);
           if (padrao && !detalhe) setCdSel(padrao.codigo);
+          if (!detalhe) {
+            const balcões = balcaoDosCds(lista);
+            setBalcaoPorCd(atual => ({ ...balcões, ...atual }));
+            if (balcões[padrao?.codigo ?? cdInicial]) {
+              setModoSel("balcao");
+              setPagamento(atual => atual === "bonificacao" ? null : atual);
+            }
+          }
         }
       } catch (e) {
         if (!cancelled) {

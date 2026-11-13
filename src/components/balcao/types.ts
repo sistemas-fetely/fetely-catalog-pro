@@ -9,7 +9,7 @@ export type BalcaoProduto = {
   sku: string; cod_cadastro: string | null; ean: string | null; nome: string; preco_varejo: number;
   disponivel_site_sp?: number; disponivel?: number; centro?: string; colecao: string | null; cor_nome: string | null;
 };
-export type CdInfo = { codigo: string; rotulo: string; padrao: boolean };
+export type CdInfo = { codigo: string; rotulo: string; padrao: boolean; balcao?: boolean };
 export const CD_PADRAO: CdInfo = { codigo: "SITE-SP", rotulo: "Site SP", padrao: true };
 export const saldoDo = (p: BalcaoProduto) => p.disponivel ?? p.disponivel_site_sp ?? 0;
 export type Item = BalcaoProduto & { quantidade: number };

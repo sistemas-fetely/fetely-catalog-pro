@@ -1,6 +1,6 @@
 // @ts-ignore — bun:test is supplied by the existing test runner.
 import { expect, test } from "bun:test";
-import { cpfPrivado, enderecoParaCotacao, entregaImediata, juntarObservacao, modalidadesVisiveis, normalizarNsu, pendenciaBasica, preencherClientePreservandoEndereco, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, vendaImediataConcluida } from "./balcaoPedido";
+import { balcaoDosCds, cpfPrivado, enderecoParaCotacao, entregaImediata, juntarObservacao, modalidadesVisiveis, normalizarNsu, pendenciaBasica, preencherClientePreservandoEndereco, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, vendaImediataConcluida } from "./balcaoPedido";
 import { FORM_VAZIO, type OpcaoEntrega } from "../components/balcao/types";
 
 const opcao = (modo: "sedex" | "pac", valor: number, prazo: number | null, ok = true): OpcaoEntrega => ({ modo, ok, frete_cobrado: valor, prazo_dias: prazo, valor_itens: 100, desconto_pedido: 0, valor_total: 100 + valor, gratis: false, fonte: null, avisos: [] });
@@ -83,7 +83,15 @@ test("pending quotation blocks submission, benefit and bonification require reas
 
 const evento: OpcaoEntrega = { ...opcao("sedex", 0, null), modo: "balcao", gratis: true };
 const baseEvento = { ...base, modo: "balcao" as const, form: { ...base.form, email: "cliente@example.test" } };
-test("event capability comes only from exclusive balcao options, including a failed immediate quote", () => {
+test("CD marked balcao true enables immediate mode before any quote, independent of warehouse code", () => {
+  expect(balcaoDosCds([{ codigo: "EVENTO-SP", balcao: true }, { codigo: "OUTRO-CD", balcao: true }, { codigo: "SITE-SP", balcao: false }])).toEqual({ "EVENTO-SP": true, "OUTRO-CD": true });
+});
+test("CD without balcao metadata preserves quote-based mode detection, even if named Evento", () => {
+  expect(balcaoDosCds([{ codigo: "EVENTO-SP" }, { codigo: "SITE-SP", balcao: false }])).toEqual({});
+  expect(somenteBalcao([])).toBe(false);
+  expect(somenteBalcao([evento])).toBe(true);
+});
+test("exclusive balcao options confirm event capability, including a failed immediate quote", () => {
   expect(somenteBalcao([evento])).toBe(true);
   expect(somenteBalcao([{ ...evento, ok: false }])).toBe(true);
   expect(somenteBalcao([])).toBe(false);
