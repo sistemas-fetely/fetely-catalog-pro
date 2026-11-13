@@ -14,7 +14,7 @@ import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
 import { balcao, salvarAlteracaoBalcao, type AlteracaoBalcao } from "@/hooks/useBalcao";
 import { fetchCEP, formatCPF as maskCpf, formatCEP as maskCep, digits as soDigitos } from "@/lib/documento";
-import { brl, entregaImediata, exigeEnderecoEntrega, juntarObservacao, normalizarNsu, pendenciaBasica, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, type Pendencia } from "@/lib/balcaoPedido";
+import { brl, enderecoParaCotacao, entregaImediata, exigeEnderecoEntrega, juntarObservacao, normalizarNsu, pendenciaBasica, preencherClientePreservandoEndereco, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, type Pendencia } from "@/lib/balcaoPedido";
 import { CD_PADRAO, FORM_VAZIO, type BalcaoCliente, type BalcaoProduto, type Beneficio, type CdInfo, type ClienteForm, type Cotacao, type Item, type MeioPagamento, type ModoEntrega, type PedidoCriado, type PedidoDetalhe } from "./types";
 import { ClienteCard } from "./ClienteCard";
 import { ItensCard } from "./ItensCard";
@@ -212,20 +212,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   };
   const onCampo = (k: keyof ClienteForm, v: string) => setForm(f => ({ ...f, [k]: v }));
 
-  const enderecoAtual = useMemo(() => {
-    if (clienteSel || modoNovoCliente) {
-      return {
-        cep: soDigitos(form.cep),
-        logradouro: form.logradouro,
-        numero: form.numero,
-        complemento: form.complemento,
-        bairro: form.bairro,
-        cidade: form.cidade,
-        uf: form.uf,
-      };
-    }
-    return null;
-  }, [clienteSel, modoNovoCliente, form]);
+  const enderecoAtual = useMemo(() => enderecoParaCotacao(form), [form]);
 
   const beneficio: Beneficio = useMemo(
     () => ({
@@ -628,15 +615,15 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
         </CardContent></Card>}
         <ClienteCard cliente={clienteSel} novo={modoNovoCliente} edicao={!!detalhe} podeCliente={podeCliente} form={form} onCampo={onCampo}
           busca={buscaCliente} onBusca={setBuscaCliente} resultados={clientesAchados} buscando={buscandoCliente}
-          onSelecionar={c => { setClienteSel(c); const preenchido = { ...FORM_VAZIO }; for (const k of Object.keys(preenchido) as (keyof ClienteForm)[]) preenchido[k] = c[k] ?? ""; preenchido.cpf = maskCpf(preenchido.cpf); preenchido.cep = maskCep(preenchido.cep); setForm(preenchido); setClientesAchados([]); }}
-          onNovo={() => { setClienteSel(null); setForm(FORM_VAZIO); setModoNovoCliente(true); }}
+          onSelecionar={c => { setClienteSel(c); setForm(atual => preencherClientePreservandoEndereco(atual, c)); setClientesAchados([]); }}
+          onNovo={() => { setClienteSel(null); setForm(atual => preencherClientePreservandoEndereco(atual, null)); setModoNovoCliente(true); }}
           onTrocar={() => { setClienteSel(null); setForm(FORM_VAZIO); setBuscaCliente(""); }}
           onCancelar={() => { setModoNovoCliente(false); setForm(FORM_VAZIO); }} buscandoCep={buscandoCep} onCepBlur={() => void buscarCep()}
           emailObrigatorio={emailObrigatorio} modoBalcao={modoBalcao} disabled={criando} erro={erros.cliente} erroCep={erros.cep} />
         <ItensCard busca={buscaProduto} onBusca={setBuscaProduto} buscando={buscandoProduto} resultados={produtosAchados} itens={itens}
           cd={cdRotulo} disabled={!podeItens || criando} onAdicionar={adicionarItem} onQuantidade={setQtd} onRemover={removerItem} erro={erros.itens} />
         <EntregaCard form={form} onCampo={onCampo} onCepBlur={() => void buscarCep()} buscandoCep={buscandoCep}
-          cotacao={cotacao} cotando={calculando} modo={modoSel} onModo={setModoSel} cd={cdRotulo} modoBalcao={modoBalcao} disabled={!podeItens || criando}
+          cotacao={cotacao} cotando={calculando} semItens={itens.length === 0} modo={modoSel} onModo={setModoSel} cd={cdRotulo} modoBalcao={modoBalcao} disabled={!podeItens || criando}
           enderecoDisabled={!!detalhe && !podeItens && !podeCliente || criando} erro={erros.entrega} erroCep={erros.cep} />
         <fieldset disabled={!podeItens || criando}>
       {/* (d) Benefício */}

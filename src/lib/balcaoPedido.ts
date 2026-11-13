@@ -1,5 +1,21 @@
-import { digits, isValidCPF } from "./documento";
-import type { ClienteForm, MeioPagamento, ModoEntrega, OpcaoEntrega } from "../components/balcao/types";
+import { digits, formatCEP, formatCPF, isValidCPF } from "./documento";
+import { FORM_VAZIO, type BalcaoCliente, type ClienteForm, type MeioPagamento, type ModoEntrega, type OpcaoEntrega } from "../components/balcao/types";
+
+export function enderecoParaCotacao(form: ClienteForm) {
+  const cep = digits(form.cep);
+  if (cep.length !== 8) return null;
+  return { cep, logradouro: form.logradouro, numero: form.numero, complemento: form.complemento,
+    bairro: form.bairro, cidade: form.cidade, uf: form.uf };
+}
+
+export function preencherClientePreservandoEndereco(form: ClienteForm, cliente: BalcaoCliente | null) {
+  const preenchido = { ...FORM_VAZIO };
+  for (const k of Object.keys(preenchido) as (keyof ClienteForm)[]) preenchido[k] = cliente?.[k] ?? "";
+  preenchido.cpf = formatCPF(preenchido.cpf);
+  preenchido.cep = formatCEP(preenchido.cep);
+  const endereco = enderecoParaCotacao(form);
+  return endereco ? { ...preenchido, ...endereco, cep: form.cep } : preenchido;
+}
 
 export const brl = (v: number | null | undefined) =>
   (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

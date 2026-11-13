@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Package, ShoppingBag, Store, Truck, Zap } from "lucide-react";
-import { brl, modalidadesVisiveis } from "@/lib/balcaoPedido";
+import { brl, enderecoParaCotacao, modalidadesVisiveis } from "@/lib/balcaoPedido";
 import { EnderecoFields } from "./EnderecoFields";
 import type { ClienteForm, Cotacao, ModoEntrega } from "./types";
 
@@ -10,9 +10,9 @@ export const ENTREGA_ICON = { retirada: Store, sedex: Zap, pac: Package, frete_f
 export function entregaLabel(modo: ModoEntrega, cd: string) {
   return { retirada: `Retirada no ${cd}`, sedex: "Correios SEDEX", pac: "Correios PAC", frete_fetely: "Frete Fetely", balcao: "Entrega imediata — cliente leva agora" }[modo];
 }
-export function EntregaCard({ form, onCampo, onCepBlur, buscandoCep, cotacao, cotando, modo, onModo, cd, modoBalcao = false, disabled, enderecoDisabled, erro, erroCep }: {
+export function EntregaCard({ form, onCampo, onCepBlur, buscandoCep, cotacao, cotando, semItens, modo, onModo, cd, modoBalcao = false, disabled, enderecoDisabled, erro, erroCep }: {
   form: ClienteForm; onCampo: (k: keyof ClienteForm, v: string) => void; onCepBlur: () => void; buscandoCep: boolean;
-  cotacao: Cotacao | null; cotando: boolean; modo: ModoEntrega; onModo: (v: ModoEntrega) => void; cd: string;
+  cotacao: Cotacao | null; cotando: boolean; semItens: boolean; modo: ModoEntrega; onModo: (v: ModoEntrega) => void; cd: string;
   disabled: boolean; enderecoDisabled: boolean; modoBalcao?: boolean; erro?: string; erroCep?: string;
 }) {
   const visiveis = modalidadesVisiveis(cotacao?.opcoes ?? []);
@@ -48,7 +48,7 @@ export function EntregaCard({ form, onCampo, onCepBlur, buscandoCep, cotacao, co
               </> : cotando ? <span className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="animate-spin" />cotando…</span> : ok ? <>
                 <span className="flex flex-wrap items-center gap-2"><span className="text-2xl font-semibold">{o ? o.frete_cobrado === 0 ? "Grátis" : brl(o.frete_cobrado) : "—"}</span>{o?.frete_cobrado === 0 && <Badge variant="outline" className="border-success/40 bg-success/10 text-success">Grátis</Badge>}</span>
                 <span className="text-xs text-muted-foreground">{o?.prazo_dias != null ? `Prazo ${o.prazo_dias} dias úteis` : m === "retirada" ? "Retirada no balcão" : ""}</span>
-              </> : <span className="text-xs text-muted-foreground">{o?.erro ?? (form.cep ? "Adicione itens para cotar esta modalidade" : "Informe o CEP para cotar")}</span>}
+              </> : <span className="text-xs text-muted-foreground">{semItens ? "Adicione itens para cotar esta modalidade" : !enderecoParaCotacao(form) ? "Informe o CEP para cotar" : o?.erro || erro || cotacao?.correios_erro || "Modalidade indisponível para este CEP"}</span>}
             </span>
           </Button>;
         })}
