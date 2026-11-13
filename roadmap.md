@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Solicitar publicação da versão atual; URL publicada respondeu HTTP 200. Nova verificação: 17 achados informativos, nenhum crítico. Pré-seleção: INSERT direto anônimo/autenticado bloqueado (42501), leitura anônima vazia e validação da função pública rejeita dados incompletos. Fotos: bucket privado sem arquivos, listagem anônima vazia, upload anônimo e pasta sem lead autenticada bloqueados. 12 testes de Estoque/ponte passaram; nenhum pedido criado.
+- [ ] Concluir envio válido de pré-seleção e leitura/upload de foto da gôndola por gestão/proprietário versus outro representante — conta Sistemas disponível é cliente e bucket não tem fotos; requer sessão comercial autorizada e foto de teste.
+- [ ] Conferir tela e saldo Site SP nesta publicação com sessão comercial — conta Sistemas foi redirecionada ao portal e balcao_cds/balcao_estoque retornaram "Acesso restrito a usuários internos"; bloqueio de cliente confirmado, acesso comercial não verificado.
+
 - [x] Adicionar modo Balcão conforme as opções SNCF: entrega imediata, e-mail obrigatório, NSU e confirmação de PIX; preservar outros CDs, sem banco/edge/publicação
 - [x] Conferir venda de evento e resultado com ponte totalmente simulada: maquininha vendido, PIX QR/erro/repetição/vendido, cartão aguardando Safra, próxima venda mantém CD, outro código de evento, retorno ao Site SP; desktop 1280 e celulares 390/360/320 sem rolagem horizontal no evento. Nenhuma criação ou declaração real; topo móvel ajustado só no modo evento.
 
