@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { EstoqueTab } from "@/components/balcao/EstoqueTab";
 import { NovoPedidoTab } from "@/components/balcao/NovoPedidoTab";
 import { CD_PADRAO, type PedidoDetalhe } from "@/components/balcao/types";
 import { brl } from "@/lib/balcaoPedido";
+import { ITENS_CARRINHO_B2C_KEY, validarItensIniciais, type ItemInicialB2c } from "@/lib/balcaoCarrinho";
 export const Route = createFileRoute("/venda-b2c")({
   head: () => ({
     meta: [
@@ -80,6 +81,29 @@ function copiar(texto: string, rotulo = "Copiado") {
 function VendaB2cPage() {
   const [aba, setAba] = useState("novo");
   const [abrirPedidoId, setAbrirPedidoId] = useState<string | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const authLoading = useAuth(s => s.loading);
+  const consumido = useRef<string | null>(null);
+  const [itensIniciais, setItensIniciais] = useState<ItemInicialB2c[] | undefined>();
+  useEffect(() => {
+    if (authLoading) return;
+    const chave = location.state.__TSR_key ?? "entrada";
+    if (consumido.current === chave) return;
+    consumido.current = chave;
+    let armazenados: unknown;
+    try {
+      const raw = sessionStorage.getItem(ITENS_CARRINHO_B2C_KEY);
+      sessionStorage.removeItem(ITENS_CARRINHO_B2C_KEY);
+      armazenados = raw ? JSON.parse(raw) : undefined;
+    } catch { /* Invalid/unavailable storage must not block the regular B2C screen. */ }
+    const iniciais = validarItensIniciais(location.state.itensDoCarrinho ?? armazenados);
+    if (iniciais.length) { setItensIniciais(iniciais); setAba("novo"); }
+    if (location.state.itensDoCarrinho !== undefined) {
+      void navigate({ to: "/venda-b2c", replace: true, resetScroll: false,
+        state: prev => ({ ...prev, itensDoCarrinho: undefined }) });
+    }
+  }, [location.state, navigate, authLoading]);
   return (
     <div className="mx-auto w-full max-w-screen-2xl px-4 py-6">
       <div className="mb-4 flex items-center gap-2">
@@ -94,7 +118,7 @@ function VendaB2cPage() {
           <TabsTrigger value="estoque">Estoque</TabsTrigger>
         </TabsList>
         <TabsContent value="novo">
-          <NovoPedidoTab onAbrirPedido={id => { setAbrirPedidoId(id); setAba("meus"); }} onFechar={() => setAba("meus")} />
+          <NovoPedidoTab itensIniciais={itensIniciais} onItensIniciaisConsumidos={() => setItensIniciais(undefined)} onAbrirPedido={id => { setAbrirPedidoId(id); setAba("meus"); }} onFechar={() => setAba("meus")} />
         </TabsContent>
         <TabsContent value="meus">
           <MeusPedidosTab escopo="meus" abrirPedidoId={abrirPedidoId} onPedidoAberto={() => setAbrirPedidoId(null)} />

@@ -22,10 +22,12 @@ import { EntregaCard } from "./EntregaCard";
 import { PagamentoCard } from "./PagamentoCard";
 import { ResumoPedido } from "./ResumoPedido";
 import { PedidoResultado } from "./PedidoResultado";
+import { resolverItensDoCarrinho, type ItemInicialB2c } from "@/lib/balcaoCarrinho";
 
 const objeto = (v: unknown): Record<string, unknown> => v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, unknown> : {};
-export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFechar }: {
+export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFechar, itensIniciais, onItensIniciaisConsumidos }: {
   detalhe?: PedidoDetalhe; onVoltar?: () => void; onSalvo?: () => Promise<unknown>; onAbrirPedido?: (id: string) => void; onFechar?: () => void;
+  itensIniciais?: ItemInicialB2c[]; onItensIniciaisConsumidos?: () => void;
 } = {}) {
   const userId = useAuth(s => s.user?.id);
   const [erros, setErros] = useState<Record<string, string>>({});
@@ -78,6 +80,10 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   // (b0) CD de origem (Site SP / Show Room) — vem do SNCF; fallback Site SP
   const [cds, setCds] = useState<CdInfo[]>([CD_PADRAO]);
   const [cdSel, setCdSel] = useState<string>(cdInicial);
+  const [cdsCarregados, setCdsCarregados] = useState(false);
+  const [carregandoCarrinho, setCarregandoCarrinho] = useState(false);
+  const [indisponiveisCarrinho, setIndisponiveisCarrinho] = useState<string[]>([]);
+  const carrinhoConsumido = useRef(false);
   const [balcaoPorCd, setBalcaoPorCd] = useState<Record<string, boolean>>({});
   // Retain the last quoted capability while recalculating or clearing the next sale.
   const modoBalcao = balcaoPorCd[cdSel] ?? (!!detalhe && modoInicial === "balcao");
@@ -106,12 +112,33 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
         if (!cancelled) {
           registrarErro("cd", e, "Erro ao carregar CDs");
         }
+      } finally {
+        if (!cancelled) setCdsCarregados(true);
       }
     })();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (detalhe || !cdsCarregados || !itensIniciais?.length || carrinhoConsumido.current) return;
+    let cancelled = false;
+    setCarregandoCarrinho(true);
+    void resolverItensDoCarrinho(itensIniciais, async sku => {
+      const r = await balcao<{ produtos: BalcaoProduto[] }>("balcao_produto_buscar", { termo: sku, centro_codigo: cdSel });
+      return r.produtos ?? [];
+    }).then(r => {
+      if (cancelled) return;
+      carrinhoConsumido.current = true;
+      setItens(r.itens);
+      setIndisponiveisCarrinho(r.indisponiveis);
+      if (r.erros.length) registrarErro("itens", new Error(r.erros.join("; ")), "Erro ao carregar itens do carrinho");
+      setCarregandoCarrinho(false);
+      onItensIniciaisConsumidos?.();
+    });
+    return () => { cancelled = true; };
+  }, [detalhe, cdsCarregados, itensIniciais, cdSel, registrarErro, onItensIniciaisConsumidos]);
 
   // (c) Entrega
   const [cotacao, setCotacao] = useState<Cotacao | null>(null);
@@ -553,6 +580,9 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   };
 
   const limparTudo = () => {
+    carrinhoConsumido.current = true;
+    setIndisponiveisCarrinho([]);
+    onItensIniciaisConsumidos?.();
     const proxima = prepararProximaVenda(cdSel, modoBalcao);
     quoteSeq.current += 1;
     cepSeq.current += 1;
@@ -610,7 +640,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3 lg:gap-6">
       <div className="min-w-0 space-y-4 lg:col-span-2">
         {!detalhe && <Card className="rounded-lg"><CardHeader className="p-4 sm:p-6"><CardTitle className="text-base tracking-normal">CD</CardTitle></CardHeader><CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
-          <Select value={cdSel} onValueChange={codigo => { setCdSel(codigo); if (balcaoPorCd[codigo]) { setModoSel("balcao"); setPagamento(atual => atual === "bonificacao" ? null : atual); } else if (modoBalcao) setModoSel("retirada"); }} disabled={criando}><SelectTrigger aria-label="CD" className="h-10 w-full"><SelectValue /></SelectTrigger><SelectContent>{cds.map(c => <SelectItem key={c.codigo} value={c.codigo}>{c.rotulo}{c.padrao ? " (padrão)" : ""}</SelectItem>)}</SelectContent></Select>
+          <Select value={cdSel} onValueChange={codigo => { setCdSel(codigo); if (balcaoPorCd[codigo]) { setModoSel("balcao"); setPagamento(atual => atual === "bonificacao" ? null : atual); } else if (modoBalcao) setModoSel("retirada"); }} disabled={criando || carregandoCarrinho}><SelectTrigger aria-label="CD" className="h-10 w-full"><SelectValue /></SelectTrigger><SelectContent>{cds.map(c => <SelectItem key={c.codigo} value={c.codigo}>{c.rotulo}{c.padrao ? " (padrão)" : ""}</SelectItem>)}</SelectContent></Select>
           {erros.cd && <p role="alert" className="mt-2 text-sm text-destructive">{erros.cd}</p>}
         </CardContent></Card>}
         <ClienteCard cliente={clienteSel} novo={modoNovoCliente} edicao={!!detalhe} podeCliente={podeCliente} form={form} onCampo={onCampo}
@@ -621,7 +651,8 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
           onCancelar={() => { setModoNovoCliente(false); setForm(FORM_VAZIO); }} buscandoCep={buscandoCep} onCepBlur={() => void buscarCep()}
           emailObrigatorio={emailObrigatorio} modoBalcao={modoBalcao} disabled={criando} erro={erros.cliente} erroCep={erros.cep} />
         <ItensCard busca={buscaProduto} onBusca={setBuscaProduto} buscando={buscandoProduto} resultados={produtosAchados} itens={itens}
-          cd={cdRotulo} disabled={!podeItens || criando} onAdicionar={adicionarItem} onQuantidade={setQtd} onRemover={removerItem} erro={erros.itens} />
+          cd={cdRotulo} disabled={!podeItens || criando || carregandoCarrinho || (!!itensIniciais?.length && !cdsCarregados)} onAdicionar={adicionarItem} onQuantidade={setQtd} onRemover={removerItem} erro={erros.itens}
+          carregandoCarrinho={carregandoCarrinho || (!!itensIniciais?.length && !cdsCarregados)} indisponiveisCarrinho={indisponiveisCarrinho} />
         <EntregaCard form={form} onCampo={onCampo} onCepBlur={() => void buscarCep()} buscandoCep={buscandoCep}
           cotacao={cotacao} cotando={calculando} semItens={itens.length === 0} modo={modoSel} onModo={setModoSel} cd={cdRotulo} modoBalcao={modoBalcao} disabled={!podeItens || criando}
           enderecoDisabled={!!detalhe && !podeItens && !podeCliente || criando} erro={erros.entrega} erroCep={erros.cep} />

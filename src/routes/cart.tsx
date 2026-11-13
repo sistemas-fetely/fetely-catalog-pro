@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Trash2, Save } from "lucide-react";
+import { ArrowLeft, Trash2, Save, ShoppingBag } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/store/authStore";
 import { useClientes, rowToCliente } from "@/store/clienteStore";
@@ -31,6 +31,7 @@ import { usePhotos, getProdutoPhoto, getColecaoPhoto } from "@/store/photoStore"
 import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
 import { useB2BAdjustment } from "@/store/b2bAdjustmentStore";
 import { B2BAdjustmentPanel } from "@/components/cart/B2BAdjustmentPanel";
+import { ITENS_CARRINHO_B2C_KEY, itensIniciaisDoCarrinho } from "@/lib/balcaoCarrinho";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -191,10 +192,25 @@ function NormalCartPage() {
   const atualizarCotacao = useCotacao((s) => s.atualizarCotacao);
   const atualizarProvisao = useProvisao((s) => s.atualizarProvisao);
   const navigate = useNavigate();
+  const [salvandoPedido, setSalvandoPedido] = useState(false);
+
+  const criarPedidoB2c = () => {
+    const itensDoCarrinho = itensIniciaisDoCarrinho(items);
+    try {
+      sessionStorage.setItem(ITENS_CARRINHO_B2C_KEY, JSON.stringify(itensDoCarrinho));
+    } catch { /* History state remains available when browser storage is blocked. */ }
+    void navigate({ to: "/venda-b2c", state: { itensDoCarrinho } });
+  };
+  const acaoB2c = !isClientePortal && !meta.provisaoEditandoId && !(meta as OrderMeta & { pedidoEditandoId?: string }).pedidoEditandoId ? <>
+    <Button variant="outline" onClick={criarPedidoB2c} disabled={items.length === 0 || salvandoPedido}
+      className="mt-2 h-auto w-full gap-1.5 border-gold/40 px-3 py-1.5 text-[10px] uppercase tracking-wider text-gold hover:bg-gold/10">
+      <ShoppingBag className="h-3 w-3" /> Criar pedido B2C
+    </Button>
+    <p className="mt-1 text-[10px] text-text-muted">Leva os itens para a Venda B2C com preço de varejo e saldo do Site SP — sem mínimo nem condições B2B.</p>
+  </> : null;
 
   const [commercial, setCommercial] = useState<CommercialState | null>(null);
   const [showFinalConfirm, setShowFinalConfirm] = useState(false);
-  const [salvandoPedido, setSalvandoPedido] = useState(false);
   const [showSalvarModelo, setShowSalvarModelo] = useState(false);
   // V21 — modo do desconto por item: "pct" | "abs" (apenas UI; salvo como %)
   const [descMode, setDescMode] = useState<Record<string, "pct" | "abs">>({});
@@ -1209,6 +1225,7 @@ function NormalCartPage() {
                 >
                   {salvandoPedido ? "Salvando..." : "Salvar como Provisão →"}
                 </button>
+                {acaoB2c}
                 <button
                   onClick={() => {
                     if (confirm("Descartar todo o carrinho?")) {
@@ -1260,6 +1277,7 @@ function NormalCartPage() {
                 >
                   {salvandoPedido ? "Salvando..." : isMisto ? "Confirmar pedido + provisão" : "Confirmar pedido"}
                 </button>
+                {acaoB2c}
                 <button
                   onClick={() => {
                     if (confirm("Limpar todo o carrinho?")) {

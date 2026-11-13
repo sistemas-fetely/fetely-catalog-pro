@@ -7,13 +7,16 @@ import { brl } from "@/lib/balcaoPedido";
 import { ProdutoThumb } from "./ProdutoThumb";
 import { saldoDo, type BalcaoProduto, type Item } from "./types";
 
-export function ItensCard({ busca, onBusca, buscando, resultados, itens, cd, disabled, onAdicionar, onQuantidade, onRemover, erro }: {
+export function ItensCard({ busca, onBusca, buscando, resultados, itens, cd, disabled, onAdicionar, onQuantidade, onRemover, erro, carregandoCarrinho, indisponiveisCarrinho }: {
   busca: string; onBusca: (v: string) => void; buscando: boolean; resultados: BalcaoProduto[]; itens: Item[];
   cd: string; disabled: boolean; onAdicionar: (p: BalcaoProduto) => void; onQuantidade: (sku: string, qtd: number) => void; onRemover: (sku: string) => void; erro?: string;
+  carregandoCarrinho?: boolean; indisponiveisCarrinho?: string[];
 }) {
   return <Card id="balcao-card-itens" className="rounded-lg scroll-mt-4">
     <CardHeader className="p-4 sm:p-6"><CardTitle className="text-base tracking-normal">Itens</CardTitle></CardHeader>
     <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
+      {!!indisponiveisCarrinho?.length && <p role="alert" className="break-words text-sm text-warning">Não disponíveis para B2C: {indisponiveisCarrinho.join(", ")}</p>}
+      {carregandoCarrinho && <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Carregando itens do carrinho…</p>}
       <div className="relative">
         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input id="balcao-busca-produto" role="combobox" aria-label="Buscar produto" aria-expanded={resultados.length > 0}
