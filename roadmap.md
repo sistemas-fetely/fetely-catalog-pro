@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] PIX Safra no B2C: inventariar contrato SNCF; centralizar meios; novo/edição/resumo/listas/links e compartilhamento; preservar PIX QR e impedir declaração Safra; testes e preview autenticado sem vendas reais, sem B2B/catálogo/publicação.
+- [x] PIX Safra no B2C: inventário do contrato SNCF; fonte única de meios; novo/edição/resumo/listas/links/WhatsApp/e-mail; PIX QR preservado e declaração Safra ausente. 166 testes passaram, build automático OK; preview autenticado com ponte simulada até criação/troca/listas/erro/retry e celular 390/360/320; sem vendas reais, banco/edge/B2B/catálogo/publicação.
+- [ ] Integração real PIX Safra B2C — no SNCF 2072f93, `recebe-pedido/index.ts:227,243` só gera/devolve link na criação de cartão; `:306–317` só remonta link de cartão; `:273–283` distingue PIX por forma_solicitada, sem regra, devolvendo QR/link local para Safra. SNCF precisa incluir pix_safra/precisa_novo_link_pix e usar fn_vd_meio_atual ou regra_pagamento_id; aceitação e leituras das fn_balcao_* não constam no snapshot e precisam ser conferidas lá. Nenhum fallback/contorno aplicado.
 
 - [x] Carrinho → Venda B2C: projeção read-only de SKU/quantidade, consumo único via state/sessionStorage após login e resolução SNCF no CD padrão; 77 testes e build automático OK. Preview autenticado com respostas B2C simuladas confirmou varejo, saldo insuficiente mantido, aviso por SKU, carrinho intacto, fallback e refresh sem repopular; zero escritas. Lint completo executado: falha por 10.400 erros do projeto (majoritariamente formatação existente); helpers novos sem erros e telas sem erros com a regra de formatação desativada, sete avisos preexistentes. Não publicado.
 
