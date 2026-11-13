@@ -3,6 +3,7 @@
 // vendedor pelo login. Fail-loud: erro do SNCF vira Error com a mensagem original.
 
 import { supabase } from "@/integrations/supabase/client";
+import type { MeioCobrancaB2c } from "@/lib/balcaoPagamento";
 
 export async function balcao<T = Record<string, unknown>>(
   tipo: string,
@@ -48,7 +49,7 @@ export type AlteracaoBalcao = {
   itens: { sku: string; quantidade: number }[];
   entrega: Record<string, unknown>;
   observacao: string;
-  meio: "pix" | "cartao" | "cartao_maquininha";
+  meio: MeioCobrancaB2c;
 };
 
 // Somente coordenação das chamadas; permissões e regras comerciais pertencem ao SNCF.

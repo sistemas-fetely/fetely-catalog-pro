@@ -25,6 +25,18 @@ test("somente meio usa trocar meio", async () => {
   expect(r.calls.map(c => c.tipo)).toEqual(["balcao_trocar_meio"]);
   expect(r.calls[0]?.body.meio).toBe("cartao_maquininha");
 });
+test("PIX Safra mantém a regra própria na troca isolada", async () => {
+  const r = recorder();
+  await salvarAlteracaoBalcao({ ...base, meioAlterado: true, meio: "pix_safra" }, r.chamar);
+  expect(r.calls.map(c => c.tipo)).toEqual(["balcao_trocar_meio"]);
+  expect(r.calls[0]?.body.meio).toBe("pix_safra");
+});
+test("PIX Safra mantém a regra própria na edição comercial após atualizar cliente", async () => {
+  const r = recorder();
+  await salvarAlteracaoBalcao({ ...base, cliente: { email: "cliente@example.test" }, meioAlterado: true, meio: "pix_safra" }, r.chamar);
+  expect(r.calls.map(c => c.tipo)).toEqual(["balcao_cliente_atualizar", "balcao_editar"]);
+  expect(r.calls[1]?.body.meio).toBe("pix_safra");
+});
 test("cliente e meio juntos não usam troca isolada", async () => {
   const r = recorder();
   await salvarAlteracaoBalcao({ ...base, cliente: { email: "novo@example.com" }, meioAlterado: true }, r.chamar);

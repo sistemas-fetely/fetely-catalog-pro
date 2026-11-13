@@ -90,7 +90,7 @@ export function pendenciaBasica(a: {
   if (!a.entregaDisponivel) return { card: "entrega", mensagem: "A entrega precisa de uma cotação válida" };
   if (!a.motivoBeneficioOk) return { card: "beneficio", mensagem: "Informe o motivo de cada benefício (mín. 3 caracteres)" };
   if (!a.pagamento) return { card: "pagamento", mensagem: "Selecione o meio de pagamento" };
-  if (a.modo === "balcao" && a.pagamento === "bonificacao") return { card: "pagamento", mensagem: "Selecione PIX, cartão maquininha ou cartão link" };
+  if (a.modo === "balcao" && a.pagamento === "bonificacao") return { card: "pagamento", mensagem: "Selecione um meio de pagamento para o balcão" };
   if (a.modo === "balcao" && a.pagamento === "cartao_maquininha" && !/^[a-zA-Z0-9]+$/.test(a.nsu ?? "")) return { card: "pagamento", campo: "balcao-nsu", mensagem: "Informe o NSU da maquininha" };
   if (!a.emailCartaoOk) return { card: "cliente", campo: "balcao-cliente-email", mensagem: "Informe o e-mail para o link do cartão" };
   if (a.pagamento === "bonificacao" && !a.bonificacaoOk) return { card: "pagamento", campo: "bonif-autorizado", mensagem: "Informe a autorização e o motivo da bonificação" };

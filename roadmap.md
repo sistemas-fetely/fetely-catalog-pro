@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] PIX Safra no B2C: inventariar contrato SNCF; centralizar meios; novo/edição/resumo/listas/links e compartilhamento; preservar PIX QR e impedir declaração Safra; testes e preview autenticado sem vendas reais, sem B2B/catálogo/publicação.
+
 - [x] Carrinho → Venda B2C: projeção read-only de SKU/quantidade, consumo único via state/sessionStorage após login e resolução SNCF no CD padrão; 77 testes e build automático OK. Preview autenticado com respostas B2C simuladas confirmou varejo, saldo insuficiente mantido, aviso por SKU, carrinho intacto, fallback e refresh sem repopular; zero escritas. Lint completo executado: falha por 10.400 erros do projeto (majoritariamente formatação existente); helpers novos sem erros e telas sem erros com a regra de formatação desativada, sete avisos preexistentes. Não publicado.
 
 - [x] Solicitar publicação da versão atual; URL publicada respondeu HTTP 200. Nova verificação: 17 achados informativos, nenhum crítico. Pré-seleção: INSERT direto anônimo/autenticado bloqueado (42501), leitura anônima vazia e validação da função pública rejeita dados incompletos. Fotos: bucket privado sem arquivos, listagem anônima vazia, upload anônimo e pasta sem lead autenticada bloqueados. 12 testes de Estoque/ponte passaram; nenhum pedido criado.

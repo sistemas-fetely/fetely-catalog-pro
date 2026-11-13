@@ -20,6 +20,7 @@ import { ProdutoThumb } from "./ProdutoThumb";
 import { PAGAMENTO_ICON } from "./PagamentoCard";
 import { entregaLabel } from "./EntregaCard";
 import type { Item, MeioPagamento, ModoEntrega } from "./types";
+import { resumoPagamentoB2c } from "@/lib/balcaoPagamento";
 
 export function ResumoPedido({ cliente, itens, valorItens, desconto, motivoDesconto, frete, modo, cd, total, pagamento, parcelas,
   pendencia, onPendencia, onSubmit, disabled, enviando, edicao, somenteLeitura, motivo, onMotivo, pagamentoRefeito, onCancelar, temConteudo }: {
@@ -36,7 +37,7 @@ export function ResumoPedido({ cliente, itens, valorItens, desconto, motivoDesco
     else onCancelar();
   };
   const Icon = pagamento ? PAGAMENTO_ICON[pagamento] : null;
-  const textoMeio = pagamento ? { pix: "PIX · link Safrapay", cartao: `Cartão · até ${parcelas}x`, cartao_maquininha: modo === "balcao" ? "Cartão maquininha · NSU" : "Cartão maquininha · comprovante", bonificacao: "Bonificação · sem cobrança" }[pagamento] : "Pagamento não selecionado";
+  const textoMeio = resumoPagamentoB2c(pagamento, modo === "balcao", parcelas);
   const botao = somenteLeitura ? "Somente leitura" : edicao ? "Salvar alterações" : "Criar pedido";
   const acao = <div onClick={() => { if (pendencia && !enviando) onPendencia(); }}><Button size="lg" className="h-11 w-full px-4" disabled={disabled} onClick={onSubmit}>{enviando && <Loader2 className="animate-spin" />}{botao}</Button></div>;
   return <>

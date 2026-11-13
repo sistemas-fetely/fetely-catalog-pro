@@ -5,11 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CreditCard, Gift, QrCode, Smartphone } from "lucide-react";
+import { CreditCard, Gift, Link, QrCode, Smartphone } from "lucide-react";
 import type { MeioPagamento } from "./types";
+import { legendaPagamentoB2c, MEIOS_PAGAMENTO_B2C, opcoesPagamentoB2c } from "@/lib/balcaoPagamento";
 
-export const PAGAMENTO_ICON = { pix: QrCode, cartao: CreditCard, cartao_maquininha: Smartphone, bonificacao: Gift };
-const labels = { pix: "PIX", cartao: "Cartão link", cartao_maquininha: "Cartão maquininha", bonificacao: "Bonificação" };
+const icons = { qr: QrCode, link: Link, cartao: CreditCard, maquininha: Smartphone, presente: Gift };
+export const PAGAMENTO_ICON = Object.fromEntries(Object.values(MEIOS_PAGAMENTO_B2C).map(m => [m.codigo, icons[m.icone]])) as Record<MeioPagamento, typeof QrCode>;
 export function PagamentoCard({ pagamento, onPagamento, onSairBonificacao, edicao, modoBalcao = false, nsu = "", onNsu, disabled, parcelas, onParcelas, autorizado, onAutorizado, motivo, onMotivo, observacao, onObservacao, motivos, carregandoMotivos, erroMotivos }: {
   pagamento: MeioPagamento | null; onPagamento: (p: MeioPagamento) => void; onSairBonificacao: () => void; edicao: boolean; disabled: boolean;
   parcelas: number; onParcelas: (n: number) => void; autorizado: string; onAutorizado: (v: string) => void;
@@ -22,13 +23,14 @@ export function PagamentoCard({ pagamento, onPagamento, onSairBonificacao, edica
     <CardHeader className="p-4 sm:p-6"><CardTitle className="text-base tracking-normal">Pagamento</CardTitle></CardHeader>
     <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
       {bonif ? <div className="flex flex-wrap items-center justify-between gap-3"><p className="flex items-center gap-2 text-sm"><Gift className="h-4 w-4" />Sem pagamento — bonificação</p>{!edicao && <Button variant="outline" onClick={onSairBonificacao} disabled={disabled}>Alterar condição</Button>}</div> :
-        <RadioGroup value={pagamento ?? ""} onValueChange={v => onPagamento(v as MeioPagamento)} disabled={disabled} aria-label="Meio de pagamento" className={`grid gap-3 sm:grid-cols-2 ${modoBalcao ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}>
-          {(["pix", "cartao", "cartao_maquininha", "bonificacao"] as const).filter(p => p !== "bonificacao" || !edicao && !modoBalcao).map(p => {
+        <RadioGroup value={pagamento ?? ""} onValueChange={v => onPagamento(v as MeioPagamento)} disabled={disabled} aria-label="Meio de pagamento" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+          {opcoesPagamentoB2c(edicao, modoBalcao).map(meio => {
+            const p = meio.codigo;
             const Icon = PAGAMENTO_ICON[p];
-            const legenda = { pix: modoBalcao ? "QR na tela · cliente pagou" : "QR code · link Safrapay", cartao: `Link Safrapay · até ${parcelas}x`, cartao_maquininha: modoBalcao ? "Pagou na maquininha? Digite o NSU do comprovante." : "Passa na loja · sem link · anexar o comprovante", bonificacao: "Sem cobrança · direto para faturamento" }[p];
+            const legenda = legendaPagamentoB2c(p, modoBalcao, parcelas);
             return <Label key={p} htmlFor={`pagamento-${p}`} className={`flex min-h-36 min-w-0 cursor-pointer flex-col items-start gap-2 rounded-md border p-3 leading-normal ${pagamento === p ? "border-primary bg-primary/5 ring-2 ring-primary/40" : "border-border"} ${disabled ? "cursor-not-allowed opacity-60" : ""}`}>
               <span className="flex w-full justify-between gap-2"><Icon className="h-5 w-5 text-primary" /><RadioGroupItem id={`pagamento-${p}`} value={p} /></span>
-              <span className="text-sm font-medium">{labels[p]}</span><span className="text-xs font-normal text-muted-foreground">{legenda}</span>
+              <span className="text-sm font-medium">{meio.rotulo}</span><span className="text-xs font-normal text-muted-foreground">{legenda}</span>
             </Label>;
           })}
         </RadioGroup>}

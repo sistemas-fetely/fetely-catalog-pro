@@ -23,6 +23,8 @@ import { PagamentoCard } from "./PagamentoCard";
 import { ResumoPedido } from "./ResumoPedido";
 import { PedidoResultado } from "./PedidoResultado";
 import { resolverItensDoCarrinho, type ItemInicialB2c } from "@/lib/balcaoCarrinho";
+import { exigirUrlPagamentoB2c, pagamentoParaCriacaoB2c, rotuloPagamentoB2c, usaLinkPagamentoB2c, type LinkPagamentoB2c } from "@/lib/balcaoPagamento";
+import { LinkPagamento } from "./LinkPagamento";
 
 const objeto = (v: unknown): Record<string, unknown> => v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, unknown> : {};
 export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFechar, itensIniciais, onItensIniciaisConsumidos }: {
@@ -533,11 +535,10 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
         cliente: clientePayload,
         itens: itens.map((i) => ({ sku: i.sku, quantidade: i.quantidade })),
         entrega: entregaPayload,
-        pagamento,
+        ...pagamentoParaCriacaoB2c(pagamento, maxParcelas),
         // bonificacao é o discriminador aceito pelo SNCF: ele grava
         // forma_solicitada=sem_pagamento e mantém seu cálculo de bonificação.
         ...(observacaoCompleta ? { observacao: observacaoCompleta } : {}),
-        ...(pagamento === "cartao" ? { max_parcelas: maxParcelas } : {}),
         ...(pagamento === "bonificacao"
           ? { bonificacao: { autorizado_por: bonifAutorizado.trim(), motivo: bonifMotivo, observacao: bonifObs.trim() || null } }
           : {}),
@@ -562,15 +563,15 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   };
 
   const gerarNovoLink = async () => {
-    if (!criado) return;
+    if (!criado || !usaLinkPagamentoB2c(pagamento)) return;
     setGerandoLink(true);
     try {
-      const r = await balcao<{ url: string; meio?: string }>("balcao_link", {
+      const r = await balcao<LinkPagamentoB2c>("balcao_link", {
         pedido_id: criado.pedido_id,
         forcar_novo: true,
         ...(pagamento === "cartao" ? { max_parcelas: maxParcelas } : {}),
       });
-      setCriado({ ...criado, link_pagamento: r.url, link_erro: null });
+      setCriado({ ...criado, link_pagamento: exigirUrlPagamentoB2c(r), link_erro: null });
       toast.success("Novo link gerado");
     } catch (e) {
       registrarErro("salvar", e, "Erro ao gerar link");
@@ -631,17 +632,19 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
 
   const total = opcaoSel?.valor_total ?? (detalhe && !pedidoMudou ? detalhe.pedido.valor_liquido : subtotalLocal);
   const pagamentoRefeito = detalhe && (meioMudou || Math.abs(total - detalhe.pedido.valor_liquido) > 0.005) ?
-    `Pagamento será refeito: ${brl(detalhe.pedido.valor_liquido)} → ${brl(total)} · ${{ pix: "PIX", cartao: "Cartão link", cartao_maquininha: "Cartão maquininha", bonificacao: "Bonificação" }[pagamento ?? "pix"]}` : undefined;
+    `Pagamento será refeito: ${brl(detalhe.pedido.valor_liquido)} → ${brl(total)} · ${rotuloPagamentoB2c(pagamento)}` : undefined;
   const submit = () => { if (pendencia) { focarPendencia(); return; } void (detalhe ? salvarEdicao() : criarPedido()); };
   if (criado) return <PedidoResultado criado={criado} pagamento={pagamento} clienteNome={clienteSel?.nome ?? form.nome}
-    clienteTelefone={clienteSel?.telefone ?? form.telefone} modo={modoSel} cd={cdRotulo} opcao={opcaoSel} edicao={!!detalhe}
+    clienteTelefone={clienteSel?.telefone ?? form.telefone} clienteEmail={form.email} modo={modoSel} cd={cdRotulo} opcao={opcaoSel} edicao={!!detalhe}
     resultadoEdicao={resultadoEdicao} totalAnterior={detalhe?.pedido.valor_liquido} gerandoLink={gerandoLink}
     onGerarLink={() => void gerarNovoLink()} onNovo={detalhe ? onVoltar : limparTudo}
     onAbrir={() => detalhe ? onVoltar?.() : onAbrirPedido?.(criado.pedido_id)} onFechar={onFechar ?? onVoltar ?? limparTudo} erro={erros.salvar} />;
   return <div data-balcao-evento={modoBalcao ? "true" : undefined} className="space-y-4 pb-32 lg:pb-0">
     {detalhe && <div className="space-y-2"><Button variant="outline" onClick={onVoltar}>Voltar para meus pedidos</Button>
       <h2 className="text-lg font-medium">{detalhe.pedido.id_externo}</h2>
-      <p className="text-sm text-muted-foreground">{detalhe.pedido.situacao ?? detalhe.pedido.estagio} · {detalhe.pedido.pagamento} · Total {brl(detalhe.pedido.valor_liquido)}{detalhe.pedido.nf_numero ? ` · NF ${detalhe.pedido.nf_numero}` : ""}</p>
+      <p className="text-sm text-muted-foreground">{detalhe.pedido.situacao ?? detalhe.pedido.estagio} · {rotuloPagamentoB2c(detalhe.pedido.pagamento)} · Total {brl(detalhe.pedido.valor_liquido)}{detalhe.pedido.nf_numero ? ` · NF ${detalhe.pedido.nf_numero}` : ""}</p>
+      {detalhe.permissoes.eh_dono && !detalhe.pedido.pagamento_confirmado_em && !detalhe.pedido.cancelado_em && usaLinkPagamentoB2c(detalhe.pedido.pagamento) && detalhe.pedido.link_pagamento &&
+        <LinkPagamento url={detalhe.pedido.link_pagamento} nome={detalhe.cliente.nome} telefone={detalhe.cliente.telefone} email={detalhe.cliente.email} pedido={detalhe.pedido.id_externo} total={detalhe.pedido.valor_liquido} />}
       {(detalhe.permissoes.motivo_bloqueio || !podeEditar) && <p role="status" className="rounded-md border p-3 text-sm">{detalhe.permissoes.motivo_bloqueio ?? "Pedido disponível somente para leitura"}</p>}
     </div>}
     {erros.salvar && <p role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">{erros.salvar}</p>}

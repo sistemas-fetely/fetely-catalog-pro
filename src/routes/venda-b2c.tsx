@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Copy, Loader2, MessageCircle, RefreshCw, Search, Store } from "lucide-react";
+import { Copy, Loader2, RefreshCw, Search, Store } from "lucide-react";
 import { useAuth } from "@/store/authStore";
 import { balcao } from "@/hooks/useBalcao";
 import { EstoqueTab } from "@/components/balcao/EstoqueTab";
@@ -16,6 +16,8 @@ import { NovoPedidoTab } from "@/components/balcao/NovoPedidoTab";
 import { CD_PADRAO, type PedidoDetalhe } from "@/components/balcao/types";
 import { brl } from "@/lib/balcaoPedido";
 import { ITENS_CARRINHO_B2C_KEY, validarItensIniciais, type ItemInicialB2c } from "@/lib/balcaoCarrinho";
+import { exigirUrlPagamentoB2c, rotuloPagamentoB2c, usaLinkPagamentoB2c, type LinkPagamentoB2c } from "@/lib/balcaoPagamento";
+import { LinkPagamento } from "@/components/balcao/LinkPagamento";
 export const Route = createFileRoute("/venda-b2c")({
   head: () => ({
     meta: [
@@ -38,6 +40,7 @@ type MeuPedido = {
   situacao: string | null;
   cliente_nome: string | null;
   cliente_telefone: string | null;
+  cliente_email?: string | null;
   valor_liquido: number | null;
   pagamento: string | null;
   pagamento_confirmado_em: string | null;
@@ -51,25 +54,6 @@ type MeuPedido = {
   rastreio_servico: string | null;
   cancelado_em: string | null;
 };
-
-function rotuloPagamento(p: string | null) {
-  if (!p) return "—";
-  if (p === "pix") return "PIX";
-  if (p === "cartao") return "Cartão (link)";
-  if (p === "cartao_maquininha") return "Maquininha";
-  if (p === "bonificacao" || p === "sem_pagamento") return "Bonificação";
-  return p;
-}
-
-const soDigitos = (v: string) => v.replace(/\D/g, "");
-function whatsappUrl(telefone: string | null | undefined, mensagem: string) {
-  const fone = soDigitos(telefone ?? "");
-  return `https://wa.me/55${fone}?text=${encodeURIComponent(mensagem)}`;
-}
-
-function msgWhatsApp(nome: string, idExterno: string, total: number, link: string) {
-  return `Olá ${nome}! Seu pedido ${idExterno} na Fetély ficou em ${brl(total)}. Pague por aqui: ${link}`;
-}
 
 function copiar(texto: string, rotulo = "Copiado") {
   navigator.clipboard
@@ -182,13 +166,14 @@ function MeusPedidosTab({ escopo, abrirPedidoId, onPedidoAberto }: { escopo: "me
   }, [pedidos, busca, filtro, todos, vendedorFiltro]);
 
   const gerarNovoLink = async (p: MeuPedido) => {
+    if (!usaLinkPagamentoB2c(p.pagamento)) return;
     setGerandoLinkId(p.id);
     try {
-      const r = await balcao<{ url: string }>("balcao_link", {
+      const r = await balcao<LinkPagamentoB2c>("balcao_link", {
         pedido_id: p.id,
         forcar_novo: true,
       });
-      copiar(r.url, "Novo link copiado");
+      copiar(exigirUrlPagamentoB2c(r), "Novo link copiado");
       void refetch();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar link");
@@ -333,7 +318,7 @@ function MeusPedidosTab({ escopo, abrirPedidoId, onPedidoAberto }: { escopo: "me
                       </TableCell>
                       <TableCell>
                         <span className="block text-xs text-text-secondary">
-                          {rotuloPagamento(p.pagamento)}
+                          {rotuloPagamentoB2c(p.pagamento)}
                         </span>
                         {p.pagamento === "bonificacao" || p.pagamento === "sem_pagamento" ? (
                           <Badge className="border-sky-500/40 bg-sky-500/10 text-sky-400">Bonificação</Badge>
@@ -388,35 +373,8 @@ function MeusPedidosTab({ escopo, abrirPedidoId, onPedidoAberto }: { escopo: "me
                         </Button>
                         {dono && !pago && !cancelado && (
                           <div className="mt-1 flex flex-col items-start gap-1">
-                            {p.link_pagamento && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => copiar(p.link_pagamento ?? "", "Link copiado")}
-                                >
-                                  <Copy className="mr-1 h-3 w-3" /> Link
-                                </Button>
-                                <Button variant="ghost" size="sm" asChild>
-                                  <a
-                                    href={whatsappUrl(
-                                      p.cliente_telefone,
-                                      msgWhatsApp(
-                                        p.cliente_nome ?? "",
-                                        p.id_externo ?? "",
-                                        p.valor_liquido ?? 0,
-                                        p.link_pagamento,
-                                      ),
-                                    )}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    <MessageCircle className="mr-1 h-3 w-3" /> WhatsApp
-                                  </a>
-                                </Button>
-                              </>
-                            )}
-                            {p.pagamento === "cartao" && (
+                            {usaLinkPagamentoB2c(p.pagamento) && p.link_pagamento && <LinkPagamento compacto url={p.link_pagamento} nome={p.cliente_nome ?? ""} telefone={p.cliente_telefone} email={p.cliente_email} pedido={p.id_externo ?? ""} total={p.valor_liquido ?? 0} />}
+                            {usaLinkPagamentoB2c(p.pagamento) && (
                               <Button
                                 variant="ghost"
                                 size="sm"

@@ -1,4 +1,5 @@
 // Existing SNCF bridge contracts shared by the B2C form and order list.
+import type { MeioPagamentoB2c } from "@/lib/balcaoPagamento";
 export type BalcaoCliente = {
   id: string; nome: string; cpf: string | null; telefone: string | null; email: string | null;
   cep: string | null; logradouro: string | null; numero: string | null; complemento: string | null;
@@ -21,7 +22,7 @@ export type OpcaoEntrega = {
 export type Cotacao = { cotacao_id: string; valida_ate: string; correios_erro: string | null; opcoes: OpcaoEntrega[] };
 export type BeneficioNivel = { tipo: "nenhum" | "pct" | "valor" | "gratis"; valor?: number; motivo: string };
 export type Beneficio = { frete: BeneficioNivel; pedido: BeneficioNivel };
-export type MeioPagamento = "pix" | "cartao" | "cartao_maquininha" | "bonificacao";
+export type MeioPagamento = MeioPagamentoB2c;
 export type PedidoCriado = {
   pedido_id: string; id_externo: string; valor_total: number; link_pagamento: string | null;
   pix_copia_cola?: string | null; link_erro?: string | null; endereco_gravado_no_cadastro?: boolean;
