@@ -1,6 +1,6 @@
 // @ts-ignore — bun:test is supplied by the existing test runner.
 import { expect, test } from "bun:test";
-import { balcaoDosCds, cpfPrivado, enderecoParaCotacao, entregaImediata, juntarObservacao, modalidadesVisiveis, normalizarNsu, pendenciaBasica, preencherClientePreservandoEndereco, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, vendaImediataConcluida } from "./balcaoPedido";
+import { balcaoDosCds, clienteParaCriacaoBalcao, cpfPrivado, enderecoParaCotacao, entregaImediata, juntarObservacao, modalidadesVisiveis, normalizarNsu, pendenciaBasica, pendenciaEnderecoClienteBalcao, preencherClientePreservandoEndereco, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, vendaImediataConcluida } from "./balcaoPedido";
 import { FORM_VAZIO, type OpcaoEntrega } from "../components/balcao/types";
 
 const opcao = (modo: "sedex" | "pac", valor: number, prazo: number | null, ok = true): OpcaoEntrega => ({ modo, ok, frete_cobrado: valor, prazo_dias: prazo, valor_itens: 100, desconto_pedido: 0, valor_total: 100 + valor, gratis: false, fonte: null, avisos: [] });
@@ -31,6 +31,25 @@ const base = { clienteSelecionado: false, novoCliente: true, form: { ...FORM_VAZ
 const enderecoDigitado = { cep: "01001-000", logradouro: "Praça da Sé", numero: "12", complemento: "Sala 3", bairro: "Sé", cidade: "São Paulo", uf: "SP" };
 const clienteCadastro = { id: "cliente-teste", nome: "Cliente", cpf: "52998224725", telefone: "11988887777", email: "cliente@example.test",
   cep: "20040002", logradouro: "Rua do Cadastro", numero: "99", complemento: "Casa", bairro: "Centro", cidade: "Rio de Janeiro", uf: "RJ" };
+test("balcao fiscal address requires an eight-digit CEP", () => {
+  expect(pendenciaEnderecoClienteBalcao({ ...base.form, ...enderecoDigitado, cep: "01001-00" })?.campo).toBe("balcao-cliente-endereco-cep");
+  expect(pendenciaEnderecoClienteBalcao({ ...base.form, ...enderecoDigitado })).toBeNull();
+});
+for (const campo of ["logradouro", "numero", "bairro", "cidade", "uf"] as const) {
+  test(`balcao fiscal address requires ${campo} even for an existing customer`, () => {
+    expect(pendenciaEnderecoClienteBalcao({ ...base.form, ...enderecoDigitado, [campo]: " " })?.campo).toBe(`balcao-cliente-endereco-${campo}`);
+  });
+}
+test("balcao fiscal UF has two characters and complement is optional", () => {
+  expect(pendenciaEnderecoClienteBalcao({ ...base.form, ...enderecoDigitado, uf: "S" })?.campo).toBe("balcao-cliente-endereco-uf");
+  expect(pendenciaEnderecoClienteBalcao({ ...base.form, ...enderecoDigitado, complemento: "" })).toBeNull();
+});
+test("balcao creation sends the fiscal address on both new and registered customer payloads", () => {
+  const form = { ...base.form, ...enderecoDigitado, email: " cliente@example.test " };
+  const endereco = { email: "cliente@example.test", cep: "01001000", logradouro: "Praça da Sé", numero: "12", endereco_complemento: "Sala 3", bairro: "Sé", cidade: "São Paulo", uf: "SP" };
+  expect(clienteParaCriacaoBalcao(form)).toEqual({ nome: "Teste", cpf: "52998224725", telefone: "11999999999", ...endereco });
+  expect(clienteParaCriacaoBalcao(form, "cliente-teste")).toEqual({ parceiro_id: "cliente-teste", ...endereco });
+});
 test("quotation receives an eight-digit CEP and address before selecting or creating a customer", () => {
   const form = { ...FORM_VAZIO, ...enderecoDigitado };
   expect(enderecoParaCotacao(form)).toEqual({ ...enderecoDigitado, cep: "01001000" });

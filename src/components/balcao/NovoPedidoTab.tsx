@@ -14,7 +14,7 @@ import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
 import { balcao, salvarAlteracaoBalcao, type AlteracaoBalcao } from "@/hooks/useBalcao";
 import { fetchCEP, formatCPF as maskCpf, formatCEP as maskCep, digits as soDigitos } from "@/lib/documento";
-import { balcaoDosCds, brl, enderecoParaCotacao, entregaImediata, exigeEnderecoEntrega, juntarObservacao, normalizarNsu, pendenciaBasica, preencherClientePreservandoEndereco, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, type Pendencia } from "@/lib/balcaoPedido";
+import { balcaoDosCds, brl, clienteParaCriacaoBalcao, enderecoParaCotacao, entregaImediata, exigeEnderecoEntrega, juntarObservacao, normalizarNsu, pendenciaBasica, pendenciaEnderecoClienteBalcao, preencherClientePreservandoEndereco, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, type Pendencia } from "@/lib/balcaoPedido";
 import { CD_PADRAO, FORM_VAZIO, type BalcaoCliente, type BalcaoProduto, type Beneficio, type CdInfo, type ClienteForm, type Cotacao, type Item, type MeioPagamento, type ModoEntrega, type PedidoCriado, type PedidoDetalhe } from "./types";
 import { ClienteCard } from "./ClienteCard";
 import { ItensCard } from "./ItensCard";
@@ -249,6 +249,13 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   };
   const onCampo = (k: keyof ClienteForm, v: string) => setForm(f => ({ ...f, [k]: v }));
 
+  // Auto-lookup only in new immediate sales; other modes keep their existing blur lookup.
+  useEffect(() => {
+    if (detalhe || !modoBalcao || soDigitos(form.cep).length !== 8) return;
+    const t = setTimeout(() => { void buscarCep(); }, 300);
+    return () => { clearTimeout(t); cepSeq.current += 1; };
+  }, [form.cep, modoBalcao, detalhe]);
+
   const enderecoAtual = useMemo(() => enderecoParaCotacao(form), [form]);
 
   const beneficio: Beneficio = useMemo(
@@ -428,7 +435,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   const cepValido = (enderecoAtual?.cep ?? "").length === 8;
   const emailObrigatorio = modoBalcao || pagamento === "cartao";
   const entregaOk = modoSel === "retirada" || (cotacao !== null && opcaoSel !== null && (modoBalcao || cepValido));
-  const pendenciaCriacao = pendenciaBasica({ clienteSelecionado: clienteSel !== null, novoCliente: modoNovoCliente,
+  const pendenciaCriacao = (!detalhe && modoBalcao && (clienteSel || modoNovoCliente) ? pendenciaEnderecoClienteBalcao(form) : null) ?? pendenciaBasica({ clienteSelecionado: clienteSel !== null, novoCliente: modoNovoCliente,
     form, cpf: detalhe ? form.cpf : clienteSel?.cpf ?? form.cpf, itens, modo: modoSel, cotando: calculando,
     entregaDisponivel: entregaOk, motivoBeneficioOk: motivoOk, pagamento,
     bonificacaoOk: !!detalhe || bonifOk, emailCartaoOk: !emailObrigatorio || !!clienteSel || form.email.trim().includes("@"), nsu });
@@ -506,8 +513,8 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
         }
       }
 
-      const clientePayload = clienteSel
-        ? { parceiro_id: clienteSel.id, ...(modoSel === "balcao" ? { email: form.email.trim() } : {}) }
+      const clientePayload = modoSel === "balcao" ? clienteParaCriacaoBalcao(form, clienteSel?.id) : clienteSel
+        ? { parceiro_id: clienteSel.id }
         : {
             nome: form.nome.trim(),
             cpf: soDigitos(form.cpf),

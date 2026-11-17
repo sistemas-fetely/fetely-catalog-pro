@@ -4,9 +4,9 @@ import { Loader2 } from "lucide-react";
 import { formatCEP } from "@/lib/documento";
 import type { ClienteForm } from "./types";
 
-export function EnderecoFields({ form, onChange, prefixo, disabled, buscandoCep, onCepBlur }: {
+export function EnderecoFields({ form, onChange, prefixo, disabled, buscandoCep, onCepBlur, obrigatorio = false }: {
   form: ClienteForm; onChange: (key: keyof ClienteForm, value: string) => void; prefixo: string;
-  disabled?: boolean; buscandoCep: boolean; onCepBlur: () => void;
+  disabled?: boolean; buscandoCep: boolean; onCepBlur: () => void; obrigatorio?: boolean;
 }) {
   return <fieldset disabled={disabled} className="grid grid-cols-6 gap-3">
     {([
@@ -18,9 +18,9 @@ export function EnderecoFields({ form, onChange, prefixo, disabled, buscandoCep,
       ["cidade", "Cidade", "col-span-4"],
       ["uf", "UF", "col-span-2"],
     ] as const).map(([key, label, classe]) => <div key={key} className={`min-w-0 space-y-1.5 ${classe}`}>
-      <Label htmlFor={`${prefixo}-${key}`}>{label}</Label>
+      <Label htmlFor={`${prefixo}-${key}`}>{label}{obrigatorio && key !== "complemento" ? " *" : ""}</Label>
       <div className="relative">
-        <Input id={`${prefixo}-${key}`} value={form[key]} inputMode={key === "cep" ? "numeric" : undefined}
+        <Input id={`${prefixo}-${key}`} value={form[key]} required={obrigatorio && key !== "complemento"} inputMode={key === "cep" ? "numeric" : undefined}
           autoComplete={key === "cep" ? "postal-code" : undefined} placeholder={key === "cep" ? "00000-000" : undefined}
           maxLength={key === "uf" ? 2 : undefined} onBlur={key === "cep" ? onCepBlur : undefined}
           onChange={e => onChange(key, key === "cep" ? formatCEP(e.target.value) : key === "uf" ? e.target.value.toUpperCase() : e.target.value)}

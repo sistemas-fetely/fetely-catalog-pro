@@ -17,6 +17,21 @@ export function preencherClientePreservandoEndereco(form: ClienteForm, cliente: 
   return endereco ? { ...preenchido, ...endereco, cep: form.cep } : preenchido;
 }
 
+export function pendenciaEnderecoClienteBalcao(form: ClienteForm): Pendencia | null {
+  const campo = digits(form.cep).length !== 8 ? "cep" :
+    (["logradouro", "numero", "bairro", "cidade", "uf"] as const).find(k => !form[k].trim() || (k === "uf" && form.uf.trim().length !== 2));
+  return campo ? { card: "cliente", campo: `balcao-cliente-endereco-${campo}`, mensagem: "Endereço do cliente obrigatório para emitir a NF." } : null;
+}
+
+// Fiscal address belongs to the customer record, never to immediate-sale delivery.
+export function clienteParaCriacaoBalcao(form: ClienteForm, parceiroId?: string) {
+  return {
+    ...(parceiroId ? { parceiro_id: parceiroId } : { nome: form.nome.trim(), cpf: digits(form.cpf), telefone: digits(form.telefone) }),
+    email: form.email.trim(), cep: digits(form.cep), logradouro: form.logradouro.trim(), numero: form.numero.trim(),
+    endereco_complemento: form.complemento.trim(), bairro: form.bairro.trim(), cidade: form.cidade.trim(), uf: form.uf.trim().toUpperCase(),
+  };
+}
+
 export const brl = (v: number | null | undefined) =>
   (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 

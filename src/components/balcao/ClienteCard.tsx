@@ -57,6 +57,11 @@ export function ClienteCard({ cliente, novo, edicao, podeCliente, form, onCampo,
         {novo && !modoBalcao && erroCep && <p role="alert" className="text-sm text-destructive">{erroCep}</p>}
         {novo && <Button variant="link" className="h-auto p-0" onClick={onCancelar} disabled={disabled}>Cancelar novo cliente</Button>}
       </>}
+      {modoBalcao && !edicao && (novo || cliente) && <div className="space-y-3">
+        <p className="text-sm font-medium">Endereço do cliente para NF</p>
+        <EnderecoFields form={form} onChange={onCampo} prefixo="balcao-cliente-endereco" disabled={disabled} buscandoCep={buscandoCep} onCepBlur={onCepBlur} obrigatorio />
+        {erroCep && <p role="alert" className="text-sm text-destructive">{erroCep}</p>}
+      </div>}
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
     </CardContent>
   </Card>;
