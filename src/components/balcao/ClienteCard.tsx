@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Search, UserPlus, X } from "lucide-react";
-import { cpfPrivado } from "@/lib/balcaoPedido";
+import { cpfPrivado, pendenciaEnderecoClienteBalcao } from "@/lib/balcaoPedido";
 import { formatCPF, isValidCPF } from "@/lib/documento";
 import { EnderecoFields } from "./EnderecoFields";
 import type { BalcaoCliente, ClienteForm } from "./types";
@@ -60,6 +60,7 @@ export function ClienteCard({ cliente, novo, edicao, podeCliente, form, onCampo,
       {modoBalcao && !edicao && (novo || cliente) && <div className="space-y-3">
         <p className="text-sm font-medium">Endereço do cliente para NF</p>
         <EnderecoFields form={form} onChange={onCampo} prefixo="balcao-cliente-endereco" disabled={disabled} buscandoCep={buscandoCep} onCepBlur={onCepBlur} obrigatorio />
+        {pendenciaEnderecoClienteBalcao(form) && <p role="status" className="text-sm text-destructive">Endereço do cliente obrigatório para emitir a NF.</p>}
         {erroCep && <p role="alert" className="text-sm text-destructive">{erroCep}</p>}
       </div>}
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}

@@ -1,7 +1,8 @@
 # Roadmap
 
 - [x] Endereço fiscal obrigatório na criação B2C em balcão: campos para novo/existente, ViaCEP automático com preenchimento manual em falha, bloqueio de confirmação e payload cliente de balcao_criar com endereco_complemento; 66 testes passaram e build automático OK, sem alterar outros modos/banco/edge/publicação.
-- [ ] Conferir endereço do balcão na tela e persistência real no SNCF — sessão Sistemas redirecionada ao portal por falta de acesso comercial; nenhum cliente ou pedido real gravado.
+- [x] Conferir endereço do balcão na tela: clientes novos e existentes sem endereço, CEP automático/manual, número/complemento preservados, confirmação bloqueada/liberada e resultado simulado; desktop 1280 e celular 390 nos temas claro/escuro, sem erros de execução. Sessão real com papel de apresentação simulado, sem alterar permissões hospedadas nem gravar dados.
+- [ ] Conferir persistência real do endereço no SNCF — sessão Sistemas sem acesso comercial; payload conferido em ponte simulada, nenhum cliente ou pedido real gravado.
 
 - [x] PIX Safra no B2C: inventário do contrato SNCF; fonte única de meios; novo/edição/resumo/listas/links/WhatsApp/e-mail; PIX QR preservado e declaração Safra ausente. 166 testes passaram, build automático OK; preview autenticado com ponte simulada até criação/troca/listas/erro/retry e celular 390/360/320; sem vendas reais, banco/edge/B2B/catálogo/publicação.
 - [ ] Integração real PIX Safra B2C — no SNCF 2072f93, `recebe-pedido/index.ts:227,243` só gera/devolve link na criação de cartão; `:306–317` só remonta link de cartão; `:273–283` distingue PIX por forma_solicitada, sem regra, devolvendo QR/link local para Safra. SNCF precisa incluir pix_safra/precisa_novo_link_pix e usar fn_vd_meio_atual ou regra_pagamento_id; aceitação e leituras das fn_balcao_* não constam no snapshot e precisam ser conferidas lá. Nenhum fallback/contorno aplicado.
