@@ -1,6 +1,6 @@
 // @ts-ignore — bun:test is supplied by the existing test runner.
 import { expect, test } from "bun:test";
-import { exigirUrlPagamentoB2c, meioPagamentoB2c, opcoesPagamentoB2c, pagamentoParaCriacaoB2c, permiteDeclararPagamentoB2c, usaLinkPagamentoB2c, usaQrLocalB2c } from "./balcaoPagamento";
+import { exigirUrlPagamentoB2c, legendaPagamentoB2c, meioPagamentoB2c, opcoesPagamentoB2c, pagamentoParaCriacaoB2c, permiteDeclararPagamentoB2c, resumoPagamentoB2c, rotuloPagamentoB2c, usaLinkPagamentoB2c, usaQrLocalB2c } from "./balcaoPagamento";
 import { vendaImediataConcluida } from "./balcaoPedido";
 
 test("PIX Safra is a distinct payment rule next to local PIX and both card methods", () => {
@@ -36,4 +36,20 @@ test("link actions use the exact SNCF URL even when the returned Safra meio is p
   expect(() => exigirUrlPagamentoB2c({ url: null, meio: "pix" })).toThrow("não devolveu a URL");
   expect(() => exigirUrlPagamentoB2c({ url: "000201-PIX-LOCAL" })).toThrow("URL de pagamento inválida");
   expect(() => exigirUrlPagamentoB2c({ url: "javascript:alert(1)" })).toThrow("URL de pagamento inválida");
+});
+test("selector cards show the SNCF labels: PIX na hora (QR) and Link PIX Safra (confirma sozinho)", () => {
+  expect(meioPagamentoB2c("pix")?.rotulo).toBe("PIX na hora (QR)");
+  expect(meioPagamentoB2c("pix_safra")?.rotulo).toBe("Link PIX Safra (confirma sozinho)");
+});
+test("lists, result, WhatsApp and e-mail share the short label Link PIX Safra", () => {
+  expect(rotuloPagamentoB2c("pix_safra")).toBe("Link PIX Safra");
+  expect(rotuloPagamentoB2c("pix")).toBe("PIX na hora (QR)");
+  expect(resumoPagamentoB2c("pix_safra", false, 1)).toBe("Link PIX Safra");
+  expect(resumoPagamentoB2c("pix", true, 1)).toBe("PIX na hora (QR)");
+});
+test("auxiliary texts match the SNCF wording for both PIX rules, in event mode too", () => {
+  expect(legendaPagamentoB2c("pix", false, 1)).toBe("Gerado na chave da Fetely. Confirmação pelo comprovante.");
+  expect(legendaPagamentoB2c("pix", true, 1)).toBe("Gerado na chave da Fetely. Confirmação pelo comprovante.");
+  expect(legendaPagamentoB2c("pix_safra", false, 1)).toBe("O cliente paga pela página do Safra e o pedido confirma sozinho.");
+  expect(legendaPagamentoB2c("pix_safra", true, 1)).toBe("O cliente paga pela página do Safra e o pedido confirma sozinho.");
 });
