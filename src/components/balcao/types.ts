@@ -13,7 +13,9 @@ export type CdInfo = { codigo: string; rotulo: string; padrao: boolean; balcao?:
 export const CD_PADRAO: CdInfo = { codigo: "SITE-SP", rotulo: "Site SP", padrao: true };
 export const saldoDo = (p: BalcaoProduto) => p.disponivel ?? p.disponivel_site_sp ?? 0;
 export type Item = BalcaoProduto & { quantidade: number };
-export type ModoEntrega = "retirada" | "sedex" | "pac" | "frete_fetely" | "balcao";
+export type ModoEntrega = "retirada" | "sedex" | "pac" | "frete_fetely" | "balcao" | "transportadora";
+export type OpcaoTransportadora = { transportadora_id: string; nome: string; valor: number; prazo_dias: number | null };
+export type CotacaoTransportadora = { ok: boolean; peso_usado?: number; opcoes: OpcaoTransportadora[]; recomendada?: string | OpcaoTransportadora | null; erro?: string };
 export type OpcaoEntrega = {
   modo: ModoEntrega; ok: boolean; valor_itens: number; desconto_pedido: number; frete_cobrado: number;
   valor_total: number; prazo_dias: number | null; gratis: boolean; fonte: string | null;

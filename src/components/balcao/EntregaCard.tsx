@@ -4,16 +4,17 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Package, ShoppingBag, Store, Truck, Zap } from "lucide-react";
 import { brl, enderecoParaCotacao, modalidadesVisiveis } from "@/lib/balcaoPedido";
 import { EnderecoFields } from "./EnderecoFields";
-import type { ClienteForm, Cotacao, ModoEntrega } from "./types";
+import type { ClienteForm, Cotacao, CotacaoTransportadora, ModoEntrega } from "./types";
 
-export const ENTREGA_ICON = { retirada: Store, sedex: Zap, pac: Package, frete_fetely: Truck, balcao: ShoppingBag };
+export const ENTREGA_ICON = { retirada: Store, sedex: Zap, pac: Package, frete_fetely: Truck, balcao: ShoppingBag, transportadora: Truck };
 export function entregaLabel(modo: ModoEntrega, cd: string) {
-  return { retirada: `Retirada no ${cd}`, sedex: "Correios SEDEX", pac: "Correios PAC", frete_fetely: "Frete Fetely", balcao: "Entrega imediata — cliente leva agora" }[modo];
+  return { retirada: `Retirada no ${cd}`, sedex: "Correios SEDEX", pac: "Correios PAC", frete_fetely: "Frete Fetely", balcao: "Entrega imediata — cliente leva agora", transportadora: "Transportadora" }[modo];
 }
-export function EntregaCard({ form, onCampo, onCepBlur, buscandoCep, cotacao, cotando, semItens, modo, onModo, cd, modoBalcao = false, disabled, enderecoDisabled, erro, erroCep }: {
+export function EntregaCard({ form, onCampo, onCepBlur, buscandoCep, cotacao, cotando, semItens, modo, onModo, cd, modoBalcao = false, disabled, enderecoDisabled, erro, erroCep, xpm = false, transportadoras, transportadoraId, onTransportadora }: {
   form: ClienteForm; onCampo: (k: keyof ClienteForm, v: string) => void; onCepBlur: () => void; buscandoCep: boolean;
   cotacao: Cotacao | null; cotando: boolean; semItens: boolean; modo: ModoEntrega; onModo: (v: ModoEntrega) => void; cd: string;
   disabled: boolean; enderecoDisabled: boolean; modoBalcao?: boolean; erro?: string; erroCep?: string;
+  xpm?: boolean; transportadoras?: CotacaoTransportadora | null; transportadoraId?: string | null; onTransportadora?: (id: string) => void;
 }) {
   const visiveis = modalidadesVisiveis(cotacao?.opcoes ?? []);
   return <Card id="balcao-card-entrega" className="rounded-lg scroll-mt-4">
@@ -22,15 +23,15 @@ export function EntregaCard({ form, onCampo, onCepBlur, buscandoCep, cotacao, co
       {!modoBalcao && <>
         <EnderecoFields form={form} onChange={onCampo} prefixo="balcao-entrega" disabled={enderecoDisabled} buscandoCep={buscandoCep} onCepBlur={onCepBlur} />
         {erroCep && <p role="alert" className="text-sm text-destructive">{erroCep}</p>}
-        {!form.cep && <p className="text-sm text-muted-foreground">Informe o CEP de entrega para cotar SEDEX, PAC e Frete Fetely</p>}
+        {!form.cep && <p className="text-sm text-muted-foreground">{xpm ? "Informe o CEP para cotar a transportadora" : "Informe o CEP de entrega para cotar SEDEX, PAC e Frete Fetely"}</p>}
       </>}
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
       {cotacao?.correios_erro && <p role="alert" className="text-sm text-warning">{cotacao.correios_erro}</p>}
       <div role="radiogroup" aria-label="Modalidade de entrega" className={`grid gap-3 ${modoBalcao ? "" : "sm:grid-cols-2"}`}>
-        {(modoBalcao ? ["balcao" as const] : ["retirada", "sedex", "pac", "frete_fetely"] as const).filter(m => m !== visiveis.oculto).map(m => {
+        {(modoBalcao ? ["balcao" as const] : xpm ? ["transportadora" as const] : ["retirada", "sedex", "pac", "frete_fetely"] as const).filter(m => m !== visiveis.oculto).map(m => {
           const o = visiveis.opcoes.find(x => x.modo === m);
           const ok = o?.ok ?? m === "retirada";
-          const selecionada = modoBalcao || modo === m && ok;
+          const selecionada = modoBalcao || xpm || modo === m && ok;
           const Icon = ENTREGA_ICON[m];
           return <Button key={m} variant="outline" role="radio" aria-checked={selecionada} disabled={disabled || !ok || cotando}
             onClick={() => onModo(m)} onKeyDown={e => {
@@ -53,6 +54,13 @@ export function EntregaCard({ form, onCampo, onCepBlur, buscandoCep, cotacao, co
           </Button>;
         })}
       </div>
+      {xpm && !!transportadoras?.opcoes.length && <div role="radiogroup" aria-label="Transportadora" className="grid gap-3">
+        {transportadoras.opcoes.map(o => <Button key={o.transportadora_id} variant="outline" role="radio" aria-checked={transportadoraId === o.transportadora_id}
+          disabled={disabled || cotando} onClick={() => onTransportadora?.(o.transportadora_id)}
+          className={`h-auto min-h-12 justify-start whitespace-normal px-4 py-3 text-left ${transportadoraId === o.transportadora_id ? "border-primary bg-primary/5 ring-2 ring-primary/40" : "border-border"}`}>
+          <Truck className="shrink-0" /><span>{o.nome} · {brl(o.valor)} · {o.prazo_dias == null ? "Prazo não informado" : `prazo ${o.prazo_dias} dias`}</span>
+        </Button>)}
+      </div>}
       {visiveis.oculto && <p className="text-xs text-muted-foreground">{visiveis.oculto === "pac" ? "PAC oculto: o SEDEX sai mais barato e mais rápido para este CEP" : "SEDEX oculto: o PAC tem valor e prazo iguais ou melhores para este CEP"}</p>}
       {!!cotacao?.opcoes.some(o => o.avisos?.length) && <ul className="list-disc space-y-1 pl-5 text-xs text-warning">{Array.from(new Set(cotacao.opcoes.flatMap(o => o.avisos ?? []).map(a => a.aviso))).map(aviso => <li key={aviso}>{aviso}</li>)}</ul>}
     </CardContent>

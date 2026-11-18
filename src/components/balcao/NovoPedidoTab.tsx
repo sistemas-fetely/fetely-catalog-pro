@@ -15,7 +15,7 @@ import { usePhotos } from "@/store/photoStore";
 import { balcao, salvarAlteracaoBalcao, type AlteracaoBalcao } from "@/hooks/useBalcao";
 import { fetchCEP, formatCPF as maskCpf, formatCEP as maskCep, digits as soDigitos } from "@/lib/documento";
 import { balcaoDosCds, brl, clienteParaCriacaoBalcao, enderecoParaCotacao, entregaImediata, exigeEnderecoEntrega, juntarObservacao, normalizarNsu, pendenciaBasica, pendenciaEnderecoClienteBalcao, preencherClientePreservandoEndereco, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, type Pendencia } from "@/lib/balcaoPedido";
-import { CD_PADRAO, FORM_VAZIO, type BalcaoCliente, type BalcaoProduto, type Beneficio, type CdInfo, type ClienteForm, type Cotacao, type Item, type MeioPagamento, type ModoEntrega, type PedidoCriado, type PedidoDetalhe } from "./types";
+import { CD_PADRAO, FORM_VAZIO, type BalcaoCliente, type BalcaoProduto, type Beneficio, type CdInfo, type ClienteForm, type Cotacao, type CotacaoTransportadora, type Item, type MeioPagamento, type ModoEntrega, type PedidoCriado, type PedidoDetalhe } from "./types";
 import { ClienteCard } from "./ClienteCard";
 import { ItensCard } from "./ItensCard";
 import { EntregaCard } from "./EntregaCard";
@@ -25,6 +25,7 @@ import { PedidoResultado } from "./PedidoResultado";
 import { resolverItensDoCarrinho, type ItemInicialB2c } from "@/lib/balcaoCarrinho";
 import { exigirUrlPagamentoB2c, pagamentoParaCriacaoB2c, rotuloPagamentoB2c, usaLinkPagamentoB2c, type LinkPagamentoB2c } from "@/lib/balcaoPagamento";
 import { LinkPagamento } from "./LinkPagamento";
+import { modoAoTrocarOrigem, parametrosCotacaoTransportadora, saiDaXpm, selecionarTransportadora } from "@/lib/balcaoTransportadora";
 
 const objeto = (v: unknown): Record<string, unknown> => v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, unknown> : {};
 export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFechar, itensIniciais, onItensIniciaisConsumidos }: {
@@ -89,6 +90,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   const [balcaoPorCd, setBalcaoPorCd] = useState<Record<string, boolean>>({});
   // Retain the last quoted capability while recalculating or clearing the next sale.
   const modoBalcao = balcaoPorCd[cdSel] ?? (!!detalhe && modoInicial === "balcao");
+  const xpm = !detalhe && saiDaXpm(cdSel);
   const cdRotulo = cds.find((c) => c.codigo === cdSel)?.rotulo ?? CD_PADRAO.rotulo;
 
   // Fotos do catálogo (mesma fonte do catálogo): garante o store carregado nesta rota.
@@ -116,6 +118,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
               setModoSel("balcao");
               setPagamento(atual => atual === "bonificacao" ? null : atual);
             }
+            if (saiDaXpm(padrao?.codigo ?? cdInicial)) setModoSel("transportadora");
           }
         }
       } catch (e) {
@@ -154,6 +157,10 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   const [cotacao, setCotacao] = useState<Cotacao | null>(null);
   const [calculando, setCalculando] = useState(false);
   const [modoSel, setModoSel] = useState<ModoEntrega>(modoInicial);
+  const [transportadoras, setTransportadoras] = useState<CotacaoTransportadora | null>(null);
+  const [transportadoraId, setTransportadoraId] = useState<string | null>(null);
+  const transportadoraRef = useRef(transportadoraId);
+  transportadoraRef.current = transportadoraId;
 
   // (d) Benefício
   const [benAberto, setBenAberto] = useState(false);
@@ -330,12 +337,25 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
     limparErro("entrega");
     try {
       const cep = enderecoAtual?.cep ?? "";
+      let escolhida = transportadoraId;
+      if (xpm) {
+        setTransportadoras(null);
+        if (cep.length !== 8) { setCotacao(null); return null; }
+        // FOP's existing bridge forwards balcao_* unchanged. SNCF must expose this read-only dispatch.
+        const frete = await balcao<CotacaoTransportadora>("balcao_cotar_transportadora", parametrosCotacaoTransportadora(cep, itens));
+        if (seq !== quoteSeq.current) return null;
+        escolhida = selecionarTransportadora(frete, transportadoraRef.current);
+        setTransportadoras(frete);
+        if (escolhida !== transportadoraRef.current) { setTransportadoraId(escolhida); transportadoraRef.current = escolhida; }
+        if (!escolhida) { setCotacao(null); return null; }
+      }
       const r = await balcao<Cotacao & { ok: true }>("balcao_calcular", {
         itens: itens.map((i) => ({ sku: i.sku, quantidade: i.quantidade })),
         centro_codigo: cdSel,
         ...(clienteSel ? { cliente: { parceiro_id: clienteSel.id } } : {}),
         ...(cep.length === 8 && enderecoAtual ? { endereco: enderecoAtual } : {}),
         beneficio,
+        ...(xpm ? { modo: "transportadora", transportadora_id: escolhida } : {}),
       });
       const c: Cotacao = {
         cotacao_id: r.cotacao_id,
@@ -345,18 +365,18 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
       };
       if (seq !== quoteSeq.current) return null;
       setCotacao(c);
-      const imediato = somenteBalcao(c.opcoes);
+      const imediato = !xpm && somenteBalcao(c.opcoes);
       setBalcaoPorCd(prev => prev[cdSel] === imediato ? prev : { ...prev, [cdSel]: imediato });
-      setModoSel(atual => selecionarModoEntrega(c.opcoes, atual));
+      setModoSel(atual => xpm ? "transportadora" : selecionarModoEntrega(c.opcoes, atual));
       if (imediato) setPagamento(atual => atual === "bonificacao" ? null : atual);
       return c;
     } catch (e) {
-      if (seq === quoteSeq.current) { setCotacao(null); setModoSel(atual => atual === "balcao" ? atual : "retirada"); erroCotacao.current = e instanceof Error ? e.message : "Erro ao calcular entrega"; registrarErro("entrega", e, "Erro ao calcular entrega"); }
+      if (seq === quoteSeq.current) { setCotacao(null); if (xpm) setTransportadoras(null); setModoSel(atual => xpm ? "transportadora" : atual === "balcao" ? atual : "retirada"); erroCotacao.current = e instanceof Error ? e.message : "Erro ao calcular entrega"; registrarErro("entrega", e, "Erro ao calcular entrega"); }
       return null;
     } finally {
       if (seq === quoteSeq.current) setCalculando(false);
     }
-  }, [itens, enderecoAtual, clienteSel, beneficio, cdSel]);
+  }, [itens, enderecoAtual, clienteSel, beneficio, cdSel, xpm, transportadoraId]);
 
   const itensKey = itens.map((i) => `${i.sku}:${i.quantidade}`).join("|");
   const cepKey = enderecoAtual?.cep ?? "";
@@ -434,7 +454,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   // Basic input validation only; stock, discounts and final pricing remain SNCF-owned.
   const cepValido = (enderecoAtual?.cep ?? "").length === 8;
   const emailObrigatorio = modoBalcao || pagamento === "cartao";
-  const entregaOk = modoSel === "retirada" || (cotacao !== null && opcaoSel !== null && (modoBalcao || cepValido));
+  const entregaOk = xpm ? !!transportadoraId && !!transportadoras?.ok && cotacao !== null && opcaoSel !== null && cepValido : modoSel === "retirada" || (cotacao !== null && opcaoSel !== null && (modoBalcao || cepValido));
   const pendenciaCriacao = (!detalhe && modoBalcao && (clienteSel || modoNovoCliente) ? pendenciaEnderecoClienteBalcao(form) : null) ?? pendenciaBasica({ clienteSelecionado: clienteSel !== null, novoCliente: modoNovoCliente,
     form, cpf: detalhe ? form.cpf : clienteSel?.cpf ?? form.cpf, itens, modo: modoSel, cotando: calculando,
     entregaDisponivel: entregaOk, motivoBeneficioOk: motivoOk, pagamento,
@@ -544,6 +564,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
               cotacao_id: cot?.cotacao_id,
               endereco: enderecoAtual,
               beneficio,
+              ...(xpm ? { transportadora_id: transportadoraId } : {}),
             };
 
       const r = await balcao<PedidoCriado & { ok: true }>("balcao_criar", {
@@ -616,8 +637,10 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
     setProdutosAchados([]);
     setItens([]);
     setCotacao(null);
+    setTransportadoras(null);
+    setTransportadoraId(null);
     setCdSel(proxima.centro_codigo);
-    setModoSel(proxima.modo);
+    setModoSel(xpm ? "transportadora" : proxima.modo);
     setBenAberto(false);
     setBenPedidoTipo("nenhum");
     setBenPedidoValor("");
@@ -665,8 +688,9 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
     {erros.salvar && <p role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">{erros.salvar}</p>}
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3 lg:gap-6">
       <div className="min-w-0 space-y-4 lg:col-span-2">
-        {!detalhe && <Card className="rounded-lg"><CardHeader className="p-4 sm:p-6"><CardTitle className="text-base tracking-normal">CD</CardTitle></CardHeader><CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
-          <Select value={cdSel} onValueChange={codigo => { setCdSel(codigo); if (balcaoPorCd[codigo]) { setModoSel("balcao"); setPagamento(atual => atual === "bonificacao" ? null : atual); } else if (modoBalcao) setModoSel("retirada"); }} disabled={criando || carregandoCarrinho}><SelectTrigger aria-label="CD" className="h-10 w-full"><SelectValue /></SelectTrigger><SelectContent>{cds.map(c => <SelectItem key={c.codigo} value={c.codigo}>{c.rotulo}{c.padrao ? " (padrão)" : ""}</SelectItem>)}</SelectContent></Select>
+        {!detalhe && <Card className="rounded-lg"><CardHeader className="p-4 sm:p-6"><CardTitle className="text-base tracking-normal">Sai de</CardTitle></CardHeader><CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+          <Select value={cdSel} onValueChange={codigo => { quoteSeq.current += 1; setCotacao(null); setTransportadoras(null); setTransportadoraId(null); setCdSel(codigo); setModoSel(atual => modoAoTrocarOrigem(codigo, !!balcaoPorCd[codigo], atual)); if (balcaoPorCd[codigo]) setPagamento(atual => atual === "bonificacao" ? null : atual); }} disabled={criando || carregandoCarrinho}><SelectTrigger aria-label="Sai de" className="h-10 w-full"><SelectValue /></SelectTrigger><SelectContent>{cds.map(c => <SelectItem key={c.codigo} value={c.codigo}>{c.rotulo}{c.padrao ? " (padrão)" : ""}</SelectItem>)}</SelectContent></Select>
+          {xpm && <p role="status" className="mt-3 text-sm text-muted-foreground">Sai da XPM SC: a XPM separa, a NF sai depois do Conferido e o prazo da transportadora conta a partir do embarque.</p>}
           {erros.cd && <p role="alert" className="mt-2 text-sm text-destructive">{erros.cd}</p>}
         </CardContent></Card>}
         <ClienteCard cliente={clienteSel} novo={modoNovoCliente} edicao={!!detalhe} podeCliente={podeCliente} form={form} onCampo={onCampo}
@@ -681,7 +705,8 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
           carregandoCarrinho={carregandoCarrinho || (!!itensIniciais?.length && !cdsCarregados)} indisponiveisCarrinho={indisponiveisCarrinho} />
         <EntregaCard form={form} onCampo={onCampo} onCepBlur={() => void buscarCep()} buscandoCep={buscandoCep}
           cotacao={cotacao} cotando={calculando} semItens={itens.length === 0} modo={modoSel} onModo={setModoSel} cd={cdRotulo} modoBalcao={modoBalcao} disabled={!podeItens || criando}
-          enderecoDisabled={!!detalhe && !podeItens && !podeCliente || criando} erro={erros.entrega} erroCep={erros.cep} />
+          enderecoDisabled={!!detalhe && !podeItens && !podeCliente || criando} erro={erros.entrega} erroCep={erros.cep}
+          xpm={xpm} transportadoras={transportadoras} transportadoraId={transportadoraId} onTransportadora={setTransportadoraId} />
         <fieldset disabled={!podeItens || criando}>
       {/* (d) Benefício */}
       {!bonif && <Collapsible open={benAberto} onOpenChange={setBenAberto}>

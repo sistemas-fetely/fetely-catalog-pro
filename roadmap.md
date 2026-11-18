@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Saída XPM SC no Novo pedido B2C: mesma ponte SNCF, transportadora exclusiva, endereço obrigatório, seleção recomendada/alternativa e benefício/totais SNCF. Prévia com sessão real e papel de apresentação/ponte simulados: erro bloqueia, Site SP/Evento preservados, celular 390 sem overflow, zero criações.
+- [ ] Cotação real XPM SC — snapshot SNCF 3fc1a931 não expõe `balcao_cotar_transportadora` em `recebe-pedido/index.ts`; precisa chamar `fn_vd_cotar_transportadora(p_cep,p_itens,p_valor)` e encaminhar `transportadora_id`/modo exclusivo em `balcao_calcular` (hoje usa Correios e omite o ID). Nenhuma edge FOP/SNCF alterada; acesso comercial hospedado não verificado na conta Sistemas.
+
 - [x] Endereço fiscal obrigatório na criação B2C em balcão: campos para novo/existente, ViaCEP automático com preenchimento manual em falha, bloqueio de confirmação e payload cliente de balcao_criar com endereco_complemento; 66 testes passaram e build automático OK, sem alterar outros modos/banco/edge/publicação.
 - [x] Conferir endereço do balcão na tela: clientes novos e existentes sem endereço, CEP automático/manual, número/complemento preservados, confirmação bloqueada/liberada e resultado simulado; desktop 1280 e celular 390 nos temas claro/escuro, sem erros de execução. Sessão real com papel de apresentação simulado, sem alterar permissões hospedadas nem gravar dados.
 - [ ] Conferir persistência real do endereço no SNCF — sessão Sistemas sem acesso comercial; payload conferido em ponte simulada, nenhum cliente ou pedido real gravado.
