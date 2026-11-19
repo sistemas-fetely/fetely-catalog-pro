@@ -10,6 +10,7 @@ export const MEIOS_PAGAMENTO_B2C = {
 } as const;
 export type MeioPagamentoB2c = keyof typeof MEIOS_PAGAMENTO_B2C;
 export type MeioCobrancaB2c = Exclude<MeioPagamentoB2c, "bonificacao">;
+export const PAGAMENTO_PADRAO_B2C = "pix_safra" as const;
 
 export function meioPagamentoB2c(codigo: string | null | undefined) {
   const chave = codigo === "sem_pagamento" ? "bonificacao" : codigo;
@@ -22,7 +23,8 @@ export const usaQrLocalB2c = (codigo: string | null | undefined) => meioPagament
 export const permiteDeclararPagamentoB2c = (codigo: string | null | undefined, modo: string) =>
   modo === "balcao" && meioPagamentoB2c(codigo)?.declaracaoBalcao === true;
 export function opcoesPagamentoB2c(edicao: boolean, modoBalcao: boolean) {
-  return Object.values(MEIOS_PAGAMENTO_B2C).filter(m => m.codigo !== "bonificacao" || !edicao && !modoBalcao);
+  return Object.values(MEIOS_PAGAMENTO_B2C).filter(m =>
+    (m.codigo !== "pix" || edicao) && (m.codigo !== "bonificacao" || !edicao && !modoBalcao));
 }
 export function legendaPagamentoB2c(codigo: MeioPagamentoB2c, imediato: boolean, parcelas: number) {
   if (codigo === "pix") return "Gerado na chave da Fetely. Confirmação pelo comprovante.";

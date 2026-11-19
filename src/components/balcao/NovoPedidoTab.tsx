@@ -23,7 +23,7 @@ import { PagamentoCard } from "./PagamentoCard";
 import { ResumoPedido } from "./ResumoPedido";
 import { PedidoResultado } from "./PedidoResultado";
 import { resolverItensDoCarrinho, type ItemInicialB2c } from "@/lib/balcaoCarrinho";
-import { exigirUrlPagamentoB2c, pagamentoParaCriacaoB2c, rotuloPagamentoB2c, usaLinkPagamentoB2c, type LinkPagamentoB2c } from "@/lib/balcaoPagamento";
+import { exigirUrlPagamentoB2c, PAGAMENTO_PADRAO_B2C, pagamentoParaCriacaoB2c, rotuloPagamentoB2c, usaLinkPagamentoB2c, type LinkPagamentoB2c } from "@/lib/balcaoPagamento";
 import { LinkPagamento } from "./LinkPagamento";
 import { modoAoTrocarOrigem, parametrosCotacaoTransportadora, saiDaXpm, selecionarTransportadora } from "@/lib/balcaoTransportadora";
 
@@ -172,7 +172,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   const [benFreteMotivo, setBenFreteMotivo] = useState(String(benF.motivo ?? ""));
 
   // (e) Pagamento
-  const [pagamento, setPagamento] = useState<MeioPagamento | null>(detalhe?.pedido.pagamento === "sem_pagamento" ? "bonificacao" : detalhe?.pedido.pagamento ?? "pix");
+  const [pagamento, setPagamento] = useState<MeioPagamento | null>(detalhe?.pedido.pagamento === "sem_pagamento" ? "bonificacao" : detalhe?.pedido.pagamento ?? PAGAMENTO_PADRAO_B2C);
   const [nsu, setNsu] = useState(String(enderecoOriginal.nsu ?? ""));
   const [maxParcelas, setMaxParcelas] = useState(1);
   const observacaoInicial = separarObservacao(detalhe?.pedido.observacao ?? "");

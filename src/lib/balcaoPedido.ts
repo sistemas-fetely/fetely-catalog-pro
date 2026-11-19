@@ -1,4 +1,5 @@
 import { digits, formatCEP, formatCPF, isValidCPF } from "./documento";
+import { PAGAMENTO_PADRAO_B2C } from "./balcaoPagamento";
 import { FORM_VAZIO, type BalcaoCliente, type ClienteForm, type MeioPagamento, type ModoEntrega, type OpcaoEntrega } from "../components/balcao/types";
 
 export function enderecoParaCotacao(form: ClienteForm) {
@@ -72,7 +73,7 @@ export function entregaImediata(centro_codigo: string, pagamento: MeioPagamento 
 export const vendaImediataConcluida = (modo: ModoEntrega, pagamento: MeioPagamento | null, declarado: boolean) =>
   modo === "balcao" && (pagamento === "cartao_maquininha" || pagamento === "pix" && declarado);
 export const prepararProximaVenda = (centro_codigo: string, imediato: boolean) => ({
-  centro_codigo, modo: imediato ? "balcao" as const : "retirada" as const, pagamento: "pix" as const, nsu: "",
+  centro_codigo, modo: imediato ? "balcao" as const : "retirada" as const, pagamento: PAGAMENTO_PADRAO_B2C, nsu: "",
 });
 
 // The bridge has only observacao. Keep the expedition instruction at its start.

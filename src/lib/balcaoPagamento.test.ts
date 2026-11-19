@@ -1,12 +1,15 @@
 // @ts-ignore — bun:test is supplied by the existing test runner.
 import { expect, test } from "bun:test";
-import { exigirUrlPagamentoB2c, legendaPagamentoB2c, meioPagamentoB2c, opcoesPagamentoB2c, pagamentoParaCriacaoB2c, permiteDeclararPagamentoB2c, resumoPagamentoB2c, rotuloPagamentoB2c, usaLinkPagamentoB2c, usaQrLocalB2c } from "./balcaoPagamento";
+import { exigirUrlPagamentoB2c, legendaPagamentoB2c, meioPagamentoB2c, opcoesPagamentoB2c, PAGAMENTO_PADRAO_B2C, pagamentoParaCriacaoB2c, permiteDeclararPagamentoB2c, resumoPagamentoB2c, rotuloPagamentoB2c, usaLinkPagamentoB2c, usaQrLocalB2c } from "./balcaoPagamento";
 import { vendaImediataConcluida } from "./balcaoPedido";
 
-test("PIX Safra is a distinct payment rule next to local PIX and both card methods", () => {
-  expect(opcoesPagamentoB2c(false, false).map(m => m.codigo)).toEqual(["pix", "pix_safra", "cartao", "cartao_maquininha", "bonificacao"]);
+test("new B2C orders offer only Safra PIX alongside unchanged card and bonification methods", () => {
+  expect(opcoesPagamentoB2c(false, false).map(m => m.codigo)).toEqual(["pix_safra", "cartao", "cartao_maquininha", "bonificacao"]);
   expect(meioPagamentoB2c("pix_safra")?.codigo).toBe("pix_safra");
   expect(meioPagamentoB2c("desconhecido")).toBeNull();
+});
+test("new B2C orders default to pix_safra", () => {
+  expect(PAGAMENTO_PADRAO_B2C).toBe("pix_safra");
 });
 test("creation sends pix_safra verbatim without card installment fields", () => {
   expect(pagamentoParaCriacaoB2c("pix_safra", 12)).toEqual({ pagamento: "pix_safra" });
@@ -27,8 +30,9 @@ test("PIX Safra never accepts seller declaration or becomes sold from a local de
   expect(permiteDeclararPagamentoB2c("pix", "retirada")).toBe(false);
 });
 test("event and editing keep PIX Safra available without permitting bonification", () => {
-  expect(opcoesPagamentoB2c(false, true).map(m => m.codigo)).toEqual(["pix", "pix_safra", "cartao", "cartao_maquininha"]);
+  expect(opcoesPagamentoB2c(false, true).map(m => m.codigo)).toEqual(["pix_safra", "cartao", "cartao_maquininha"]);
   expect(opcoesPagamentoB2c(true, false).map(m => m.codigo)).toEqual(["pix", "pix_safra", "cartao", "cartao_maquininha"]);
+  expect(opcoesPagamentoB2c(true, true).map(m => m.codigo)).toEqual(["pix", "pix_safra", "cartao", "cartao_maquininha"]);
   expect(meioPagamentoB2c("sem_pagamento")?.codigo).toBe("bonificacao");
 });
 test("link actions use the exact SNCF URL even when the returned Safra meio is pix", () => {

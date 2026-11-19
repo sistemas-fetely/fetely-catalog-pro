@@ -166,7 +166,7 @@ test("card link still waits for Safra, never for a seller declaration", () => {
   expect(vendaImediataConcluida("balcao", "cartao", true)).toBe(false);
 });
 test("next sale preserves the selected event warehouse and clears the previous machine payment declaration", () => {
-  expect(prepararProximaVenda("EVENTO-SP", true)).toEqual({ centro_codigo: "EVENTO-SP", modo: "balcao", pagamento: "pix", nsu: "" });
+  expect(prepararProximaVenda("EVENTO-SP", true)).toEqual({ centro_codigo: "EVENTO-SP", modo: "balcao", pagamento: "pix_safra", nsu: "" });
   expect(prepararProximaVenda("OUTRO-EVENTO", true).centro_codigo).toBe("OUTRO-EVENTO");
-  expect(prepararProximaVenda("SITE-SP", false)).toEqual({ centro_codigo: "SITE-SP", modo: "retirada", pagamento: "pix", nsu: "" });
+  expect(prepararProximaVenda("SITE-SP", false)).toEqual({ centro_codigo: "SITE-SP", modo: "retirada", pagamento: "pix_safra", nsu: "" });
 });
