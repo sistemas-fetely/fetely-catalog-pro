@@ -24,9 +24,9 @@ test("failed SNCF quote preserves original error and cannot supply a selected ca
   expect(() => selecionarTransportadora({ ok: false, opcoes, erro: "CEP não atendido" }, "a")).toThrow("CEP não atendido");
 });
 test("transportadora requires a full delivery address and a successful quote before creation", () => {
-  const base = { clienteSelecionado: true, novoCliente: false, form: { ...FORM_VAZIO }, cpf: "52998224725", itens: [{ quantidade: 1 }], modo: "transportadora" as const, cotando: false, entregaDisponivel: true, motivoBeneficioOk: true, pagamento: "pix", bonificacaoOk: true, emailCartaoOk: true };
+  const base = { clienteSelecionado: true, novoCliente: false, form: { ...FORM_VAZIO, telefone: "11999999999", email: "cliente@example.test" }, cpf: "52998224725", itens: [{ quantidade: 1 }], modo: "transportadora" as const, cotando: false, entregaDisponivel: true, motivoBeneficioOk: true, pagamento: "pix", bonificacaoOk: true, emailCartaoOk: true };
   expect(pendenciaBasica(base)?.campo).toBe("balcao-entrega-cep");
-  const form = { ...FORM_VAZIO, cep: "01001000", logradouro: "Praça da Sé", numero: "12", bairro: "Sé", cidade: "São Paulo", uf: "SP" };
+  const form = { ...base.form, cep: "01001000", logradouro: "Praça da Sé", numero: "12", bairro: "Sé", cidade: "São Paulo", uf: "SP" };
   expect(pendenciaBasica({ ...base, form })).toBeNull();
   expect(pendenciaBasica({ ...base, form, entregaDisponivel: false })?.card).toBe("entrega");
   expect(pendenciaBasica({ ...base, form: { ...form, numero: "" } })?.campo).toBe("balcao-entrega-numero");

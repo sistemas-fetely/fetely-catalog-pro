@@ -3,23 +3,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Search, UserPlus, X } from "lucide-react";
-import { cpfPrivado, pendenciaEnderecoClienteBalcao } from "@/lib/balcaoPedido";
-import { formatCPF, isValidCPF } from "@/lib/documento";
+import { cadastroClienteFaltante, camposEnderecoFaltantes, cpfPrivado, exigeEnderecoEntrega, pendenciaEnderecoClienteBalcao } from "@/lib/balcaoPedido";
+import { digits, formatCPF, isValidCPF } from "@/lib/documento";
 import { EnderecoFields } from "./EnderecoFields";
-import type { BalcaoCliente, ClienteForm } from "./types";
+import type { BalcaoCliente, ClienteForm, ModoEntrega } from "./types";
 
 export function ClienteCard({ cliente, novo, edicao, podeCliente, form, onCampo, busca, onBusca, resultados, buscando,
-  onSelecionar, onNovo, onTrocar, onCancelar, buscandoCep, onCepBlur, emailObrigatorio, modoBalcao = false, disabled, erro, erroCep }: {
+  onSelecionar, onNovo, onTrocar, onCancelar, buscandoCep, onCepBlur, emailObrigatorio, modoBalcao = false, modo = "retirada", disabled, erro, erroCep }: {
   cliente: BalcaoCliente | null; novo: boolean; edicao: boolean; podeCliente: boolean; form: ClienteForm;
   onCampo: (k: keyof ClienteForm, v: string) => void; busca: string; onBusca: (v: string) => void;
   resultados: BalcaoCliente[]; buscando: boolean; onSelecionar: (c: BalcaoCliente) => void;
   onNovo: () => void; onTrocar: () => void; onCancelar: () => void; buscandoCep: boolean; onCepBlur: () => void;
-  emailObrigatorio: boolean; modoBalcao?: boolean; disabled: boolean; erro?: string; erroCep?: string;
+  emailObrigatorio: boolean; modoBalcao?: boolean; modo?: ModoEntrega; disabled: boolean; erro?: string; erroCep?: string;
 }) {
+  const faltantes = cadastroClienteFaltante(form);
+  const cadastro = cliente ? { ...form, telefone: cliente.telefone ?? "", email: cliente.email ?? "" } : form;
+  const enderecoCadastro = cliente ? Object.fromEntries(Object.keys(form).map(k => [k, cliente[k as keyof ClienteForm] ?? ""])) as ClienteForm : form;
+  const enderecoNoCliente = !edicao && !exigeEnderecoEntrega(modo) && (novo || !!cliente && (camposEnderecoFaltantes(enderecoCadastro).length > 0 || camposEnderecoFaltantes(form).length > 0));
   return <Card id="balcao-card-cliente" className="rounded-lg scroll-mt-4">
     <CardHeader className="flex-row items-center justify-between gap-2 space-y-0 p-4 sm:p-6">
       <CardTitle className="text-base tracking-normal">Cliente</CardTitle>
-      {!edicao && !novo && <Button variant="outline" size="sm" onClick={onNovo} disabled={disabled}><UserPlus />Novo cliente</Button>}
+      {!edicao && !novo && <Button id="balcao-novo-cliente" variant="outline" size="sm" onClick={onNovo} disabled={disabled}><UserPlus />Novo cliente</Button>}
     </CardHeader>
     <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
       {edicao && <p className="text-sm text-muted-foreground">O cliente não pode ser trocado na edição. Os campos liberados pelo SNCF podem ser atualizados.</p>}
@@ -37,11 +41,16 @@ export function ClienteCard({ cliente, novo, edicao, podeCliente, form, onCampo,
       </>}
       {cliente && <div className="flex items-start justify-between gap-3 rounded-md border p-3">
         <div className="min-w-0 space-y-1"><p className="font-semibold">{cliente.nome}</p><p className="break-words text-sm text-muted-foreground">{cpfPrivado(cliente.cpf)}{cliente.telefone ? ` · ${cliente.telefone}` : ""}{cliente.email ? ` · ${cliente.email}` : ""}</p>
-          {!cliente.cpf && <p className="text-sm text-destructive">CPF obrigatório para a NF</p>}
+          {!(edicao ? cliente.cpf : digits(cliente.cpf ?? "")) && <p className="text-sm text-destructive">{edicao ? "CPF obrigatório para a NF" : "Cliente sem CPF no cadastro — não é possível emitir NF. Use 'Novo cliente' informando o CPF."}</p>}
         </div>
         {!edicao && <Button variant="ghost" size="icon" title="Trocar cliente" aria-label="Trocar cliente" onClick={onTrocar} disabled={disabled}><X /></Button>}
       </div>}
-      {modoBalcao && cliente && !cliente.email && !edicao && <div className="space-y-1.5">
+      {cliente && !edicao && faltantes.length > 0 && <p role="status" className="rounded-md border border-warning/50 bg-warning/10 p-3 text-sm text-warning">Cadastro incompleto — falta: {faltantes.join(", ")}. Necessário para emitir a NF e falar com o cliente.{exigeEnderecoEntrega(modo) && camposEnderecoFaltantes(form).length > 0 ? " Complete o endereço nos campos de Entrega." : ""}</p>}
+      {cliente && !edicao && !digits(cadastro.telefone) && <div className="space-y-1.5">
+        <Label htmlFor="balcao-cliente-telefone">Telefone/WhatsApp *</Label>
+        <Input id="balcao-cliente-telefone" inputMode="tel" autoComplete="tel" value={form.telefone} onChange={e => onCampo("telefone", e.target.value)} disabled={disabled} required />
+      </div>}
+      {cliente && !cadastro.email.trim().includes("@") && !edicao && <div className="space-y-1.5">
         <Label htmlFor="balcao-cliente-email">E-mail *</Label>
         <Input id="balcao-cliente-email" type="email" autoComplete="email" value={form.email} onChange={e => onCampo("email", e.target.value)} disabled={disabled} required />
         <p className="text-sm text-muted-foreground">A NF vai por e-mail ao cliente</p>
@@ -53,14 +62,12 @@ export function ClienteCard({ cliente, novo, edicao, podeCliente, form, onCampo,
           <div className="col-span-6 space-y-1.5 sm:col-span-2"><Label htmlFor="balcao-cliente-telefone">Telefone/WhatsApp *</Label><Input id="balcao-cliente-telefone" inputMode="tel" autoComplete="tel" value={form.telefone} onChange={e => onCampo("telefone", e.target.value)} /></div>
           <div className="col-span-6 space-y-1.5 sm:col-span-2"><Label htmlFor="balcao-cliente-email">E-mail{emailObrigatorio ? " *" : ""}</Label><Input id="balcao-cliente-email" type="email" autoComplete="email" required={emailObrigatorio} value={form.email} onChange={e => onCampo("email", e.target.value)} />{modoBalcao && <p className="text-xs text-muted-foreground">A NF vai por e-mail ao cliente</p>}</div>
         </fieldset>
-        {novo && !modoBalcao && <EnderecoFields form={form} onChange={onCampo} prefixo="balcao-novo-cliente" disabled={disabled} buscandoCep={buscandoCep} onCepBlur={onCepBlur} />}
-        {novo && !modoBalcao && erroCep && <p role="alert" className="text-sm text-destructive">{erroCep}</p>}
         {novo && <Button variant="link" className="h-auto p-0" onClick={onCancelar} disabled={disabled}>Cancelar novo cliente</Button>}
       </>}
-      {modoBalcao && !edicao && (novo || cliente) && <div className="space-y-3">
+      {enderecoNoCliente && <div className="space-y-3">
         <p className="text-sm font-medium">Endereço do cliente para NF</p>
         <EnderecoFields form={form} onChange={onCampo} prefixo="balcao-cliente-endereco" disabled={disabled} buscandoCep={buscandoCep} onCepBlur={onCepBlur} obrigatorio />
-        {pendenciaEnderecoClienteBalcao(form) && <p role="status" className="text-sm text-destructive">Endereço do cliente obrigatório para emitir a NF.</p>}
+        {pendenciaEnderecoClienteBalcao(form, modo) && <p role="status" className="text-sm text-destructive">{pendenciaEnderecoClienteBalcao(form, modo)?.mensagem}</p>}
         {erroCep && <p role="alert" className="text-sm text-destructive">{erroCep}</p>}
       </div>}
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}

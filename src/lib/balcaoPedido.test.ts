@@ -27,7 +27,7 @@ test("expedition is first in the existing observation, preserves multiline text 
 test("CPF displayed in customer selection conceals first and last digits", () => {
   expect(cpfPrivado("52998224725")).toBe("***.982.247-**");
 });
-const base = { clienteSelecionado: false, novoCliente: true, form: { ...FORM_VAZIO, nome: "Teste", cpf: "529.982.247-25", telefone: "11999999999" }, cpf: "52998224725", itens: [{ quantidade: 2 }], modo: "retirada" as const, cotando: false, entregaDisponivel: true, motivoBeneficioOk: true, pagamento: "pix", bonificacaoOk: true, emailCartaoOk: true };
+const base = { clienteSelecionado: false, novoCliente: true, form: { ...FORM_VAZIO, nome: "Teste", cpf: "529.982.247-25", telefone: "11999999999", email: "cliente@example.test", cep: "01001000", logradouro: "Praça", numero: "1", bairro: "Sé", cidade: "São Paulo", uf: "SP" }, cpf: "52998224725", itens: [{ quantidade: 2 }], modo: "retirada" as const, cotando: false, entregaDisponivel: true, motivoBeneficioOk: true, pagamento: "pix", bonificacaoOk: true, emailCartaoOk: true };
 const enderecoDigitado = { cep: "01001-000", logradouro: "Praça da Sé", numero: "12", complemento: "Sala 3", bairro: "Sé", cidade: "São Paulo", uf: "SP" };
 const clienteCadastro = { id: "cliente-teste", nome: "Cliente", cpf: "52998224725", telefone: "11988887777", email: "cliente@example.test",
   cep: "20040002", logradouro: "Rua do Cadastro", numero: "99", complemento: "Casa", bairro: "Centro", cidade: "Rio de Janeiro", uf: "RJ" };
@@ -48,7 +48,7 @@ test("balcao creation sends the fiscal address on both new and registered custom
   const form = { ...base.form, ...enderecoDigitado, email: " cliente@example.test " };
   const endereco = { email: "cliente@example.test", cep: "01001000", logradouro: "Praça da Sé", numero: "12", endereco_complemento: "Sala 3", bairro: "Sé", cidade: "São Paulo", uf: "SP" };
   expect(clienteParaCriacaoBalcao(form)).toEqual({ nome: "Teste", cpf: "52998224725", telefone: "11999999999", ...endereco });
-  expect(clienteParaCriacaoBalcao(form, "cliente-teste")).toEqual({ parceiro_id: "cliente-teste", ...endereco });
+  expect(clienteParaCriacaoBalcao(form, "cliente-teste")).toEqual({ parceiro_id: "cliente-teste", telefone: "11999999999", ...endereco });
 });
 test("quotation receives an eight-digit CEP and address before selecting or creating a customer", () => {
   const form = { ...FORM_VAZIO, ...enderecoDigitado };
@@ -90,8 +90,8 @@ test("quantities are positive integers but do not check commercial stock", () =>
   expect(pendenciaBasica({ ...base, itens: [{ quantidade: 0 }] })?.card).toBe("itens");
   expect(pendenciaBasica({ ...base, itens: [{ quantidade: 999 }] })).toBeNull();
 });
-test("shipping requires CEP and required address fields; collection does not", () => {
-  expect(pendenciaBasica({ ...base, modo: "sedex" })?.campo).toBe("balcao-entrega-cep");
+test("shipping requires CEP and required address fields", () => {
+  expect(pendenciaBasica({ ...base, modo: "sedex", form: { ...base.form, cep: "" } })?.campo).toBe("balcao-entrega-cep");
   expect(pendenciaBasica({ ...base, modo: "sedex", form: { ...base.form, cep: "01001000", logradouro: "Praça", numero: "1", bairro: "Sé", cidade: "São Paulo", uf: "SP" } })).toBeNull();
 });
 test("pending quotation blocks submission, benefit and bonification require reasons", () => {
@@ -121,7 +121,7 @@ test("exclusive immediate option is selected automatically; returning to normal 
   expect(selecionarModoEntrega([evento], "retirada")).toBe("balcao");
   expect(selecionarModoEntrega([opcao("sedex", 15, 2)], "balcao")).toBe("retirada");
 });
-test("immediate event sale needs no CEP or delivery address but still needs a successful quote", () => {
+test("immediate sale with complete customer address still needs a successful quote", () => {
   expect(pendenciaBasica(baseEvento)).toBeNull();
   expect(pendenciaBasica({ ...baseEvento, entregaDisponivel: false })?.card).toBe("entrega");
 });
@@ -169,4 +169,35 @@ test("next sale preserves the selected event warehouse and clears the previous m
   expect(prepararProximaVenda("EVENTO-SP", true)).toEqual({ centro_codigo: "EVENTO-SP", modo: "balcao", pagamento: "pix_safra", nsu: "" });
   expect(prepararProximaVenda("OUTRO-EVENTO", true).centro_codigo).toBe("OUTRO-EVENTO");
   expect(prepararProximaVenda("SITE-SP", false)).toEqual({ centro_codigo: "SITE-SP", modo: "retirada", pagamento: "pix_safra", nsu: "" });
+});
+
+test("existing customer without email blocks every new delivery mode", () => {
+  for (const modo of ["retirada", "balcao", "sedex", "pac", "frete_fetely", "transportadora"] as const) {
+    const p = pendenciaBasica({ ...base, modo, clienteSelecionado: true, novoCliente: false, form: { ...base.form, email: "" } });
+    expect(p?.campo).toBe("balcao-cliente-email");
+  }
+});
+test("existing customer without address in collection focuses customer address", () => {
+  const p = pendenciaBasica({ ...base, clienteSelecionado: true, novoCliente: false, form: { ...base.form, cep: "" } });
+  expect(p?.card).toBe("cliente"); expect(p?.campo).toBe("balcao-cliente-endereco-cep");
+});
+test("existing customer without CPF cannot substitute a typed CPF", () => {
+  const p = pendenciaBasica({ ...base, clienteSelecionado: true, novoCliente: false, cpf: "" });
+  expect(p?.campo).toBe("balcao-novo-cliente");
+});
+test("new customer requires email even with PIX Safra outside event mode", () => {
+  expect(pendenciaBasica({ ...base, pagamento: "pix_safra", form: { ...base.form, email: "" } })?.campo).toBe("balcao-cliente-email");
+});
+test("shipping without recipient address focuses delivery rather than customer fields", () => {
+  for (const modo of ["sedex", "pac", "frete_fetely", "transportadora"] as const) {
+    const p = pendenciaBasica({ ...base, modo, form: { ...base.form, numero: "" } });
+    expect(p?.card).toBe("entrega"); expect(p?.campo).toBe("balcao-entrega-numero");
+  }
+});
+test("existing customers require a phone and serialization strips its punctuation", () => {
+  expect(pendenciaBasica({ ...base, clienteSelecionado: true, novoCliente: false, form: { ...base.form, telefone: "" } })?.campo).toBe("balcao-cliente-telefone");
+  expect(clienteParaCriacaoBalcao({ ...base.form, telefone: "(11) 99999-9999" }, "cliente-teste").telefone).toBe("11999999999");
+});
+test("editing keeps its prior optional existing contact and collection address rules", () => {
+  expect(pendenciaBasica({ ...base, edicao: true, clienteSelecionado: true, novoCliente: false, form: { ...base.form, telefone: "", email: "", cep: "", numero: "" } })).toBeNull();
 });

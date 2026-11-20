@@ -10,18 +10,19 @@ export const ENTREGA_ICON = { retirada: Store, sedex: Zap, pac: Package, frete_f
 export function entregaLabel(modo: ModoEntrega, cd: string) {
   return { retirada: `Retirada no ${cd}`, sedex: "Correios SEDEX", pac: "Correios PAC", frete_fetely: "Frete Fetely", balcao: "Entrega imediata — cliente leva agora", transportadora: "Transportadora" }[modo];
 }
-export function EntregaCard({ form, onCampo, onCepBlur, buscandoCep, cotacao, cotando, semItens, modo, onModo, cd, modoBalcao = false, disabled, enderecoDisabled, erro, erroCep, xpm = false, transportadoras, transportadoraId, onTransportadora }: {
+export function EntregaCard({ form, onCampo, onCepBlur, buscandoCep, cotacao, cotando, semItens, modo, onModo, cd, modoBalcao = false, disabled, enderecoDisabled, erro, erroCep, xpm = false, transportadoras, transportadoraId, onTransportadora, criacao = false }: {
   form: ClienteForm; onCampo: (k: keyof ClienteForm, v: string) => void; onCepBlur: () => void; buscandoCep: boolean;
   cotacao: Cotacao | null; cotando: boolean; semItens: boolean; modo: ModoEntrega; onModo: (v: ModoEntrega) => void; cd: string;
   disabled: boolean; enderecoDisabled: boolean; modoBalcao?: boolean; erro?: string; erroCep?: string;
   xpm?: boolean; transportadoras?: CotacaoTransportadora | null; transportadoraId?: string | null; onTransportadora?: (id: string) => void;
+  criacao?: boolean;
 }) {
   const visiveis = modalidadesVisiveis(cotacao?.opcoes ?? []);
   return <Card id="balcao-card-entrega" className="rounded-lg scroll-mt-4">
     <CardHeader className="p-4 sm:p-6"><CardTitle className="flex items-center gap-2 text-base tracking-normal">Entrega{cotando && <><Loader2 className="h-4 w-4 animate-spin" /><span className="text-sm font-normal text-muted-foreground">cotando…</span></>}</CardTitle></CardHeader>
     <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
-      {!modoBalcao && <>
-        <EnderecoFields form={form} onChange={onCampo} prefixo="balcao-entrega" disabled={enderecoDisabled} buscandoCep={buscandoCep} onCepBlur={onCepBlur} />
+      {!modoBalcao && !(criacao && modo === "retirada") && <>
+        <EnderecoFields form={form} onChange={onCampo} prefixo="balcao-entrega" disabled={enderecoDisabled} buscandoCep={buscandoCep} onCepBlur={onCepBlur} obrigatorio={criacao} />
         {erroCep && <p role="alert" className="text-sm text-destructive">{erroCep}</p>}
         {!form.cep && <p className="text-sm text-muted-foreground">{xpm ? "Informe o CEP para cotar a transportadora" : "Informe o CEP de entrega para cotar SEDEX, PAC e Frete Fetely"}</p>}
       </>}

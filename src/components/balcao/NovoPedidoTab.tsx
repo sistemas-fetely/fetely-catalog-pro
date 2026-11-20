@@ -14,7 +14,7 @@ import { useAuth } from "@/store/authStore";
 import { usePhotos } from "@/store/photoStore";
 import { balcao, salvarAlteracaoBalcao, type AlteracaoBalcao } from "@/hooks/useBalcao";
 import { fetchCEP, formatCPF as maskCpf, formatCEP as maskCep, digits as soDigitos } from "@/lib/documento";
-import { balcaoDosCds, brl, clienteParaCriacaoBalcao, enderecoParaCotacao, entregaImediata, exigeEnderecoEntrega, juntarObservacao, normalizarNsu, pendenciaBasica, pendenciaEnderecoClienteBalcao, preencherClientePreservandoEndereco, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, type Pendencia } from "@/lib/balcaoPedido";
+import { balcaoDosCds, brl, clienteParaCriacaoBalcao, enderecoParaCotacao, entregaImediata, exigeEnderecoEntrega, juntarObservacao, normalizarNsu, pendenciaBasica, preencherClientePreservandoEndereco, prepararProximaVenda, selecionarModoEntrega, separarObservacao, somenteBalcao, type Pendencia } from "@/lib/balcaoPedido";
 import { CD_PADRAO, FORM_VAZIO, type BalcaoCliente, type BalcaoProduto, type Beneficio, type CdInfo, type ClienteForm, type Cotacao, type CotacaoTransportadora, type Item, type MeioPagamento, type ModoEntrega, type PedidoCriado, type PedidoDetalhe } from "./types";
 import { ClienteCard } from "./ClienteCard";
 import { ItensCard } from "./ItensCard";
@@ -256,12 +256,12 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
   };
   const onCampo = (k: keyof ClienteForm, v: string) => setForm(f => ({ ...f, [k]: v }));
 
-  // Auto-lookup only in new immediate sales; other modes keep their existing blur lookup.
+  // New sales share the same customer/recipient address; editing keeps blur lookup.
   useEffect(() => {
-    if (detalhe || !modoBalcao || soDigitos(form.cep).length !== 8) return;
+    if (detalhe || soDigitos(form.cep).length !== 8) return;
     const t = setTimeout(() => { void buscarCep(); }, 300);
     return () => { clearTimeout(t); cepSeq.current += 1; };
-  }, [form.cep, modoBalcao, detalhe]);
+  }, [form.cep, detalhe]);
 
   const enderecoAtual = useMemo(() => enderecoParaCotacao(form), [form]);
 
@@ -454,9 +454,9 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
 
   // Basic input validation only; stock, discounts and final pricing remain SNCF-owned.
   const cepValido = (enderecoAtual?.cep ?? "").length === 8;
-  const emailObrigatorio = modoBalcao || pagamento === "cartao";
+  const emailObrigatorio = !detalhe || modoBalcao || pagamento === "cartao";
   const entregaOk = xpm ? !!transportadoraId && !!transportadoras?.ok && cotacao !== null && opcaoSel !== null && cepValido : modoSel === "retirada" || (cotacao !== null && opcaoSel !== null && (modoBalcao || cepValido));
-  const pendenciaCriacao = (!detalhe && modoBalcao && (clienteSel || modoNovoCliente) ? pendenciaEnderecoClienteBalcao(form) : null) ?? pendenciaBasica({ clienteSelecionado: clienteSel !== null, novoCliente: modoNovoCliente,
+  const pendenciaCriacao = pendenciaBasica({ clienteSelecionado: clienteSel !== null, novoCliente: modoNovoCliente, edicao: !!detalhe,
     form, cpf: detalhe ? form.cpf : clienteSel?.cpf ?? form.cpf, itens, modo: modoSel, cotando: calculando,
     entregaDisponivel: entregaOk, motivoBeneficioOk: motivoOk, pagamento,
     bonificacaoOk: !!detalhe || bonifOk, emailCartaoOk: !emailObrigatorio || !!clienteSel || form.email.trim().includes("@"), nsu });
@@ -534,21 +534,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
         }
       }
 
-      const clientePayload = modoSel === "balcao" ? clienteParaCriacaoBalcao(form, clienteSel?.id) : clienteSel
-        ? { parceiro_id: clienteSel.id }
-        : {
-            nome: form.nome.trim(),
-            cpf: soDigitos(form.cpf),
-            telefone: soDigitos(form.telefone),
-            email: form.email.trim(),
-            cep: soDigitos(form.cep),
-            logradouro: form.logradouro,
-            numero: form.numero,
-            complemento: form.complemento,
-            bairro: form.bairro,
-            cidade: form.cidade,
-            uf: form.uf,
-          };
+      const clientePayload = clienteParaCriacaoBalcao(form, clienteSel?.id);
 
       if (exigeEnderecoEntrega(modoSel) && (!cot || !enderecoAtual)) {
         throw new Error("Informe o endereço e recalcule a entrega. Tente de novo.");
@@ -700,11 +686,11 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
           onNovo={() => { setClienteSel(null); setForm(atual => preencherClientePreservandoEndereco(atual, null)); setModoNovoCliente(true); }}
           onTrocar={() => { setClienteSel(null); setForm(FORM_VAZIO); setBuscaCliente(""); }}
           onCancelar={() => { setModoNovoCliente(false); setForm(FORM_VAZIO); }} buscandoCep={buscandoCep} onCepBlur={() => void buscarCep()}
-          emailObrigatorio={emailObrigatorio} modoBalcao={modoBalcao} disabled={criando} erro={erros.cliente} erroCep={erros.cep} />
+          emailObrigatorio={emailObrigatorio} modoBalcao={modoBalcao} modo={modoSel} disabled={criando} erro={erros.cliente} erroCep={erros.cep} />
         <ItensCard busca={buscaProduto} onBusca={setBuscaProduto} buscando={buscandoProduto} resultados={produtosAchados} itens={itens}
           cd={cdRotulo} centro={cdSel} disabled={!podeItens || criando || carregandoCarrinho || (!!itensIniciais?.length && !cdsCarregados)} onAdicionar={adicionarItem} onQuantidade={setQtd} onRemover={removerItem} erro={erros.itens}
           carregandoCarrinho={carregandoCarrinho || (!!itensIniciais?.length && !cdsCarregados)} indisponiveisCarrinho={indisponiveisCarrinho} />
-        <EntregaCard form={form} onCampo={onCampo} onCepBlur={() => void buscarCep()} buscandoCep={buscandoCep}
+        <EntregaCard criacao={!detalhe} form={form} onCampo={onCampo} onCepBlur={() => void buscarCep()} buscandoCep={buscandoCep}
           cotacao={cotacao} cotando={calculando} semItens={itens.length === 0} modo={modoSel} onModo={setModoSel} cd={cdRotulo} modoBalcao={modoBalcao} disabled={!podeItens || criando}
           enderecoDisabled={!!detalhe && !podeItens && !podeCliente || criando} erro={erros.entrega} erroCep={erros.cep}
           xpm={xpm} transportadoras={transportadoras} transportadoraId={transportadoraId} onTransportadora={setTransportadoraId} />

@@ -18,16 +18,29 @@ export function preencherClientePreservandoEndereco(form: ClienteForm, cliente: 
   return endereco ? { ...preenchido, ...endereco, cep: form.cep } : preenchido;
 }
 
-export function pendenciaEnderecoClienteBalcao(form: ClienteForm): Pendencia | null {
-  const campo = digits(form.cep).length !== 8 ? "cep" :
-    (["logradouro", "numero", "bairro", "cidade", "uf"] as const).find(k => !form[k].trim() || (k === "uf" && form.uf.trim().length !== 2));
-  return campo ? { card: "cliente", campo: `balcao-cliente-endereco-${campo}`, mensagem: "Endereço do cliente obrigatório para emitir a NF." } : null;
+const CAMPOS_ENDERECO = { cep: "CEP", logradouro: "logradouro", numero: "número", bairro: "bairro", cidade: "cidade", uf: "UF" } as const;
+export function camposEnderecoFaltantes(form: ClienteForm) {
+  return (Object.keys(CAMPOS_ENDERECO) as (keyof typeof CAMPOS_ENDERECO)[]).filter(k =>
+    k === "cep" ? digits(form.cep).length !== 8 : !form[k].trim() || (k === "uf" && form.uf.trim().length !== 2));
+}
+export function cadastroClienteFaltante(form: ClienteForm) {
+  const endereco = camposEnderecoFaltantes(form);
+  return [...(!digits(form.telefone) ? ["telefone"] : []),
+    ...(!form.email.trim().includes("@") ? ["e-mail"] : []),
+    ...(endereco.length ? [`endereço (${endereco.map(k => CAMPOS_ENDERECO[k]).join(", ")})`] : [])];
+}
+export function pendenciaEnderecoClienteBalcao(form: ClienteForm, modo: ModoEntrega = "balcao"): Pendencia | null {
+  const campo = camposEnderecoFaltantes(form)[0];
+  const envio = exigeEnderecoEntrega(modo);
+  return campo ? { card: envio ? "entrega" : "cliente", campo: `${envio ? "balcao-entrega" : "balcao-cliente-endereco"}-${campo}`,
+    mensagem: `Informe ${CAMPOS_ENDERECO[campo]} do endereço ${envio ? "de entrega" : "do cliente"} — obrigatório para emitir a NF.` } : null;
 }
 
 // Fiscal address belongs to the customer record, never to immediate-sale delivery.
 export function clienteParaCriacaoBalcao(form: ClienteForm, parceiroId?: string) {
   return {
-    ...(parceiroId ? { parceiro_id: parceiroId } : { nome: form.nome.trim(), cpf: digits(form.cpf), telefone: digits(form.telefone) }),
+    ...(parceiroId ? { parceiro_id: parceiroId } : { nome: form.nome.trim(), cpf: digits(form.cpf) }),
+    telefone: digits(form.telefone),
     email: form.email.trim(), cep: digits(form.cep), logradouro: form.logradouro.trim(), numero: form.numero.trim(),
     endereco_complemento: form.complemento.trim(), bairro: form.bairro.trim(), cidade: form.cidade.trim(), uf: form.uf.trim().toUpperCase(),
   };
@@ -91,11 +104,18 @@ export function pendenciaBasica(a: {
   clienteSelecionado: boolean; novoCliente: boolean; form: ClienteForm; cpf: string;
   itens: { quantidade: number }[]; modo: ModoEntrega; cotando: boolean; entregaDisponivel: boolean;
   motivoBeneficioOk: boolean; pagamento: string | null; bonificacaoOk: boolean;
-  emailCartaoOk: boolean; nsu?: string;
+  emailCartaoOk: boolean; nsu?: string; edicao?: boolean;
 }): Pendencia | null {
   if (!a.clienteSelecionado && !a.novoCliente) return { card: "cliente", campo: "balcao-busca-cliente", mensagem: "Selecione ou cadastre um cliente" };
   if (a.novoCliente && a.form.nome.trim().length < 2) return { card: "cliente", campo: "balcao-cliente-nome", mensagem: "Informe o nome do cliente" };
+  if (!a.edicao && a.clienteSelecionado && !digits(a.cpf)) return { card: "cliente", campo: "balcao-novo-cliente", mensagem: "Cliente sem CPF no cadastro — não é possível emitir NF. Use 'Novo cliente' informando o CPF." };
   if (!isValidCPF(a.cpf)) return { card: "cliente", campo: "balcao-cliente-cpf", mensagem: digits(a.cpf).length ? "Informe um CPF válido" : "CPF obrigatório para a NF" };
+  if (!a.edicao) {
+    if (!digits(a.form.telefone)) return { card: "cliente", campo: "balcao-cliente-telefone", mensagem: "Informe o telefone/WhatsApp — necessário para falar com o cliente." };
+    if (!a.form.email.trim().includes("@")) return { card: "cliente", campo: "balcao-cliente-email", mensagem: "Informe o e-mail do cliente — necessário para enviar a NF e falar com o cliente." };
+    const endereco = pendenciaEnderecoClienteBalcao(a.form, a.modo);
+    if (endereco) return endereco;
+  }
   if (a.novoCliente && !digits(a.form.telefone)) return { card: "cliente", campo: "balcao-cliente-telefone", mensagem: "Informe o telefone/WhatsApp" };
   if (a.modo === "balcao" && !a.form.email.trim().includes("@")) return { card: "cliente", campo: "balcao-cliente-email", mensagem: "Informe o e-mail do cliente — a NF vai por e-mail" };
   if (!a.itens.length) return { card: "itens", campo: "balcao-busca-produto", mensagem: "Adicione um item ao pedido" };
