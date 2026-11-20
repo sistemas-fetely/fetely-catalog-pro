@@ -1,6 +1,6 @@
 # Roadmap
 
-- [x] Cadastro completo em todo Novo pedido B2C: pendências específicas com foco, complemento inline de cadastro existente, endereço único por modalidade e payload completo; edição/B2B preservados. 197 testes passam, build OK; retirada/envio e banner SNCF conferidos em sessão com respostas simuladas, sem pedido real/publicação. Persistência real continua dependendo de conferência no SNCF.
+- [x] Cadastro completo em todo Novo pedido B2C: pendências específicas com foco, complemento inline de cadastro existente, endereço único por modalidade e payload completo; edição/B2B preservados. 197 testes passam, build OK. Prévia desktop/celular, claro/escuro: novos/existentes, CPF ausente, foco dos contatos e seis campos de endereço, retirada/SEDEX/PAC/Frete Fetely/Show Room/Evento e banner SNCF conferidos com respostas simuladas, sem pedido real/publicação. Persistência real continua dependendo de conferência no SNCF.
 
 - [x] Saldo XPM SC na tela B2C: `disponivel_sc` no produto, selo verde "SP: X disp." / azul "Sem saldo em SP — SC cobre (Y)" / amarelo "Sem saldo em SP e SC" só no Site SP, Show Room/Evento intactos, saldo preservado na troca de CD e nenhuma venda bloqueada por saldo; 190 testes, build OK e conferido na prévia (desktop e celular, claro e escuro, com pedido liberado mesmo sem saldo), sem edge/banco/publicação.
 
