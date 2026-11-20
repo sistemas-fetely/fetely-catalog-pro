@@ -430,7 +430,8 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
               centro_codigo: cdSel,
             });
             const p = r.produtos?.find((x) => x.sku === i.sku);
-            return p ? { ...p, preco_varejo: detalhe ? i.preco_varejo : p.preco_varejo, quantidade: i.quantidade } : i;
+            // keep the XPM SC balance already fetched when the new quote did not return it
+            return p ? { ...p, disponivel_sc: p.disponivel_sc ?? i.disponivel_sc, preco_varejo: detalhe ? i.preco_varejo : p.preco_varejo, quantidade: i.quantidade } : i;
           }),
         );
         if (!cancelled) setItens(atualizados);
@@ -701,7 +702,7 @@ export function NovoPedidoTab({ detalhe, onVoltar, onSalvo, onAbrirPedido, onFec
           onCancelar={() => { setModoNovoCliente(false); setForm(FORM_VAZIO); }} buscandoCep={buscandoCep} onCepBlur={() => void buscarCep()}
           emailObrigatorio={emailObrigatorio} modoBalcao={modoBalcao} disabled={criando} erro={erros.cliente} erroCep={erros.cep} />
         <ItensCard busca={buscaProduto} onBusca={setBuscaProduto} buscando={buscandoProduto} resultados={produtosAchados} itens={itens}
-          cd={cdRotulo} disabled={!podeItens || criando || carregandoCarrinho || (!!itensIniciais?.length && !cdsCarregados)} onAdicionar={adicionarItem} onQuantidade={setQtd} onRemover={removerItem} erro={erros.itens}
+          cd={cdRotulo} centro={cdSel} disabled={!podeItens || criando || carregandoCarrinho || (!!itensIniciais?.length && !cdsCarregados)} onAdicionar={adicionarItem} onQuantidade={setQtd} onRemover={removerItem} erro={erros.itens}
           carregandoCarrinho={carregandoCarrinho || (!!itensIniciais?.length && !cdsCarregados)} indisponiveisCarrinho={indisponiveisCarrinho} />
         <EntregaCard form={form} onCampo={onCampo} onCepBlur={() => void buscarCep()} buscandoCep={buscandoCep}
           cotacao={cotacao} cotando={calculando} semItens={itens.length === 0} modo={modoSel} onModo={setModoSel} cd={cdRotulo} modoBalcao={modoBalcao} disabled={!podeItens || criando}

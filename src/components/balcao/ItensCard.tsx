@@ -5,11 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Minus, PackageSearch, Plus, Search, Trash2 } from "lucide-react";
 import { brl } from "@/lib/balcaoPedido";
 import { ProdutoThumb } from "./ProdutoThumb";
-import { saldoDo, type BalcaoProduto, type Item } from "./types";
+import { linhaSaldoBusca, seloSaldoB2c, type BalcaoProduto, type Item } from "./types";
 
-export function ItensCard({ busca, onBusca, buscando, resultados, itens, cd, disabled, onAdicionar, onQuantidade, onRemover, erro, carregandoCarrinho, indisponiveisCarrinho }: {
+export function ItensCard({ busca, onBusca, buscando, resultados, itens, cd, centro, disabled, onAdicionar, onQuantidade, onRemover, erro, carregandoCarrinho, indisponiveisCarrinho }: {
   busca: string; onBusca: (v: string) => void; buscando: boolean; resultados: BalcaoProduto[]; itens: Item[];
-  cd: string; disabled: boolean; onAdicionar: (p: BalcaoProduto) => void; onQuantidade: (sku: string, qtd: number) => void; onRemover: (sku: string) => void; erro?: string;
+  cd: string; centro: string; disabled: boolean; onAdicionar: (p: BalcaoProduto) => void; onQuantidade: (sku: string, qtd: number) => void; onRemover: (sku: string) => void; erro?: string;
   carregandoCarrinho?: boolean; indisponiveisCarrinho?: string[];
 }) {
   return <Card id="balcao-card-itens" className="rounded-lg scroll-mt-4">
@@ -29,7 +29,7 @@ export function ItensCard({ busca, onBusca, buscando, resultados, itens, cd, dis
         {resultados.map(p => <li key={p.sku} role="option" aria-selected={false}>
           <Button variant="ghost" className="h-auto w-full justify-start gap-3 whitespace-normal rounded-none p-3 text-left" disabled={disabled} onClick={() => onAdicionar(p)}>
             <ProdutoThumb colecao={p.colecao} corNome={p.cor_nome} sku={p.sku} nome={p.nome} />
-            <span className="min-w-0 flex-1"><span className="block font-medium">{p.nome}</span><span className="block text-xs text-muted-foreground">{p.cod_cadastro ?? p.sku} · {p.colecao} · {p.cor_nome} · {cd}: {saldoDo(p)} disp.</span></span>
+            <span className="min-w-0 flex-1"><span className="block font-medium">{p.nome}</span><span className="block text-xs text-muted-foreground">{p.cod_cadastro ?? p.sku} · {p.colecao} · {p.cor_nome} · {linhaSaldoBusca(p, centro, cd)}</span></span>
             <span className="shrink-0 text-sm">{brl(p.preco_varejo)}</span><Plus />
           </Button>
         </li>)}
@@ -39,7 +39,7 @@ export function ItensCard({ busca, onBusca, buscando, resultados, itens, cd, dis
         <ul className="divide-y divide-border">{itens.map(i => <li key={i.sku} className="grid grid-cols-[64px_minmax(0,1fr)_36px] items-start gap-3 py-4 first:pt-0 sm:grid-cols-[64px_minmax(0,1fr)]">
           <ProdutoThumb colecao={i.colecao} corNome={i.cor_nome} sku={i.sku} nome={i.nome} tamanho={64} />
           <div className="min-w-0 space-y-2"><p className="line-clamp-2 text-base font-medium">{i.nome}</p><p className="text-xs text-muted-foreground">{i.cod_cadastro ?? i.sku}{i.colecao ? ` · ${i.colecao}` : ""}{i.cor_nome ? ` · ${i.cor_nome}` : ""}</p>
-            <Badge variant="outline" className={i.quantidade > saldoDo(i) ? "border-warning/50 bg-warning/10 text-warning" : "border-success/40 bg-success/10 text-success"}>{i.quantidade > saldoDo(i) ? `Sem saldo no ${cd}` : `${cd}: ${saldoDo(i)} disp.`}</Badge>
+            {(() => { const s = seloSaldoB2c(i, i.quantidade, centro, cd); return <Badge variant="outline" className={s.classe}>{s.rotulo}</Badge>; })()}
           </div>
           <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive sm:hidden" title="Remover item" aria-label={`Remover ${i.nome}`} disabled={disabled} onClick={() => onRemover(i.sku)}><Trash2 /></Button>
           <div className="col-span-3 flex flex-wrap items-center justify-between gap-3 sm:col-span-2 sm:pl-[76px]">

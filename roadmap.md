@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Saldo XPM SC na tela B2C: `disponivel_sc` no produto, selo verde "SP: X disp." / azul "Sem saldo em SP — SC cobre (Y)" / amarelo "Sem saldo em SP e SC" só no Site SP, Show Room/Evento intactos, saldo preservado na troca de CD e nenhuma venda bloqueada por saldo; 190 testes e build automático OK, sem edge/banco/publicação.
+- [ ] Conferir selos de saldo na prévia com sessão comercial — conta Sistemas é perfil de cliente e cai no portal; selos conferidos em renderização simulada (SP cobre, só SC cobre, nenhum cobre, Evento) e na tela aberta sem login.
+
 - [x] Saída XPM SC no Novo pedido B2C: mesma ponte SNCF, transportadora exclusiva, endereço obrigatório, seleção recomendada/alternativa e benefício/totais SNCF. Conferência ampliada em claro/escuro, desktop 1280 e celular 390: cada transportadora, endereço/payload, erro/bloqueio, benefício, retorno Site SP/Evento e resultado simulado. Sessão real com papel de apresentação e todas as chamadas B2C simulados; zero pedidos reais e sem erros de execução.
 - [ ] Cotação real XPM SC — snapshot SNCF 3fc1a931 não expõe `balcao_cotar_transportadora` em `recebe-pedido/index.ts`; precisa chamar `fn_vd_cotar_transportadora(p_cep,p_itens,p_valor)` e encaminhar `transportadora_id`/modo exclusivo em `balcao_calcular` (hoje usa Correios e omite o ID). Nenhuma edge FOP/SNCF alterada; acesso comercial hospedado não verificado na conta Sistemas.
 
