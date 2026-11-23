@@ -18,7 +18,41 @@ interface LoadedImage {
   ext: "jpeg" | "png";
 }
 
+function directStorageUrl(url: string): string | null {
+  const m = url.match(/\/api\/public\/img\?path=([^&]+)/);
+  const base = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  if (!m?.[1] || !base) return null;
+  return `${base.replace(/\/+$/, "")}/storage/v1/object/public/${decodeURIComponent(m[1])}`;
+}
+
+// Muitas fotos de uma vez falhavam de forma intermitente e saíam vazias na
+// planilha: tenta de novo e, se preciso, busca direto no armazenamento.
 async function urlToBase64(url: string, maxSize = 320): Promise<LoadedImage | null> {
+  const direct = directStorageUrl(url);
+  const tries = [url, url, direct, direct].filter((u): u is string => !!u);
+  for (let i = 0; i < tries.length; i++) {
+    const r = await urlToBase64Once(tries[i]!, maxSize);
+    if (r) return r;
+    await new Promise((ok) => setTimeout(ok, 300 * (i + 1)));
+  }
+  return null;
+}
+
+async function mapLimit<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R>): Promise<R[]> {
+  const out = new Array<R>(items.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) {
+        const i = next++;
+        out[i] = await fn(items[i]!);
+      }
+    }),
+  );
+  return out;
+}
+
+async function urlToBase64Once(url: string, maxSize: number): Promise<LoadedImage | null> {
   try {
     const res = await fetch(url, { mode: "cors" });
     if (!res.ok) return null;
@@ -215,15 +249,13 @@ export async function buildCatalogXLSX(opts: BuildOpts): Promise<Blob> {
 
     // Pré-carrega fotos da fatia
     const images = includePhotos
-      ? await Promise.all(
-          variantes.map(async (p) => {
+      ? await mapLimit(variantes, 6, async (p) => {
             const key = p.grupo === "Talheres" || p.numeroVela != null ? p.corNome : p.sku;
             const url =
               getProdutoPhoto(photos, col.nome, key) ??
               getProdutoPhoto(photos, col.nome, p.corNome);
             return url ? await urlToBase64(url, 320) : null;
-          }),
-        )
+          })
       : variantes.map(() => null);
 
     for (let pi = 0; pi < variantes.length; pi++) {
