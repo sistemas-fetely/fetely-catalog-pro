@@ -242,7 +242,7 @@ async function sincronizarFotos(supabase: any, sncfToken: string) {
   for (;;) {
     const { data, error } = await supabase
       .from("photos")
-      .select("id, kind, colecao, cor, categoria, url, path, created_at, updated_at")
+      .select("id, kind, colecao, cor, categoria, url, path, cod_cadastros, created_at, updated_at")
       .order("id")
       .range(desde, desde + 999);
     if (error) throw error;
