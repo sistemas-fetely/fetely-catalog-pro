@@ -1,3 +1,4 @@
+import { withPhotoRetry, mapLimit } from "@/lib/photoFetch";
 // Exportação completa de pedidos — PDF, CSV, JSON, ZIP (lote)
 // jsPDF/autoTable/JSZip (~600 KB) carregados sob demanda, só na exportação.
 import FileSaver from "file-saver";
@@ -27,7 +28,11 @@ import { usePhotos, getProdutoPhoto } from "@/store/photoStore";
 interface LoadedImage { data: string; w: number; h: number }
 type ThumbMap = Map<string, LoadedImage>;
 
-async function urlToDataUrlExp(url: string, maxSize = 200): Promise<LoadedImage | null> {
+async function urlToDataUrlExp(url: string, maxSize?: number): Promise<LoadedImage | null> {
+  return withPhotoRetry(url, (u) => urlToDataUrlExpOnce(u, maxSize));
+}
+
+async function urlToDataUrlExpOnce(url: string, maxSize: number | undefined = 200): Promise<LoadedImage | null> {
   try {
     const res = await fetch(url, { mode: "cors" });
     if (!res.ok) return null;
@@ -59,10 +64,10 @@ async function loadThumbsForItens(itens: { sku: string; colecao: string; corNome
     if (url) seen.set(it.sku, url);
   }
   const map: ThumbMap = new Map();
-  await Promise.all(Array.from(seen.entries()).map(async ([sku, url]) => {
+  await mapLimit(Array.from(seen.entries()), 6, async ([sku, url]) => {
     const img = await urlToDataUrlExp(url);
     if (img) map.set(sku, img);
-  }));
+  });
   return map;
 }
 

@@ -1,3 +1,4 @@
+import { withPhotoRetry, mapLimit } from "@/lib/photoFetch";
 // jsPDF/autoTable (~400 KB) NÃO entram no bundle da rota — carregados sob
 // demanda só quando um PDF é efetivamente gerado.
 type JsPDFDoc = import("jspdf").jsPDF;
@@ -34,7 +35,11 @@ type SecaoItens = { tipo: "firme" | "provisao"; titulo: string; grupos: GrupoCol
 interface LoadedImage { data: string; w: number; h: number }
 type ThumbMap = Map<string, LoadedImage>;
 
-async function urlToDataUrl(url: string, maxSize = 200): Promise<LoadedImage | null> {
+async function urlToDataUrl(url: string, maxSize?: number): Promise<LoadedImage | null> {
+  return withPhotoRetry(url, (u) => urlToDataUrlOnce(u, maxSize));
+}
+
+async function urlToDataUrlOnce(url: string, maxSize: number | undefined = 200): Promise<LoadedImage | null> {
   try {
     const res = await fetch(url, { mode: "cors" });
     if (!res.ok) return null;
@@ -91,12 +96,10 @@ async function loadItemThumbs(items: CartItem[]): Promise<ThumbMap> {
     const key = photoKeyForItem(it);
     if (url && !seen.has(key)) seen.set(key, url);
   }
-  await Promise.all(
-    Array.from(seen.entries()).map(async ([key, url]) => {
-      const img = await urlToDataUrl(url, 320);
-      if (img) map.set(key, img);
-    }),
-  );
+  await mapLimit(Array.from(seen.entries()), 6, async ([key, url]) => {
+    const img = await urlToDataUrl(url, 320);
+    if (img) map.set(key, img);
+  });
   return map;
 }
 

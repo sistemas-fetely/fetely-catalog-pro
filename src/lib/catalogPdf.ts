@@ -1,3 +1,4 @@
+import { withPhotoRetry, mapLimit } from "@/lib/photoFetch";
 // jsPDF (~400 KB) carregado sob demanda, só ao gerar o PDF do catálogo.
 type JsPDFDoc = import("jspdf").jsPDF;
 import type { Product } from "@/types";
@@ -112,7 +113,11 @@ interface LoadedImage {
 }
 
 // Carrega uma imagem e devolve dataURL + dimensões reais para preservar proporção.
-async function urlToDataUrl(url: string, maxSize = 500): Promise<LoadedImage | null> {
+async function urlToDataUrl(url: string, maxSize?: number): Promise<LoadedImage | null> {
+  return withPhotoRetry(url, (u) => urlToDataUrlOnce(u, maxSize));
+}
+
+async function urlToDataUrlOnce(url: string, maxSize: number | undefined = 500): Promise<LoadedImage | null> {
   try {
     const res = await fetch(url, { mode: "cors" });
     if (!res.ok) return null;
@@ -309,15 +314,13 @@ export async function buildCatalogPDF(opts: BuildOpts): Promise<Blob> {
       doc.line(margin, 22, pageW - margin, 22);
 
       const slice = variantes.slice(i, i + cols * rows);
-      const images = await Promise.all(
-        slice.map(async (p) => {
+      const images = await mapLimit(slice, 6, async (p) => {
           const key = p.grupo === "Talheres" || p.numeroVela != null ? p.corNome : p.sku;
           const url =
             getProdutoPhoto(photos, col.nome, key) ??
             getProdutoPhoto(photos, col.nome, p.corNome);
           return url ? await urlToDataUrl(url, 560) : null;
-        }),
-      );
+        });
 
       for (let k = 0; k < slice.length; k++) {
         const p = slice[k];
