@@ -113,6 +113,13 @@
       "when": 1795443772171,
       "tag": "0015_keep_photos_linked_on_rename",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1795443820516,
+      "tag": "0016_relink_orphan_photos_from_history",
+      "breakpoints": true
     }
   ]
 }
