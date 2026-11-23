@@ -120,6 +120,13 @@
       "when": 1795443820516,
       "tag": "0016_relink_orphan_photos_from_history",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795456799698,
+      "tag": "0017_photos_cod_cadastro",
+      "breakpoints": true
     }
   ]
 }

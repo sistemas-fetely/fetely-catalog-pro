@@ -2332,6 +2332,7 @@ export type Database = {
       photos: {
         Row: {
           categoria: string | null
+          cod_cadastros: string[] | null
           colecao: string
           cor: string | null
           created_at: string
@@ -2343,6 +2344,7 @@ export type Database = {
         }
         Insert: {
           categoria?: string | null
+          cod_cadastros?: string[] | null
           colecao: string
           cor?: string | null
           created_at?: string
@@ -2354,6 +2356,7 @@ export type Database = {
         }
         Update: {
           categoria?: string | null
+          cod_cadastros?: string[] | null
           colecao?: string
           cor?: string | null
           created_at?: string

@@ -6,7 +6,7 @@ import { createSafeStorage } from "@/lib/safeStorage";
 
 const BUCKET = "product-photos";
 // Fotos mudam raramente — revalida no máximo a cada 10 min por sessão/dispositivo.
-const PHOTOS_TTL = 10 * 60_000;
+const PHOTOS_TTL = 2 * 60_000;
 
 async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
   const res = await fetch(dataUrl);
@@ -54,7 +54,7 @@ export const usePhotos = create<PhotoState>()(
     set({ loading: true });
     const { data, error } = await supabase
       .from("photos")
-      .select("kind, colecao, categoria, cor, url, path");
+      .select("kind, colecao, categoria, cor, url, path, cod_cadastros");
     if (error) {
       console.error("photos fetch error", error);
       set({ loading: false, loaded: true });
@@ -73,6 +73,37 @@ export const usePhotos = create<PhotoState>()(
         const key = `${nc}__${normalizeKey(row.cor)}`;
         produtos[key] = proxiedPhotoUrl(row.url)!;
         paths[`p:${key}`] = row.path;
+      }
+    }
+    // Ligação pelo Cód. Cadastro: a foto acompanha o produto mesmo que
+    // coleção, nome da cor ou SKU mudem (ex.: planilha SharePoint).
+    const porCod = new Map<string, { url: string; path: string }>();
+    for (const row of data ?? []) {
+      if (row.kind !== "produto") continue;
+      for (const c of ((row as any).cod_cadastros ?? []) as string[]) {
+        if (c && !porCod.has(c)) porCod.set(c, { url: row.url, path: row.path });
+      }
+    }
+    if (porCod.size) {
+      const cods = [...porCod.keys()];
+      for (let i = 0; i < cods.length; i += 300) {
+        const { data: prods } = await supabase
+          .from("products")
+          .select("cod_cadastro, colecao, sku, cor, cor_nome")
+          .in("cod_cadastro", cods.slice(i, i + 300));
+        for (const p of prods ?? []) {
+          const f = p.cod_cadastro ? porCod.get(p.cod_cadastro) : undefined;
+          if (!f || !p.colecao) continue;
+          const nc = normalizeKey(p.colecao);
+          for (const k of [p.sku, p.cor_nome, p.cor]) {
+            if (!k) continue;
+            const key = `${nc}__${normalizeKey(k)}`;
+            if (!produtos[key]) {
+              produtos[key] = proxiedPhotoUrl(f.url)!;
+              paths[`p:${key}`] = f.path;
+            }
+          }
+        }
       }
     }
     set({ colecoes, produtos, paths, loaded: true, loading: false, fetchedAt: Date.now() });
