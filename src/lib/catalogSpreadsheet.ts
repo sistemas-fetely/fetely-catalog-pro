@@ -6,6 +6,9 @@ export type ProductField = typeof PRODUCT_FIELDS[number];
 export const READ_FIELDS = ["cod_cadastro", "sku", "ean", "dun", "fase", "ncm", "cest", "origem_fisc", "origem_prod"];
 export const FIELD_LABELS: Record<string, string> = { cod_cadastro: "Código de cadastro", sku: "SKU", ean: "EAN", dun: "DUN", fase: "Fase", marca: "Marca", linha: "Linha", departamento: "Departamento", categoria: "Categoria", familia: "Família", grupo: "Grupo", tipo: "Tipo", colecao: "Coleção", sub_colecao: "Subcoleção", sub_colecao2: "Subcoleção 2", cor_nome: "Nome da cor", cor: "Cor", estampa: "Estampa", tamanho_numero: "Tamanho / número", tamanho_ref: "Referência de tamanho", is_vela_numerica: "Vela numérica", numero_vela: "Número da vela", nome_comercial: "Nome comercial", nome_completo: "Nome completo", descricao_produto: "Descrição do produto", meta_descricao: "Meta descrição", descricao_colecao: "Descrição da coleção", material_descritivo: "Material descritivo", multiplos: "Múltiplos", qtd_kit: "Quantidade do kit", preco_atacado: "Preço atacado", preco_varejo: "Preço varejo", preco_site: "Preço site", canal_venda: "Canal de venda", ncm: "NCM", cest: "CEST", origem_fisc: "Origem fiscal", origem_prod: "Origem do produto", peso_g: "Peso (g)", altura_cm: "Altura (cm)", largura_cm: "Largura (cm)", profundidade_cm: "Profundidade (cm)", material: "Material", tipo_embalagem: "Tipo de embalagem" };
 export const normalizeName = (value: unknown) => String(value ?? "").trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+export const dimensionKey = (value: unknown) =>
+  String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR")
+    .split(/[^a-z0-9]+/).filter(t => t && t !== "e").join(" ");
 export interface Dimension { id: string; nome: string; categoria_id?: string }
 export interface CatalogLists { grupo: Dimension[]; colecao: Dimension[]; cor: Dimension[]; canais: string[]; categorias: Dimension[] }
 export type DimensionKind = "grupo" | "colecao" | "cor";
@@ -54,7 +57,7 @@ export function comparableProductValue(field: ProductField, value: unknown): unk
   if (value == null || String(value).trim() === "") return null;
   if (numericFields.has(field)) { const parsed = numericValue(value); return Number.isFinite(parsed) ? parsed : String(value).trim(); }
   if (field === "is_vela_numerica") { try { return parseProductValue(field, value); } catch { return String(value).trim(); } }
-  return dimensionFor(field) ? normalizeName(value) : String(value).trim();
+  return dimensionFor(field) ? dimensionKey(value) : String(value).trim();
 }
 export function equalProductValue(field: ProductField, a: unknown, b: unknown) {
   return comparableProductValue(field, a) === comparableProductValue(field, b);
@@ -66,10 +69,13 @@ export function resolveProductChange(field: ProductField, raw: unknown, product:
   const kind = dimensionFor(field);
   let newKey: string | undefined;
   if (kind) {
-    const matches = lists[kind].filter(d => normalizeName(d.nome) === normalizeName(after));
-    const match = kind === "grupo" ? matches.find(d => d.categoria_id === categoriaId) ?? matches[0] : matches[0];
+    const matches = lists[kind].filter(d => dimensionKey(d.nome) === dimensionKey(after));
+    if (kind === "grupo" && !categoriaId && matches.length > 1) throw new Error(`Grupo "${after}" existe em mais de uma categoria — informe a categoria.`);
+    const match = kind === "grupo"
+      ? (categoriaId ? matches.find(d => d.categoria_id === categoriaId) : (matches.length === 1 ? matches[0] : undefined))
+      : matches[0];
     if (match) after = match.nome;
-    else newKey = `${kind}:${normalizeName(after)}${kind === "grupo" ? `:${categoriaId ?? ""}` : ""}`;
+    else newKey = `${kind}:${dimensionKey(after)}${kind === "grupo" ? `:${categoriaId ?? ""}` : ""}`;
   }
   if (!equalProductValue(field, product[field], after)) return { field, before: product[field], after, newKey };
 }

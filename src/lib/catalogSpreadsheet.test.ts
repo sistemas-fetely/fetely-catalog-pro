@@ -1,10 +1,46 @@
 // @ts-ignore Bun supplies the test runner
 import { test, expect } from "bun:test";
 import ExcelJS from "exceljs";
-import { PRODUCT_FIELDS, validateSheet, selectedChanges, type CatalogLists } from "./catalogSpreadsheet";
+import { PRODUCT_FIELDS, dimensionKey, comparableProductValue, normalizeName, resolveProductChange, validateSheet, selectedChanges, type CatalogLists } from "./catalogSpreadsheet";
 import { catalogWorkbook } from "./catalogSpreadsheetExcel";
 const lists: CatalogLists = { grupo: [{ id: "g", nome: "Velas", categoria_id: "c" }], colecao: [{ id: "co", nome: "Coleção" }], cor: [{ id: "red", nome: "Vermelho" }], canais: ["b2b"], categorias: [{ id: "c", nome: "Festa" }] };
 const products = [{ cod_cadastro: "001", nome_comercial: "Vela", fase: "registrado", ativo: false, preco_atacado: 10, multiplos: 6, qtd_kit: 1, grupo: "Velas", colecao: "Coleção", cor: "Vermelho", cor_nome: "Vermelho", categoria: "Festa" }, { cod_cadastro: "002", nome_comercial: "Outra", fase: "ativo", preco_atacado: 20 }];
+test("dimensão Butterfly ignora espaços e pontuação", () => {
+  expect(dimensionKey("Butterfly - B&W")).toBe(dimensionKey("Butterfly -B&W"));
+});
+test("dimensão Pink ignora &", () => {
+  expect(dimensionKey("Pink & Cristal")).toBe(dimensionKey("Pink Cristal"));
+});
+test("dimensões preservam a ordem das cores", () => {
+  expect(dimensionKey("Azul e Amarelo")).not.toBe(dimensionKey("Amarelo e Azul"));
+});
+test("coleção equivalente resolve o nome canônico sem valor novo", () => {
+  const change = resolveProductChange("colecao", "Butterfly - B&W", { colecao: "Outra" }, { ...lists, colecao: [{ id: "butterfly", nome: "Butterfly -B&W" }] });
+  expect(change?.after).toBe("Butterfly -B&W");
+  expect(change?.newKey).toBeUndefined();
+});
+test("Bandeja de outra categoria fica como valor novo na categoria do produto", () => {
+  const change = resolveProductChange("grupo", "Bandeja", { grupo: "Travessa", categoria: "A" }, { ...lists, grupo: [{ id: "b", nome: "Bandeja", categoria_id: "B" }] }, "A");
+  expect(change?.newKey).toBe("grupo:bandeja:A");
+});
+test("grupo existente na própria categoria resolve normalmente", () => {
+  const change = resolveProductChange("grupo", " BANDEJA ", { grupo: "Travessa", categoria: "A" }, { ...lists, grupo: [{ id: "b", nome: "Bandeja", categoria_id: "B" }, { id: "a", nome: "Bandeja", categoria_id: "A" }] }, "A");
+  expect(change?.after).toBe("Bandeja");
+  expect(change?.newKey).toBeUndefined();
+});
+test("grupo ambíguo sem categoria exige categoria", () => {
+  expect(() => resolveProductChange("grupo", "Bandeja", { grupo: "Travessa" }, { ...lists, grupo: [{ id: "a", nome: "Bandeja", categoria_id: "A" }, { id: "b", nome: "Bandeja", categoria_id: "B" }] })).toThrow('Grupo "Bandeja" existe em mais de uma categoria — informe a categoria.');
+});
+test("grupo único sem categoria ainda resolve normalmente", () => {
+  const change = resolveProductChange("grupo", "Bandeja", { grupo: "Travessa" }, { ...lists, grupo: [{ id: "a", nome: "Bandeja", categoria_id: "A" }] });
+  expect(change?.after).toBe("Bandeja");
+  expect(change?.newKey).toBeUndefined();
+});
+test("comparação de dimensões usa chave única sem mudar normalização de categorias", () => {
+  expect(comparableProductValue("colecao", "Butterfly - B&W")).toBe(comparableProductValue("colecao", "Butterfly -B&W"));
+  expect(normalizeName("Pink & Cristal")).toBe("pink & cristal");
+  expect(comparableProductValue("categoria", "Pink & Cristal")).not.toBe(comparableProductValue("categoria", "Pink Cristal"));
+});
 function sheet(slugs: string[], rows: unknown[][]) { const book = new ExcelJS.Workbook(); const s = book.addWorksheet("teste"); s.addRow(slugs); rows.forEach(r => s.addRow(r)); return s; }
 test("Operações, fase e ativo não entram no conjunto gravável", () => {
   for (const f of ["sku", "ean", "dun", "fase", "ativo", "ncm", "cest", "inner_qtd", "nome_operacional", "grupo_tributario_bling"]) expect(PRODUCT_FIELDS.includes(f as never)).toBe(false);

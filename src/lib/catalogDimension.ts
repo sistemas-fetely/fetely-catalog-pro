@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { CatalogClient } from './catalogProductPersistence';
+import { dimensionKey } from './catalogSpreadsheet';
 
 export const catalogDimensionBodySchema = z.object({
   dimensao: z.literal('colecao'),
@@ -11,12 +12,7 @@ export type CatalogDimensionBody = z.infer<typeof catalogDimensionBodySchema>;
 export type CatalogDimensionResult = { ok: true; id: string; nome: string; criada: boolean };
 
 export function normalizeDimensionName(value: unknown): string {
-  return String(value ?? '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('pt-BR');
+  return dimensionKey(value);
 }
 
 export async function createCatalogDimension(client: CatalogClient, body: CatalogDimensionBody): Promise<CatalogDimensionResult> {

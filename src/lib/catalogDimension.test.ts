@@ -69,6 +69,12 @@ test('recusa nome inválido', () => {
   expect(catalogDimensionBodySchema.safeParse({ dimensao: 'colecao', nome: ' A ', quem }).success).toBe(false);
   expect(catalogDimensionBodySchema.safeParse({ dimensao: 'colecao', nome: 'A'.repeat(61), quem }).success).toBe(false);
 });
+test('coleção Butterfly com pontuação equivalente não duplica cadastro', async () => {
+  const { client, rows, audits } = fakeClient([{ id: 'butterfly', nome: 'Butterfly -B&W', ativo: true }]);
+  expect(await createCatalogDimension(client, { dimensao: 'colecao', nome: 'Butterfly - B&W', quem })).toEqual({ ok: true, id: 'butterfly', nome: 'Butterfly -B&W', criada: false });
+  expect(rows).toHaveLength(1);
+  expect(audits).toHaveLength(0);
+});
 
 test('recusa dimensão diferente de coleção', () => {
   expect(catalogDimensionBodySchema.safeParse({ dimensao: 'cor', nome: 'Verde', quem }).success).toBe(false);

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
-import { PRODUCT_FIELDS, normalizeName, type CatalogLists, type CatalogRow, type Dimension, type NewValue } from './catalogSpreadsheet';
+import { PRODUCT_FIELDS, dimensionKey, type CatalogLists, type CatalogRow, type Dimension, type NewValue } from './catalogSpreadsheet';
 
 export type CatalogClient = SupabaseClient<Database>;
 export interface ProductAuditMeta { usuarioId: string; usuarioNome: string }
@@ -63,7 +63,7 @@ export async function createCatalogDimensionValue(
   const table = value.kind === 'grupo' ? 'produto_grupos' : value.kind === 'colecao' ? 'produto_colecoes' : 'produto_cores';
   const fresh = await loadCatalogLists(client);
   const existing = fresh[value.kind].find(dimension =>
-    normalizeName(dimension.nome) === normalizeName(value.nome)
+    dimensionKey(dimension.nome) === dimensionKey(value.nome)
     && (value.kind !== 'grupo' || dimension.categoria_id === value.categoriaId));
   if (existing) return { ...existing, criado: false };
   if (value.kind === 'grupo' && !value.categoriaId) throw new Error(`Grupo ${value.nome}: categoria não encontrada para criar este valor`);

@@ -85,6 +85,12 @@ test('grupo sem categoria_id retorna 400', async () => {
   expect(response.status).toBe(400);
   expect(await response.json()).toMatchObject({ ok: false, erro: 'Corpo inválido' });
 });
+test('cadastro compartilhado resolve Pink & Cristal sem duplicar cor', async () => {
+  const { client, rows, audits } = fakeClient({ cor: [{ id: 'pink', nome: 'Pink Cristal' }] });
+  expect(await registerCatalogDimension(client, { quem, kind: 'cor', nome: 'Pink & Cristal' })).toEqual({ ok: true, criado: false, kind: 'cor', id: 'pink', nome: 'Pink Cristal' });
+  expect(rows.cor).toHaveLength(1);
+  expect(audits).toHaveLength(0);
+});
 
 test('token inválido retorna 401', async () => {
   const { client, rows, audits } = fakeClient();
