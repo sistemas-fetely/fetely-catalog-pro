@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] cor e cor_nome independentes: porta SNCF e importador manual param de derivar cor_nome de cor; 80 testes Vitest e 210 testes Bun passam, build OK; banco, migrations, gate, sincronizar-catalogo e telas intocados, sem publicação.
+
 - [x] Travas de dimensões: chave canônica ordenada, grupo restrito à categoria no código e gate; migração 0018_scope_product_group_to_category aplicada e definição conferida; 78 testes Vitest passaram e build OK; fotos/telas/preços/fase/SKU intocados, sem publicação.
 
 - [x] Cadastro completo em todo Novo pedido B2C: pendências específicas com foco, complemento inline de cadastro existente, endereço único por modalidade e payload completo; edição/B2B preservados. 197 testes passam, build OK. Prévia desktop/celular, claro/escuro: novos/existentes, CPF ausente, foco dos contatos e seis campos de endereço, retirada/SEDEX/PAC/Frete Fetely/Show Room/Evento e banner SNCF conferidos com respostas simuladas, sem pedido real/publicação. Persistência real continua dependendo de conferência no SNCF.

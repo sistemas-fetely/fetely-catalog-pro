@@ -19,17 +19,18 @@ for (const field of ['altura_cm', 'largura_cm', 'profundidade_cm']) test(`${fiel
 });
 test('vazio preserva valor', () => expect(prepare({ valor_novo: '' }).patch).toEqual({}));
 test('zero legado igual não é validado como alteração', () => expect(prepareSharepointCell({ ...cell, campo: 'peso_g', valor_esperado: '0', valor_novo: '0' }, { ...product, peso_g: 0 }, lists).result.status).toBe('aplicada'));
-test('cor resolve dimensão e pareia cor_nome', () => expect(prepare({ campo: 'cor', valor_esperado: 'Azul', valor_novo: ' verde ' }).patch).toEqual({ cor: 'Verde', cor_nome: 'Verde' }));
+test('cor resolve dimensão e não toca cor_nome', () => expect(prepare({ campo: 'cor', valor_esperado: 'Azul', valor_novo: ' verde ' }).patch).toEqual({ cor: 'Verde' }));
 test('dimensão desconhecida não é criada automaticamente', () => expect(prepare({ campo: 'cor', valor_esperado: 'Azul', valor_novo: 'Inexistente' }).result.status).toBe('erro'));
 test('canal inválido barrado', () => expect(prepareSharepointCell({ ...cell, campo: 'canal_venda', valor_esperado: null, valor_novo: 'xyz' }, product, lists).result.status).toBe('erro'));
 const body = { quem: { id: 'd9ba28af-7398-45f9-b04e-db458c9aa65d', nome: 'Operador SNCF' }, leitura_id: '79e9eb11-9310-439a-ab0a-7b9386daffcb', celulas: [cell] };
 test('teto concreto de 500 células', () => { const cells = Array.from({ length: 501 }, (_, index) => ({ ...cell, id: `00000000-0000-4000-8000-${String(index).padStart(12, '0')}` })); expect(sharepointBodySchema.safeParse({ ...body, celulas: cells.slice(0,500) }).success).toBe(true); expect(sharepointBodySchema.safeParse({ ...body, celulas: cells }).success).toBe(false); });
-function fakeClient(failCode?: string) {
-  const rows: CatalogRow[] = [{ ...product }, { ...product, cod_cadastro: '01513' }];
+function fakeClient(failCode?: string, base: CatalogRow = product) {
+  const rows: CatalogRow[] = [{ ...base }, { ...base, cod_cadastro: '01513' }];
   const audits: CatalogRow[] = [];
   const client = { from(table: string) {
     let op = 'read'; let patch: CatalogRow = {}; const conditions: [string, unknown][] = [];
     const query = { select() { return query; }, update(value: CatalogRow) { op = 'update'; patch = value; return query; }, insert(value: CatalogRow) { if (table === 'catalog_audit') audits.push(value); return Promise.resolve({ error: null }); }, eq(key: string, value: unknown) { conditions.push([key,value]); return query; }, is(key: string, value: unknown) { conditions.push([key,value]); return query; }, maybeSingle() { return query; }, single() { return query; }, then(resolve: (value: unknown) => unknown) {
+      if (table === 'produto_cores') return Promise.resolve({ data: lists.cor, error: null }).then(resolve);
       if (table.startsWith('produto_')) return Promise.resolve({ data: [], error: null }).then(resolve);
       if (table === 'profiles') return Promise.resolve({ data: null, error: null }).then(resolve);
       const row = rows.find(row => conditions.every(([key,value]) => row[key] === value));
@@ -68,3 +69,10 @@ test('conflito fiscal compara sem pontuação', () => { expect(fiscal('ncm', '48
 test('mesmo NCM em outro formato não grava', () => expect(fiscal('ncm', '4823.69.00', '48236900').patch).toEqual({}));
 test('origem_prod canônica', () => { expect(fiscal('origem_prod', 'importado', 'NACIONAL').patch).toEqual({ origem_prod: 'Nacional' }); expect(fiscal('origem_prod', 'Importado', 'Estrangeiro').result.status).toBe('erro'); });
 test('origem_fisc só código ativo', () => { expect(fiscal('origem_fisc', '0', '2').patch).toEqual({ origem_fisc: '2' }); expect(fiscal('origem_fisc', '0', '9').result.status).toBe('erro'); });
+test('mudar cor mantém o cor_nome comercial do produto', async () => {
+  const { client, rows } = fakeClient(undefined, { ...product, cor: 'Azul', cor_nome: 'Jardin Cristal' });
+  const result = await applySharepointCells(client, { ...body, celulas: [{ ...cell, campo: 'cor', valor_esperado: 'Azul', valor_novo: 'Verde' }] });
+  expect(result.resultados[0]?.status).toBe('aplicada');
+  expect(rows[0]?.cor).toBe('Verde');
+  expect(rows[0]?.cor_nome).toBe('Jardin Cristal');
+});

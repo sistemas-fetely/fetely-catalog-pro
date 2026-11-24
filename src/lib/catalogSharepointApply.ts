@@ -56,7 +56,6 @@ export function prepareSharepointCell(cell: SharepointCell, product: CatalogRow 
     if (!change) return { result, patch: {} }; // Empty preserves and unchanged legacy data remains unchanged.
     if (change.newKey) return error(`Valor de dimensão não cadastrado: ${cell.campo} = ${change.after}`);
     const patch: CatalogRow = { [field]: change.after };
-    if (field === 'cor') patch.cor_nome = change.after;
     return { result, patch };
   } catch (cause) { return error(cause instanceof Error ? cause.message : String(cause)); }
 }
@@ -83,14 +82,6 @@ export async function applySharepointCells(client: CatalogClient, body: Sharepoi
         if (duplicateFields.has(entry.cell.campo)) { entry.result.status = 'erro'; entry.result.erro = 'Campo duplicado no produto'; entry.patch = {}; }
         results.set(entry.cell.id, entry.result);
         Object.assign(patch, entry.patch);
-      }
-      // Never let a derived color overwrite an explicitly conflicting/invalid cor_nome cell.
-      const nameCell = prepared.find(entry => entry.cell.campo === 'cor_nome');
-      const colorCell = prepared.find(entry => entry.cell.campo === 'cor');
-      if (colorCell?.patch.cor_nome !== undefined && nameCell && (nameCell.result.status !== 'aplicada' || (nameCell.patch.cor_nome !== undefined && nameCell.patch.cor_nome !== colorCell.patch.cor_nome))) {
-        colorCell.result.status = 'erro'; colorCell.result.erro = 'cor e cor_nome incompatíveis nesta chamada'; colorCell.patch = {};
-        for (const key of Object.keys(patch)) delete patch[key];
-        for (const entry of prepared) Object.assign(patch, entry.patch);
       }
       if (product && Object.keys(patch).length) {
         try {

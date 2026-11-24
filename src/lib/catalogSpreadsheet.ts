@@ -128,10 +128,6 @@ export function validateSheet(sheet: Worksheet, products: CatalogRow[], lists: C
         }
         changes.push(change);
       }
-      const color = changes.find(c => c.field === "cor");
-      if (color && !changes.some(c => c.field === "cor_nome") && product.cor_nome !== color.after) {
-        changes.push({ ...color, field: "cor_nome", before: product.cor_nome });
-      }
       if (changes.length) {
         result.products.push({ row: i, product, changes });
         for (const value of pending) if (changes.some(c => c.newKey === value.key) && !result.newValues.some(v => v.key === value.key)) result.newValues.push(value);
