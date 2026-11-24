@@ -13,7 +13,11 @@ export function formatBRL(value: number | null | undefined): string {
 let quantidadeLivre = false;
 
 /** E-mails autorizados a lançar quantidade unitária, além do master. */
-export const EMAILS_QUANTIDADE_LIVRE = ["rafaela.barbosa@fetely.com.br"];
+export const EMAILS_QUANTIDADE_LIVRE = ["rafaela.barbosa@fetely.com.br", "amandafetely@gmail.com"];
+
+export function quantidadeLivreLiberada(email: string, master: boolean): boolean {
+  return master || EMAILS_QUANTIDADE_LIVRE.includes(email.trim().toLowerCase());
+}
 
 export function setQuantidadeLivre(v: boolean): void {
   quantidadeLivre = v;
@@ -31,7 +35,7 @@ export function isQuantidadeLivre(): boolean {
 let pfLiberado = false;
 
 /** E-mails autorizados a cadastrar pessoa física, além do master. */
-export const EMAILS_PF_LIBERADO = EMAILS_QUANTIDADE_LIVRE;
+export const EMAILS_PF_LIBERADO = ["rafaela.barbosa@fetely.com.br"];
 
 export function setPfLiberado(v: boolean): void {
   pfLiberado = v;

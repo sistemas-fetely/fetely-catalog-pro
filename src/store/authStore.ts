@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { setQuantidadeLivre, setPfLiberado, EMAILS_QUANTIDADE_LIVRE } from "@/lib/format";
+import { setQuantidadeLivre, setPfLiberado, quantidadeLivreLiberada, EMAILS_PF_LIBERADO } from "@/lib/format";
 
 export type AppRole = "master" | "admin" | "vendedor" | "cliente";
 
@@ -61,10 +61,8 @@ async function loadProfileAndRoles(userId: string): Promise<{ profile: Profile |
   // Quantidade unitária (sem caixa fechada) e cadastro de pessoa física:
   // master e contas autorizadas.
   const email = (p?.email ?? "").trim().toLowerCase();
-  const liberado =
-    roles.includes("master") || EMAILS_QUANTIDADE_LIVRE.includes(email);
-  setQuantidadeLivre(liberado);
-  setPfLiberado(liberado);
+  setQuantidadeLivre(quantidadeLivreLiberada(email, roles.includes("master")));
+  setPfLiberado(roles.includes("master") || EMAILS_PF_LIBERADO.includes(email));
   return { profile: p, roles };
 }
 
