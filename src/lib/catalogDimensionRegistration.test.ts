@@ -4,6 +4,7 @@ import { registerCatalogDimension } from './catalogDimensionRegistration';
 import { handleCatalogDimensionRegistration } from './catalogDimensionRegistrationHandler';
 import type { CatalogClient } from './catalogProductPersistence';
 import type { CatalogRow } from './catalogSpreadsheet';
+import { createCatalogDimensionValue } from './catalogProductPersistence';
 
 const quem = { id: 'd9ba28af-7398-45f9-b04e-db458c9aa65d', nome: 'Operador SNCF' };
 const categoriaId = 'b16239f5-91d1-4f1c-948a-c8f8f872a20f';
@@ -18,6 +19,7 @@ function fakeClient(initial: Partial<Record<'grupo' | 'colecao' | 'cor', Catalog
   const tableKind = { produto_grupos: 'grupo', produto_colecoes: 'colecao', produto_cores: 'cor' } as const;
 
   const client = {
+    auth: { getUser: async () => ({ data: { user: { id: quem.id, email: 'operador@example.test' } }, error: null }) },
     rpc: async (name: string) => name === 'get_vault_secret'
       ? { data: 'expected-test-token', error: null }
       : { data: null, error: { message: 'RPC inesperada' } },
@@ -36,6 +38,14 @@ function fakeClient(initial: Partial<Record<'grupo' | 'colecao' | 'cor', Catalog
       if (!kind) throw new Error(`Tabela inesperada: ${table}`);
       return {
         select: async () => ({ data: rows[kind].map(row => ({ ...row })), error: null }),
+        update(value: CatalogRow) {
+          return { eq: (_field: string, id: string) => ({ select: () => ({ single: async () => {
+            const row = rows[kind].find(row => row['id'] === id);
+            if (!row) return { data: null, error: { message: 'Não encontrado' } };
+            Object.assign(row, value);
+            return { data: { ...row }, error: null };
+          } }) }) };
+        },
         insert(value: CatalogRow) {
           return {
             select: () => ({
@@ -102,4 +112,39 @@ test('token inválido retorna 401', async () => {
   expect(await response.json()).toEqual({ ok: false, erro: 'Token inválido' });
   expect(rows.colecao).toHaveLength(0);
   expect(audits).toHaveLength(0);
+});
+for (const kind of ['grupo', 'colecao', 'cor'] as const) {
+  test(`${kind}: ativa vence inativa equivalente sem gravar`, async () => {
+    const category = kind === 'grupo' ? { categoria_id: categoriaId } : {};
+    const { client, rows, audits } = fakeClient({ [kind]: [
+      { id: 'inativa', nome: 'Pink & Cristal', ativo: false, ...category },
+      { id: 'ativa', nome: 'Pink Cristal', ativo: true, ...category },
+    ] });
+    expect(await registerCatalogDimension(client, { quem, kind, nome: 'Pink & Cristal', ...category })).toMatchObject({ id: 'ativa', nome: 'Pink Cristal', criado: false });
+    expect(rows[kind]).toHaveLength(2);
+    expect(audits).toHaveLength(0);
+  });
+  test(`${kind}: só inativa reativa o mesmo id sem duplicar e audita SNCF`, async () => {
+    const category = kind === 'grupo' ? { categoria_id: categoriaId } : {};
+    const { client, rows, audits } = fakeClient({ [kind]: [{ id: 'inativa', nome: 'Pink Cristal', ativo: false, ...category }] });
+    expect(await registerCatalogDimension(client, { quem, kind, nome: 'Pink & Cristal', ...category })).toMatchObject({ id: 'inativa', nome: 'Pink Cristal', criado: false });
+    expect(rows[kind]).toHaveLength(1);
+    expect(rows[kind][0]?.['ativo']).toBe(true);
+    expect(audits[0]).toMatchObject({ acao: 'reativado', campos_alterados: { ativo: { antes: false, depois: true }, origem: 'planilha_sharepoint', quem } });
+    expect(audits).toHaveLength(1);
+  });
+}
+test('reativação manual registra usuário e mantém lista sem duplicação', async () => {
+  const { client, rows, audits } = fakeClient({ colecao: [{ id: 'antiga', nome: 'Butterfly -B&W', ativo: false }] });
+  const lists = { grupo: [], colecao: [{ id: 'antiga', nome: 'Butterfly -B&W', ativo: false }], cor: [], categorias: [], canais: [] };
+  expect(await createCatalogDimensionValue(client, { kind: 'colecao', nome: 'Butterfly - B&W' }, lists)).toMatchObject({ id: 'antiga', ativo: true, criado: false });
+  expect(rows.colecao).toHaveLength(1);
+  expect(lists.colecao).toEqual([{ id: 'antiga', nome: 'Butterfly -B&W', ativo: true }]);
+  expect(audits[0]).toMatchObject({ acao: 'reativado', campos_alterados: { origem: 'planilha', quem: { id: quem.id, nome: 'operador@example.test' } } });
+});
+test('grupo inativo de outra categoria não é reativado', async () => {
+  const { client, rows } = fakeClient({ grupo: [{ id: 'outra', nome: 'Bandeja', ativo: false, categoria_id: 'outra-categoria' }] });
+  expect(await registerCatalogDimension(client, { quem, kind: 'grupo', nome: 'Bandeja', categoria_id: categoriaId })).toMatchObject({ criado: true });
+  expect(rows.grupo).toHaveLength(2);
+  expect(rows.grupo[0]?.['ativo']).toBe(false);
 });

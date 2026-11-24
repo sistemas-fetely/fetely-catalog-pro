@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Complemento de dimensões: dry_run valida sem gravação, catalogos_pdf acompanha a coleção na transação; resolução/cadastro preferem ativos, reativação mantém id e audita, destino inativo bloqueia. Migração 0020 aplicada, ambos os contratos RPC restritos à integração; 127 testes de catálogo passam (26 novos), build OK; testes em dados isolados, sem publicar.
+
 - [x] Renomear dimensão: porta SNCF autenticada e RPCs atômicas com auditoria; migração 0019 aplicada e permissões conferidas, 101 testes Vitest passam (21 novos, transação PostgreSQL isolada com gate existente), porta da prévia rejeita token inválido com 401, build OK; sem renomear dados reais, alterar portas/gates/telas existentes ou publicar.
 
 - [x] cor e cor_nome independentes: porta SNCF e importador manual param de derivar cor_nome de cor; 80 testes Vitest e 210 testes Bun passam, build OK; banco, migrations, gate, sincronizar-catalogo e telas intocados, sem publicação.

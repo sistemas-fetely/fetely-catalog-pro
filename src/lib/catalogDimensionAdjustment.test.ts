@@ -21,15 +21,17 @@ beforeAll(async () => {
       grupo_id uuid, colecao_id uuid, cor_id uuid, grupo text, colecao text, cor text, cor_nome text,
       categoria text, departamento text, fase text DEFAULT 'registrado', ativo boolean DEFAULT true);
     CREATE TABLE photos (kind text, colecao text, url text);
+    CREATE TABLE catalogos_pdf (id uuid PRIMARY KEY, colecao text, titulo text);
     CREATE TABLE catalog_audit (usuario_id uuid REFERENCES profiles(id), usuario_nome text, produto_sku text,
       produto_nome text, acao text, campos_alterados jsonb);
   `);
   await db.exec(readFileSync('drizzle/migrations/0018_scope_product_group_to_category.sql', 'utf8'));
   await db.exec(`CREATE TRIGGER gate BEFORE UPDATE ON products FOR EACH ROW EXECUTE FUNCTION fn_products_gate_dimensoes();`);
   await db.exec(readFileSync('drizzle/migrations/0019_catalogo_dimensao_ajustar_atomico.sql', 'utf8'));
+  await db.exec(readFileSync('drizzle/migrations/0020_catalogo_dimensao_dry_run_e_vinculo_pdf.sql', 'utf8'));
 }, 30000);
 beforeEach(async () => {
-  await db.exec(`TRUNCATE products, photos, catalog_audit, produto_grupos, produto_colecoes, produto_cores, produto_categorias, produto_departamentos;
+  await db.exec(`TRUNCATE products, photos, catalogos_pdf, catalog_audit, produto_grupos, produto_colecoes, produto_cores, produto_categorias, produto_departamentos;
     INSERT INTO produto_departamentos VALUES ('${id(20)}', 'Depto');
     INSERT INTO produto_categorias VALUES ('${id(10)}', 'A', '${id(20)}'), ('${id(11)}', 'B', '${id(20)}');
     INSERT INTO produto_grupos VALUES ('${id(1)}', 'Travessa', '${id(10)}', true), ('${id(2)}', 'Travessa', '${id(11)}', true);
@@ -40,6 +42,7 @@ beforeEach(async () => {
         ('${id(31)}','01570','SKU-2','Produto 2','${id(1)}','${id(3)}','Travessa','Antiga','A',false),
         ('${id(32)}','01571','SKU-3','Produto 3','${id(2)}',NULL,'Travessa',NULL,'B',true);
     INSERT INTO photos VALUES ('colecao','Antiga','capa'), ('produto','Antiga','produto');
+    INSERT INTO catalogos_pdf VALUES ('${id(50)}','Antiga','PDF original'), ('${id(51)}','Outra','PDF intocado');
   `);
 });
 afterAll(async () => { await db.close(); });
@@ -66,9 +69,9 @@ const client = {
     if (name === 'get_vault_secret') return { data: 'test-token', error: null };
     const rename = name === 'fn_catalogo_dimensao_renomear';
     if (!rename && name !== 'fn_catalogo_dimensao_inativar_se_vazio') throw new Error('RPC inesperada');
-    const values = rename ? [args['p_kind'], args['p_id'], args['p_para'], args['p_cods'], args['p_quem']]
+    const values = rename ? [args['p_kind'], args['p_id'], args['p_para'], args['p_cods'], args['p_quem'], args['p_dry_run'] ?? false]
       : [args['p_kind'], args['p_id'], args['p_quem']];
-    const result = await db.query<{ result: Record<string, unknown> }>(`SELECT ${name}(${rename ? '$1,$2,$3,$4,$5' : '$1,$2,$3'}) AS result`, values);
+    const result = await db.query<{ result: Record<string, unknown> }>(`SELECT ${name}(${rename ? '$1,$2,$3,$4,$5,$6' : '$1,$2,$3'}) AS result`, values);
     return { data: result.rows[0]?.result, error: null };
   },
 } as unknown as CatalogClient;
@@ -84,6 +87,7 @@ const snapshot = async () => (await db.query(`SELECT jsonb_build_object(
   'groups',(SELECT jsonb_agg(g ORDER BY id) FROM produto_grupos g),
   'collections',(SELECT jsonb_agg(c ORDER BY id) FROM produto_colecoes c),
   'photos',(SELECT jsonb_agg(p) FROM photos p),
+  'pdfs',(SELECT jsonb_agg(p ORDER BY id) FROM catalogos_pdf p),
   'audit',(SELECT jsonb_agg(a) FROM catalog_audit a)) AS value`)).rows;
 
 test('renomeia grupo no mesmo id, inclui inativos e deixa outra categoria intacta', async () => {
@@ -111,10 +115,56 @@ test('renomeia coleção preservando descrição, id, fotos de capa e produto', 
   ]);
 });
 test('destino equivalente existente na mesma categoria não grava', async () => {
-  await db.exec(`INSERT INTO produto_grupos VALUES ('${id(5)}','Bándeja','${id(10)}',false)`);
+  await db.exec(`INSERT INTO produto_grupos VALUES ('${id(5)}','Bándeja','${id(10)}',true)`);
   const before = await snapshot();
   expect(await adjustCatalogDimension(client, renameBody())).toEqual({ ok: true, renomeado: false, motivo: 'destino_existe' });
   expect(await snapshot()).toEqual(before);
+});
+test('renomeação de coleção atualiza somente PDFs vinculados pelo nome antigo', async () => {
+  await adjustCatalogDimension(client, renameBody('colecao'));
+  expect((await db.query('SELECT * FROM catalogos_pdf ORDER BY id')).rows).toEqual([
+    { id: id(50), colecao: 'Bandeja', titulo: 'PDF original' },
+    { id: id(51), colecao: 'Outra', titulo: 'PDF intocado' },
+  ]);
+});
+test.each(['grupo', 'colecao'] as const)('dry_run de %s valida e conta sem nenhuma gravação', async kind => {
+  const before = await snapshot();
+  const response = await handle({ ...renameBody(kind), dry_run: true });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({ renomeado: true, produtos: 2 });
+  expect(await snapshot()).toEqual(before);
+});
+test.each(['nao_encontrado', 'parcial', 'destino_existe', 'destino_inativo'] as const)('dry_run devolve %s sem gravar', async motivo => {
+  if (motivo.startsWith('destino')) await db.exec(`INSERT INTO produto_colecoes VALUES ('${id(5)}','Bándeja',NULL,${motivo === 'destino_existe'})`);
+  const before = await snapshot();
+  const response = await handle({ ...renameBody('colecao'), dry_run: true,
+    ...(motivo === 'nao_encontrado' ? { de: 'Ausente' } : {}), ...(motivo === 'parcial' ? { cod_cadastros: ['01569'] } : {}),
+  });
+  expect(await response.json()).toEqual({ ok: true, renomeado: false, motivo });
+  expect(await snapshot()).toEqual(before);
+});
+test('destino inativo bloqueia tanto a porta quanto a RPC', async () => {
+  await db.exec(`INSERT INTO produto_colecoes VALUES ('${id(5)}','Bándeja',NULL,false)`);
+  const before = await snapshot();
+  expect(await adjustCatalogDimension(client, renameBody('colecao'))).toEqual({ ok: true, renomeado: false, motivo: 'destino_inativo' });
+  expect((await client.rpc('fn_catalogo_dimensao_renomear', { p_kind: 'colecao', p_id: id(3), p_para: 'Bandeja', p_cods: ['01569', '01570'], p_quem: quem })).data).toEqual({ renomeado: false, motivo: 'destino_inativo' });
+  expect(await snapshot()).toEqual(before);
+});
+test('origem ativa vence equivalente inativa na renomeação', async () => {
+  await db.exec(`INSERT INTO produto_grupos VALUES ('${id(0)}','Trávessa','${id(10)}',false)`);
+  expect(await adjustCatalogDimension(client, renameBody())).toMatchObject({ renomeado: true, id: id(1), produtos: 2 });
+});
+test('origem somente inativa não é renomeada', async () => {
+  await db.exec(`UPDATE produto_colecoes SET ativo=false WHERE id='${id(3)}'`);
+  expect(await adjustCatalogDimension(client, renameBody('colecao'))).toMatchObject({ renomeado: false, motivo: 'nao_encontrado' });
+});
+test('inativação escolhe ativa antes de equivalente inativa', async () => {
+  await db.exec(`INSERT INTO produto_cores VALUES ('${id(0)}','Vérde',false)`);
+  expect(await adjustCatalogDimension(client, { quem, acao: 'inativar_se_vazio', kind: 'cor', nome: 'Verde' })).toEqual({ ok: true, inativado: true, id: id(4) });
+});
+test('contrato RPC antigo também atualiza o vínculo PDF', async () => {
+  await db.query('SELECT fn_catalogo_dimensao_renomear($1,$2,$3,$4,$5)', ['colecao', id(3), 'Bandeja', ['01569', '01570'], quem]);
+  expect((await db.query('SELECT colecao FROM catalogos_pdf WHERE id=$1', [id(50)])).rows).toEqual([{ colecao: 'Bandeja' }]);
 });
 test('destino em outra categoria não impede renomear', async () => {
   await db.exec(`UPDATE produto_grupos SET nome='Bandeja' WHERE id='${id(2)}'`);
@@ -191,4 +241,6 @@ test('RPCs não podem ser executadas por anon ou authenticated', async () => {
   expect((await db.query(`SELECT has_function_privilege('anon','fn_catalogo_dimensao_renomear(text,uuid,text,text[],jsonb)','EXECUTE') AS anon,
     has_function_privilege('authenticated','fn_catalogo_dimensao_inativar_se_vazio(text,uuid,jsonb)','EXECUTE') AS authenticated,
     has_function_privilege('service_role','fn_catalogo_dimensao_renomear(text,uuid,text,text[],jsonb)','EXECUTE') AS integration`)).rows).toEqual([{ anon: false, authenticated: false, integration: true }]);
+  expect((await db.query(`SELECT has_function_privilege('anon','fn_catalogo_dimensao_renomear(text,uuid,text,text[],jsonb,boolean)','EXECUTE') AS anon,
+    has_function_privilege('authenticated','fn_catalogo_dimensao_renomear(text,uuid,text,text[],jsonb,boolean)','EXECUTE') AS authenticated`)).rows).toEqual([{ anon: false, authenticated: false }]);
 });

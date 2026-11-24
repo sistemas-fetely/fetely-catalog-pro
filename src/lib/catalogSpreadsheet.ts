@@ -9,7 +9,7 @@ export const normalizeName = (value: unknown) => String(value ?? "").trim().norm
 export const dimensionKey = (value: unknown) =>
   String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR")
     .split(/[^a-z0-9]+/).filter(t => t && t !== "e").join(" ");
-export interface Dimension { id: string; nome: string; categoria_id?: string }
+export interface Dimension { id: string; nome: string; categoria_id?: string; ativo?: boolean }
 export interface CatalogLists { grupo: Dimension[]; colecao: Dimension[]; cor: Dimension[]; canais: string[]; categorias: Dimension[] }
 export type DimensionKind = "grupo" | "colecao" | "cor";
 export interface NewValue { key: string; kind: DimensionKind; nome: string; categoriaId?: string }
@@ -69,7 +69,7 @@ export function resolveProductChange(field: ProductField, raw: unknown, product:
   const kind = dimensionFor(field);
   let newKey: string | undefined;
   if (kind) {
-    const matches = lists[kind].filter(d => dimensionKey(d.nome) === dimensionKey(after));
+    const matches = lists[kind].filter(d => d.ativo !== false && dimensionKey(d.nome) === dimensionKey(after));
     if (kind === "grupo" && !categoriaId && matches.length > 1) throw new Error(`Grupo "${after}" existe em mais de uma categoria — informe a categoria.`);
     const match = kind === "grupo"
       ? (categoriaId ? matches.find(d => d.categoria_id === categoriaId) : (matches.length === 1 ? matches[0] : undefined))

@@ -36,6 +36,21 @@ test("grupo único sem categoria ainda resolve normalmente", () => {
   expect(change?.after).toBe("Bandeja");
   expect(change?.newKey).toBeUndefined();
 });
+for (const field of ['grupo', 'colecao', 'cor'] as const) {
+  test(`${field}: resolução escolhe ativa mesmo com inativa antes na lista`, () => {
+    const dimensions = [
+      { id: 'inativa', nome: 'Pink & Cristal', ativo: false, categoria_id: 'A' },
+      { id: 'ativa', nome: 'Pink Cristal', ativo: true, categoria_id: 'A' },
+    ];
+    const change = resolveProductChange(field, 'Pink & Cristal', { [field]: 'Outra' }, { ...lists, [field]: dimensions }, 'A');
+    expect(change?.after).toBe('Pink Cristal');
+    expect(change?.newKey).toBeUndefined();
+  });
+  test(`${field}: só inativa vira valor novo`, () => {
+    const change = resolveProductChange(field, 'Pink & Cristal', { [field]: 'Outra' }, { ...lists, [field]: [{ id: 'inativa', nome: 'Pink Cristal', ativo: false, categoria_id: 'A' }] }, 'A');
+    expect(change?.newKey).toBe(`${field}:pink cristal${field === 'grupo' ? ':A' : ''}`);
+  });
+}
 test("comparação de dimensões usa chave única sem mudar normalização de categorias", () => {
   expect(comparableProductValue("colecao", "Butterfly - B&W")).toBe(comparableProductValue("colecao", "Butterfly -B&W"));
   expect(normalizeName("Pink & Cristal")).toBe("pink & cristal");
