@@ -134,6 +134,13 @@
       "when": 1795461703190,
       "tag": "0018_scope_product_group_to_category",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795513330453,
+      "tag": "0019_catalogo_dimensao_ajustar_atomico",
+      "breakpoints": true
     }
   ]
 }

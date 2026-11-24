@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Renomear dimensão: porta SNCF autenticada e RPCs atômicas com auditoria; migração 0019 aplicada e permissões conferidas, 101 testes Vitest passam (21 novos, transação PostgreSQL isolada com gate existente), porta da prévia rejeita token inválido com 401, build OK; sem renomear dados reais, alterar portas/gates/telas existentes ou publicar.
+
 - [x] cor e cor_nome independentes: porta SNCF e importador manual param de derivar cor_nome de cor; 80 testes Vitest e 210 testes Bun passam, build OK; banco, migrations, gate, sincronizar-catalogo e telas intocados, sem publicação.
 
 - [x] Travas de dimensões: chave canônica ordenada, grupo restrito à categoria no código e gate; migração 0018_scope_product_group_to_category aplicada e definição conferida; 78 testes Vitest passaram e build OK; fotos/telas/preços/fase/SKU intocados, sem publicação.

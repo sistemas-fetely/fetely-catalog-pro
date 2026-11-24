@@ -3909,6 +3909,21 @@ export type Database = {
           token: string
         }[]
       }
+      fn_catalogo_dimensao_inativar_se_vazio: {
+        Args: { p_id: string; p_kind: string; p_quem: Json }
+        Returns: Json
+      }
+      fn_catalogo_dimensao_renomear: {
+        Args: {
+          p_cods: string[]
+          p_id: string
+          p_kind: string
+          p_para: string
+          p_quem: Json
+        }
+        Returns: Json
+      }
+      fn_catalogo_dimension_key: { Args: { p_nome: string }; Returns: string }
       fn_pedidos_vendedor_para_sncf: {
         Args: { p_token: string }
         Returns: Json

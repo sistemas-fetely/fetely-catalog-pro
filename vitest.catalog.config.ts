@@ -13,6 +13,7 @@ export default defineConfig({
       'src/lib/catalogSpreadsheet.test.ts',
       'src/lib/catalogDimension.test.ts',
       'src/lib/catalogDimensionRegistration.test.ts',
+      'src/lib/catalogDimensionAdjustment.test.ts',
       'src/lib/catalogSharepointApply.test.ts',
     ],
   },
