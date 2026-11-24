@@ -148,6 +148,13 @@
       "when": 1795513858176,
       "tag": "0020_catalogo_dimensao_dry_run_e_vinculo_pdf",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795543019817,
+      "tag": "0021_scope_catalog_read_rules",
+      "breakpoints": true
     }
   ]
 }
