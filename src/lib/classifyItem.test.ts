@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { roteamentoQtd, vendaBloqueada, emEstoque } from "./classifyItem";
 
 describe("Jingle Pop liberada como pronta entrega — Thomer 25/11/2026", () => {
