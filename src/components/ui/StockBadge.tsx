@@ -12,7 +12,8 @@ interface StockBadgeProps {
 }
 
 export function StockBadge({ status, estoqueDisponivel = 0, colecao, className }: StockBadgeProps) {
-  const jinglePop = colecao?.trim().toLocaleLowerCase("pt-BR") === "jingle pop";
+  const jinglePop = false; // Jingle Pop liberada como pronta entrega (25/11/2026)
+  void colecao;
   const emEstoque = !jinglePop || estoqueDisponivel > 0;
   const emPrevisao = jinglePop && !emEstoque && /^prev/i.test(status.trim());
   const color = emEstoque

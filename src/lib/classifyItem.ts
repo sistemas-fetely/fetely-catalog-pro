@@ -6,8 +6,12 @@ export function classificarItem(statusEstoque: string): "firme" | "provisao" {
 
 type ProdutoEstoque = Pick<Product, "estoqueDisponivel" | "statusEstoque" | "prontaEntrega"> & { colecao?: string };
 
+/** Coleções ainda sujeitas a saldo/provisão. Jingle Pop liberada em 25/11/2026. */
+const COLECOES_COM_SALDO: readonly string[] = [];
+
 function ehJinglePop(product: ProdutoEstoque): boolean {
-  return product.colecao?.trim().toLocaleLowerCase("pt-BR") === "jingle pop";
+  const c = product.colecao?.trim().toLocaleLowerCase("pt-BR") ?? "";
+  return COLECOES_COM_SALDO.includes(c);
 }
 
 function temPrevisao(product: ProdutoEstoque): boolean {
