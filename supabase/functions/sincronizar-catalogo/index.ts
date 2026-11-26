@@ -1,3 +1,4 @@
+// v8.3: novo modo {"modo":"trocar_sku"} — SNCF avisa o SKU definitivo; produto achado por cod_cadastro; dry_run padrão. Nenhum outro modo alterado.
 // 🟢 FOP — sincronizar-catalogo v8.2
 // v8.2: modo `catalogo` passa a incluir meta_descricao, tamanho_ref, sub_colecao,
 //       sub_colecao2, descricao_colecao, numero_vela e is_vela_numerica. Os sete existiam
@@ -597,6 +598,112 @@ async function registrarPi(req: Request, supabase: any, corpo: any) {
   return jsonResponse(200, { ok: true, modo, resultado });
 }
 
+// ---------- MODO trocar_sku: SNCF avisa o SKU definitivo (produto por cod_cadastro) ----------
+// deno-lint-ignore no-explicit-any
+async function trocarSku(req: Request, supabase: any, corpo: any) {
+  const modo = "trocar_sku";
+  const negado = await autenticarEntrada(req, supabase, modo);
+  if (negado) return negado;
+
+  const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const cod = str(corpo?.cod_cadastro);
+  const skuNovo = str(corpo?.sku_novo);
+  const motivo = str(corpo?.motivo);
+  const dryRun = corpo?.dry_run !== false;
+
+  console.log(
+    `[sincronizar-catalogo v8.3 modo=trocar_sku] cod=${cod} | para=${skuNovo} | dry_run=${dryRun} | motivo=${motivo}`
+  );
+
+  if (!cod || !skuNovo || !motivo) {
+    return jsonResponse(400, { ok: false, modo, error: "cod_cadastro, sku_novo e motivo são obrigatórios" });
+  }
+  if (!skuNovo.endsWith("/" + cod)) {
+    return jsonResponse(400, { ok: false, modo, error: `sku_novo deve terminar em "/${cod}"` });
+  }
+
+  const { data: prods, error: errBusca } = await supabase
+    .from("products")
+    .select("id, sku, fase")
+    .eq("cod_cadastro", cod);
+  if (errBusca) {
+    return jsonResponse(502, { ok: false, modo, error: "Banco recusou a busca", erro_banco: errBusca.message });
+  }
+  const prod = (prods ?? [])[0];
+  if (!prod) {
+    return jsonResponse(404, { ok: false, modo, error: "Produto não encontrado para este cod_cadastro" });
+  }
+  const skuAntigo: string = prod.sku;
+
+  console.log(
+    `[sincronizar-catalogo v8.3 modo=trocar_sku] cod=${cod} | de=${skuAntigo} | para=${skuNovo} | dry_run=${dryRun} | motivo=${motivo}`
+  );
+
+  if (skuAntigo === skuNovo) {
+    return jsonResponse(200, { ok: true, modo, ja_estava: true, cod_cadastro: cod, sku: skuAntigo });
+  }
+
+  const { data: outros, error: errOutro } = await supabase
+    .from("products")
+    .select("id")
+    .eq("sku", skuNovo)
+    .neq("id", prod.id);
+  if (errOutro) {
+    return jsonResponse(502, { ok: false, modo, error: "Banco recusou a busca", erro_banco: errOutro.message });
+  }
+  if ((outros ?? []).length > 0) {
+    return jsonResponse(409, { ok: false, error: "SKU já usado por outro produto" });
+  }
+
+  const contar = async (tabela: string, col: string, val: string) => {
+    const { count, error } = await supabase
+      .from(tabela)
+      .select("*", { count: "exact", head: true })
+      .eq(col, val);
+    return error ? null : (count ?? 0);
+  };
+  const tocaria = {
+    order_items: await contar("order_items", "product_id", prod.id),
+    provisao_itens: await contar("provisao_itens", "sku", skuAntigo),
+    product_price_history: await contar("product_price_history", "product_id", prod.id),
+    catalog_audit: await contar("catalog_audit", "produto_sku", skuAntigo),
+  };
+
+  if (dryRun) {
+    return jsonResponse(200, {
+      ok: true, modo, dry_run: true, cod_cadastro: cod, de: skuAntigo, para: skuNovo, fase: prod.fase, tocaria,
+    });
+  }
+
+  const { error: errUpd } = await supabase.from("products").update({ sku: skuNovo }).eq("id", prod.id);
+  if (errUpd) {
+    return jsonResponse(502, { ok: false, error: "Banco recusou a troca", erro_banco: errUpd.message });
+  }
+
+  const avisos: string[] = [];
+  const tocados: Record<string, number | null> = {};
+  // deno-lint-ignore no-explicit-any
+  const passo = async (nome: string, q: any) => {
+    const { data, error } = await q.select("*");
+    if (error) {
+      avisos.push(`${nome}: ${error.message}`);
+      tocados[nome] = null;
+    } else {
+      tocados[nome] = (data ?? []).length;
+    }
+  };
+  await passo("order_items",
+    supabase.from("order_items").update({ sku: skuNovo }).eq("product_id", prod.id).eq("sku", skuAntigo));
+  await passo("provisao_itens",
+    supabase.from("provisao_itens").update({ sku: skuNovo }).eq("sku", skuAntigo));
+  await passo("product_price_history",
+    supabase.from("product_price_history").update({ sku: skuNovo }).eq("product_id", prod.id).eq("sku", skuAntigo));
+  await passo("catalog_audit",
+    supabase.from("catalog_audit").update({ produto_sku: skuNovo }).eq("produto_sku", skuAntigo));
+
+  return jsonResponse(200, { ok: true, modo, cod_cadastro: cod, de: skuAntigo, para: skuNovo, tocados, avisos });
+}
+
 serve(async (req) => {
   // Preflight CORS
   if (req.method === "OPTIONS") {
@@ -636,6 +743,9 @@ serve(async (req) => {
     }
     if (modo === "registrar_pi") {
       return await registrarPi(req, supabase, corpo);
+    }
+    if (modo === "trocar_sku") {
+      return await trocarSku(req, supabase, corpo);
     }
 
     const sncfUrl =
