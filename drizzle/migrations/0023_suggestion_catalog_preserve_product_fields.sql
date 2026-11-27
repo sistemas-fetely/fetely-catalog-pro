@@ -1,0 +1,3 @@
+CREATE OR REPLACE FUNCTION public.public_catalogo_sugestao() RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+SELECT coalesce(jsonb_agg(jsonb_build_object('sku',sku,'codCadastro',cod_cadastro,'nomeComercial',nome_comercial,'colecao',colecao,'grupo',grupo,'categoria',categoria,'corNome',cor_nome,'cor',cor,'tamanhoNumero',tamanho_numero,'tamanhoRef',tamanho_ref,'linha',linha,'multiplos',multiplos,'qtdKit',qtd_kit,'precoAtacado',preco_atacado,'precoVarejo',preco_varejo,'statusEstoque',status_estoque,'prontaEntrega',pronta_entrega,'isVelaNumerica',is_vela_numerica,'numeroVela',numero_vela,'ativo',ativo) ORDER BY sku),'[]'::jsonb) FROM public.products WHERE ativo=true AND preco_atacado>0 AND coalesce(status_estoque,'') <> 'Esgotado';
+$$;

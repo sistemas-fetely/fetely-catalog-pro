@@ -1,6 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+const preferenciasSugestaoSchema = z.array(z.object({
+  preferencias: z.object({
+    investimento: z.number().min(1000).max(30000),
+    grupos: z.object({ 'Mesa posta': z.number().min(0).max(2).optional(), 'Copos e Taças': z.number().min(0).max(2).optional(), 'Jogo Americano': z.number().min(0).max(2).optional(), Talheres: z.number().min(0).max(2).optional(), Velas: z.number().min(0).max(2).optional(), Infantil: z.number().min(0).max(2).optional() }),
+    profundidade: z.enum(['meia','uma','duas','personalizado']), caixas: z.number().int().min(1).max(100),
+    estilo: z.enum(['vendidos','equilibrado','mesclado']), colecoes: z.enum(['concentrar','espalhar']),
+    preferidas: z.array(z.string().max(120)).max(200), excluidas: z.array(z.string().max(120)).max(200), prontaEntrega: z.boolean(),
+  }), seed: z.number().int().nonnegative(), skus: z.array(z.string().max(80)).max(500),
+})).max(100);
+
 const statusSchema = z.enum([
   "nova",
   "visualizada",
@@ -62,6 +72,7 @@ const preSelecaoSchema = z.object({
   atribuidoParaVendedorId: z.string().uuid().optional(),
   visualizadoEm: z.string().datetime().optional(),
   sessaoId: z.string().uuid().optional(),
+  preferenciasSugestao: preferenciasSugestaoSchema.optional(),
 });
 
 export const enviarPreSelecaoPublica = createServerFn({ method: "POST" })
@@ -96,6 +107,7 @@ export const enviarPreSelecaoPublica = createServerFn({ method: "POST" })
       pedido_gerado_id: data.pedidoGeradoId ?? null,
       visualizado_em: data.visualizadoEm ?? null,
       sessao_id: data.sessaoId ?? null,
+      preferencias_sugestao: data.preferenciasSugestao ?? null,
     });
 
     if (error) throw new Error(error.message);

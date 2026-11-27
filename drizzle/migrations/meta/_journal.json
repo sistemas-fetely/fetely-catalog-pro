@@ -155,6 +155,20 @@
       "when": 1795543019817,
       "tag": "0021_scope_catalog_read_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795737379407,
+      "tag": "0022_public_order_suggestions",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795737804406,
+      "tag": "0023_suggestion_catalog_preserve_product_fields",
+      "breakpoints": true
     }
   ]
 }

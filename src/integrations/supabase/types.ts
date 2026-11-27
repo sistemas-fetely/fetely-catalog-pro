@@ -2388,6 +2388,7 @@ export type Database = {
           nome_fantasia: string
           observacao: string | null
           pedido_gerado_id: string | null
+          preferencias_sugestao: Json | null
           razao_social: string
           resultado_motivo: string | null
           segmento: string
@@ -2420,6 +2421,7 @@ export type Database = {
           nome_fantasia: string
           observacao?: string | null
           pedido_gerado_id?: string | null
+          preferencias_sugestao?: Json | null
           razao_social: string
           resultado_motivo?: string | null
           segmento: string
@@ -2452,6 +2454,7 @@ export type Database = {
           nome_fantasia?: string
           observacao?: string | null
           pedido_gerado_id?: string | null
+          preferencias_sugestao?: Json | null
           razao_social?: string
           resultado_motivo?: string | null
           segmento?: string
@@ -4000,6 +4003,18 @@ export type Database = {
       next_cotacao_id: { Args: never; Returns: string }
       next_order_id: { Args: never; Returns: string }
       next_pre_selecao_id: { Args: never; Returns: string }
+      public_afinidade_colecoes: {
+        Args: never
+        Returns: {
+          colecao_a: string
+          colecao_b: string
+          grupo_a: string
+          grupo_b: string
+          pedidos_juntos: number
+          score_afinidade: number
+        }[]
+      }
+      public_catalogo_sugestao: { Args: never; Returns: Json }
       public_emit_evento_catalogo: {
         Args: {
           p_campos_preenchidos?: Json
@@ -4010,7 +4025,34 @@ export type Database = {
         }
         Returns: undefined
       }
+      public_faixas_sugestao: {
+        Args: never
+        Returns: {
+          desconto_celebra: number
+          frete: string
+          nome: string
+          valor_max: number
+          valor_min: number
+        }[]
+      }
       public_get_wishlist: { Args: { p_chave: string }; Returns: Json }
+      public_ranking_vendas: {
+        Args: never
+        Returns: {
+          caixas_medias_por_pedido: number
+          categoria: string
+          clientes_distintos: number
+          colecao: string
+          grupo: string
+          participacao_receita_grupo: number
+          pedidos_distintos: number
+          receita: number
+          score_popularidade: number
+          score_recencia: number
+          sku: string
+          unidades_vendidas: number
+        }[]
+      }
       public_save_wishlist: {
         Args: {
           p_chave: string

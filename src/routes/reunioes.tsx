@@ -18,6 +18,7 @@ import type { CartItem, OrderMeta } from "@/types";
 import { formatBRL } from "@/lib/format";
 import { tempoRestante, PUBLIC_SITE_URL } from "@/lib/preSelecao";
 import { cn } from "@/lib/utils";
+import { criteriosSugestao } from "@/lib/sugestaoPedido";
 import { toast } from "sonner";
 import { useSessoesCatalogo, ESTADO_SESSAO_LABEL, type SessaoRow, type EstadoSessao } from "@/lib/sessoesCatalogo";
 import { chavesWishlist, fetchWishlistCarrinhos, fetchUltimaPreSelecao, mesclarItens, type PreSelecaoEnviada, type WishlistCarrinhoRow } from "@/lib/wishlistEquipe";
@@ -25,7 +26,7 @@ import { chavesWishlist, fetchWishlistCarrinhos, fetchUltimaPreSelecao, mesclarI
 
 export const Route = createFileRoute("/reunioes")({
   head: () => ({
-    meta: [{ title: "Reuniões — Fetély B2B" }],
+    meta: [{ title: "Reuniões — Fetély B2B" }, { name: 'description', content: 'Pré-seleções, sugestões de pedido e interesses dos clientes Fetély para acompanhamento comercial.' }, { property: 'og:title', content: 'Reuniões — Fetély B2B' }, { property: 'og:description', content: 'Acompanhe listas de desejos e critérios das sugestões de pedido Fetély.' }, { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary_large_image' }],
   }),
   component: ReunioesPage,
 });
@@ -368,6 +369,7 @@ function ReunioesPage() {
                   <td className="px-3 py-3 font-mono text-xs">{p.id}</td>
                   <td className="px-3 py-3">
                     <div className="font-medium">{p.nomeFantasia}</div>
+                    {!!p.preferenciasSugestao?.length && <span className="text-[10px] text-gold">✦ Sugestão automática</span>}
                     <div className="text-xs text-text-secondary">{p.cidadeEstado} · {SEGMENTO_LABEL[p.segmento]}</div>
                   </td>
                   <td className="px-3 py-3 text-xs">
@@ -854,6 +856,7 @@ function PreSelecaoDetail({ pre, onClose }: { pre: PreSelecao; onClose: () => vo
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {!!pre.preferenciasSugestao?.length && <section><h3 className="font-display text-lg text-gold">✦ Sugestão automática</h3>{pre.preferenciasSugestao.map((o,index)=><div key={index} className="text-xs text-text-secondary space-y-1 mt-2">{criteriosSugestao(o.preferencias).map(c=><p key={c}>{c}</p>)}<p>{o.skus.length} SKUs da sugestão na lista</p></div>)}</section>}
         <section>
           <h3 className="text-xs uppercase tracking-wider text-gold-muted mb-2">Empresa</h3>
           <dl className="text-sm space-y-1">

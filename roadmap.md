@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Sugestão de Pedido: agregados públicos seguros de vendas/afinidade/faixas e critérios no envio; migrações 0022/0023 aplicadas, sem leitura pública de pedidos ou clientes.
+- [x] Sugestão de Pedido: montagem determinística, painel de preferências e edição, aplicação na lista e critérios em Reuniões; grade 0–9 indivisível tem precedência sobre o teto de dois SKUs por coleção ao espalhar.
+- [x] Sugestão de Pedido: 33 testes de regras/segurança passam; fluxo público desktop/mobile, soma, troca, substituição, retomada e envio real PS0090 com leitura autenticada de critérios em Reuniões conferidos; pré-seleção e listas técnicas removidas, sem publicar.
+
 - [x] Complemento de dimensões: dry_run valida sem gravação, catalogos_pdf acompanha a coleção na transação; resolução/cadastro preferem ativos, reativação mantém id e audita, destino inativo bloqueia. Migração 0020 aplicada, ambos os contratos RPC restritos à integração; 127 testes de catálogo passam (26 novos), build OK; testes em dados isolados, sem publicar.
 
 - [x] Renomear dimensão: porta SNCF autenticada e RPCs atômicas com auditoria; migração 0019 aplicada e permissões conferidas, 101 testes Vitest passam (21 novos, transação PostgreSQL isolada com gate existente), porta da prévia rejeita token inválido com 401, build OK; sem renomear dados reais, alterar portas/gates/telas existentes ou publicar.

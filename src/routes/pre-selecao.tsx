@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
@@ -42,6 +43,10 @@ import { usePreSelecao } from "@/store/preSelecaoStore";
 import { formatBRL, halfBox, nearestMultiple } from "@/lib/format";
 import type { Product } from "@/types";
 import { cn } from "@/lib/utils";
+import { SugestaoPedidoSheet } from "@/components/catalog/SugestaoPedidoSheet";
+import { aplicarSugestao, type ItemSugestao, type PreferenciasSugestao, type OrigemSugestao } from "@/lib/sugestaoPedido";
+import { sugestaoQueryOptions } from "@/lib/sugestaoPedidoQuery";
+import { safeLocalStorage } from "@/lib/safeStorage";
 
 const searchSchema = z.object({
   v: fallback(z.string(), "").optional(),
@@ -57,6 +62,10 @@ export const Route = createFileRoute("/pre-selecao")({
       { title: "Fetély — Catálogo de Pré-seleção" },
       { name: "description", content: "Navegue pelo catálogo Fetély e marque os produtos de interesse antes da reunião." },
       { name: "robots", content: "noindex" },
+      { property: "og:title", content: "Fetély — Catálogo de Pré-seleção" },
+      { property: "og:description", content: "Monte sua lista de desejos ou uma sugestão de pedido com os mais vendidos da Fetély." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: PreSelecaoPage,
@@ -66,7 +75,17 @@ type CartMap = Record<string, number>; // sku → qty (0 = ♡ interesse sem qtd
 
 function PreSelecaoPage() {
   const { v, colecao, grupo, categoria } = Route.useSearch();
-  const products = useCatalog((s) => s.products);
+  const catalogProducts = useCatalog((s) => s.products);
+  const [sugestaoOpen, setSugestaoOpen] = useState(false);
+  const [origensSugestao, setOrigensSugestao] = useState<OrigemSugestao[]>([]);
+  const [produtosSugeridos, setProdutosSugeridos] = useState<Product[]>([]);
+  const sugestaoData = useQuery({ ...sugestaoQueryOptions(), enabled: sugestaoOpen || origensSugestao.length > 0 });
+  const products = useMemo(() => {
+    const map = new Map(catalogProducts.map(p => [p.sku, p]));
+    const skus = new Set(origensSugestao.flatMap(o => o.skus));
+    for (const p of [...(sugestaoData.data?.produtos ?? []), ...produtosSugeridos]) if (skus.has(p.sku)) map.set(p.sku, { ...(map.get(p.sku) ?? p), ...p });
+    return [...map.values()];
+  }, [catalogProducts, produtosSugeridos, sugestaoData.data, origensSugestao]);
   const photos = usePhotos();
   const setGroupExpanded = useUI((s) => s.setGroupExpanded);
 
@@ -104,6 +123,10 @@ function PreSelecaoPage() {
     const gateSaved = loadGateIdentidade();
     const key = wishlistKey(gateSaved);
     wishKeyRef.current = key;
+    try {
+      const raw = JSON.parse(localStorage.getItem(`${key}:sugestao`) || '[]');
+      if (Array.isArray(raw)) setOrigensSugestao(raw.filter(o => o && Array.isArray(o.skus) && o.preferencias));
+    } catch { /* Metadados opcionais não impedem retomar a lista. */ }
     const saved = loadWishlist(key);
     if (Object.keys(saved).length > 0) setCart(saved);
     (async () => {
@@ -130,11 +153,12 @@ function PreSelecaoPage() {
     if (!cartRestoredRef.current || !wishKeyRef.current) return;
     const key = wishKeyRef.current;
     saveWishlist(key, cart);
+    safeLocalStorage.setItem(`${key}:sugestao`, JSON.stringify(origensSugestao));
     const t = setTimeout(() => {
       void saveWishlistRemote(key, cart, loadGateIdentidade());
     }, 600);
     return () => clearTimeout(t);
-  }, [cart]);
+  }, [cart, origensSugestao]);
 
 
   // Bootstrap da sessão: cria/reutiliza session_id, resolve link_instance
@@ -172,6 +196,8 @@ function PreSelecaoPage() {
     // Migra/recupera o carrinho para a chave da identidade informada.
     const novaKey = wishlistKey(value);
     const antigaKey = wishKeyRef.current ?? novaKey;
+    const metaSugestao = safeLocalStorage.getItem(`${antigaKey}:sugestao`);
+    if (metaSugestao) safeLocalStorage.setItem(`${novaKey}:sugestao`, metaSugestao);
     const local = migrateWishlist(antigaKey, novaKey);
     wishKeyRef.current = novaKey;
     const remoto = await loadWishlistRemote(novaKey);
@@ -308,6 +334,25 @@ function PreSelecaoPage() {
     });
 
   const canSubmit = resumo.totalItens > 0;
+  const abrirSugestao = () => {
+    setSugestaoOpen(true);
+    const sid = sessionIdRef.current;
+    if (sid) void emitEvento(sid, 'sugestao_aberta');
+  };
+  const sugestaoGerada = useCallback((preferencias: PreferenciasSugestao, valor: number) => {
+    const sid = sessionIdRef.current;
+    if (sid) void emitEvento(sid, 'sugestao_gerada', { valor_parcial: valor, campos_preenchidos: { preferencias } });
+  }, []);
+  const aplicarPedidoSugerido = (itens: ItemSugestao[], origem: OrigemSugestao, substituir: boolean, novosProdutos: Product[]) => {
+    setProdutosSugeridos(novosProdutos);
+    setCart(prev => aplicarSugestao(prev, itens, substituir));
+    setOrigensSugestao(prev => substituir ? [origem] : [...prev, origem]);
+    const sid = sessionIdRef.current;
+    if (sid) void emitEvento(sid, 'sugestao_aplicada', { valor_parcial: itens.reduce((s,i) => s+i.quantidade*i.produto.precoAtacado,0), itens_parcial: itens.length, campos_preenchidos: { preferencias: origem.preferencias, substituir } });
+    setSugestaoOpen(false);
+    toast.success('Sugestão adicionada à sua lista.');
+    setWishlistOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-background text-text-primary flex flex-col">
@@ -356,7 +401,7 @@ function PreSelecaoPage() {
         <main className="flex-1 min-w-0 pb-32">
           <div className="px-3 py-4 sm:px-6 sm:py-8 max-w-[1200px] mx-auto">
             {!colecao ? (
-              <EmptyStatePublic vendedor={v || ""} />
+              <EmptyStatePublic vendedor={v || ""} onSugestao={abrirSugestao} />
             ) : (
               <>
                 <nav className="flex items-center gap-1.5 text-[10px] sm:text-[11px] uppercase tracking-wider text-text-muted mb-3 sm:mb-4 overflow-x-auto whitespace-nowrap pb-1">
@@ -415,8 +460,8 @@ function PreSelecaoPage() {
         "fixed bottom-0 inset-x-0 z-40 border-t border-gold/40 bg-background/95 backdrop-blur",
         !canSubmit && "opacity-95",
       )}>
-        <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-3 flex items-center gap-3">
-          <div className="flex-1 min-w-0">
+        <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-3 flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex-1 min-w-0 basis-full sm:basis-auto">
             <div className="text-sm font-medium truncate">
               <Heart className="inline h-4 w-4 text-gold mr-1.5" />
               {resumo.totalItens} {resumo.totalItens === 1 ? "item selecionado" : "itens selecionados"} · {resumo.unidades} un.
@@ -428,6 +473,9 @@ function PreSelecaoPage() {
               Valor estimado (atacado): <span className="text-gold font-medium">{formatBRL(resumo.atacado)}</span>
             </div>
           </div>
+          <Button variant="outline" onClick={abrirSugestao} className="gold-border text-gold hover:bg-gold/10 text-xs sm:text-sm flex-1 sm:flex-none whitespace-normal h-auto min-h-9">
+            ✦ Monte meu pedido sugerido
+          </Button>
           <Button
             variant="outline"
             disabled={!canSubmit}
@@ -446,6 +494,8 @@ function PreSelecaoPage() {
         </div>
       </div>
 
+      <SugestaoPedidoSheet open={sugestaoOpen} onOpenChange={setSugestaoOpen} onAplicar={aplicarPedidoSugerido} onGerada={sugestaoGerada} />
+
       <WishlistSheet
         open={wishlistOpen}
         onOpenChange={setWishlistOpen}
@@ -463,11 +513,13 @@ function PreSelecaoPage() {
         produtos={products}
         vendedor={v || null}
         sessionIdRef={sessionIdRef}
+        origensSugestao={origensSugestao.map(o => ({ ...o, skus: o.skus.filter(sku => sku in cart) })).filter(o => o.skus.length > 0)}
         onDone={(pre) => {
           setModalOpen(false);
           const link = `${PUBLIC_SITE_URL}/reunioes/importar#${encodePreSelecao(pre)}`;
           setConfirmado({ id: pre.id, link });
           setCart({});
+          setOrigensSugestao([]);
           formularioEmitidaRef.current = false;
         }}
       />
@@ -482,7 +534,7 @@ function PreSelecaoPage() {
 
 /** Tela inicial (sem coleção selecionada) — mesma UX do /catalog público:
  *  primeiro escolhe categoria, depois vê grid de coleções com foto. */
-function EmptyStatePublic({ vendedor }: { vendedor: string }) {
+function EmptyStatePublic({ vendedor, onSugestao }: { vendedor: string; onSugestao: () => void }) {
   const products = useCatalog((s) => s.products);
   const photos = usePhotos();
   const { categoria } = Route.useSearch();
@@ -532,6 +584,7 @@ function EmptyStatePublic({ vendedor }: { vendedor: string }) {
             Nossa equipe entra em contato com uma proposta personalizada.
           </p>
         </header>
+        <div className="flex justify-center"><Button onClick={onSugestao} variant="outline" className="gold-border text-gold hover:bg-gold/10 min-h-11 h-auto whitespace-normal font-display text-lg">✦ Monte meu pedido sugerido</Button></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {CATS.map((c) => {
             const sampleCol = collections.find((x) => x.categoria === c.nome);
@@ -632,6 +685,7 @@ function DadosEmpresaModal({
   produtos,
   vendedor,
   sessionIdRef,
+  origensSugestao,
   onDone,
 }: {
   open: boolean;
@@ -640,6 +694,7 @@ function DadosEmpresaModal({
   produtos: Product[];
   vendedor: string | null;
   sessionIdRef: React.MutableRefObject<string | null>;
+  origensSugestao: OrigemSugestao[];
   onDone: (pre: Awaited<ReturnType<typeof buildPreSelecao>>) => void;
 }) {
   const [cnpj, setCnpj] = useState("");
@@ -741,6 +796,7 @@ function DadosEmpresaModal({
         observacao: observacao || undefined,
         aceitaNewsletter,
         itens,
+        ...(origensSugestao.length > 0 ? { preferenciasSugestao: origensSugestao } : {}),
       });
       const sid = sessionIdRef.current || undefined;
       const pre = { ...preBase, sessaoId: sid };

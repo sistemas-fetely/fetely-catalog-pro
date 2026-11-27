@@ -54,6 +54,7 @@ export interface ItemPreSelecao {
 }
 
 export interface PreSelecao {
+  preferenciasSugestao?: import('@/lib/sugestaoPedido').OrigemSugestao[];
   id: string; // PS0042
   criadoEm: string;
   expiraEm: string;

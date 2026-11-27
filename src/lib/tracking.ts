@@ -21,7 +21,10 @@ export type EventoTipo =
   | "montagem_iniciada"
   | "formulario_aberto"
   | "pre_selecao_enviada"
-  | "formulario_autosave";
+  | "formulario_autosave"
+  | "sugestao_aberta"
+  | "sugestao_gerada"
+  | "sugestao_aplicada";
 
 export interface GateIdentidade {
   nome: string;

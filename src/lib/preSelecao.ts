@@ -167,6 +167,7 @@ type DbRow = {
   visualizado_em: string | null;
   followup_em?: string | null;
   resultado_motivo?: string | null;
+  preferencias_sugestao?: PreSelecao['preferenciasSugestao'] | null;
 };
 
 export function toDbRow(pre: PreSelecao) {
@@ -198,6 +199,7 @@ export function toDbRow(pre: PreSelecao) {
     pedido_gerado_id: pre.pedidoGeradoId ?? null,
     visualizado_em: pre.visualizadoEm ?? null,
     sessao_id: pre.sessaoId ?? null,
+    preferencias_sugestao: pre.preferenciasSugestao ?? null,
   };
 }
 
@@ -231,6 +233,7 @@ export function fromDbRow(r: DbRow): PreSelecao {
     visualizadoEm: r.visualizado_em ?? undefined,
     followupEm: r.followup_em ?? undefined,
     resultadoMotivo: r.resultado_motivo ?? undefined,
+    ...(r.preferencias_sugestao ? { preferenciasSugestao: r.preferencias_sugestao } : {}),
   };
 }
 
