@@ -20,6 +20,7 @@ export interface PreferenciasSugestao {
   preferidas: string[];
   excluidas: string[];
   prontaEntrega: boolean;
+  limiteAncoras?: number;
 }
 export interface RankingVenda {
   sku: string;
@@ -61,6 +62,8 @@ export interface OrigemSugestao {
   skus: string[];
 }
 export interface ResultadoSugestao {
+  kits: KitSugestao[];
+  avisosProfundidade: string[];
   itens: ItemSugestao[];
   total: number;
   atingiuAlvo: boolean;
@@ -131,13 +134,175 @@ export function dicaFaixa(
       }
     : null;
 }
-function jitter(sku: string, seed: number): number {
-  let h = seed | 0;
-  for (const c of sku) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
-  return (h >>> 0) / 4294967296;
+export interface KitSugestao {
+  id: string;
+  nome: string;
+  grupo: GrupoSugestao;
+  colecao: string;
+  cor: string;
+  itens: ItemSugestao[];
+  custo: number;
+  score: number;
+  recencia: number;
+  novidade: boolean;
+  afinidades: Record<string, number>;
+  motivo: string;
+  travado: boolean;
+  nivelExtra: number;
 }
+export interface OpcoesMontagem {
+  anteriores?: KitSugestao[];
+  regenerar?: boolean;
+}
+function aleatorio(key: string, seed: number): number {
+  let h = (seed ^ 2166136261) >>> 0;
+  for (const c of key) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  h = Math.imul(h ^ (h >>> 16), 2246822507);
+  h = Math.imul(h ^ (h >>> 13), 3266489909);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+const normalizar = (v: string) => v.trim().toLocaleLowerCase("pt-BR");
 function gradeKey(p: Product): string {
-  return `${p.colecao}|${p.linha}|${p.nomeComercial.replace(/\b[0-9]\b/g, "")}|${p.corNome}|${p.tamanhoRef}`;
+  return `${p.linha}|${p.corNome}|${p.tamanhoRef}`;
+}
+/** Catalog-only kit definition: photos stay in the view's collection-photo store. */
+export function montarKits(
+  produtos: Product[],
+  pref: PreferenciasSugestao = PREFERENCIAS_PADRAO,
+  ranking: RankingVenda[] = [],
+  afinidades: AfinidadeColecao[] = [],
+): KitSugestao[] {
+  const historico = new Map(ranking.map((r) => [r.sku, r]));
+  const blocos = new Map<string, Product[]>();
+  const elegiveis = produtos.filter((p) => elegivelSugestao(p, pref));
+  for (const p of elegiveis) {
+    const grupo = grupoSugestao(p);
+    if (!grupo) continue;
+    // When the safe projection has no estampa, the commercial color identifies the print.
+    const variacao =
+      grupo === "Mesa posta" || grupo === "Infantil"
+        ? normalizar(p.estampa || (p.colecao.toLocaleLowerCase().includes("mosa") ? p.corNome : ""))
+        : grupo === "Copos e Taças" || grupo === "Talheres"
+          ? normalizar(p.corNome)
+          : grupo === "Velas" && p.isVelaNumerica
+            ? gradeKey(p)
+            : "";
+    const id = `${grupo}|${p.colecao}|${p.isVelaNumerica ? "grade|" : ""}${variacao}`;
+    const bloco = blocos.get(id) ?? [];
+    if (!bloco.some((x) => x.sku === p.sku)) bloco.push(p);
+    blocos.set(id, bloco);
+  }
+  const kits: KitSugestao[] = [];
+  for (const [id, bloco] of blocos) {
+    const primeiro = bloco[0];
+    if (!primeiro) continue;
+    const grupo = grupoSugestao(primeiro);
+    if (!grupo) continue;
+    let pecas = [...bloco].sort(
+      (a, b) =>
+        a.grupo.localeCompare(b.grupo) ||
+        a.corNome.localeCompare(b.corNome) ||
+        Number(a.tamanhoNumero) - Number(b.tamanhoNumero) ||
+        a.sku.localeCompare(b.sku),
+    );
+    if (primeiro.isVelaNumerica) {
+      const grade = Array.from({ length: 10 }, (_, n) =>
+        bloco.find((p) => (p.numeroVela ?? Number(p.tamanhoNumero)) === n),
+      );
+      if (!grade.every((p): p is Product => p !== undefined)) continue;
+      pecas = grade;
+    }
+    const itens = pecas.map((produto) => ({
+      produto,
+      quantidade: quantidadeSugestao(produto, pref),
+      motivo: "",
+    }));
+    const custo = totalSugestao(itens);
+    const score =
+      itens.reduce(
+        (sum, i) =>
+          sum +
+          (historico.get(i.produto.sku)?.score_popularidade ?? 4) *
+            i.quantidade *
+            i.produto.precoAtacado,
+        0,
+      ) / Math.max(custo, 1);
+    const recencia =
+      itens.reduce(
+        (sum, i) =>
+          sum +
+          (historico.get(i.produto.sku)?.score_recencia ?? 0) *
+            i.quantidade *
+            i.produto.precoAtacado,
+        0,
+      ) / Math.max(custo, 1);
+    const novidade = pecas.every((p) => !historico.has(p.sku));
+    const motivo = novidade
+      ? "Novidade"
+      : pref.prontaEntrega
+        ? "Pronta entrega"
+        : recencia >= 60
+          ? "Em alta nos últimos 90 dias"
+          : score >= 70
+            ? grupo === "Mesa posta"
+              ? "Mesa mais vendida"
+              : "Entre os mais vendidos"
+            : "Escolha das lojas";
+    const afinidade: Record<string, number> = {};
+    for (const a of afinidades) {
+      if (a.colecao_a === primeiro.colecao && pecas.some((p) => p.grupo === a.grupo_a))
+        afinidade[a.colecao_b] = Math.max(afinidade[a.colecao_b] ?? 0, a.score_afinidade);
+      if (a.colecao_b === primeiro.colecao && pecas.some((p) => p.grupo === a.grupo_b))
+        afinidade[a.colecao_a] = Math.max(afinidade[a.colecao_a] ?? 0, a.score_afinidade);
+    }
+    kits.push({
+      id,
+      nome: `${grupo === "Mesa posta" ? "Mesa" : grupo} ${primeiro.colecao}${
+        grupo === "Copos e Taças" ||
+        grupo === "Talheres" ||
+        (grupo === "Mesa posta" && id.split("|")[2])
+          ? ` · ${primeiro.estampa || primeiro.corNome}`
+          : ""
+      }`,
+      grupo,
+      colecao: primeiro.colecao,
+      cor: primeiro.corNome,
+      itens: itens.map((i) => ({ ...i, motivo })),
+      custo,
+      score: score * 0.75 + recencia * 0.25,
+      recencia,
+      novidade,
+      afinidades: afinidade,
+      motivo,
+      travado: false,
+      nivelExtra: 0,
+    });
+  }
+  return kits.sort((a, b) => a.id.localeCompare(b.id));
+}
+export function atualizarKit(kit: KitSugestao, itens: ItemSugestao[]): KitSugestao {
+  return { ...kit, itens, custo: totalSugestao(itens) };
+}
+export function alternativasKit(
+  atual: KitSugestao,
+  candidatos: KitSugestao[],
+  selecionados: KitSugestao[],
+  alvo: number,
+): KitSugestao[] {
+  const totalMantido = selecionados
+    .filter((k) => k.id !== atual.id)
+    .reduce((s, k) => s + k.custo, 0);
+  const usados = new Set(selecionados.map((k) => k.id));
+  return candidatos
+    .filter(
+      (k) => k.grupo === atual.grupo && !usados.has(k.id) && k.custo + totalMantido <= alvo * 1.05,
+    )
+    .sort(
+      (a, b) =>
+        Math.abs(Math.log(a.custo / atual.custo)) - Math.abs(Math.log(b.custo / atual.custo)) ||
+        b.score - a.score,
+    )
+    .slice(0, 5);
 }
 export function montarSugestao(
   produtos: Product[],
@@ -145,242 +310,161 @@ export function montarSugestao(
   afinidades: AfinidadeColecao[],
   pref: PreferenciasSugestao,
   seed = 1,
+  opcoes: OpcoesMontagem = {},
 ): ResultadoSugestao {
   const alvo = Math.max(1000, Math.min(30000, pref.investimento || 2500));
-  const teto = alvo * 1.05;
-  const historico = new Map(ranking.map((r) => [r.sku, r]));
-  const elegiveis = produtos.filter((p) => elegivelSugestao(p, pref));
-  const grades = new Map<string, Product[]>();
-  for (const p of elegiveis.filter((p) => p.isVelaNumerica)) {
-    const key = gradeKey(p);
-    const arr = grades.get(key) ?? [];
-    arr.push(p);
-    grades.set(key, arr);
-  }
-  const candidatos: Product[][] = [];
-  const vistos = new Set<string>();
-  for (const p of elegiveis) {
-    if (!p.isVelaNumerica) {
-      candidatos.push([p]);
-      continue;
-    }
-    const key = gradeKey(p);
-    if (vistos.has(key)) continue;
-    vistos.add(key);
-    const arr = grades.get(key) ?? [];
-    const grade = Array.from({ length: 10 }, (_, n) =>
-      arr.find((x) => (x.numeroVela ?? Number(x.tamanhoNumero)) === n),
+  const candidatos = montarKits(produtos, pref, ranking, afinidades);
+  const anteriores = opcoes.anteriores ?? [];
+  const antigos = new Set(anteriores.filter((k) => !k.travado).map((k) => k.id));
+  const escolhidos: KitSugestao[] = [];
+  const usados = new Set<string>();
+  const valor = () => escolhidos.reduce((s, k) => s + k.custo, 0);
+  const pode = (k: KitSugestao) =>
+    !usados.has(k.id) &&
+    valor() + k.custo <= alvo &&
+    (pref.colecoes !== "espalhar" || !escolhidos.some((x) => x.colecao === k.colecao));
+  const adicionar = (k: KitSugestao) => {
+    escolhidos.push(k);
+    usados.add(k.id);
+  };
+  const validoAnterior = (k: KitSugestao) => {
+    const base = candidatos.find((x) => x.id === k.id);
+    return (
+      base &&
+      k.itens.length > 0 &&
+      k.itens.every(
+        (i) =>
+          base.itens.some((x) => x.produto.sku === i.produto.sku) &&
+          i.quantidade <= quantidadeSugestao(i.produto, pref) * 2,
+      )
     );
-    if (grade.every((x): x is Product => !!x)) candidatos.push(grade);
+  };
+  // Locks survive reshuffling; preference changes keep compatible, non-inflated edits.
+  for (const k of [...anteriores].sort((a, b) => Number(b.travado) - Number(a.travado))) {
+    if ((!opcoes.regenerar || k.travado) && validoAnterior(k) && pode(k)) adicionar(k);
   }
-  const score = (ps: Product[]) =>
-    ps.reduce((s, p) => s + (historico.get(p.sku)?.score_popularidade ?? 2), 0) / ps.length;
-  const custo = (ps: Product[]) =>
-    ps.reduce((s, p) => s + p.precoAtacado * quantidadeSugestao(p, pref), 0);
   const grupos = GRUPOS_SUGESTAO.filter(
-    (g) =>
-      (pref.grupos[g] ?? 0) > 0 && candidatos.some((ps) => ps[0] && grupoSugestao(ps[0]) === g),
+    (g) => (pref.grupos[g] ?? 0) > 0 && candidatos.some((k) => k.grupo === g),
   );
   const receitas = new Map(
     grupos.map((g) => [
       g,
-      ranking.filter((r) => grupoSugestao(r) === g).reduce((s, r) => s + Number(r.receita), 0),
+      ranking.filter((r) => grupoSugestao(r) === g).reduce((s, r) => s + r.receita, 0),
     ]),
   );
-  const somaReceitas = [...receitas.values()].reduce((a, b) => a + b, 0);
+  const soma = [...receitas.values()].reduce((s, v) => s + v, 0);
   const pesos = new Map(
     grupos.map((g) => [
       g,
-      Math.max((receitas.get(g) ?? 0) / Math.max(somaReceitas, 1), 0.02) * (pref.grupos[g] ?? 1),
+      (soma ? Math.max((receitas.get(g) ?? 0) / soma, 0.02) : 1) * (pref.grupos[g] ?? 1),
     ]),
   );
-  const somaPesos = [...pesos.values()].reduce((a, b) => a + b, 0);
-  const colecoes = new Map<string, number>();
-  for (const ps of candidatos) {
-    const p = ps[0];
-    if (p) colecoes.set(p.colecao, (colecoes.get(p.colecao) ?? 0) + score(ps));
-  }
-  for (const a of afinidades) {
-    if (colecoes.has(a.colecao_a))
-      colecoes.set(a.colecao_a, (colecoes.get(a.colecao_a) ?? 0) + a.score_afinidade * 0.2);
-    if (colecoes.has(a.colecao_b))
-      colecoes.set(a.colecao_b, (colecoes.get(a.colecao_b) ?? 0) + a.score_afinidade * 0.2);
-  }
-  const rankColecao = (col: string) => {
-    const ps = candidatos.filter((arr) => arr[0]?.colecao === col);
-    const media = ps.reduce((s, arr) => s + score(arr), 0) / Math.max(ps.length, 1);
-    const cobertura = new Set(ps.flatMap((arr) => arr.map((p) => p.grupo))).size;
-    const afinidade =
-      afinidades
-        .filter((a) => a.colecao_a === col || a.colecao_b === col)
-        .reduce((s, a) => s + a.score_afinidade, 0) / Math.max(ps.length, 1);
-    return (
-      media +
-      cobertura * 15 +
-      afinidade * 0.15 +
-      (pref.preferidas.includes(col) ? 1000 : 0) +
-      jitter(col, seed) * 15
-    );
-  };
-  const ancoras = [...colecoes.keys()]
-    .filter((c) =>
-      candidatos.some((ps) => ps[0]?.colecao === c && grupoSugestao(ps[0]) === "Mesa posta"),
-    )
-    .sort((a, b) => rankColecao(b) - rankColecao(a) || a.localeCompare(b))
-    .slice(0, 3);
-  const colecaoPorGrupo = new Map<GrupoSugestao, string[]>();
-  for (const g of GRUPOS_SUGESTAO) {
-    const limite = (alvo * (pesos.get(g) ?? 0)) / Math.max(somaPesos, 1e-9);
-    const doGrupo = candidatos.filter((ps) => ps[0] && grupoSugestao(ps[0]) === g);
-    const acessiveis = doGrupo.filter((ps) => custo(ps) <= limite);
-    const cols = [
-      ...new Set((acessiveis.length ? acessiveis : doGrupo).map((ps) => ps[0]?.colecao ?? "")),
-    ];
-    cols.sort(
-      (a, b) =>
-        rankColecao(b) +
-          (ancoras.includes(b) ? 80 : 0) -
-          (rankColecao(a) + (ancoras.includes(a) ? 80 : 0)) || a.localeCompare(b),
-    );
-    // Mesa coordenada usa até três âncoras; os complementos vêm de uma linha por grupo.
-    colecaoPorGrupo.set(g, cols.slice(0, g === "Mesa posta" || g === "Jogo Americano" ? 3 : 1));
-  }
-  const top10 = new Set(
-    [...ranking]
-      .sort((a, b) => b.score_popularidade - a.score_popularidade)
-      .slice(0, 10)
-      .map((r) => r.sku),
-  );
-  const itens: ItemSugestao[] = [];
-  const usados = new Set<string>();
-  const porColecao = new Map<string, number>();
-  const cores = new Set<string>();
-  const pode = (ps: Product[]) => {
-    const p = ps[0];
-    if (!p || usados.has(p.sku)) return false;
-    if (
-      pref.colecoes === "concentrar" &&
-      !(colecaoPorGrupo.get(grupoSugestao(p) ?? "Mesa posta") ?? []).includes(p.colecao)
-    )
-      return false;
-    // A grade numérica 0–9 é uma unidade indivisível; a exceção ao limite de 2 é exclusiva dela.
-    return (
-      pref.colecoes !== "espalhar" ||
-      (porColecao.get(p.colecao) ?? 0) + (ps.length === 10 ? 1 : ps.length) <= 2
-    );
-  };
-  const ordenar = (lista: Product[][]) =>
-    [...lista].sort((a, b) => {
-      const val = (ps: Product[]) => {
-        const p = ps[0];
-        if (!p) return -Infinity;
-        const repeticoes = porColecao.get(p.colecao) ?? 0;
-        const cor = cores.has(p.corNome) ? 1 : 0;
-        let v =
-          pref.estilo === "vendidos"
-            ? score(ps)
-            : pref.estilo === "equilibrado"
-              ? score(ps) * 0.7 + 30 / (1 + repeticoes + cor)
-              : score(ps) * 0.2 + 80 / (1 + repeticoes + cor);
-        v += jitter(p.sku, seed) * (pref.estilo === "vendidos" ? 0.001 : 25);
-        if (pref.preferidas.includes(p.colecao)) v += 40;
-        if (pref.colecoes === "concentrar" && ancoras.includes(p.colecao)) v += 65;
-        if (
-          pref.colecoes === "concentrar" &&
-          itens.some((i) => i.produto.colecao === p.colecao && i.produto.grupo !== p.grupo)
-        )
-          v += 25;
-        return v;
-      };
-      return val(b) - val(a) || (a[0]?.sku ?? "").localeCompare(b[0]?.sku ?? "");
-    });
-  const adicionar = (ps: Product[]) => {
-    for (const p of ps) {
-      const motivo = top10.has(p.sku)
-        ? "Top 10 mais vendido"
-        : pref.estilo === "mesclado" && !historico.has(p.sku)
-          ? "Novidade"
-          : pref.prontaEntrega
-            ? "Pronta entrega"
-            : ancoras.includes(p.colecao)
-              ? `Combina com a coleção ${p.colecao}`
-              : "Mais vendido no grupo";
-      itens.push({ produto: p, quantidade: quantidadeSugestao(p, pref), motivo });
-      usados.add(p.sku);
-      cores.add(p.corNome);
-    }
-    const p = ps[0];
-    if (p)
-      porColecao.set(
-        p.colecao,
-        (porColecao.get(p.colecao) ?? 0) + (ps.length === 10 ? 1 : ps.length),
-      );
-  };
-  for (const g of grupos) {
-    const limite = (alvo * (pesos.get(g) ?? 0)) / Math.max(somaPesos, 1e-9);
-    let gasto = 0;
-    while (true) {
-      const ps = ordenar(
-        candidatos.filter((ps) => ps[0] && grupoSugestao(ps[0]) === g && pode(ps)),
-      ).find((ps) => gasto + custo(ps) <= limite && totalSugestao(itens) + custo(ps) <= teto);
-      if (!ps) break;
-      adicionar(ps);
-      gasto += custo(ps);
-    }
-  }
-  // Redistribui as sobras, mantendo profundidade e grade intactas.
-  while (totalSugestao(itens) < Math.max(1000, alvo * 0.95)) {
-    const ps = ordenar(candidatos.filter(pode)).find(
-      (ps) => totalSugestao(itens) + custo(ps) <= teto,
-    );
-    if (!ps) break;
-    adicionar(ps);
-  }
-  // Com mix restrito, completa as caixas já selecionadas em passos de meia caixa.
-  // Grades numéricas recebem o mesmo incremento nos dez números.
-  for (
-    let tentativa = 0;
-    totalSugestao(itens) < Math.max(1000, alvo * 0.95) && tentativa < 10000;
-    tentativa++
-  ) {
-    const blocos = itens.map((i) =>
-      i.produto.isVelaNumerica
-        ? itens.filter(
-            (x) => x.produto.isVelaNumerica && gradeKey(x.produto) === gradeKey(i.produto),
-          )
-        : [i],
-    );
-    const deficitGrupo = (bloco: ItemSugestao[]) => {
-      const g = bloco[0] && grupoSugestao(bloco[0].produto);
-      return g
-        ? (alvo * (pesos.get(g) ?? 0)) / Math.max(somaPesos, 1e-9) -
-            itens
-              .filter((i) => grupoSugestao(i.produto) === g)
-              .reduce((s, i) => s + i.quantidade * i.produto.precoAtacado, 0)
-        : 0;
+  const totalPesos = [...pesos.values()].reduce((s, v) => s + v, 0);
+  const ancoras = new Set(escolhidos.filter((k) => k.grupo === "Mesa posta").map((k) => k.colecao));
+  const kExpo = pref.estilo === "vendidos" ? 3 : pref.estilo === "equilibrado" ? 1.5 : 0.6;
+  let rodada = 0;
+  const sortear = (lista: KitSugestao[]) => {
+    rodada++;
+    const peso = (k: KitSugestao) => {
+      let bonus = pref.preferidas.includes(k.colecao) ? 5 : 1;
+      const novaColecao = !escolhidos.some((x) => x.colecao === k.colecao);
+      const novaCor = !escolhidos.some((x) => x.cor === k.cor);
+      if (pref.estilo === "mesclado")
+        bonus *= (novaColecao ? 2.5 : 1) * (novaCor ? 1.5 : 1) * (k.novidade ? 3 : 1);
+      if (pref.colecoes === "concentrar") {
+        if (ancoras.has(k.colecao)) bonus *= 5;
+        bonus *= 1 + Math.max(0, ...escolhidos.map((x) => k.afinidades[x.colecao] ?? 0)) / 20;
+      }
+      if (opcoes.regenerar && antigos.has(k.id)) bonus *= 0.000001;
+      return Math.pow(Math.max(k.score, 4), kExpo) * bonus;
     };
-    const bloco = blocos
-      .filter(
-        (b) =>
-          totalSugestao(itens) +
-            b.reduce((s, i) => s + halfBox(i.produto.multiplos) * i.produto.precoAtacado, 0) <=
-          teto,
-      )
-      .sort((a, b) => deficitGrupo(b) - deficitGrupo(a))[0];
-    if (!bloco) break;
-    for (const i of bloco) i.quantidade += halfBox(i.produto.multiplos);
+    return lista
+      .map((k) => ({
+        k,
+        v: -Math.log(Math.max(1e-9, aleatorio(`${rodada}|${k.id}`, seed))) / peso(k),
+      }))
+      .sort((a, b) => a.v - b.v || a.k.id.localeCompare(b.k.id))[0]?.k;
+  };
+  const permitido = (k: KitSugestao) =>
+    pode(k) &&
+    (pref.colecoes !== "concentrar" ||
+      k.grupo !== "Mesa posta" ||
+      ancoras.has(k.colecao) ||
+      ancoras.size < (pref.limiteAncoras ?? 4));
+  // Fill by width, accepting a complete kit up to 25% above its group's share.
+  for (const g of grupos) {
+    const cota = (alvo * (pesos.get(g) ?? 0)) / Math.max(totalPesos, 1e-9);
+    while (true) {
+      const gasto = escolhidos.filter((k) => k.grupo === g).reduce((s, k) => s + k.custo, 0);
+      const kit = sortear(
+        candidatos.filter((k) => k.grupo === g && permitido(k) && gasto + k.custo <= cota * 1.25),
+      );
+      if (!kit) break;
+      adicionar(kit);
+      if (g === "Mesa posta") ancoras.add(kit.colecao);
+    }
   }
-  const total = totalSugestao(itens);
-  const atingiuAlvo = total >= Math.max(1000, alvo * 0.95) && total <= teto;
+  // Unspent shares are redistributed to additional complete kits, not isolated SKUs.
+  while (true) {
+    const kit = sortear(candidatos.filter(permitido));
+    if (!kit) break;
+    const afinidade = escolhidos.find((x) => (kit.afinidades[x.colecao] ?? 0) > 0);
+    adicionar(
+      afinidade && kit.motivo === "Escolha das lojas"
+        ? {
+            ...kit,
+            motivo: `Combina com ${afinidade.colecao}`,
+            itens: kit.itens.map((i) => ({ ...i, motivo: `Combina com ${afinidade.colecao}` })),
+          }
+        : kit,
+    );
+    if (kit.grupo === "Mesa posta") ancoras.add(kit.colecao);
+  }
+  const avisosProfundidade: string[] = [];
+  // Only an exhausted eligible mix allows whole-kit depth increases, bounded at 2×.
+  const restantes = candidatos.filter(
+    (k) =>
+      !usados.has(k.id) &&
+      (pref.colecoes !== "espalhar" || !escolhidos.some((x) => x.colecao === k.colecao)) &&
+      (pref.colecoes !== "concentrar" ||
+        k.grupo !== "Mesa posta" ||
+        ancoras.has(k.colecao) ||
+        ancoras.size < (pref.limiteAncoras ?? 4)),
+  );
+  if (!restantes.length) {
+    const niveis = pref.profundidade === "duas" ? 2 : pref.profundidade === "personalizado" ? Math.max(1, Math.round(pref.caixas)) : 1;
+    for (let nivel = 0; nivel < niveis; nivel++) {
+      for (let index = 0; index < escolhidos.length; index++) {
+        const kit = escolhidos[index];
+        if (!kit || kit.travado || valor() >= alvo * 0.95) continue;
+        const novos = kit.itens.map((i) => ({
+          ...i,
+          quantidade:
+            i.quantidade +
+            (pref.profundidade === "meia" ? halfBox(i.produto.multiplos) : i.produto.multiplos),
+        }));
+        if (novos.some((i) => i.quantidade > quantidadeSugestao(i.produto, pref) * 2)) continue;
+        const novo = atualizarKit(kit, novos);
+        if (valor() - kit.custo + novo.custo > alvo) continue;
+        escolhidos[index] = { ...novo, nivelExtra: kit.nivelExtra + 1 };
+      }
+    }
+  }
+  for (const kit of escolhidos)
+    if (kit.nivelExtra > 0)
+      avisosProfundidade.push(`Aumentamos a profundidade de ${kit.nome} para fechar o valor`);
+  const total = valor();
+  const atingiuAlvo = total >= Math.max(1000, alvo * 0.95);
   return {
-    itens,
+    kits: escolhidos,
+    itens: escolhidos.flatMap((k) => k.itens),
     total,
     atingiuAlvo,
-    aviso: atingiuAlvo
-      ? null
-      : "Não foi possível atingir o investimento com este mix e esta profundidade. Ajuste as preferências.",
+    avisosProfundidade,
+    aviso: atingiuAlvo ? null : "Este é o mix completo mais próximo abaixo do seu investimento.",
   };
 }
+/** Compatibility helper: replace the entire source kit rather than one isolated SKU. */
 export function trocarItemSugestao(
   itens: ItemSugestao[],
   sku: string,
@@ -388,58 +472,41 @@ export function trocarItemSugestao(
   ranking: RankingVenda[],
   pref: PreferenciasSugestao,
 ): ItemSugestao[] {
-  const atual = itens.find((i) => i.produto.sku === sku);
+  const atuais = montarKits(
+    itens.map((i) => i.produto),
+    pref,
+    ranking,
+  ).map((k) =>
+    atualizarKit(
+      k,
+      k.itens.map((i) => itens.find((x) => x.produto.sku === i.produto.sku) ?? i),
+    ),
+  );
+  const atual = atuais.find((k) => k.itens.some((i) => i.produto.sku === sku));
   if (!atual) return itens;
-  const removidos = atual.produto.isVelaNumerica
-    ? itens.filter(
-        (i) => i.produto.isVelaNumerica && gradeKey(i.produto) === gradeKey(atual.produto),
-      )
-    : [atual];
-  const mantidos = itens.filter((i) => !removidos.includes(i));
-  const usados = new Set(itens.map((i) => i.produto.sku));
-  const ordenados = produtos
-    .filter(
-      (p) =>
-        elegivelSugestao(p, pref) &&
-        grupoSugestao(p) === grupoSugestao(atual.produto) &&
-        !usados.has(p.sku) &&
-        p.isVelaNumerica === atual.produto.isVelaNumerica,
-    )
-    .sort(
-      (a, b) =>
-        (ranking.find((r) => r.sku === b.sku)?.score_popularidade ?? 0) -
-          (ranking.find((r) => r.sku === a.sku)?.score_popularidade ?? 0) ||
-        a.sku.localeCompare(b.sku),
-    );
-  for (const p of ordenados) {
-    const grade = p.isVelaNumerica
-      ? Array.from({ length: 10 }, (_, n) =>
-          ordenados.find(
-            (x) => gradeKey(x) === gradeKey(p) && (x.numeroVela ?? Number(x.tamanhoNumero)) === n,
-          ),
-        )
-      : [p];
-    if (!grade.every((x): x is Product => !!x)) continue;
-    if (
-      pref.colecoes === "espalhar" &&
-      mantidos.filter((i) => i.produto.colecao === p.colecao && !i.produto.isVelaNumerica).length +
-        (p.isVelaNumerica ? 1 : grade.length) >
-        2
-    )
-      continue;
-    return [
-      ...mantidos,
-      ...grade.map((produto) => ({
-        produto,
-        quantidade: Math.max(
-          halfBox(produto.multiplos),
-          Math.round(atual.quantidade / halfBox(produto.multiplos)) * halfBox(produto.multiplos),
-        ),
-        motivo: `Alternativa em ${produto.grupo}`,
-      })),
-    ];
-  }
-  return itens;
+  const alternativa = alternativasKit(
+    atual,
+    montarKits(produtos, pref, ranking),
+    atuais,
+    pref.investimento,
+  )[0];
+  if (!alternativa) return itens;
+  const primeira = atual.itens[0];
+  if (!primeira) return itens;
+  const razao = primeira.quantidade / quantidadeSugestao(primeira.produto, pref);
+  const novo = alternativa.itens.map((i) => ({
+    ...i,
+    quantidade: Math.max(
+      halfBox(i.produto.multiplos),
+      Math.round(
+        (quantidadeSugestao(i.produto, pref) * Math.min(2, razao)) / halfBox(i.produto.multiplos),
+      ) * halfBox(i.produto.multiplos),
+    ),
+  }));
+  return [
+    ...itens.filter((i) => !atual.itens.some((x) => x.produto.sku === i.produto.sku)),
+    ...novo,
+  ];
 }
 export function aplicarSugestao(
   cart: Record<string, number>,

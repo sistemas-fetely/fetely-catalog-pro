@@ -1,20 +1,28 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, RefreshCw, Minus, Plus, Trash2, ArrowLeftRight } from "lucide-react";
-import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
+import { AnimatePresence, animate, motion, useReducedMotion } from "framer-motion";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Sparkles,
+  RefreshCw,
+  MoreHorizontal,
+  ShoppingBag,
+  TrendingUp,
+  Compass,
+  Layers,
+  X,
+} from "lucide-react";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Drawer, DrawerContent, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -25,9 +33,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { PhotoPlaceholder } from "@/components/photos/PhotoPlaceholder";
-import { getProdutoPhoto, usePhotos } from "@/store/photoStore";
-import { formatBRL, halfBox } from "@/lib/format";
+import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { sugestaoQueryOptions } from "@/lib/sugestaoPedidoQuery";
@@ -35,17 +41,23 @@ import {
   GRUPOS_SUGESTAO,
   PREFERENCIAS_PADRAO,
   montarSugestao,
+  montarKits,
+  atualizarKit,
+  alternativasKit,
   totalSugestao,
   faixaSugestao,
-  dicaFaixa,
-  grupoSugestao,
-  trocarItemSugestao,
   type PreferenciasSugestao,
   type ItemSugestao,
   type OrigemSugestao,
+  type KitSugestao,
 } from "@/lib/sugestaoPedido";
+import { SugestaoKitCard, FotoKit } from "./SugestaoKitCard";
+import {
+  SugestaoPreferencias,
+  SECOES_PREFERENCIAS,
+  type SecaoPreferencias,
+} from "./SugestaoPreferencias";
 import type { Product } from "@/types";
-
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -57,487 +69,594 @@ interface Props {
   ) => void;
   onGerada: (preferencias: PreferenciasSugestao, valor: number) => void;
 }
+const CORES_GRUPOS = [
+  "text-gold",
+  "text-info",
+  "text-success",
+  "text-warning",
+  "text-stock-pre",
+  "text-muted-foreground",
+];
+function TotalAnimado({ valor }: { valor: number }) {
+  const [mostrado, setMostrado] = useState(valor);
+  const anterior = useRef(valor);
+  const reduzido = useReducedMotion();
+  useEffect(() => {
+    if (reduzido) {
+      setMostrado(valor);
+      anterior.current = valor;
+      return;
+    }
+    const controle = animate(anterior.current, valor, { duration: 0.35, onUpdate: setMostrado });
+    anterior.current = valor;
+    return () => controle.stop();
+  }, [valor, reduzido]);
+  return (
+    <span className="tabular-nums" aria-label={formatBRL(valor)}>
+      {formatBRL(mostrado)}
+    </span>
+  );
+}
 export function SugestaoPedidoSheet({ open, onOpenChange, onAplicar, onGerada }: Props) {
   const query = useQuery({ ...sugestaoQueryOptions(), enabled: open });
   const [pref, setPref] = useState<PreferenciasSugestao>(PREFERENCIAS_PADRAO);
   const [seed, setSeed] = useState(1);
-  const [itens, setItens] = useState<ItemSugestao[]>([]);
+  const [kits, setKits] = useState<KitSugestao[]>([]);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [avisos, setAvisos] = useState<string[]>([]);
   const [confirmar, setConfirmar] = useState(false);
   const [recalculando, setRecalculando] = useState(false);
-  const photos = usePhotos();
+  const [aplicando, setAplicando] = useState(false);
+  const [secao, setSecao] = useState<SecaoPreferencias | null>(null);
+  const [troca, setTroca] = useState<KitSugestao | null>(null);
+  const kitsRef = useRef(kits);
+  const eventoRef = useRef(onGerada);
+  const ultimo = useRef({ seed, profundidade: pref.profundidade, caixas: pref.caixas });
+  const reduzido = useReducedMotion();
+  const aplicarTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    kitsRef.current = kits;
+  }, [kits]);
+  useEffect(() => {
+    eventoRef.current = onGerada;
+  }, [onGerada]);
+  useEffect(
+    () => () => {
+      if (aplicarTimer.current) clearTimeout(aplicarTimer.current);
+    },
+    [],
+  );
   const produtos = useMemo(() => query.data?.produtos ?? [], [query.data]);
   const faixas = query.data?.faixas ?? [];
+  const candidatos = useMemo(
+    () => montarKits(produtos, pref, query.data?.ranking ?? [], query.data?.afinidades ?? []),
+    [produtos, pref, query.data],
+  );
+  const vitrine = useMemo(
+    () =>
+      montarKits(
+        produtos,
+        {
+          ...pref,
+          grupos: Object.fromEntries(GRUPOS_SUGESTAO.map((g) => [g, 1])),
+          excluidas: [],
+          prontaEntrega: false,
+        },
+        query.data?.ranking ?? [],
+      ),
+    [produtos, pref, query.data],
+  );
   useEffect(() => {
     if (!open || !query.data) return;
     setRecalculando(true);
     const t = setTimeout(() => {
+      const profundidadeMudou =
+        ultimo.current.profundidade !== pref.profundidade || ultimo.current.caixas !== pref.caixas;
+      const anteriores = profundidadeMudou
+        ? kitsRef.current.flatMap((k) => {
+            const base = candidatos.find((x) => x.id === k.id);
+            return base ? [{ ...base, travado: k.travado }] : [];
+          })
+        : kitsRef.current;
       const r = montarSugestao(
         query.data.produtos,
         query.data.ranking,
         query.data.afinidades,
         pref,
         seed,
+        { anteriores, regenerar: ultimo.current.seed !== seed },
       );
-      setItens(r.itens);
+      setKits(r.kits);
+      kitsRef.current = r.kits;
       setAviso(r.aviso);
+      setAvisos(r.avisosProfundidade);
       setRecalculando(false);
-      onGerada(pref, r.total);
-    }, 300);
+      eventoRef.current(pref, r.total);
+      ultimo.current = { seed, profundidade: pref.profundidade, caixas: pref.caixas };
+    }, 250);
     return () => clearTimeout(t);
-  }, [open, query.data, pref, seed, onGerada]);
+  }, [open, query.data, pref, seed, candidatos]);
+  const itens = useMemo(() => kits.flatMap((k) => k.itens), [kits]);
   const total = totalSugestao(itens);
   const faixa = faixaSugestao(total, faixas);
-  const faixaAlvo = faixaSugestao(pref.investimento, faixas);
-  const dica = dicaFaixa(pref.investimento, faixas);
-  const colecoes = useMemo(
-    () =>
-      [...new Set(produtos.map((p) => p.colecao))]
-        .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b, "pt-BR")),
-    [produtos],
-  );
-  const agrupados = useMemo(() => {
-    const m = new Map<string, ItemSugestao[]>();
-    for (const i of itens) {
-      const k = `${i.produto.categoria} → ${i.produto.colecao}`;
-      const a = m.get(k) ?? [];
-      a.push(i);
-      m.set(k, a);
-    }
-    return [...m]
-      .sort(([a], [b]) => a.localeCompare(b, "pt-BR"))
-      .map(([nome, lista]) => ({
-        nome,
-        lista: lista.sort(
-          (a, b) =>
-            a.produto.corNome.localeCompare(b.produto.corNome, "pt-BR") ||
-            (a.produto.numeroVela ?? 99) - (b.produto.numeroVela ?? 99),
-        ),
-      }));
-  }, [itens]);
   const patch = (v: Partial<PreferenciasSugestao>) => setPref((p) => ({ ...p, ...v }));
-  const mudarColecao = (campo: "preferidas" | "excluidas", col: string) =>
-    setPref((p) => ({
-      ...p,
-      [campo]: p[campo].includes(col) ? p[campo].filter((c) => c !== col) : [...p[campo], col],
-      ...(campo === "excluidas"
-        ? { preferidas: p.preferidas.filter((c) => c !== col) }
-        : { excluidas: p.excluidas.filter((c) => c !== col) }),
-    }));
-  const aplicar = (substituir: boolean) =>
-    onAplicar(
-      itens,
-      { preferencias: pref, seed, skus: itens.map((i) => i.produto.sku) },
-      substituir,
-      produtos,
-    );
-  const mudarQty = (sku: string, delta: number) =>
-    setItens((prev) =>
-      prev.map((i) =>
-        i.produto.sku === sku
-          ? {
-              ...i,
-              quantidade: Math.max(
-                halfBox(i.produto.multiplos),
-                i.quantidade + delta * halfBox(i.produto.multiplos),
-              ),
-            }
-          : i,
-      ),
-    );
-  const trocar = (sku: string) => {
-    const next = trocarItemSugestao(itens, sku, produtos, query.data?.ranking ?? [], pref);
-    if (next === itens) toast.info("Não há outra opção elegível neste grupo.");
-    else setItens(next);
-  };
+  const distribuicao = GRUPOS_SUGESTAO.map((grupo, i) => ({
+    grupo,
+    cor: CORES_GRUPOS[i] ?? "text-gold",
+    valor: kits.filter((k) => k.grupo === grupo).reduce((s, k) => s + k.custo, 0),
+  })).filter((g) => g.valor > 0);
   const podeAplicar =
     itens.length > 0 &&
     total >= 1000 &&
+    total <= pref.investimento * 1.05 &&
     pref.investimento >= 1000 &&
     pref.investimento <= 30000 &&
     !recalculando &&
-    !query.isError;
+    !query.isError &&
+    !aplicando;
+  const aplicar = (substituir: boolean) => {
+    setConfirmar(false);
+    setAplicando(true);
+    aplicarTimer.current = setTimeout(
+      () => {
+        onAplicar(
+          itens,
+          { preferencias: pref, seed, skus: itens.map((i) => i.produto.sku) },
+          substituir,
+          produtos,
+        );
+        setAplicando(false);
+      },
+      reduzido ? 0 : 350,
+    );
+  };
+  const alternativas = troca
+    ? alternativasKit(troca, candidatos, kits, pref.investimento).filter(
+        (k) =>
+          pref.colecoes !== "espalhar" ||
+          !kits.some((x) => x.id !== troca.id && x.colecao === k.colecao),
+      )
+    : [];
+  const mudarKit = (kit: KitSugestao, novas: ItemSugestao[]) => {
+    const alterado = atualizarKit(kit, novas);
+    if (total - kit.custo + alterado.custo > pref.investimento * 1.05) {
+      toast.info("Esta quantidade ultrapassa o investimento escolhido.");
+      return;
+    }
+    setKits((prev) =>
+      novas.length
+        ? prev.map((k) => (k.id === kit.id ? alterado : k))
+        : prev.filter((k) => k.id !== kit.id),
+    );
+  };
+  const cenarios = [
+    {
+      nome: "Os Queridinhos",
+      descricao: "Os favoritos das lojas",
+      estilo: "vendidos",
+      colecoes: "concentrar",
+      Icon: TrendingUp,
+    },
+    {
+      nome: "Mesa Coordenada",
+      descricao: "Coleções que se completam",
+      estilo: "equilibrado",
+      colecoes: "concentrar",
+      Icon: Layers,
+    },
+    {
+      nome: "Descobertas",
+      descricao: "Novas cores, novos encontros",
+      estilo: "mesclado",
+      colecoes: "espalhar",
+      Icon: Compass,
+    },
+  ] as const;
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-full sm:max-w-5xl p-0 flex flex-col h-dvh gold-border"
-      >
-        <header className="px-5 py-4 border-b border-border pr-12">
-          <SheetTitle className="font-display text-2xl text-gold flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            Sugestão de Pedido
-          </SheetTitle>
-          <SheetDescription>Valores estimados de atacado</SheetDescription>
-        </header>
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden grid md:grid-cols-[300px_minmax(0,1fr)]">
-          <section className="p-5 space-y-6 border-b md:border-b-0 md:border-r border-border min-w-0">
-            <h2 className="font-display text-xl">Preferências</h2>
-            <div className="space-y-3">
-              <Label htmlFor="sugestao-investimento">Quanto quer investir (R$, atacado)</Label>
-              <Input
-                id="sugestao-investimento"
-                type="number"
-                min={1000}
-                max={30000}
-                step={100}
-                value={pref.investimento}
-                onChange={(e) => patch({ investimento: Number(e.target.value) })}
-                onBlur={() =>
-                  patch({
-                    investimento: Math.max(1000, Math.min(30000, pref.investimento || 1000)),
-                  })
-                }
-              />
-              <Slider
-                aria-label="Investimento"
-                min={1000}
-                max={30000}
-                step={100}
-                value={[Math.max(1000, Math.min(30000, pref.investimento))]}
-                onValueChange={(v) => patch({ investimento: v[0] ?? 2500 })}
-              />
-              <p className="text-xs text-text-secondary">Pedido mínimo: {formatBRL(1000)}</p>
-              {faixaAlvo && (
-                <p className="text-xs text-gold">
-                  {faixaAlvo.nome} · {faixaAlvo.desconto_celebra}% de desconto · Frete{" "}
-                  {faixaAlvo.frete}
-                </p>
-              )}
-              {dica && (
-                <p className="text-xs text-text-secondary">
-                  Faltam {formatBRL(dica.falta)} para a faixa {dica.faixa.nome} (+
-                  {dica.descontoExtra}% de desconto
-                  {dica.faixa.frete === "CIF" ? " / frete CIF" : ""})
-                </p>
-              )}
-            </div>
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium mb-2">O que quer no pedido</legend>
-              {GRUPOS_SUGESTAO.map((g) => (
-                <div key={g} className="flex gap-2 items-center">
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "flex-1 justify-start gold-border text-xs",
-                      pref.grupos[g] && "bg-gold/10 text-gold",
-                    )}
-                    aria-pressed={!!pref.grupos[g]}
-                    onClick={() =>
-                      setPref((p) => ({ ...p, grupos: { ...p.grupos, [g]: p.grupos[g] ? 0 : 1 } }))
-                    }
-                  >
-                    {g}
-                  </Button>
-                  {!!pref.grupos[g] && (
-                    <Select
-                      value={String(pref.grupos[g])}
-                      onValueChange={(v) =>
-                        setPref((p) => ({ ...p, grupos: { ...p.grupos, [g]: Number(v) } }))
-                      }
-                    >
-                      <SelectTrigger className="w-28 text-xs" aria-label={`Peso ${g}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0.5">Pouco</SelectItem>
-                        <SelectItem value="1">Equilibrado</SelectItem>
-                        <SelectItem value="2">Muito</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
+    <TooltipProvider>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="bottom"
+          aria-label="Seu pedido sugerido"
+          className="sugestao-concierge inset-x-0 bottom-0 w-full max-w-none h-dvh rounded-none p-0 gap-0 flex flex-col overflow-hidden gold-border md:inset-x-[4vw] md:top-[4vh] md:bottom-[4vh] md:w-[92vw] md:h-[92dvh] md:rounded-xl shadow-xl"
+        >
+          <header className="shrink-0 px-4 md:px-7 py-4 md:py-5 border-b border-border pr-12">
+            <SheetTitle className="font-display text-2xl md:text-3xl text-gold flex items-center gap-2">
+              <Sparkles className="size-5 shrink-0" /> Seu pedido sugerido
+            </SheetTitle>
+            <SheetDescription className="text-xs mt-1">
+              Montado a partir do que as lojas mais compram na Fetély
+            </SheetDescription>
+          </header>
+          <div
+            className="md:hidden shrink-0 flex flex-nowrap overflow-x-auto gap-1.5 px-3 py-3 border-b border-border scrollbar-thin"
+            aria-label="Preferências"
+          >
+            {SECOES_PREFERENCIAS.map((s) => (
+              <Button
+                key={s}
+                variant="outline"
+                size="sm"
+                className="h-8 px-2 text-[11px] gold-border shrink-0"
+                onClick={() => setSecao(s)}
+              >
+                {s === "Investimento"
+                  ? formatBRL(pref.investimento)
+                  : s === "Profundidade"
+                    ? `${pref.profundidade === "meia" ? "½" : pref.profundidade === "duas" ? "2" : pref.profundidade === "personalizado" ? pref.caixas : "1"} caixa`
+                    : s}
+              </Button>
+            ))}
+          </div>
+          <div className="flex-1 min-h-0 grid md:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)]">
+            <aside className="hidden md:block min-h-0 overflow-y-auto overflow-x-hidden border-r border-border px-5 py-6 scrollbar-thin">
+              <h2 className="font-display text-xl mb-5">Preferências</h2>
+              <SugestaoPreferencias pref={pref} patch={patch} kits={vitrine} faixas={faixas} />
+            </aside>
+            <section className="min-w-0 min-h-0 flex flex-col" aria-busy={recalculando}>
+              <div className="shrink-0 border-b border-border px-4 md:px-6 py-4 bg-background/95">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="font-display text-3xl md:text-4xl text-gold">
+                      <TotalAnimado valor={total} />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {kits.length} kits · {itens.length} SKUs ·{" "}
+                      {itens.reduce((s, i) => s + i.quantidade, 0)} un.
+                    </p>
+                  </div>
+                  <span className="text-xs text-gold text-right">
+                    {faixa?.nome ?? "Pedido mínimo R$ 1.000"}
+                    <span className="block text-[10px] text-muted-foreground">
+                      {recalculando ? "Atualizando…" : "Valores estimados · atacado"}
+                    </span>
+                  </span>
                 </div>
-              ))}
-            </fieldset>
-            <div className="space-y-2">
-              <Label>Profundidade por item</Label>
-              <Select
-                value={pref.profundidade}
-                onValueChange={(v) =>
-                  patch({ profundidade: v as PreferenciasSugestao["profundidade"] })
-                }
-              >
-                <SelectTrigger aria-label="Profundidade por item">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="meia">Quantidade mínima (meia caixa)</SelectItem>
-                  <SelectItem value="uma">1 caixa</SelectItem>
-                  <SelectItem value="duas">2 caixas</SelectItem>
-                  <SelectItem value="personalizado">Personalizado (nº de caixas)</SelectItem>
-                </SelectContent>
-              </Select>
-              {pref.profundidade === "personalizado" && (
-                <Input
-                  aria-label="Número de caixas"
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={pref.caixas}
-                  onChange={(e) =>
-                    patch({ caixas: Math.max(1, Math.min(100, Number(e.target.value))) })
-                  }
-                />
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label>Estilo do mix</Label>
-              <Select
-                value={pref.estilo}
-                onValueChange={(v) => patch({ estilo: v as PreferenciasSugestao["estilo"] })}
-              >
-                <SelectTrigger aria-label="Estilo do mix">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="vendidos">Só os mais vendidos</SelectItem>
-                  <SelectItem value="equilibrado">
-                    Equilibrado (mais vendidos + variedade)
-                  </SelectItem>
-                  <SelectItem value="mesclado">Bem mesclado (máxima variedade)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Coleções</Label>
-              <Select
-                value={pref.colecoes}
-                onValueChange={(v) => patch({ colecoes: v as PreferenciasSugestao["colecoes"] })}
-              >
-                <SelectTrigger
-                  aria-label="Distribuição de coleções"
-                  className="h-auto min-h-9 [&>span]:whitespace-normal"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="concentrar">
-                    Concentrar em poucas coleções completas (mesa coordenada)
-                  </SelectItem>
-                  <SelectItem value="espalhar">Espalhar por várias coleções</SelectItem>
-                </SelectContent>
-              </Select>
-              {(["preferidas", "excluidas"] as const).map((campo) => (
-                <details key={campo} className="text-sm">
-                  <summary className="cursor-pointer py-2 text-text-secondary">
-                    {campo === "preferidas" ? "Coleções preferidas" : "Coleções a excluir"} (
-                    {pref[campo].length})
-                  </summary>
-                  <div className="max-h-40 overflow-y-auto space-y-2">
-                    {colecoes.map((col) => (
-                      <Label key={col} className="flex gap-2 text-xs font-normal">
-                        <Checkbox
-                          checked={pref[campo].includes(col)}
-                          onCheckedChange={() => mudarColecao(campo, col)}
+                {!!total && (
+                  <>
+                    <svg
+                      viewBox="0 0 100 4"
+                      preserveAspectRatio="none"
+                      className="w-full h-1.5 mt-3 rounded overflow-hidden"
+                      role="img"
+                      aria-label="Distribuição do investimento por grupo"
+                    >
+                      {distribuicao.map((g, i) => (
+                        <rect
+                          key={g.grupo}
+                          x={
+                            (distribuicao.slice(0, i).reduce((s, x) => s + x.valor, 0) / total) *
+                            100
+                          }
+                          width={(g.valor / total) * 100}
+                          height={4}
+                          fill="currentColor"
+                          className={g.cor}
                         />
-                        <span className="break-words">{col}</span>
-                      </Label>
+                      ))}
+                    </svg>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-[9px] mt-2 text-muted-foreground">
+                      {distribuicao.map((g) => (
+                        <span key={g.grupo} className="flex items-center gap-1">
+                          <span className={g.cor}>●</span>
+                          {g.grupo} {Math.round((g.valor / total) * 100)}%
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 md:px-6 py-5 scrollbar-thin">
+                <div className="grid grid-cols-3 gap-2 mb-6">
+                  {cenarios.map((c) => (
+                    <Button
+                      key={c.nome}
+                      variant="outline"
+                      aria-pressed={pref.estilo === c.estilo && pref.colecoes === c.colecoes}
+                      className={cn(
+                        "h-auto min-h-20 px-1.5 py-3 flex-col gap-1 whitespace-normal text-center",
+                        pref.estilo === c.estilo &&
+                          pref.colecoes === c.colecoes &&
+                          "border-gold bg-gold/10",
+                      )}
+                      onClick={() => {
+                        setPref((p) => ({
+                          ...p,
+                          estilo: c.estilo,
+                          colecoes: c.colecoes,
+                          limiteAncoras: c.nome === "Mesa Coordenada" ? 3 : 4,
+                          grupos:
+                            c.nome === "Mesa Coordenada"
+                              ? {
+                                  "Mesa posta": 2,
+                                  "Copos e Taças": 1,
+                                  Talheres: 1,
+                                  "Jogo Americano": 1,
+                                }
+                              : PREFERENCIAS_PADRAO.grupos,
+                        }));
+                        setSeed((s) => s + 1);
+                      }}
+                    >
+                      <c.Icon className="size-4 text-gold" />
+                      <span className="font-display text-base leading-tight">{c.nome}</span>
+                      <span className="hidden xl:block text-[10px] text-muted-foreground">
+                        {c.descricao}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+                {query.isPending ? (
+                  <div className="grid xl:grid-cols-2 gap-4">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="space-y-3">
+                        <Skeleton className="aspect-[4/3] w-full rounded-lg" />
+                        <Skeleton className="h-7 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
                     ))}
                   </div>
-                </details>
-              ))}
+                ) : query.isError ? (
+                  <div role="alert" className="space-y-3">
+                    <p>Não foi possível carregar o histórico de vendas.</p>
+                    <Button variant="outline" onClick={() => void query.refetch()}>
+                      Tentar novamente
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    {aviso && (
+                      <div role="status" className="mb-5 space-y-3">
+                        <p className="text-xs text-muted-foreground">{aviso}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {!pref.grupos.Velas && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => patch({ grupos: { ...pref.grupos, Velas: 1 } })}
+                            >
+                              Incluir Velas
+                            </Button>
+                          )}
+                          {pref.profundidade !== "duas" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => patch({ profundidade: "duas" })}
+                            >
+                              Aumentar para 2 caixas
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              patch({ colecoes: "espalhar", excluidas: [], preferidas: [] })
+                            }
+                          >
+                            Liberar mais coleções
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    {avisos.map((a) => (
+                      <p
+                        key={a}
+                        className="text-[11px] text-gold bg-gold/10 rounded px-3 py-2 mb-2"
+                      >
+                        {a}
+                      </p>
+                    ))}
+                    {GRUPOS_SUGESTAO.map((g) => {
+                      const lista = kits.filter((k) => k.grupo === g);
+                      return lista.length ? (
+                        <div key={g} className="mb-8">
+                          <h3 className="font-body text-[11px] uppercase text-muted-foreground mb-3">
+                            {g}
+                          </h3>
+                          <div className="grid xl:grid-cols-2 gap-4 items-start">
+                            <AnimatePresence initial={false}>
+                              {lista.map((kit) => (
+                                <SugestaoKitCard
+                                  key={kit.id}
+                                  kit={kit}
+                                  base={candidatos.find((k) => k.id === kit.id) ?? kit}
+                                  onChange={(i) => mudarKit(kit, i)}
+                                  onLock={() =>
+                                    setKits((ks) =>
+                                      ks.map((k) =>
+                                        k.id === kit.id ? { ...k, travado: !k.travado } : k,
+                                      ),
+                                    )
+                                  }
+                                  onSwap={() => setTroca(kit)}
+                                  onRemove={() =>
+                                    setKits((ks) => ks.filter((k) => k.id !== kit.id))
+                                  }
+                                />
+                              ))}
+                            </AnimatePresence>
+                          </div>
+                        </div>
+                      ) : null;
+                    })}
+                    {!kits.length && (
+                      <p className="py-10 text-center text-muted-foreground text-sm">
+                        Nenhum kit completo cabe nas preferências atuais.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            </section>
+          </div>
+          <footer className="relative shrink-0 border-t border-border bg-background/90 backdrop-blur-xl px-3 md:px-6 py-3 pb-[max(12px,env(safe-area-inset-bottom))] grid grid-cols-[minmax(0,1fr)_auto] md:flex md:items-center gap-2 overflow-hidden">
+            <div className="min-w-0 md:mr-auto">
+              <div className="font-display text-xl text-gold truncate">{formatBRL(total)}</div>
+              <p className="text-[10px] text-muted-foreground">
+                {faixa?.nome ?? "Mínimo R$ 1.000"}
+              </p>
             </div>
-            <Label className="flex items-center justify-between gap-3">
-              Só pronta entrega
-              <Switch
-                checked={pref.prontaEntrega}
-                onCheckedChange={(v) => patch({ prontaEntrega: v })}
-              />
-            </Label>
-          </section>
-          <section className="p-4 sm:p-5 space-y-4 min-w-0" aria-busy={recalculando}>
-            <h2 className="font-display text-xl">Sugestão</h2>
-            {query.isPending ? (
-              <p className="text-text-secondary">Consultando os mais vendidos…</p>
-            ) : query.isError ? (
-              <div role="alert">
-                <p>Não foi possível carregar o histórico de vendas.</p>
-                <Button variant="outline" onClick={() => void query.refetch()}>
-                  Tentar novamente
+            <Button
+              variant="outline"
+              className="text-xs md:text-sm"
+              disabled={!query.data || recalculando || aplicando}
+              onClick={() => {
+                setRecalculando(true);
+                setSeed((s) => s + 1);
+              }}
+            >
+              <motion.span
+                animate={{ rotate: recalculando && !reduzido ? 360 : 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <RefreshCw className="size-4" />
+              </motion.span>
+              Outra opção
+            </Button>
+            <Button
+              className="h-11 min-w-0 text-xs md:text-sm active:scale-[0.97] md:px-6"
+              disabled={!podeAplicar}
+              onClick={() => aplicar(false)}
+            >
+              <ShoppingBag className="size-4 shrink-0" />
+              Adicionar à minha lista
+            </Button>
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-11 w-11 justify-self-end"
+                      aria-label="Mais opções da sugestão"
+                    >
+                      <MoreHorizontal className="size-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Mais opções</TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem disabled={!podeAplicar} onSelect={() => setConfirmar(true)}>
+                  Substituir minha lista
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <AnimatePresence>
+              {aplicando && (
+                <motion.span
+                  initial={{ x: 0, y: 0, opacity: 1 }}
+                  animate={{
+                    x: reduzido ? 0 : -100,
+                    y: reduzido ? 0 : -25,
+                    opacity: 0,
+                    scale: 0.5,
+                  }}
+                  transition={{ duration: 0.35 }}
+                  className="absolute left-1/2 bottom-3 text-gold pointer-events-none"
+                >
+                  <ShoppingBag className="size-7" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </footer>
+          <Drawer
+            open={!!secao}
+            onOpenChange={(v) => {
+              if (!v) setSecao(null);
+            }}
+            shouldScaleBackground={false}
+          >
+            <DrawerContent className="max-h-[80dvh] z-[60] overflow-hidden">
+              <div className="p-4 flex items-center justify-between">
+                <DrawerTitle className="font-display text-2xl">{secao}</DrawerTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Fechar preferência"
+                  onClick={() => setSecao(null)}
+                >
+                  <X className="size-4" />
                 </Button>
               </div>
-            ) : (
-              <>
-                <div className="border-b border-border pb-4">
-                  <div className="font-display text-3xl text-gold">{formatBRL(total)}</div>
-                  <p className="text-xs text-text-secondary mt-1">
-                    {itens.length} SKUs · {itens.reduce((s, i) => s + i.quantidade, 0)} unidades ·{" "}
-                    {new Set(itens.map((i) => i.produto.colecao)).size} coleções
-                  </p>
-                  <p className="text-xs text-gold mt-1">
-                    {faixa?.nome ?? "Abaixo do pedido mínimo"}
-                    {recalculando ? " · Atualizando…" : ""}
-                  </p>
-                </div>
-                {aviso && (
-                  <p className="text-xs text-text-secondary" role="status">
-                    {aviso}
-                  </p>
+              <DrawerDescription className="sr-only">
+                Preferências do pedido sugerido
+              </DrawerDescription>
+              <div className="overflow-y-auto p-5 pt-0">
+                {secao && (
+                  <SugestaoPreferencias
+                    pref={pref}
+                    patch={patch}
+                    kits={vitrine}
+                    faixas={faixas}
+                    secao={secao}
+                  />
                 )}
-                {total < 1000 && (
-                  <p className="text-xs text-destructive">
-                    A lista precisa atingir R$ 1.000 para ser adicionada.
-                  </p>
-                )}
-                <div className="space-y-2" aria-label="Distribuição do valor por grupo">
-                  {GRUPOS_SUGESTAO.map((g) => {
-                    const valor = itens
-                      .filter((i) => grupoSugestao(i.produto) === g)
-                      .reduce((s, i) => s + i.quantidade * i.produto.precoAtacado, 0);
-                    return valor > 0 ? (
-                      <div
-                        key={g}
-                        className="grid grid-cols-[100px_minmax(0,1fr)_90px] items-center gap-2 text-[11px]"
-                      >
-                        <span>{g}</span>
-                        <div className="h-2 bg-surface-2 overflow-hidden">
-                          <svg
-                            viewBox="0 0 100 8"
-                            preserveAspectRatio="none"
-                            className="w-full h-2 text-gold"
-                            role="img"
-                            aria-label={`${g}: ${Math.round((valor / total) * 100)}%`}
-                          >
-                            <rect width={(valor / total) * 100} height="8" fill="currentColor" />
-                          </svg>
-                        </div>
-                        <span className="text-right">{formatBRL(valor)}</span>
-                      </div>
-                    ) : null;
-                  })}
-                </div>
-                {agrupados.map(({ nome, lista }) => (
-                  <div key={nome}>
-                    <h3 className="font-display text-base border-b border-border py-2 break-words">
-                      {nome}
-                    </h3>
-                    {lista.map((i) => {
-                      const p = i.produto;
-                      const foto =
-                        getProdutoPhoto(photos, p.colecao, p.sku) ??
-                        getProdutoPhoto(photos, p.colecao, p.corNome);
-                      return (
-                        <article
-                          key={p.sku}
-                          className="flex gap-3 py-3 border-b border-border min-w-0"
-                        >
-                          <div className="w-14 h-14 shrink-0 bg-surface-2 overflow-hidden">
-                            {foto ? (
-                              <img
-                                src={foto}
-                                alt={p.nomeComercial}
-                                className="w-full h-full object-contain"
-                              />
-                            ) : (
-                              <PhotoPlaceholder colecao={p.colecao} className="w-full h-full" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm break-words">{p.nomeComercial}</p>
-                            <p className="text-xs text-text-secondary break-words">
-                              {p.corNome} {p.tamanhoNumero} · {formatBRL(p.precoAtacado)}/un.
-                            </p>
-                            <span className="text-[10px] text-gold break-words">{i.motivo}</span>
-                            <div className="flex flex-wrap gap-1 items-center mt-2">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-7 w-7"
-                                aria-label={`Diminuir ${p.sku}`}
-                                onClick={() => mudarQty(p.sku, -1)}
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                              <span className="w-10 text-center text-xs">{i.quantidade}</span>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-7 w-7"
-                                aria-label={`Aumentar ${p.sku}`}
-                                onClick={() => mudarQty(p.sku, 1)}
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                title="Trocar"
-                                aria-label={`Trocar ${p.sku}`}
-                                onClick={() => trocar(p.sku)}
-                              >
-                                <ArrowLeftRight className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                title="Remover"
-                                aria-label={`Remover ${p.sku}`}
-                                onClick={() =>
-                                  setItens((prev) => prev.filter((x) => x.produto.sku !== p.sku))
-                                }
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                              <span className="ml-auto text-xs font-medium">
-                                {formatBRL(i.quantidade * p.precoAtacado)}
-                              </span>
-                            </div>
-                          </div>
-                        </article>
+              </div>
+              <Button className="m-4 shrink-0" onClick={() => setSecao(null)}>
+                Pronto
+              </Button>
+            </DrawerContent>
+          </Drawer>
+          <Dialog
+            open={!!troca}
+            onOpenChange={(v) => {
+              if (!v) setTroca(null);
+            }}
+          >
+            <DialogContent className="max-w-[calc(100vw-24px)] sm:max-w-3xl p-5">
+              <DialogTitle className="font-display text-2xl">
+                Outra escolha para {troca?.grupo}
+              </DialogTitle>
+              <DialogDescription>Kits completos próximos do valor atual.</DialogDescription>
+              <div className="flex gap-3 overflow-x-auto snap-x pb-3">
+                {alternativas.map((k) => (
+                  <Button
+                    key={k.id}
+                    variant="outline"
+                    className="h-auto w-44 shrink-0 snap-start flex-col items-stretch p-0 overflow-hidden whitespace-normal"
+                    onClick={() => {
+                      setKits((ks) =>
+                        ks.map((x) => (x.id === troca?.id ? { ...k, travado: x.travado } : x)),
                       );
-                    })}
-                  </div>
+                      setTroca(null);
+                    }}
+                  >
+                    <div className="aspect-[4/3] overflow-hidden">
+                      <FotoKit kit={k} />
+                    </div>
+                    <span className="font-display text-lg p-2">{k.nome}</span>
+                    <span className="text-xs text-gold pb-3">{formatBRL(k.custo)}</span>
+                  </Button>
                 ))}
-              </>
-            )}
-          </section>
-        </div>
-        <footer className="border-t border-border bg-background p-3 flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            className="gold-border text-gold"
-            disabled={!query.data || recalculando}
-            onClick={() => setSeed((s) => s + 1)}
-          >
-            <RefreshCw className="h-4 w-4" />
-            Gerar outra opção
-          </Button>
-          <Button
-            className="flex-1 bg-gold text-background hover:bg-gold-light"
-            disabled={!podeAplicar}
-            onClick={() => aplicar(false)}
-          >
-            Adicionar à minha lista
-          </Button>
-          <Button
-            variant="outline"
-            className="gold-border text-gold"
-            disabled={!podeAplicar}
-            onClick={() => setConfirmar(true)}
-          >
-            Substituir minha lista
-          </Button>
-        </footer>
-        <AlertDialog open={confirmar} onOpenChange={setConfirmar}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Substituir sua lista?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Os itens atuais serão substituídos pela sugestão de pedido.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Voltar</AlertDialogCancel>
-              <AlertDialogAction onClick={() => aplicar(true)}>
-                Substituir minha lista
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </SheetContent>
-    </Sheet>
+              </div>
+              {!alternativas.length && (
+                <p className="text-sm text-muted-foreground">
+                  Não há outra opção completa neste grupo que caiba no investimento.
+                </p>
+              )}
+            </DialogContent>
+          </Dialog>
+          <AlertDialog open={confirmar} onOpenChange={setConfirmar}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Substituir sua lista?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Os itens atuais serão substituídos pela sugestão de pedido.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Voltar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => aplicar(true)}>
+                  Substituir minha lista
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </SheetContent>
+      </Sheet>
+    </TooltipProvider>
   );
 }

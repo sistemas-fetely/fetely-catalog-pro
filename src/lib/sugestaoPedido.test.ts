@@ -7,6 +7,8 @@ import {
   elegivelSugestao,
   grupoSugestao,
   montarSugestao,
+  montarKits,
+  alternativasKit,
   PREFERENCIAS_PADRAO,
   quantidadeSugestao,
   trocarItemSugestao,
@@ -109,17 +111,22 @@ test("seed e preferências iguais produzem a mesma sugestão", () =>
   expect(montarSugestao(catalogo, [], [], pref(), 4)).toEqual(
     montarSugestao(catalogo, [], [], pref(), 4),
   ));
-test("orçamento padrão alcança 95–105% de R$ 2.500 com quantidades válidas", () => {
-  const r = montarSugestao(catalogo, [], [], pref(), 1);
-  expect(r.atingiuAlvo).toBe(true);
-  expect(r.total).toBeGreaterThanOrEqual(2375);
-  expect(r.total).toBeLessThanOrEqual(2625);
-  expect(r.itens.every((i) => i.quantidade % halfBox(i.produto.multiplos) === 0)).toBe(true);
+test("montagem fica abaixo do alvo sem ultrapassar duas vezes a profundidade", () => {
+  for (const profundidade of ["meia", "uma", "duas", "personalizado"] as const) {
+    const prefs = pref({ profundidade, caixas: 3 });
+    const r = montarSugestao(catalogo, [], [], prefs, 1);
+    expect(r.total).toBeLessThanOrEqual(2500 * 1.05);
+    expect(r.itens.length).toBeGreaterThan(0);
+    for (const i of r.itens) {
+      expect(i.quantidade).toBeLessThanOrEqual(quantidadeSugestao(i.produto, prefs) * 2);
+      expect(i.quantidade % halfBox(i.produto.multiplos)).toBe(0);
+    }
+  }
 });
-test("pedido mínimo não fica abaixo de R$ 1.000 quando há mix possível", () => {
+test("sem kit acessível devolve resultado abaixo do alvo e informa alternativa", () => {
   const r = montarSugestao(catalogo, [], [], pref({ investimento: 1000 }));
-  expect(r.total).toBeGreaterThanOrEqual(1000);
   expect(r.total).toBeLessThanOrEqual(1050);
+  if (r.total < 950) expect(r.aviso).not.toBeNull();
 });
 test("mix impossível sinaliza inviabilidade sem inventar itens", () => {
   const r = montarSugestao(
@@ -132,26 +139,21 @@ test("mix impossível sinaliza inviabilidade sem inventar itens", () => {
   expect(r.itens).toHaveLength(0);
   expect(r.aviso).not.toBeNull();
 });
-test("mais vendidos prioriza score de popularidade", () => {
-  const rs = catalogo.map((p, i) => ranking(p, i));
-  const r = montarSugestao(catalogo, rs, [], pref({ estilo: "vendidos", colecoes: "espalhar" }));
-  expect(r.itens[0]?.produto.sku).toBe("P59");
+test("seeds diferentes sorteiam kits diferentes até no estilo mais vendidos", () => {
+  const rs = catalogo.map((p) => ranking(p, 50));
+  const a = montarSugestao(catalogo, rs, [], pref({ estilo: "vendidos" }), 1);
+  const b = montarSugestao(catalogo, rs, [], pref({ estilo: "vendidos" }), 2);
+  expect(a.kits.map((k) => k.id)).not.toEqual(b.kits.map((k) => k.id));
 });
-test("espalhar limita a dois SKUs não numéricos por coleção", () => {
+test("espalhar limita a um kit por coleção, sem cortar suas peças", () => {
   const r = montarSugestao(catalogo, [], [], pref({ colecoes: "espalhar" }));
-  const counts = new Map<string, number>();
-  for (const i of r.itens) counts.set(i.produto.colecao, (counts.get(i.produto.colecao) ?? 0) + 1);
-  expect([...counts.values()].every((n) => n <= 2)).toBe(true);
-  expect(counts.size).toBeGreaterThan(1);
+  expect(new Set(r.kits.map((k) => k.colecao)).size).toBe(r.kits.length);
+  expect(r.kits.every((k) => k.itens.length === 3)).toBe(true);
 });
-test("coleções preferidas recebem prioridade em concentrar", () => {
-  const r = montarSugestao(catalogo, [], [], pref({ preferidas: ["Coleção 12"] }));
-  expect(r.itens.slice(0, 3).some((i) => i.produto.colecao === "Coleção 12")).toBe(true);
-});
-test("concentrar mantém mesa em até três coleções âncora", () => {
+test("concentrar permite até quatro âncoras sem prender cada grupo a uma coleção", () => {
   const r = montarSugestao(catalogo, [], [], pref());
-  expect(new Set(r.itens.map((i) => i.produto.colecao)).size).toBeLessThanOrEqual(3);
-  expect(r.total).toBeGreaterThanOrEqual(2375);
+  expect(new Set(r.kits.map((k) => k.colecao)).size).toBeLessThanOrEqual(4);
+  expect(new Set(r.kits.map((k) => k.colecao)).size).toBeGreaterThanOrEqual(2);
 });
 test("âncora de velas cabe no orçamento do grupo sem descartar todas as velas", () => {
   const numericas = Array.from({ length: 10 }, (_, n) =>
@@ -264,4 +266,164 @@ test("dica aparece até 15% abaixo da próxima faixa e mostra desconto increment
   ];
   expect(dicaFaixa(4250, faixas)).toMatchObject({ falta: 750, descontoExtra: 3 });
   expect(dicaFaixa(4249, faixas)).toBeNull();
+});
+
+test("Mesa inclui todos os tamanhos de prato, guardanapos e bandejas da coleção", () => {
+  const pecas = [
+    produto("p15", { colecao: "Costa Serena", tamanhoNumero: "15" }),
+    produto("p21", { colecao: "Costa Serena", tamanhoNumero: "21" }),
+    produto("p27", { colecao: "Costa Serena", tamanhoNumero: "27" }),
+    produto("g16", { colecao: "Costa Serena", grupo: "Guardanapo" }),
+    produto("b", { colecao: "Costa Serena", grupo: "Bandeja" }),
+  ];
+  const kits = montarKits(pecas, pref());
+  expect(kits).toHaveLength(1);
+  expect(kits[0]?.itens.map((i) => i.produto.sku).sort()).toEqual([
+    "b",
+    "g16",
+    "p15",
+    "p21",
+    "p27",
+  ]);
+  const r = montarSugestao(pecas, [], [], pref());
+  expect(r.itens).toHaveLength(5);
+  expect(new Set(r.itens.map((i) => i.quantidade)).size).toBe(1);
+  expect(r.itens.every((i) => i.quantidade <= 24)).toBe(true);
+});
+test("cada estampa Mosaïque é uma mesa completa independente", () => {
+  const pecas = ["A", "B"].flatMap((estampa) =>
+    ["Prato", "Guardanapo"].map((grupo) =>
+      produto(`${estampa}${grupo}`, { colecao: "Mosaïque", grupo, estampa }),
+    ),
+  );
+  const kits = montarKits(pecas, pref());
+  expect(kits).toHaveLength(2);
+  expect(kits.every((k) => k.itens.length === 2)).toBe(true);
+});
+test("jogo americano agrupa todas as cores; taças e talheres separam por cor", () => {
+  for (const grupo of ["Jogo Americano", "Copos e Taças", "Talheres"] as const) {
+    const produtos = ["Azul", "Rosa"].flatMap((corNome) =>
+      ["90", "150", "260"].map((tamanhoNumero) =>
+        produto(`${corNome}${tamanhoNumero}`, {
+          colecao: "Lineare",
+          grupo,
+          corNome,
+          tamanhoNumero,
+        }),
+      ),
+    );
+    const kits = montarKits(produtos, pref({ grupos: { [grupo]: 1 } }));
+    expect(kits).toHaveLength(grupo === "Jogo Americano" ? 1 : 2);
+    expect(kits.every((k) => k.itens.length === (grupo === "Jogo Americano" ? 6 : 3))).toBe(true);
+  }
+});
+test("Infantil reúne todos os itens do tema", () => {
+  const kits = montarKits(
+    ["Prato", "Copo", "Guardanapo"].map((grupo) =>
+      produto(grupo, { grupo, categoria: "Imaginar & Celebrar", colecao: "Dinossauros" }),
+    ),
+    pref({ grupos: { Infantil: 1 } }),
+  );
+  expect(kits).toHaveLength(1);
+  expect(kits[0]?.itens).toHaveLength(3);
+});
+test("sorteio nunca corta kits para caber no alvo", () => {
+  const prefs = pref({ colecoes: "espalhar" });
+  const bases = montarKits(catalogo, prefs);
+  const resultado = montarSugestao(catalogo, [], [], prefs, 42);
+  for (const k of resultado.kits) {
+    const base = bases.find((b) => b.id === k.id);
+    expect(k.itens.map((i) => i.produto.sku)).toEqual(base?.itens.map((i) => i.produto.sku));
+  }
+});
+test("kits travados preservam itens e quantidades e outra opção muda pelo menos 40% do restante", () => {
+  const prefs = pref({ investimento: 1800, colecoes: "espalhar" });
+  const a = montarSugestao(catalogo, [], [], prefs, 10);
+  const anteriores = a.kits.map((k, i) => ({ ...k, travado: i === 0 }));
+  const b = montarSugestao(catalogo, [], [], prefs, 11, { anteriores, regenerar: true });
+  expect(b.kits.find((k) => k.travado)).toEqual(anteriores[0]);
+  const livres = anteriores.filter((k) => !k.travado);
+  const diferentes = livres.filter((k) => !b.kits.some((x) => x.id === k.id));
+  expect(diferentes.length / livres.length).toBeGreaterThanOrEqual(0.4);
+});
+test("recalcular preferências conserva kits que ainda são válidos", () => {
+  const prefs = pref({ investimento: 1800, colecoes: "espalhar" });
+  const a = montarSugestao(catalogo, [], [], prefs, 10);
+  const b = montarSugestao(catalogo, [], [], { ...prefs, investimento: 2100 }, 10, {
+    anteriores: a.kits,
+  });
+  expect(a.kits.every((k) => b.kits.some((x) => x.id === k.id))).toBe(true);
+});
+test("profundidade só aumenta em kits inteiros com mix esgotado", () => {
+  const produtos = [
+    produto("a", { colecao: "Única", precoAtacado: 30 }),
+    produto("b", { colecao: "Única", grupo: "Guardanapo", precoAtacado: 30 }),
+  ];
+  const r = montarSugestao(produtos, [], [], pref({ investimento: 1500 }));
+  expect(r.itens.map((i) => i.quantidade)).toEqual([24, 24]);
+  expect(r.avisosProfundidade).toHaveLength(1);
+  expect(r.total).toBe(1440);
+});
+test("kit não cresce enquanto existem outros kits elegíveis não selecionados", () => {
+  const produtos = [
+    produto("barato", { precoAtacado: 10 }),
+    produto("caro", { precoAtacado: 1000 }),
+  ];
+  const r = montarSugestao(produtos, [], [], pref());
+  expect(r.itens[0]?.quantidade).toBe(12);
+  expect(r.avisosProfundidade).toHaveLength(0);
+});
+test("alternativas pertencem ao mesmo grupo e respeitam o teto de 105%", () => {
+  const bases = montarKits(catalogo, pref());
+  const atual = bases[0];
+  if (!atual) throw new Error("Fixture sem kit");
+  const alternativas = alternativasKit(atual, bases, [atual], 1000);
+  expect(alternativas.length).toBeGreaterThanOrEqual(3);
+  expect(alternativas.length).toBeLessThanOrEqual(5);
+  expect(
+    alternativas.every((k) => k.grupo === atual.grupo && k.custo <= 1050 && k.id !== atual.id),
+  ).toBe(true);
+});
+
+test("Mesa Coordenada limita as âncoras a três coleções", () => {
+  const r = montarSugestao(catalogo, [], [], pref({ investimento: 10000, limiteAncoras: 3 }));
+  expect(new Set(r.kits.filter((k) => k.grupo === "Mesa posta").map((k) => k.colecao)).size).toBe(
+    3,
+  );
+});
+test("cada nível extra de duas caixas e personalizado respeita o dobro para todas as peças", () => {
+  const produtos = [
+    produto("a", { colecao: "Única", precoAtacado: 30 }),
+    produto("b", { colecao: "Única", grupo: "Guardanapo", precoAtacado: 30 }),
+  ];
+  for (const profundidade of ["duas", "personalizado"] as const) {
+    const prefs = pref({
+      investimento: profundidade === "duas" ? 3000 : 4400,
+      profundidade,
+      caixas: 3,
+    });
+    const r = montarSugestao(produtos, [], [], prefs);
+    expect(r.itens.every((i) => i.quantidade === quantidadeSugestao(i.produto, prefs) * 2)).toBe(
+      true,
+    );
+    expect(r.total).toBeLessThanOrEqual(prefs.investimento);
+  }
+});
+test("afinidade da mesa considera pratos e guardanapos, não só a primeira peça", () => {
+  const kits = montarKits(
+    [produto("b", { colecao: "Mesa A", grupo: "Bandeja" }), produto("p", { colecao: "Mesa A" })],
+    pref(),
+    [],
+    [
+      {
+        colecao_a: "Mesa A",
+        grupo_a: "Prato",
+        colecao_b: "Taças B",
+        grupo_b: "Copos e Taças",
+        pedidos_juntos: 20,
+        score_afinidade: 80,
+      },
+    ],
+  );
+  expect(kits[0]?.afinidades["Taças B"]).toBe(80);
 });

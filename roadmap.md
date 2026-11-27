@@ -1,5 +1,10 @@
 # Roadmap
 
+- [x] Reformulação Sugestão: kits completos, profundidade até 2×, sorteio ponderado, travas e alternativas; contratos/carrinho preservados, 45 testes passaram.
+- [x] Reformulação Sugestão: painel concierge com Framer Motion, preferências móveis, cards editoriais e rodapé sem cortes em 360, 768 e 1440px.
+- [x] Reformulação Sugestão: primeiro fluxo com consultas reais confirmou aplicação/retomada e cálculo máximo 14,2ms em 927 produtos; versão final conferida com resposta pública capturada, 75% dos kits livres mudaram, travado preservado, troca/substituição e teclado conferidos, sem publicação.
+- [ ] Ranking público: consulta existente public_ranking_vendas passou a exceder o limite de tempo (57014) nas repetições; catálogo/faixas/afinidade respondem. RPCs preservadas conforme escopo; nova verificação ao vivo depende de a consulta responder novamente.
+
 - [x] Sugestão de Pedido: agregados públicos seguros de vendas/afinidade/faixas e critérios no envio; migrações 0022/0023 aplicadas, sem leitura pública de pedidos ou clientes.
 - [x] Sugestão de Pedido: montagem determinística, painel de preferências e edição, aplicação na lista e critérios em Reuniões; grade 0–9 indivisível tem precedência sobre o teto de dois SKUs por coleção ao espalhar.
 - [x] Sugestão de Pedido: 33 testes de regras/segurança passam; fluxo público desktop/mobile, soma, troca, substituição, retomada e envio real PS0090 com leitura autenticada de critérios em Reuniões conferidos; pré-seleção e listas técnicas removidas, sem publicar.

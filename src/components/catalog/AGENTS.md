@@ -1,0 +1,1 @@
+- Order suggestions render complete, seeded kits through SugestaoKitCard and SugestaoPreferencias; the pure algorithm remains in sugestaoPedido. Why: keep editorial presentation separate from quantity, eligibility and budget rules without changing public RPCs or cart provenance.
